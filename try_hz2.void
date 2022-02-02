@@ -1,0 +1,123 @@
+{   v_import("voidc_target.void");
+    v_import("voidc_types.void");
+    v_import("voidc_util.void");
+
+    v_import("function_hack.void");
+    v_import("if_then_else.void");
+    v_import("block.void");
+    v_import("loop.void");
+    v_import("defer.void");
+    v_import("definitions.void");
+
+    v_import("printf.void");
+}
+
+{
+    voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_loop();
+    voidc_enable_statement_defer();
+    voidc_enable_definitions();
+}
+
+
+//---------------------------------------------------------------------
+N = 256;
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+
+my_div: (a: uint(N), b: uint(N)) -> uint(N)
+{
+//void udiv256(I n, I d, I* q) {
+//    *q = 0;
+//    while (n >= d) {
+//        I i = 0, d_t = d;
+//        while (n >= (d_t << 1) && ++i)
+//            d_t <<= 1;
+//        *q |= (I)1 << i;
+//        n -= d_t;
+//    }
+//}
+
+    n: &uint(N+1) := a;
+    d: &uint(N) := b;
+
+    q: &uint(N) := 0;
+
+    loop
+    {
+        if (n < d)  v_break();
+
+        i:   &uint(N) := 0;
+        d_t: &uint(N+1) := d;
+
+        loop
+        {
+            if (!(n >= (d_t << 1)  &&  ++i)) v_break();
+
+            d_t <<= 1;
+        }
+
+        q |= (1 << i);
+
+        n -= d_t;
+    }
+
+    v_return(q);
+}
+
+my_divrem: (a: &uint(N), b: uint(N)) -> uint(N)
+{
+    a1 = my_div(a, b);
+
+    r = a - a1*b;
+
+    a := a1;
+
+    v_return(r);
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    v: uint(N) = -1;
+
+    s = v_alloca(char, N*3/10+5);
+
+    p: &*char := s;
+
+    t: &uint(N) := v;
+
+    loop
+    {
+        if (t == 0) v_break();
+
+//        d  = t % 10;
+//        t := t / 10;
+
+        d = my_divrem(t, 10);
+
+        *p++ := ('0' + d : char);
+    }
+
+    --p;
+
+    printf("v: ");
+
+    loop
+    {
+        printf("%c", *p);
+
+        if (p <= s) v_break();
+
+        --p;
+    }
+
+    printf("\n");
+}
+
+
+

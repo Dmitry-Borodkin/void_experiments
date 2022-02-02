@@ -1,0 +1,16 @@
+syntax: glob
+
+**.o
+**.so
+
+**.asm
+**.png
+**.bin
+
+**.voidc*
+
+**micros.incdirs
+
+try_roller/**
+
+

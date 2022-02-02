@@ -1,0 +1,250 @@
+{   v_import("voidc_target.void");
+    v_import("voidc_types.void");
+    v_import("voidc_util.void");
+    v_import("voidc_ast.void");
+    v_import("voidc_quark.void");
+    v_import("voidc_visitor.void");
+    v_import("voidc_compiler.void");
+    v_import("vpeg_parser.void");
+    v_import("vpeg_grammar.void");
+    v_import("vpeg_context.void");
+
+    v_import("llvm-c/Core.void");
+
+    v_import("function_hack.void");
+    v_import("memory.void");
+    v_import("if_then_else.void");
+    v_import("block.void");
+    v_import("loop.void");
+    v_import("grammar.void");
+    v_import("switch.void");
+    v_import("expression.void");
+    v_import("defer.void");
+}
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_loop();
+    voidc_enable_statement_grammar();
+    voidc_enable_statement_switch();
+    voidc_enable_expression();
+    voidc_enable_statement_defer();
+}
+
+{   v_import("printf.void"); }
+
+
+//---------------------------------------------------------------------
+{
+    typ = *v_alloca(v_type_ptr) := LLVMValueKind;
+
+    ft = v_function_type(v_pointer_type(char, 0), &typ, 1, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("value_kind_to_string", ft);
+
+    v_add_parameter_name(f, 0, "kind", LLVMValueKind);
+}
+{
+    s = *v_alloca(*char) := "?";
+
+    switch(kind)
+    {
+    case LLVMArgumentValueKind:                 s := "Argument";                v_break();
+    case LLVMBasicBlockValueKind:               s := "BasicBlock";              v_break();
+    case LLVMMemoryUseValueKind:                s := "MemoryUse";               v_break();
+    case LLVMMemoryDefValueKind:                s := "MemoryDef";               v_break();
+    case LLVMMemoryPhiValueKind:                s := "MemoryPhi";               v_break();
+
+    case LLVMFunctionValueKind:                 s := "Function";                v_break();
+    case LLVMGlobalAliasValueKind:              s := "GlobalAlias";             v_break();
+    case LLVMGlobalIFuncValueKind:              s := "GlobalIFunc";             v_break();
+    case LLVMGlobalVariableValueKind:           s := "GlobalVariable";          v_break();
+    case LLVMBlockAddressValueKind:             s := "BlockAddress";            v_break();
+    case LLVMConstantExprValueKind:             s := "ConstantExpr";            v_break();
+    case LLVMConstantArrayValueKind:            s := "ConstantArray";           v_break();
+    case LLVMConstantStructValueKind:           s := "ConstantStruct";          v_break();
+    case LLVMConstantVectorValueKind:           s := "ConstantVector";          v_break();
+
+    case LLVMUndefValueValueKind:               s := "UndefValue";              v_break();
+    case LLVMConstantAggregateZeroValueKind:    s := "ConstantAggregateZero";   v_break();
+    case LLVMConstantDataArrayValueKind:        s := "ConstantDataArray";       v_break();
+    case LLVMConstantDataVectorValueKind:       s := "ConstantDataVector";      v_break();
+    case LLVMConstantIntValueKind:              s := "ConstantInt";             v_break();
+    case LLVMConstantFPValueKind:               s := "ConstantFP";              v_break();
+    case LLVMConstantPointerNullValueKind:      s := "ConstantPointerNull";     v_break();
+    case LLVMConstantTokenNoneValueKind:        s := "ConstantTokenNone";       v_break();
+
+    case LLVMMetadataAsValueValueKind:          s := "MetadataAsValue";         v_break();
+    case LLVMInlineAsmValueKind:                s := "InlineAsm";               v_break();
+
+    case LLVMInstructionValueKind:              s := "Instruction";             v_break();
+    case LLVMPoisonValueValueKind:              s := "PoisonValue";             v_break();
+    }
+
+    v_return(s);
+}
+
+//---------------------------------------------------------------------
+{
+    typ = *v_alloca(v_type_ptr) := LLVMOpcode;
+
+    ft = v_function_type(v_pointer_type(char, 0), &typ, 1, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("opcode_to_string", ft);
+
+    v_add_parameter_name(f, 0, "opc", LLVMOpcode);
+}
+{
+    s = *v_alloca(*char) := "?";
+
+    switch(opc)
+    {
+    case LLVMRet:               s := "Ret";             v_break();
+    case LLVMBr:                s := "Br";              v_break();
+    case LLVMSwitch:            s := "Switch";          v_break();
+    case LLVMIndirectBr:        s := "IndirectBr";      v_break();
+    case LLVMInvoke:            s := "Invoke";          v_break();
+    case LLVMUnreachable:       s := "Unreachable";     v_break();
+    case LLVMCallBr:            s := "CallBr";          v_break();
+    case LLVMFNeg:              s := "FNeg";            v_break();
+    case LLVMAdd:               s := "Add";             v_break();
+    case LLVMFAdd:              s := "FAdd";            v_break();
+    case LLVMSub:               s := "Sub";             v_break();
+    case LLVMFSub:              s := "FSub";            v_break();
+    case LLVMMul:               s := "Mul";             v_break();
+    case LLVMFMul:              s := "FMul";            v_break();
+    case LLVMUDiv:              s := "UDiv";            v_break();
+    case LLVMSDiv:              s := "SDiv";            v_break();
+    case LLVMFDiv:              s := "FDiv";            v_break();
+    case LLVMURem:              s := "URem";            v_break();
+    case LLVMSRem:              s := "SRem";            v_break();
+    case LLVMFRem:              s := "FRem";            v_break();
+    case LLVMShl:               s := "Shl";             v_break();
+    case LLVMLShr:              s := "LShr";            v_break();
+    case LLVMAShr:              s := "AShr";            v_break();
+    case LLVMAnd:               s := "And";             v_break();
+    case LLVMOr:                s := "Or";              v_break();
+    case LLVMXor:               s := "Xor";             v_break();
+    case LLVMAlloca:            s := "Alloca";          v_break();
+    case LLVMLoad:              s := "Load";            v_break();
+    case LLVMStore:             s := "Store";           v_break();
+    case LLVMGetElementPtr:     s := "GetElementPtr";   v_break();
+    case LLVMTrunc:             s := "Trunc";           v_break();
+    case LLVMZExt:              s := "ZExt";            v_break();
+    case LLVMSExt:              s := "SExt";            v_break();
+    case LLVMFPToUI:            s := "FPToUI";          v_break();
+    case LLVMFPToSI:            s := "FPToSI";          v_break();
+    case LLVMUIToFP:            s := "UIToFP";          v_break();
+    case LLVMSIToFP:            s := "SIToFP";          v_break();
+    case LLVMFPTrunc:           s := "FPTrunc";         v_break();
+    case LLVMFPExt:             s := "FPExt";           v_break();
+    case LLVMPtrToInt:          s := "PtrToInt";        v_break();
+    case LLVMIntToPtr:          s := "IntToPtr";        v_break();
+    case LLVMBitCast:           s := "BitCast";         v_break();
+    case LLVMAddrSpaceCast:     s := "AddrSpaceCast";   v_break();
+    case LLVMICmp:              s := "ICmp";            v_break();
+    case LLVMFCmp:              s := "FCmp";            v_break();
+    case LLVMPHI:               s := "PHI";             v_break();
+    case LLVMCall:              s := "Call";            v_break();
+    case LLVMSelect:            s := "Select";          v_break();
+    case LLVMUserOp1:           s := "UserOp1";         v_break();
+    case LLVMUserOp2:           s := "UserOp2";         v_break();
+    case LLVMVAArg:             s := "VAArg";           v_break();
+    case LLVMExtractElement:    s := "ExtractElement";  v_break();
+    case LLVMInsertElement:     s := "InsertElement";   v_break();
+    case LLVMShuffleVector:     s := "ShuffleVector";   v_break();
+    case LLVMExtractValue:      s := "ExtractValue";    v_break();
+    case LLVMInsertValue:       s := "InsertValue";     v_break();
+    case LLVMFreeze:            s := "Freeze";          v_break();
+    case LLVMFence:             s := "Fence";           v_break();
+    case LLVMAtomicCmpXchg:     s := "AtomicCmpXchg";   v_break();
+    case LLVMAtomicRMW:         s := "AtomicRMW";       v_break();
+    case LLVMResume:            s := "Resume";          v_break();
+    case LLVMLandingPad:        s := "LandingPad";      v_break();
+    case LLVMCleanupRet:        s := "CleanupRet";      v_break();
+    case LLVMCatchRet:          s := "CatchRet";        v_break();
+    case LLVMCatchPad:          s := "CatchPad";        v_break();
+    case LLVMCleanupPad:        s := "CleanupPad";      v_break();
+    case LLVMCatchSwitch:       s := "CatchSwitch";     v_break();
+    }
+
+    v_return(s);
+}
+
+
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("v_try_value_intrinsic", voidc_intrinsic_t);
+
+    v_add_parameter_name(f, 0, "visitor",  voidc_visitor_ptr);
+    v_add_parameter_name(f, 1, "aux",      v_pointer_type(void, 0));
+    v_add_parameter_name(f, 2, "arg_list", v_ast_expr_list_ptr);
+}
+{
+//  printf("v_try_value_intrinsic\n");
+
+    arg = v_alloca(v_ast_opaque_expr_sptr);
+    v_initialize(arg);
+    defer v_terminate(arg);
+
+    v_list_get_items(arg_list, 0, arg);
+
+    v_set_result_type(INVIOLABLE_TAG);
+
+    v_ast_accept_visitor(v_cast(arg, v_ast_base_ptr), visitor, aux);
+
+    v = v_get_result_value();
+
+
+    s = value_kind_to_string(LLVMGetValueKind(v));
+
+    printf("k: %s\n", s);
+
+    printf("n: %d\n", LLVMGetNumOperands(v));
+
+    printf("ic: %s\n", opcode_to_string(LLVMGetInstructionOpcode(v)));
+    printf("cc: %s\n", opcode_to_string(LLVMGetConstOpcode(v)));
+
+}
+
+
+//---------------------------------------------------------------------
+{   v_add_intrinsic("v_try_value", v_try_value_intrinsic);
+}
+
+
+//---------------------------------------------------------------------
+{ v_debug_print_module(1); }
+{
+    r = v_try_value( &"qwe"[1] );
+
+//  a = *v_alloca(float(64)) := 10;
+
+//  r = v_try_value( a / 3 );
+
+
+    printf("r: %p\n", r);
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

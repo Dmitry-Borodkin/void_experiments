@@ -1,0 +1,394 @@
+{   v_import("voidc_target.void");
+    v_import("voidc_types.void");
+
+    v_import("function_hack.void");
+    v_import("memory.void");
+    v_import("if_then_else.void");
+    v_import("block.void");
+    v_import("loop.void");
+    v_import("expression.void");
+    v_import("defer.void");
+    v_import("definitions.void");
+
+    v_import("llvm-c/Core.void");
+    v_import("llvm-c/Support.void");
+}
+
+{   v_import("printf.void");
+}
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_loop();
+    voidc_enable_expression();
+    voidc_enable_statement_defer();
+    voidc_enable_definitions();
+}
+
+
+//---------------------------------------------------------------------
+//- ... <cairo/cairo.h>
+//---------------------------------------------------------------------
+{   ok = LLVMLoadLibraryPermanently("libcairo.so");
+
+    printf("ok: %d\n", ok);
+}
+
+
+{   surface_t = v_struct_type_named("struct.cairo_surface_t");
+
+    v_add_type("cairo_surface_t", surface_t);
+
+    cairo_t = v_struct_type_named("struct.cairo_t");
+
+    v_add_type("cairo_t", cairo_t);
+}
+
+
+//---------------------------------------------------------------------
+double = float(64);
+
+
+//---------------------------------------------------------------------
+cairo_format_t = int;
+
+CAIRO_FORMAT_ARGB32:    cairo_format_t = 0;
+CAIRO_FORMAT_RGB24:     cairo_format_t = 1;
+CAIRO_FORMAT_A8:        cairo_format_t = 2;
+CAIRO_FORMAT_A1:        cairo_format_t = 3;
+CAIRO_FORMAT_RGB16_565: cairo_format_t = 4;
+CAIRO_FORMAT_RGB30:     cairo_format_t = 5;
+
+cairo_image_surface_create: (cairo_format_t, width: int, height: int) -> *cairo_surface_t;
+
+cairo_surface_flush: (*cairo_surface_t) -> void;
+
+cairo_surface_write_to_png: (*cairo_surface_t, filename: *const char) -> int;
+
+cairo_surface_destroy: (*cairo_surface_t) -> void;
+
+
+cairo_image_surface_create_for_data: (data: *uint(8),
+                                      cairo_format_t,
+                                      width:  int,
+                                      height: int,
+                                      stride: int
+                                      ) -> *cairo_surface_t;
+
+cairo_format_stride_for_width: (format: cairo_format_t, width: int) -> int;
+
+
+cairo_create: (*cairo_surface_t) -> *cairo_t;
+
+cairo_destroy:       (*cairo_t) -> void;
+cairo_paint:         (*cairo_t) -> void;
+cairo_fill:          (*cairo_t) -> void;
+cairo_fill_preserve: (*cairo_t) -> void;
+cairo_stroke:        (*cairo_t) -> void;
+
+cairo_set_source_rgb:  (*cairo_t, r: double, g: double, b: double) -> void;
+
+cairo_set_source_rgba: (*cairo_t, r: double, g: double, b: double, a: double) -> void;
+
+cairo_rectangle: (*cairo_t, x: double, y: double, w: double, h: double) -> void;
+
+cairo_set_line_width: (*cairo_t, w: double) -> void;
+
+cairo_line_to: (*cairo_t, x: double, y: double) -> void;
+cairo_move_to: (*cairo_t, x: double, y: double) -> void;
+
+cairo_close_path: (*cairo_t) -> void;
+
+cairo_set_fill_rule: (*cairo_t, int) -> void;
+
+
+cairo_operator_t = int;
+
+CAIRO_OPERATOR_CLEAR          : cairo_operator_t =  0;
+CAIRO_OPERATOR_SOURCE         : cairo_operator_t =  1;
+CAIRO_OPERATOR_OVER           : cairo_operator_t =  2;
+CAIRO_OPERATOR_IN             : cairo_operator_t =  3;
+CAIRO_OPERATOR_OUT            : cairo_operator_t =  4;
+CAIRO_OPERATOR_ATOP           : cairo_operator_t =  5;
+CAIRO_OPERATOR_DEST           : cairo_operator_t =  6;
+CAIRO_OPERATOR_DEST_OVER      : cairo_operator_t =  7;
+CAIRO_OPERATOR_DEST_IN        : cairo_operator_t =  8;
+CAIRO_OPERATOR_DEST_OUT       : cairo_operator_t =  9;
+CAIRO_OPERATOR_DEST_ATOP      : cairo_operator_t = 10;
+CAIRO_OPERATOR_XOR            : cairo_operator_t = 11;
+CAIRO_OPERATOR_ADD            : cairo_operator_t = 12;
+CAIRO_OPERATOR_SATURATE       : cairo_operator_t = 13;
+CAIRO_OPERATOR_MULTIPLY       : cairo_operator_t = 14;
+CAIRO_OPERATOR_SCREEN         : cairo_operator_t = 15;
+CAIRO_OPERATOR_OVERLAY        : cairo_operator_t = 16;
+CAIRO_OPERATOR_DARKEN         : cairo_operator_t = 17;
+CAIRO_OPERATOR_LIGHTEN        : cairo_operator_t = 18;
+CAIRO_OPERATOR_COLOR_DODGE    : cairo_operator_t = 19;
+CAIRO_OPERATOR_COLOR_BURN     : cairo_operator_t = 20;
+CAIRO_OPERATOR_HARD_LIGHT     : cairo_operator_t = 21;
+CAIRO_OPERATOR_SOFT_LIGHT     : cairo_operator_t = 22;
+CAIRO_OPERATOR_DIFFERENCE     : cairo_operator_t = 23;
+CAIRO_OPERATOR_EXCLUSION      : cairo_operator_t = 24;
+CAIRO_OPERATOR_HSL_HUE        : cairo_operator_t = 25;
+CAIRO_OPERATOR_HSL_SATURATION : cairo_operator_t = 26;
+CAIRO_OPERATOR_HSL_COLOR      : cairo_operator_t = 27;
+CAIRO_OPERATOR_HSL_LUMINOSITY : cairo_operator_t = 28;
+
+cairo_set_operator: (*cairo_t, cairo_operator_t) -> void;
+cairo_get_operator: (*cairo_t) -> cairo_operator_t;
+
+
+//---------------------------------------------------------------------
+rand: () -> int;
+
+RAND_MAX = 2147483647;      //- ?
+
+
+//---------------------------------------------------------------------
+fopen: (filename: *const char, mode: *const char) -> *void;
+
+fwrite: (buf: *const void, size: size_t, count: size_t, stream: *void) -> size_t;
+
+fclose: (stream: *void) -> void;
+
+
+//---------------------------------------------------------------------
+sin: (double) -> double;
+cos: (double) -> double;
+
+{
+    str = "3.14159265358979323846264338327950288419716939937510582";
+
+    v = LLVMConstRealOfString(v_type_get_llvm_type(double), str);
+
+    v_add_constant("M_PI", double, v);
+}
+
+
+//---------------------------------------------------------------------
+random_triangle: (cr: *cairo_t, w: int, h: int) -> void
+{
+    t = (rand(): double) / RAND_MAX * 2;
+
+    t = t*t*(3 - t) / 2;
+    t = t*t*(3 - t) / 2;
+
+    sh = t*t*(3 - t) / 4 * (w - h);
+
+    x0 = sh + (rand(): double) / RAND_MAX * h;
+    y0 =      (rand(): double) / RAND_MAX * h;
+
+    x1 = sh + (rand(): double) / RAND_MAX * h;
+    y1 =      (rand(): double) / RAND_MAX * h;
+
+    x2 = sh + (rand(): double) / RAND_MAX * h;
+    y2 =      (rand(): double) / RAND_MAX * h;
+
+    c0 = (rand(): double) / RAND_MAX;
+    c1 = (rand(): double) / RAND_MAX;
+
+    a0 = (rand(): double) / RAND_MAX;   a0 = a0 * a0 * ((4:double) / 5);
+    a1 = (rand(): double) / RAND_MAX;   a1 = a1 * a1 * ((4:double) / 5);
+
+
+    cairo_move_to(cr, x0, y0);
+    cairo_line_to(cr, x1, y1);
+    cairo_line_to(cr, x2, y2);
+    cairo_close_path(cr);
+
+    cairo_set_source_rgba(cr, c0, c0, c0, a0);
+
+    cairo_fill_preserve(cr);
+
+    cairo_set_source_rgba(cr, c1, c1, c1, a1);
+
+    cairo_stroke(cr);
+}
+
+//---------------------------------------------------------------------
+nod: (N: int, M: int) -> int
+{
+    n: &int = N;
+    m: &int = M;
+
+    loop
+    {
+        if (n < m)  { s: int = n; n := m; m := s; }
+
+        r = n % m;
+
+        if (r == 0) v_return(m);
+
+        n := r;
+    }
+}
+
+//---------------------------------------------------------------------
+random_star: (cr: *cairo_t, w: int, h: int) -> void
+{
+    r = (rand(): double) / RAND_MAX;
+
+    kr = 50;
+
+    r = r / ((1-kr)*r + kr);
+
+    r = r * h / 2;
+
+    x = (rand(): double) / RAND_MAX;
+    y = (rand(): double) / RAND_MAX;
+
+//    x = x*(w - 2*r) + r;
+//    y = y*(h - 2*r) + r;
+
+    x = x * w;
+    y = y * h;
+
+    n = (rand(): double) / RAND_MAX;
+
+    kn = 5;
+
+    n = n / ((1-kn)*n + kn);
+
+    n = (n*20 : int) + 3;
+
+    m: &int := v_undef();
+
+    loop
+    {
+        v = (rand(): double) / RAND_MAX;
+
+        m := (v*n/2 : int);
+
+        if (m == 0) v_continue();
+
+        if (nod(n, m) == 1) v_break();
+    }
+
+    TAU = 2*M_PI;
+
+    A = (rand(): double) / RAND_MAX;
+
+    A = A * TAU / n;
+
+    D = TAU / n * m;
+
+    a: &double := A;
+
+    i: &int := 0;
+
+    loop
+    {
+        if (i == n) v_break();
+
+        vx = x + r*sin(a);
+        vy = y + r*cos(a);
+
+        if (i == 0) cairo_move_to(cr, vx, vy);
+        else        cairo_line_to(cr, vx, vy);
+
+        a += D;
+
+        ++i;
+    }
+
+    cairo_close_path(cr);
+
+
+    c0 = (rand(): double) / RAND_MAX;
+    c1 = (rand(): double) / RAND_MAX;
+
+    a0 = (rand(): double) / RAND_MAX;   a0 = a0 * a0 * ((3:double) / 5);
+    a1 = (rand(): double) / RAND_MAX;   a1 = a1 * a1 * ((3:double) / 5);
+
+
+    cairo_set_source_rgba(cr, c0, c0, c0, a0);
+
+    cairo_fill_preserve(cr);
+
+    cairo_set_source_rgba(cr, c1, c1, c1, a1);
+
+    cairo_stroke(cr);
+}
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    w = 15000;
+    h =  5000;
+
+    stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
+
+    data = v_malloc(uint(8), stride*h);
+    defer v_mfree(data);
+
+    surface = cairo_image_surface_create_for_data(data, CAIRO_FORMAT_RGB24, w, h, stride);
+    defer cairo_surface_destroy(surface);
+
+    {   cr = cairo_create(surface);
+        defer cairo_destroy(cr);
+
+        cairo_set_source_rgb(cr, 0, 0, 0);
+        cairo_paint(cr);
+
+        cairo_set_line_width(cr, 1);
+
+        cairo_set_fill_rule(cr, 1);
+
+        cairo_set_operator(cr, CAIRO_OPERATOR_HARD_LIGHT);
+
+        i: &int := 0;
+
+        loop
+        {
+            if (i == 1000000) v_break();
+
+            random_star(cr, w, h);
+
+            ++i;
+        }
+    }
+
+    cairo_surface_flush(surface);
+
+    cairo_surface_write_to_png(surface, "try_cairo5.png");
+
+    line = v_malloc(uint(8), w);
+    defer v_mfree(line);
+
+    f = fopen("try_cairo5.bin", "wb");
+    defer fclose(f);
+
+    i: &int := 0;
+
+    loop
+    {
+        if (i == h) v_break();
+
+        d_i = data + stride*i;
+
+        j: &int := 0;
+
+        loop
+        {
+            if (j == w) v_break();
+
+            line[j] := *(d_i + j*4);
+
+            ++j;
+        }
+
+        fwrite(line, w, 1, f);
+
+        ++i;
+    }
+}
+
+
+//---------------------------------------------------------------------
+system: (*const char) -> int;
+
+
+{   system("display try_cairo5.png");
+}
+
+

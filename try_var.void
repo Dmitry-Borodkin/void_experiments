@@ -1,0 +1,81 @@
+{   v_import("function_hack.void");
+    v_import("arithmetic.void");
+}
+
+{   v_import("printf.void"); }
+
+
+{   void_ptr = v_pointer_type(void, 0);
+
+    v_add_local_symbol("void_ptr", voidc_opaque_type, void_ptr);
+}
+
+//{ v_debug_print_module(2); }
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("voidc_var_intrinsic", voidc_intrinsic_t);
+
+    v_add_parameter_name(f, 0, "visitor",  voidc_visitor_ptr);
+    v_add_parameter_name(f, 1, "aux",      void_ptr);
+    v_add_parameter_name(f, 2, "arg_list", v_ast_arg_list_ptr);
+}
+{
+    call = v_alloca(v_ast_opaque_call_sptr);
+    v_initialize(call);
+
+    v_ast_make_call(call, "v_alloca", arg_list);
+
+    call_base = v_cast(call, v_ast_base_ptr);
+
+    v_ast_accept_visitor(call_base, visitor, aux);
+
+    ptr_type = v_get_return_type();
+
+    elt_type = v_type_refptr_get_element_type(ptr_type);
+
+    ref_type = v_reference_type(elt_type, 0);
+
+    v_set_return_type(ref_type);
+
+    v_clear_arguments();
+
+    v_terminate(call);
+}
+
+
+{   v_add_intrinsic("v_var", voidc_var_intrinsic);
+}
+
+
+//{ v_debug_print_module(1); }
+{
+    i = v_var(int);
+
+    v_assign(i, 77);
+
+    printf("i: %d\n", i);
+}
+
+
+//---------------------------------------------------------------------
+{   int_ptr = v_pointer_type(int, 0);
+
+    v_add_local_symbol("int_ptr", voidc_opaque_type, int_ptr);
+}
+
+{ v_debug_print_module(1); }
+{
+    v0 = v_alloca(int, 2);
+    v1 = v_getelementptr(v0, 1);
+
+    v_store(77, v0);
+    v_store(88, v1);
+
+
+    p1 = v_cast(1, int_ptr);
+
+    vx = v_binop(LLVMAdd, v0, p1);      //- Don't work...
+
+}
+
+

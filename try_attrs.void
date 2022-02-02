@@ -1,0 +1,118 @@
+{
+    v_import("voidc_target.void");
+    v_import("voidc_types.void");
+
+    v_import("llvm-c/Core.void");
+
+    v_import("function_hack.void");
+    v_import("expression.void");
+    v_import("memory.void");
+}
+
+{
+    voidc_enable_expression();
+}
+
+{   v_import("printf.void"); }
+
+
+//---------------------------------------------------------------------
+{   module = LLVMModuleCreateWithName("try_attrs_module");
+
+    v_set_module(module);
+}
+
+
+//---------------------------------------------------------------------
+{
+    ak = LLVMGetEnumAttributeKindForName("alwaysinline", 12);
+
+    printf("ak: %d\n", ak);
+
+    a = LLVMCreateEnumAttribute(v_target_get_llvm_ctx(), ak, 0);
+
+    printf("a: %p\n", a);
+
+
+    typ = *v_alloca(v_type_ptr) := int;
+
+    ft = v_function_type(int, &typ, 1, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("test_fn", ft);
+
+    LLVMSetLinkage(f, LLVMPrivateLinkage);
+
+    LLVMAddAttributeAtIndex(f, LLVMAttributeFunctionIndex, a);
+
+    v_add_parameter_name(f, 0, "v", int);
+}
+{
+    v_return(v + 1);
+}
+
+
+//---------------------------------------------------------------------
+{
+    typ = *v_alloca(v_type_ptr) := int;
+
+    ft = v_function_type(int, &typ, 1, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("test_fn2", ft);
+
+    v_add_parameter_name(f, 0, "v", int);
+}
+{
+    v_return(test_fn(v));
+}
+
+
+//---------------------------------------------------------------------
+{
+    module = v_get_module();
+
+    //-----------------------------------------------------------------
+    v_debug_print_module(1);
+
+    voidc_prepare_module_for_jit(module);
+
+    v_debug_print_module(1);
+
+    voidc_unit_load_module_to_jit(module);
+
+    LLVMDisposeModule(module);
+    v_set_module(0);
+}
+
+
+//---------------------------------------------------------------------
+{
+    v = test_fn2(1);
+
+    printf("v: %d\n", v);
+}
+
+
+
+//---------------------------------------------------------------------
+{   void_ptr = v_pointer_type(void, 0);
+
+    typ = v_alloca(v_type_ptr, 2);
+
+    typ[0] := size_t;
+    typ[1] := size_t;
+
+    ft = v_function_type(void_ptr, typ, 2, false);
+
+    v_add_symbol("aligned_alloc", ft, 0);
+}
+
+{   p = aligned_alloc(256, 8*256);
+
+    printf("p: %p\n", p);
+
+    v_mfree(p);
+}
+
+

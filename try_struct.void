@@ -1,0 +1,26 @@
+{   v_import("voidc_types.void");
+}
+
+{   v_import("printf.void"); }
+
+
+{   st = v_struct_type_named("Qwerty");
+
+    typ0 = v_alloca(v_type_ptr, 3);
+    typ1 = v_getelementptr(typ0, 1);
+    typ2 = v_getelementptr(typ0, 2);
+
+    v_store(bool,   typ0);
+    v_store(short,  typ1);
+    v_store(long,   typ2);
+
+    v_type_struct_set_body(st, typ0, 3, false);
+
+
+//  v_store(int, typ2);
+
+    v_type_struct_set_body(st, typ0, 3, false);
+
+}
+
+

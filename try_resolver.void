@@ -1,0 +1,31 @@
+{   v_import("voidc_internals.void");
+}
+
+
+{   v_import("printf.void");
+}
+
+
+{   p = voidc_resolver("printf", 0);
+
+    printf("printf: %p\n", p);
+
+
+    p = voidc_resolver("v_ast_call_t_visitor_method_tag", 0);
+
+    printf("v_ast_call_t_visitor_method_tag: %p\n", p);
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

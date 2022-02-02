@@ -1,0 +1,64 @@
+{   v_import("printf.void"); }
+
+{   printf("Hello world!\n");
+}
+
+//---------------------------------------------------------------------
+{   v_import("fun_hack.void");
+}
+
+{
+    printf("++++++++++++++++++++++++++++++++++\n");
+
+    num = QWERTY(77, "ZZZZZZZZZZZZZZZZZZ !!!");
+
+    printf("++++++++++++++++++++++++++++++++++\n");
+
+    printf("num: %d\n", num);
+}
+
+
+//---------------------------------------------------------------------
+{
+//  v_import("malloc.void");
+    v_import("memory.void");
+}
+
+{   buf000 = v_malloc(int, 1000);
+    buf999 = v_getelementptr(buf000, 999);
+
+    v_add_local_symbol("buf000", int, buf000);
+    v_add_local_symbol("buf999", int, buf999);
+}
+
+{
+    v_store(77777, buf000);
+    v_store(99999, buf999);
+
+}
+
+{
+    val000 = v_load(buf000);
+    val999 = v_load(buf999);
+
+
+    printf("val000: %d\n", val000);
+    printf("val999: %d\n", val999);
+
+    v_mfree(buf000);
+}
+
+
+{   buf = v_malloc(long);
+
+    v_store(88888, buf);
+
+    val = v_load(buf);
+
+
+    printf("\nval: %ld\n", val);
+
+    v_mfree(buf);
+}
+
+

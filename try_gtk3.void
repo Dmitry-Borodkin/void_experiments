@@ -1,0 +1,246 @@
+{   v_import("level-00");
+    v_import("level-01");
+
+    v_import("llvm-c/Support.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_level_01(); }
+
+
+//---------------------------------------------------------------------
+{
+    FILE = v_struct_type_named("FILE");
+
+    v_add_type("FILE", FILE);
+
+    FILE_ptr = v_pointer_type(FILE, 0);
+
+    typ = v_alloca(v_type_ptr, 2);
+
+    char_ptr = v_pointer_type(char, 0);
+
+    typ[0] := char_ptr;
+    typ[1] := char_ptr;
+
+    popen_ft = v_function_type(FILE_ptr, typ, 2, false);
+
+    typ[0] := FILE_ptr;
+
+    pclose_ft = v_function_type(int, typ, 1, false);
+
+    if (v_find_constant("_WIN32", 0, 0))
+    {
+        v_add_symbol("_popen",  popen_ft,  0);
+        v_add_symbol("_pclose", pclose_ft, 0);
+
+        v_add_alias("popen",  "_popen");
+        v_add_alias("pclose", "_pclose");
+    }
+    else
+    {
+        v_add_symbol("popen",  popen_ft,  0);
+        v_add_symbol("pclose", pclose_ft, 0);
+    }
+}
+
+
+//---------------------------------------------------------------------
+fscanf: (stream: *FILE, format: *const char, ...) -> int;
+
+
+//---------------------------------------------------------------------
+{   buffer: &*char := 0;
+    defer v_mfree(buffer);
+
+    libname :&*char = 0;
+
+    if (v_find_constant("_WIN32", 0, 0))
+    {
+        buffer := v_malloc(char, 1024);
+
+        {   p = popen("bash -c \"dlltool -I $(pkg-config --variable=libdir gtk+-3.0)/libgtk-3.dll.a\"", "r");
+            defer pclose(p);
+
+            fscanf(p, "%1023s", buffer);
+        }
+
+        libname := buffer;
+    }
+    else
+    {
+        libname := "libgtk-3.so";
+    }
+
+    ok = LLVMLoadLibraryPermanently(libname);
+
+//  printf("ok: %d\n", ok);
+}
+
+
+//---------------------------------------------------------------------
+//- ... <gtk/gtk.h>
+//---------------------------------------------------------------------
+{   v_add_type("GtkApplication", v_struct_type_named("struct.GtkApplication"));
+
+    v_add_type("GtkContainer", v_struct_type_named("struct.GtkContainer"));
+
+    v_add_type("GtkWidget", v_struct_type_named("struct.GtkWidget"));
+}
+
+{   v_add_type("cairo_surface_t", v_struct_type_named("struct.cairo_surface_t"));
+
+    v_add_type("cairo_t", v_struct_type_named("struct.cairo_t"));
+}
+
+
+//{ v_debug_print_module(1); }
+//---------------------------------------------------------------------
+gtk_application_new: (id: *const char, flags: int) -> *GtkApplication;
+
+g_signal_connect_data: (instance: *void,
+                        signal: *const char,
+                        callback: *(()->void),
+                        data: *void,
+                        notify: *void,
+                        flags: int
+                       ) -> long;
+
+g_application_run: (app: *GtkApplication, argc: int, argv: **char) -> int;
+
+
+gtk_application_window_new: (app: *GtkApplication) -> *GtkWidget;
+
+
+gtk_container_add: (container: *GtkContainer, widget: *GtkWidget) -> void;
+
+gtk_widget_show_all: (wnd: *GtkWidget) -> void;
+
+
+gtk_drawing_area_new: () -> *GtkWidget;
+
+gtk_widget_get_allocated_width:  (*GtkWidget) -> int;
+gtk_widget_get_allocated_height: (*GtkWidget) -> int;
+
+
+//---------------------------------------------------------------------
+double = float(64);
+
+sin: (double) -> double;
+cos: (double) -> double;
+
+
+//---------------------------------------------------------------------
+cairo_paint:           (*cairo_t) -> void;
+cairo_fill:            (*cairo_t) -> void;
+cairo_fill_preserve:   (*cairo_t) -> void;
+cairo_stroke:          (*cairo_t) -> void;
+cairo_stroke_preserve: (*cairo_t) -> void;
+
+cairo_set_source_rgb:  (*cairo_t, r: double, g: double, b: double) -> void;
+
+cairo_set_source_rgba: (*cairo_t, r: double, g: double, b: double, a: double) -> void;
+
+cairo_rectangle: (*cairo_t, x: double, y: double, w: double, h: double) -> void;
+
+cairo_set_line_width: (*cairo_t, w: double) -> void;
+
+cairo_line_to: (*cairo_t, x: double, y: double) -> void;
+cairo_move_to: (*cairo_t, x: double, y: double) -> void;
+
+cairo_close_path: (*cairo_t) -> void;
+
+cairo_scale: (*cairo_t, kx: double, ky: double) ->void;
+cairo_translate: (*cairo_t, dx: double, dy: double) ->void;
+
+cairo_save: (*cairo_t) -> void;
+cairo_restore: (*cairo_t) -> void;
+
+cairo_arc: (*cairo_t, x: double, y: double, r: double, a0: double, a1: double) -> void;
+
+cairo_clip: (*cairo_t) -> void;
+
+cairo_set_line_cap: (*cairo_t, int) -> void;
+
+
+//---------------------------------------------------------------------
+draw_cb: (widget: *GtkWidget, cr: *cairo_t, *void) -> void
+{
+    width  = gtk_widget_get_allocated_width(widget);
+    height = gtk_widget_get_allocated_height(widget);
+
+    cairo_set_source_rgb(cr, 1, 1, 1);
+
+    cairo_paint(cr);
+
+    cairo_set_source_rgb(cr, 0, 0, 0);
+
+    cairo_set_line_width(cr, 1);
+
+    N = 20;
+
+    kx = (width:  double) / (N+2);
+    ky = (height: double) / (N+2);
+
+    i: &int := 0;
+
+    loop
+    {
+        if (i > N) v_break();
+
+        x = kx * (1 + i);
+        y = ky;
+
+        cairo_move_to(cr, x, y);
+
+        x = kx;
+        y = ky * (N + 1 - i);
+
+        cairo_line_to(cr, x, y);
+
+        x = kx * (N + 1 - i);
+        y = ky * (N + 1);
+
+        cairo_line_to(cr, x, y);
+
+        x = kx * (N + 1);
+        y = ky * (1 + i);
+
+        cairo_line_to(cr, x, y);
+
+        cairo_close_path(cr);
+
+        ++i;
+    }
+
+    cairo_stroke(cr);
+}
+
+
+//---------------------------------------------------------------------
+on_activate: (app: *GtkApplication, data: *void) -> void
+{
+    window = gtk_application_window_new(app);
+
+    drawing_area = gtk_drawing_area_new();
+
+    g_signal_connect_data(drawing_area, "draw", (draw_cb: *(()->void)), 0, 0, 0);
+
+    gtk_container_add((window: *GtkContainer), drawing_area);
+
+    gtk_widget_show_all(window);
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    app = gtk_application_new(0, 0);
+
+    g_signal_connect_data(app, "activate", (on_activate: *(()->void)), 0, 0, 0);
+
+    g_application_run(app, 1, &"Нечто");
+}
+
+

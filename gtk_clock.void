@@ -1,0 +1,359 @@
+{   v_import("level-00");
+    v_import("level-01");
+
+    v_import("llvm-c/Core.void");
+    v_import("llvm-c/Support.void");
+}
+
+{   v_import("printf.void");
+}
+
+{   v_enable_level_01(); }
+
+
+//---------------------------------------------------------------------
+//- The hack!
+//---------------------------------------------------------------------
+{   FILE = v_struct_type_named("FILE");
+
+    v_add_type("FILE", FILE);
+}
+
+popen: (cmd: *const char, mode: *const char) -> *FILE;
+
+pclose: (*FILE) -> int;
+
+fprintf: (stream: *FILE, format: *const char, ...) -> int;
+
+fscanf: (stream: *FILE, format: *const char, ...) -> int;
+
+sprintf: (str: *char, format: *const char, ...) -> int;
+
+system: (cmd: *const char) -> int;
+
+fputs: (buf: *char, stream: *FILE) -> int;
+
+
+//---------------------------------------------------------------------
+{
+    buflen = 4096;
+
+    buf = v_malloc(char, buflen);
+    defer v_mfree(buf);
+
+    tmp = buf;
+    cmd = buf + buflen/2;
+
+    {   p = popen("mktemp", "r");
+        defer pclose(p);
+
+        fscanf(p, "%2000s", tmp);
+    }
+
+    defer
+    {
+        sprintf(cmd, "rm %s", tmp);
+
+        system(cmd);
+    }
+
+    //-----------------------------------------------------------------
+    {   p = popen("bash", "w");
+        defer pclose(p);
+
+        fprintf(p, "clang -x c - -O3 -c -o %s <<HEREDOC\n", tmp);
+
+        fputs("#include <time.h>\n", p);
+
+        fputs("double my_clock(void)\n", p);
+        fputs("{\n", p);
+        fputs("  struct timespec rawtime;\n", p);
+        fputs("  struct tm * timeinfo;\n", p);
+        fputs("  double ret;\n", p);
+
+        fputs("  clock_gettime(CLOCK_REALTIME, &rawtime);\n", p);
+        fputs("  timeinfo = localtime(&rawtime.tv_sec);\n", p);
+
+        fputs("  ret = timeinfo->tm_hour;\n", p);
+        fputs("  ret = 60*ret + timeinfo->tm_min;\n", p);
+        fputs("  ret = 60*ret + timeinfo->tm_sec;\n", p);
+        fputs("  ret += rawtime.tv_nsec * 1e-9;\n", p);
+
+        fputs("  return ret;\n", p);
+        fputs("}\n", p);
+
+        fputs("HEREDOC\n", p);
+    }
+
+    //-----------------------------------------------------------------
+    mb: &LLVMMemoryBufferRef := 0;
+
+    LLVMCreateMemoryBufferWithContentsOfFile(tmp, &mb, 0);
+
+    voidc_add_local_object_file_to_jit(mb);
+}
+
+//---------------------------------------------------------------------
+my_clock: () -> float(64);
+
+
+//---------------------------------------------------------------------
+//- ... <gtk/gtk.h>
+//---------------------------------------------------------------------
+{
+    ok = LLVMLoadLibraryPermanently("libgtk-4.so");
+
+//  printf("ok: %d\n", ok);
+}
+
+
+{   v_add_type("GtkApplication", v_struct_type_named("struct.GtkApplication"));
+
+    v_add_type("GtkWidget", v_struct_type_named("struct.GtkWidget"));
+
+    v_add_type("GtkDrawingArea", v_struct_type_named("struct.GtkDrawingArea"));
+}
+
+{   v_add_type("cairo_surface_t", v_struct_type_named("struct.cairo_surface_t"));
+
+    v_add_type("cairo_t", v_struct_type_named("struct.cairo_t"));
+}
+
+//---------------------------------------------------------------------
+{   pi = LLVMConstRealOfString(LLVMDoubleType(), "3.14159265358979323846264338327950288419716939937510582");
+
+    v_add_constant("M_PI", v_f64_type(), pi);
+}
+
+
+//{ v_debug_print_module(1); }
+//---------------------------------------------------------------------
+gtk_application_new: (id: *const char, flags: int) -> *GtkApplication;
+
+g_signal_connect_data: (instance: *void,
+                        signal: *const char,
+                        callback: *(()->void),
+                        data: *void,
+                        notify: *void,
+                        flags: int
+                       ) -> long;
+
+g_application_run: (app: *GtkApplication, argc: int, argv: **char) -> int;
+
+
+gtk_application_window_new: (app: *GtkApplication) -> *GtkWidget;
+
+
+gtk_window_set_child: (wnd: *GtkWidget, widget: *GtkWidget) -> void;
+
+gtk_window_present: (wnd: *GtkWidget) -> void;
+
+
+gtk_drawing_area_new: () -> *GtkWidget;
+
+
+GtkDrawingAreaDrawFunc = *((*GtkDrawingArea, *cairo_t, w: int, h: int, aux: *void) -> void);
+
+gtk_drawing_area_set_draw_func: (*GtkDrawingArea, GtkDrawingAreaDrawFunc, aux: *void, destroy: *void) -> void;
+
+
+gtk_widget_queue_draw: (*GtkWidget) -> void;
+
+g_timeout_add: (interval: unsigned, func: *((aux: *void) -> int), aux: *void) -> unsigned;
+
+
+g_thread_self: () -> *void;
+
+
+//---------------------------------------------------------------------
+on_timeout: (aux: *void) -> int
+{
+printf("on_timeout  - thread: %p\n", g_thread_self());
+
+    gtk_widget_queue_draw((aux: *GtkWidget));
+
+    v_return(true);
+}
+
+
+//---------------------------------------------------------------------
+double = float(64);
+
+sin: (double) -> double;
+cos: (double) -> double;
+
+
+//---------------------------------------------------------------------
+cairo_paint:           (*cairo_t) -> void;
+cairo_fill:            (*cairo_t) -> void;
+cairo_fill_preserve:   (*cairo_t) -> void;
+cairo_stroke:          (*cairo_t) -> void;
+cairo_stroke_preserve: (*cairo_t) -> void;
+
+cairo_set_source_rgb:  (*cairo_t, r: double, g: double, b: double) -> void;
+
+cairo_set_source_rgba: (*cairo_t, r: double, g: double, b: double, a: double) -> void;
+
+cairo_rectangle: (*cairo_t, x: double, y: double, w: double, h: double) -> void;
+
+cairo_set_line_width: (*cairo_t, w: double) -> void;
+
+cairo_line_to: (*cairo_t, x: double, y: double) -> void;
+cairo_move_to: (*cairo_t, x: double, y: double) -> void;
+
+cairo_close_path: (*cairo_t) -> void;
+
+cairo_scale: (*cairo_t, kx: double, ky: double) ->void;
+cairo_translate: (*cairo_t, dx: double, dy: double) ->void;
+
+cairo_save: (*cairo_t) -> void;
+cairo_restore: (*cairo_t) -> void;
+
+cairo_arc: (*cairo_t, x: double, y: double, r: double, a0: double, a1: double) -> void;
+
+cairo_clip: (*cairo_t) -> void;
+
+cairo_set_line_cap: (*cairo_t, int) -> void;
+
+
+//---------------------------------------------------------------------
+milli = 1 / (1000: double);
+
+m_radius     = 420*milli;
+m_line_width =  25*milli;
+
+draw_cb: (drawing_area: *GtkDrawingArea,
+          cr: *cairo_t,
+          width: int,
+          height: int,
+          aux: *void
+         ) -> void
+{
+    {   k: &double := height;
+
+        if (width < height) k := width;
+
+        cairo_scale(cr, k, k);
+
+        k *= 2;
+
+        cairo_translate(cr, width/k, height/k);
+    }
+
+    cairo_set_line_width(cr, m_line_width);
+
+    cairo_save(cr);
+    cairo_set_source_rgba(cr, 337*milli, 612*milli, 117*milli, 900*milli);      //- Green
+    cairo_paint(cr);
+    cairo_restore(cr);
+    cairo_arc(cr, 0, 0, m_radius, 0, 2*M_PI);
+    cairo_save(cr);
+    cairo_set_source_rgba(cr, 1, 1, 1, 800*milli);
+    cairo_fill_preserve(cr);
+    cairo_restore(cr);
+    cairo_stroke_preserve(cr);
+    cairo_clip(cr);
+
+    //- Clock ticks
+
+    i: &int := 0;
+    loop
+    {
+        if (i >= 12)  v_break();
+
+        inset: &double := 50*milli;
+
+        cairo_save(cr);
+        cairo_set_line_cap(cr, 1);      //- Kinda ROUND...
+
+        if (i % 3 != 0)
+        {
+            inset *= 800*milli;
+
+            cairo_set_line_width(cr, 30*milli);
+        }
+
+        cairo_move_to(cr, (m_radius - inset) * cos(i*(M_PI/6)),
+                          (m_radius - inset) * sin(i*(M_PI/6)));
+
+        cairo_line_to(cr, m_radius * cos(i*(M_PI/6)),
+                          m_radius * sin(i*(M_PI/6)));
+
+        cairo_stroke(cr);
+        cairo_restore(cr);
+
+        ++i;
+    }
+
+    time = my_clock();
+
+    hours   = time          * (M_PI /  6 / 3600);
+    minutes = (time % 3600) * (M_PI / 30 /   60);
+    seconds = (time %   60) * (M_PI / 30       );
+
+    cairo_save(cr);
+    cairo_set_line_cap(cr, 1);      //- Kinda ROUND...
+
+    //- Draw the seconds hand
+    cairo_save(cr);
+    cairo_set_line_width(cr, m_line_width/3);
+
+    flash = !(50*milli < time%5 < 4950*milli);
+
+    if (flash)  cairo_set_source_rgb(cr, 1, 0, 0);                              //- RED!
+    else        cairo_set_source_rgb(cr, 700*milli, 700*milli, 700*milli);      //- Gray
+
+    cairo_move_to(cr, 0, 0);
+    cairo_line_to(cr, sin(seconds)*(m_radius * 900*milli), -cos(seconds)*(m_radius * 900*milli));
+    cairo_stroke(cr);
+    cairo_restore(cr);
+
+    //- Draw the minutes hand
+    cairo_set_source_rgba(cr, 117*milli, 337*milli, 612*milli, 900*milli);      // Blue
+    cairo_move_to(cr, 0, 0);
+    cairo_line_to(cr, sin(minutes)*(m_radius * 800*milli), -cos(minutes)*(m_radius * 800*milli));
+    cairo_stroke(cr);
+
+    //- Draw the hours hand
+    cairo_set_source_rgba(cr, 337*milli, 612*milli, 117*milli, 900*milli);      // Green
+    cairo_move_to(cr, 0, 0);
+    cairo_line_to(cr, sin(hours)*(m_radius * 500*milli), -cos(hours)*(m_radius * 500*milli));
+    cairo_stroke(cr);
+    cairo_restore(cr);
+
+    //- Draw a little dot in the middle
+    cairo_arc(cr, 0, 0, m_line_width/3, 0, 2*M_PI);
+    cairo_fill(cr);
+}
+
+
+//---------------------------------------------------------------------
+on_activate: (app: *GtkApplication, data: *void) -> void
+{
+    window = gtk_application_window_new(app);
+
+    drawing_area = gtk_drawing_area_new();
+
+    gtk_drawing_area_set_draw_func((drawing_area: *GtkDrawingArea), draw_cb, 0, 0);
+
+    gtk_window_set_child(window, drawing_area);
+
+    gtk_window_present(window);
+
+printf("on_activate - thread: %p\n", g_thread_self());
+
+    g_timeout_add(2000, on_timeout, drawing_area);
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    app = gtk_application_new(0, 0);
+
+    g_signal_connect_data(app, "activate", (on_activate: *(()->void)), 0, 0, 0);
+
+    g_application_run(app, 1, &"Часики");
+}
+
+

@@ -1,0 +1,93 @@
+{   v_import("imports.void"); }
+
+{   enable_imports(); }
+
+{   v_set_export_flag(true); }
+
+
+//---------------------------------------------------------------------
+{   voidc_unit_begin_module("include_stack_mod"); }
+
+
+//---------------------------------------------------------------------
+//- include_stack_node_t ...
+//---------------------------------------------------------------------
+{
+    include_stack_node_t = v_struct_type_named("struct.include_stack_node_t");
+
+    include_stack_node_ptr = v_pointer_type(include_stack_node_t, 0);
+
+    typ = v_alloca(v_type_ptr, 3);
+
+    typ[0] := v_pointer_type(FILE, 0);      //- File opened
+    typ[1] := int;                          //- ifdef counter
+    typ[2] := include_stack_node_ptr;       //- Next node ...
+
+    v_type_struct_set_body(include_stack_node_t, typ, 3, 0);
+
+    //-----------------------------------------------------------------
+    v_add_type("include_stack_node_t", include_stack_node_t);
+
+    //-----------------------------------------------------------------
+    LLVMDisposeMemoryBuffer(voidc_get_unit_buffer());
+    voidc_set_unit_buffer(0);
+}
+
+//---------------------------------------------------------------------
+private
+include_stack: &*include_stack_node_t := 0;
+
+
+//---------------------------------------------------------------------
+//- Include stack utility...
+//---------------------------------------------------------------------
+include_stack_push: (f: *FILE) -> void
+{
+    node = *v_malloc(include_stack_node_t);
+
+    node[0] := f;
+    node[1] := 0;
+    node[2] := include_stack;
+
+    include_stack := &node;
+}
+
+//---------------------------------------------------------------------
+include_stack_pop: () -> void
+{
+    node = *include_stack;
+
+    include_stack := node[2];
+
+    v_mfree(&node);
+}
+
+//---------------------------------------------------------------------
+include_stack_peek: () -> *FILE
+{
+    node = *include_stack;
+
+    v_return(node[0]);
+}
+
+//---------------------------------------------------------------------
+include_stack_peek_ifdef_counter: () -> &int
+{
+    node = *include_stack;
+
+    v_return(node[1]);
+}
+
+//---------------------------------------------------------------------
+include_stack_empty: () -> bool
+{
+    v_return(include_stack == 0);
+}
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+{   voidc_unit_end_module(); }
+
+

@@ -1,0 +1,81 @@
+{   v_import("imports.void");
+
+    v_import("include_stack.void");
+    v_import("preprocessor.void");
+}
+
+{   enable_imports(); }
+
+
+//---------------------------------------------------------------------
+{
+    ctx = v_alloca(v_peg_opaque_context_sptr, 2);
+    v_initialize(ctx, 2);
+    defer v_terminate(ctx, 2);
+
+    my_ctx    = ctx + 0;
+    saved_ctx = ctx + 1;
+
+    make_preprocessor_context(my_ctx);
+
+    //-----------------------------------------------------------------
+    v_peg_get_context(saved_ctx);
+    defer v_peg_set_context(saved_ctx);
+
+    v_peg_set_context(my_ctx);
+
+    //-----------------------------------------------------------------
+    grm = v_alloca(v_peg_opaque_grammar_sptr);
+    v_initialize(grm);
+    defer v_terminate(grm);
+
+    v_peg_get_grammar(grm);
+
+    grammar grm
+    {
+    parsers:
+
+        my_unit = _ s:str  { s }
+                / _ !.     { 0 }
+                ;
+
+        str = [0-9]+    { $0 };
+
+    }
+
+    my_q = v_quark_from_string("my_unit");
+
+    v_peg_set_grammar(grm);
+
+    //-----------------------------------------------------------------
+    f = v_fopen("test_file.txt", "rb");
+
+    include_stack_push(f);
+
+    res = v_alloca(v_util_opaque_std_any);
+    v_initialize(res);
+    defer v_terminate(res);
+
+    loop
+    {
+        v_peg_parse(res, my_q);
+
+        if (v_empty(res))
+        {
+            fprintf(stderr, "Parse error!\n");
+
+            exit(-1);
+        }
+
+        sstr = v_std_any_get_pointer(v_util_opaque_std_string, res);
+
+        if (!sstr)  v_break();
+
+        printf("%s\n", v_std_string_get(sstr));
+    }
+
+
+
+}
+
+

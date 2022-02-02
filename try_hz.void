@@ -1,0 +1,23 @@
+{   v_import("arithmetic.void");
+}
+
+
+{
+    u3 = v_uint_type(3);
+
+    v_add_local_symbol("u3", voidc_opaque_type, u3);
+}
+
+
+{v_debug_print_module(1);}
+{
+    v = v_alloca(u3);   v = v_reference(v);
+
+    v_assign(v, 7);
+
+//  v = v_cast(v, int);
+
+    printf("v: %d, v*v: %d\n", v, v_binop(LLVMMul, v, v));
+
+}
+

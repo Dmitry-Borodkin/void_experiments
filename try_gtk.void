@@ -1,0 +1,117 @@
+{   v_import("voidc_target.void");
+    v_import("voidc_types.void");
+
+    v_import("if_then_else.void");
+    v_import("block.void");
+    v_import("loop.void");
+    v_import("expression.void");
+    v_import("defer.void");
+    v_import("definitions.void");
+
+    v_import("llvm-c/Support.void");
+}
+
+{   v_import("printf.void");
+}
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_loop();
+    voidc_enable_expression();
+    voidc_enable_statement_defer();
+    voidc_enable_definitions();
+}
+
+
+//---------------------------------------------------------------------
+//- ... <gtk/gtk.h>
+//---------------------------------------------------------------------
+{
+//  ok = LLVMLoadLibraryPermanently("libcairo.so");
+
+    ok = LLVMLoadLibraryPermanently("libgtk-4.so");
+
+    printf("ok: %d\n", ok);
+}
+
+
+{   v_add_type("GtkApplication", v_struct_type_named("struct.GtkApplication"));
+
+    v_add_type("GtkWidget", v_struct_type_named("struct.GtkWidget"));
+
+
+}
+
+
+//{ v_debug_print_module(1); }
+//---------------------------------------------------------------------
+gtk_application_new: (id: *const char, flags: int) -> *GtkApplication;
+
+g_signal_connect_data: (instance: *void,
+                        signal: *const char,
+                        callback: *(()->void),
+                        data: *void,
+                        notify: *void,
+                        flags: int
+                       ) -> long;
+
+g_application_run: (app: *GtkApplication, argc: int, argv: **char) -> int;
+
+
+gtk_application_window_new: (app: *GtkApplication) -> *GtkWidget;
+
+
+gtk_button_new_with_label: (label: *const char) -> *GtkWidget;
+
+gtk_button_set_label: (btn: *GtkWidget, label: *const char) -> void;
+
+gtk_window_set_child: (wnd: *GtkWidget, widget: *GtkWidget) -> void;
+
+gtk_window_present: (wnd: *GtkWidget) -> void;
+
+
+
+//---------------------------------------------------------------------
+sprintf: (str: *char, format: *const char, ...) -> int;
+
+
+//---------------------------------------------------------------------
+counter: &int := 0;
+
+
+//---------------------------------------------------------------------
+on_clicked: (btn: *GtkWidget, data: *void) -> void
+{
+    buf = v_alloca(char, 32);
+
+    sprintf(buf, "Hello World (%d)", counter++);
+
+    gtk_button_set_label(btn, buf);
+}
+
+on_activate: (app: *GtkApplication, data: *void) -> void
+{
+    window = gtk_application_window_new(app);
+
+    button = gtk_button_new_with_label("Click Me!");
+
+    g_signal_connect_data(button, "clicked", (on_clicked: *(()->void)), 0, 0, 0);
+
+    gtk_window_set_child(window, button);
+
+    gtk_window_present(window);
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    app = gtk_application_new(0, 0);
+
+    g_signal_connect_data(app, "activate", (on_activate: *(()->void)), 0, 0, 0);
+
+    g_application_run(app, 1, &"try_gtk.void");
+}
+
+
+

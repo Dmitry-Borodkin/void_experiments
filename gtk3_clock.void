@@ -1,0 +1,415 @@
+{   v_import("level-00");
+    v_import("level-01");
+
+    v_import("llvm-c/Core.void");
+    v_import("llvm-c/Support.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_level_01(); }
+
+
+//---------------------------------------------------------------------
+{
+    gr0 = v_alloca(v_peg_opaque_grammar_sptr);
+    v_initialize(gr0);
+    defer v_terminate(gr0);
+
+    v_peg_get_grammar(gr0);
+
+    grammar gr0
+    {
+    parsers:
+        string += "\"\"\"" <(!"\"\"\"" .)*> "\"\"\"" { $1 };
+    }
+
+    v_peg_set_grammar(gr0);
+}
+
+
+//---------------------------------------------------------------------
+{
+    FILE = v_struct_type_named("FILE");
+
+    v_add_type("FILE", FILE);
+
+    FILE_ptr = v_pointer_type(FILE, 0);
+
+    typ = v_alloca(v_type_ptr, 2);
+
+    char_ptr = v_pointer_type(char, 0);
+
+    typ[0] := char_ptr;
+    typ[1] := char_ptr;
+
+    popen_ft = v_function_type(FILE_ptr, typ, 2, false);
+
+    typ[0] := FILE_ptr;
+
+    pclose_ft = v_function_type(int, typ, 1, false);
+
+    if (v_find_constant("_WIN32", 0, 0))
+    {
+        v_add_symbol("_popen",  popen_ft,  0);
+        v_add_symbol("_pclose", pclose_ft, 0);
+
+        v_add_alias("popen",  "_popen");
+        v_add_alias("pclose", "_pclose");
+    }
+    else
+    {
+        v_add_symbol("popen",  popen_ft,  0);
+        v_add_symbol("pclose", pclose_ft, 0);
+    }
+}
+
+
+//---------------------------------------------------------------------
+fprintf: (stream: *FILE, format: *const char, ...) -> int;
+
+fscanf: (stream: *FILE, format: *const char, ...) -> int;
+
+fputs: (buf: *char, stream: *FILE) -> int;
+
+sprintf: (str: *char, format: *const char, ...) -> int;
+
+system: (cmd: *const char) -> int;
+
+
+//---------------------------------------------------------------------
+buffer: &*char := 0;
+
+{   buflen = 1024;
+
+    buffer := v_malloc(char, buflen);
+
+    {   p = popen("mktemp", "r");
+        defer pclose(p);
+
+        fscanf(p, "%500s", buffer);
+    }
+
+    if (v_find_constant("_WIN32", 0, 0))
+    {
+        cmd = buffer + 512;
+
+        sprintf(cmd, "cygpath -m %s", buffer);
+
+        p = popen(cmd, "r");
+        defer pclose(p);
+
+        fscanf(p, "%1000s", buffer);
+    }
+
+    //-----------------------------------------------------------------
+    {   p = popen("bash", "w");
+        defer pclose(p);
+
+        fprintf(p, "clang -x c - -O3 $(pkg-config gtk+-3.0 --cflags --libs) -shared -fPIC -o %s <<HEREDOC\n", buffer);
+
+        fputs(
+            """
+            #include <time.h>
+            #include <gtk/gtk.h>
+
+            double my_clock(void)
+            {
+                struct timespec rawtime;
+                struct tm * timeinfo;
+                double ret;
+
+                clock_gettime(CLOCK_REALTIME, &rawtime);
+                timeinfo = localtime(&rawtime.tv_sec);
+
+                ret = timeinfo->tm_hour;
+                ret = 60*ret + timeinfo->tm_min;
+                ret = 60*ret + timeinfo->tm_sec;
+                ret += rawtime.tv_nsec * 1e-9;
+
+                return ret;
+            }
+
+            void *my_gtk_hook = gtk_application_new;
+
+            """, p);
+
+        fputs("\nHEREDOC\n", p);
+    }
+}
+
+//---------------------------------------------------------------------
+{   ok = LLVMLoadLibraryPermanently(buffer);
+
+//  printf("ok: %d\n", ok);
+}
+
+
+//---------------------------------------------------------------------
+my_clock: () -> float(64);
+
+
+//---------------------------------------------------------------------
+//- ... <gtk/gtk.h>
+//---------------------------------------------------------------------
+{   v_add_type("GtkApplication", v_struct_type_named("struct.GtkApplication"));
+
+    v_add_type("GtkContainer", v_struct_type_named("struct.GtkContainer"));
+
+    v_add_type("GtkWidget", v_struct_type_named("struct.GtkWidget"));
+}
+
+{   v_add_type("cairo_surface_t", v_struct_type_named("struct.cairo_surface_t"));
+
+    v_add_type("cairo_t", v_struct_type_named("struct.cairo_t"));
+}
+
+//---------------------------------------------------------------------
+{   pi = LLVMConstRealOfString(LLVMDoubleType(), "3.14159265358979323846264338327950288419716939937510582");
+
+    v_add_constant("M_PI", v_f64_type(), pi);
+}
+
+
+//{ v_debug_print_module(1); }
+//---------------------------------------------------------------------
+gtk_application_new: (id: *const char, flags: int) -> *GtkApplication;
+
+g_signal_connect_data: (instance: *void,
+                        signal: *const char,
+                        callback: *(()->void),
+                        data: *void,
+                        notify: *void,
+                        flags: int
+                       ) -> long;
+
+g_application_run: (app: *GtkApplication, argc: int, argv: **char) -> int;
+
+
+gtk_application_window_new: (app: *GtkApplication) -> *GtkWidget;
+
+
+gtk_container_add: (container: *GtkContainer, widget: *GtkWidget) -> void;
+
+gtk_widget_show_all: (wnd: *GtkWidget) -> void;
+
+
+gtk_drawing_area_new: () -> *GtkWidget;
+
+gtk_widget_get_allocated_width:  (*GtkWidget) -> int;
+gtk_widget_get_allocated_height: (*GtkWidget) -> int;
+
+
+gtk_widget_queue_draw: (*GtkWidget) -> void;
+
+g_timeout_add: (interval: unsigned, func: *((aux: *void) -> bool), aux: *void) -> unsigned;
+
+
+//---------------------------------------------------------------------
+is_active: &bool := true;
+
+on_timeout: (aux: *void) -> bool
+{
+    if (!is_active) v_return(false);
+
+    gtk_widget_queue_draw((aux: *GtkWidget));
+
+    v_return(true);
+}
+
+on_destroy: (wid: *GtkWidget, *void) -> void
+{
+    is_active := false;
+}
+
+
+//---------------------------------------------------------------------
+double = float(64);
+
+sin: (double) -> double;
+cos: (double) -> double;
+
+
+//---------------------------------------------------------------------
+cairo_paint:           (*cairo_t) -> void;
+cairo_fill:            (*cairo_t) -> void;
+cairo_fill_preserve:   (*cairo_t) -> void;
+cairo_stroke:          (*cairo_t) -> void;
+cairo_stroke_preserve: (*cairo_t) -> void;
+
+cairo_set_source_rgb:  (*cairo_t, r: double, g: double, b: double) -> void;
+
+cairo_set_source_rgba: (*cairo_t, r: double, g: double, b: double, a: double) -> void;
+
+cairo_rectangle: (*cairo_t, x: double, y: double, w: double, h: double) -> void;
+
+cairo_set_line_width: (*cairo_t, w: double) -> void;
+
+cairo_line_to: (*cairo_t, x: double, y: double) -> void;
+cairo_move_to: (*cairo_t, x: double, y: double) -> void;
+
+cairo_close_path: (*cairo_t) -> void;
+
+cairo_scale: (*cairo_t, kx: double, ky: double) ->void;
+cairo_translate: (*cairo_t, dx: double, dy: double) ->void;
+
+cairo_save: (*cairo_t) -> void;
+cairo_restore: (*cairo_t) -> void;
+
+cairo_arc: (*cairo_t, x: double, y: double, r: double, a0: double, a1: double) -> void;
+
+cairo_clip: (*cairo_t) -> void;
+
+cairo_set_line_cap: (*cairo_t, int) -> void;
+
+
+//---------------------------------------------------------------------
+milli = 1 / (1000: double);
+
+m_radius     = 420*milli;
+m_line_width =  25*milli;
+
+draw_cb: (widget: *GtkWidget, cr: *cairo_t, *void) -> void
+{
+    width  = gtk_widget_get_allocated_width(widget);
+    height = gtk_widget_get_allocated_height(widget);
+
+    {   k: &double := height;
+
+        if (width < height) k := width;
+
+        cairo_scale(cr, k, k);
+
+        k *= 2;
+
+        cairo_translate(cr, width/k, height/k);
+    }
+
+    cairo_set_line_width(cr, m_line_width);
+
+    cairo_save(cr);
+    cairo_set_source_rgba(cr, 337*milli, 612*milli, 117*milli, 900*milli);      //- Green
+    cairo_paint(cr);
+    cairo_restore(cr);
+    cairo_arc(cr, 0, 0, m_radius, 0, 2*M_PI);
+    cairo_save(cr);
+    cairo_set_source_rgba(cr, 1, 1, 1, 800*milli);
+    cairo_fill_preserve(cr);
+    cairo_restore(cr);
+    cairo_stroke_preserve(cr);
+    cairo_clip(cr);
+
+    //- Clock ticks
+
+    i: &int := 0;
+    loop
+    {
+        if (i >= 12)  v_break();
+
+        inset: &double := 50*milli;
+
+        cairo_save(cr);
+        cairo_set_line_cap(cr, 1);      //- Kinda ROUND...
+
+        if (i % 3 != 0)
+        {
+            inset *= 800*milli;
+
+            cairo_set_line_width(cr, 30*milli);
+        }
+
+        cairo_move_to(cr, (m_radius - inset) * cos(i*(M_PI/6)),
+                          (m_radius - inset) * sin(i*(M_PI/6)));
+
+        cairo_line_to(cr, m_radius * cos(i*(M_PI/6)),
+                          m_radius * sin(i*(M_PI/6)));
+
+        cairo_stroke(cr);
+        cairo_restore(cr);
+
+        ++i;
+    }
+
+    time = my_clock();
+
+    hours   = time          * (M_PI /  6 / 3600);
+    minutes = (time % 3600) * (M_PI / 30 /   60);
+    seconds = (time %   60) * (M_PI / 30       );
+
+    cairo_save(cr);
+    cairo_set_line_cap(cr, 1);      //- Kinda ROUND...
+
+    //- Draw the seconds hand
+    cairo_save(cr);
+    cairo_set_line_width(cr, m_line_width/3);
+
+    flash = !(50*milli < time%5 < 4950*milli);
+
+    if (flash)  cairo_set_source_rgb(cr, 1, 0, 0);                              //- RED!
+    else        cairo_set_source_rgb(cr, 700*milli, 700*milli, 700*milli);      //- Gray
+
+    cairo_move_to(cr, 0, 0);
+    cairo_line_to(cr, sin(seconds)*(m_radius * 900*milli), -cos(seconds)*(m_radius * 900*milli));
+    cairo_stroke(cr);
+    cairo_restore(cr);
+
+    //- Draw the minutes hand
+    cairo_set_source_rgba(cr, 117*milli, 337*milli, 612*milli, 900*milli);      // Blue
+    cairo_move_to(cr, 0, 0);
+    cairo_line_to(cr, sin(minutes)*(m_radius * 800*milli), -cos(minutes)*(m_radius * 800*milli));
+    cairo_stroke(cr);
+
+    //- Draw the hours hand
+    cairo_set_source_rgba(cr, 337*milli, 612*milli, 117*milli, 900*milli);      // Green
+    cairo_move_to(cr, 0, 0);
+    cairo_line_to(cr, sin(hours)*(m_radius * 500*milli), -cos(hours)*(m_radius * 500*milli));
+    cairo_stroke(cr);
+    cairo_restore(cr);
+
+    //- Draw a little dot in the middle
+    cairo_arc(cr, 0, 0, m_line_width/3, 0, 2*M_PI);
+    cairo_fill(cr);
+}
+
+
+//---------------------------------------------------------------------
+on_activate: (app: *GtkApplication, data: *void) -> void
+{
+    window = gtk_application_window_new(app);
+
+    drawing_area = gtk_drawing_area_new();
+
+    g_signal_connect_data(drawing_area, "draw", (draw_cb: *(()->void)), 0, 0, 0);
+
+    gtk_container_add((window: *GtkContainer), drawing_area);
+
+    gtk_widget_show_all(window);
+
+    g_signal_connect_data(window, "destroy", (on_destroy: *(()->void)), 0, 0, 0);
+
+    g_timeout_add(20, on_timeout, drawing_area);
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    app = gtk_application_new(0, 0);
+
+    g_signal_connect_data(app, "activate", (on_activate: *(()->void)), 0, 0, 0);
+
+    g_application_run(app, 1, &"Часики");
+}
+
+
+//---------------------------------------------------------------------
+{
+    p = popen("bash", "w");
+    defer pclose(p);
+
+    fprintf(p, "rm %s\n", buffer);
+
+    v_mfree(buffer);
+}
+
+

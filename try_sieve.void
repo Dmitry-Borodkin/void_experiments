@@ -1,0 +1,102 @@
+{   v_import("voidc_types.void"); }
+
+{   v_import("switch.void");
+}
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_loop();
+    voidc_enable_statement_switch();
+}
+
+{   v_import("printf.void"); }
+
+
+//{ v_debug_print_module(1); }
+{
+    N = v_cast(1000, int);
+
+    flags = v_malloc(bool, N);
+
+    i = v_alloca(int);  i = v_reference(i);
+
+    v_assign(i, 0);
+
+    loop
+    {
+        f = v_icmp(LLVMIntSGE, i, N);
+        if (f) v_break();
+
+        fl_i = v_getelementptr(flags, i);
+
+        v_store(true, fl_i);
+
+        i1 = v_binop(LLVMAdd, i, 1);    v_assign(i, i1);
+    }
+
+    v_assign(i, 2);
+
+    k = v_alloca(int);  k = v_reference(k);
+
+    loop
+    {
+        f = v_icmp(LLVMIntSGE, i, N);
+        if (f) v_break();
+
+        fl_i = v_getelementptr(flags, i);
+
+        p = v_load(fl_i);
+
+        if (p)
+        {
+            prime = v_cast(i, int);
+
+            k1 = v_binop(LLVMAdd, i, prime);
+
+            v_assign(k, k1);
+
+            loop
+            {
+                f = v_icmp(LLVMIntSGE, k, N);
+                if (f) v_break();
+
+                fl_k = v_getelementptr(flags, k);
+
+                v_store(false, fl_k);
+
+                k1 = v_binop(LLVMAdd, k, prime);    v_assign(k, k1);
+            }
+        }
+
+        i1 = v_binop(LLVMAdd, i, 1);    v_assign(i, i1);
+    }
+
+
+    v_assign(i, 2);
+
+    loop
+    {
+        f = v_icmp(LLVMIntSGE, i, N);
+        if (f) v_break();
+
+        fl_i = v_getelementptr(flags, i);
+
+        p = v_load(fl_i);
+
+        if (p)  printf("%d\n", i);
+
+        i1 = v_binop(LLVMAdd, i, 1);    v_assign(i, i1);
+    }
+
+
+    v_mfree(flags);
+}
+
+
+
+
+
+
+
+
+

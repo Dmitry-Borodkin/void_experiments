@@ -1,0 +1,112 @@
+{   v_import("expression.void");
+    v_import("defer.void");
+    v_import("llvm-c/Support.void");
+    v_import("llvm-c/TargetMachine.void");
+}
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_loop();
+    voidc_enable_statement_switch();
+    voidc_enable_statement_grammar();
+    voidc_enable_expression();
+    voidc_enable_statement_defer();
+}
+
+{   v_import("printf.void"); }
+
+
+//---------------------------------------------------------------------
+{
+    typ = v_alloca(v_type_ptr, 2);
+
+    char_ptr = v_pointer_type(char, 0);
+
+    typ[0] := char_ptr;
+    typ[1] := char_ptr;
+
+    ft = v_function_type(char_ptr, typ, 2, false);
+    v_add_symbol_type("strstr", ft);
+
+}
+
+//---------------------------------------------------------------------
+//{   ok = LLVMLoadLibraryPermanently("glib-2.0.so");
+//
+//    printf("ok: %d\n", ok);
+//}
+
+{
+    tr = LLVMGetTargetMachineTriple(voidc_target_machine);
+
+    printf("tr: %s\n", tr);
+
+
+    ext = *v_alloca(*char) := "";
+
+
+    if (strstr(tr, "linux"))
+    {
+        printf("Got Linux\n");
+
+        ext := ".so";
+    }
+
+    if (strstr(tr, "windows"))
+    {
+        printf("Got Windows\n");
+
+        ext := ".dll";
+    }
+
+    LLVMDisposeMessage(tr);
+
+    q = v_quark_from_string(ext);
+
+    v_add_local_symbol("extension", v_pointer_type(char, 0), v_quark_to_string(q));
+}
+
+{
+    printf("ext: %s\n", extension);
+}
+
+
+//---------------------------------------------------------------------
+{
+    char_ptr = v_pointer_type(char, 0);
+
+    ft = v_function_type(bool, &char_ptr, 1, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("v_load_library", ft);
+
+    v_add_parameter_name(f, 0, "name", char_ptr);
+}
+{
+    str = v_alloca(v_util_opaque_std_string);
+    v_initialize(str);
+
+    v_std_string_set(str, name);
+
+    v_std_string_append(str, extension);
+
+    ok = LLVMLoadLibraryPermanently(v_std_string_get(str));
+
+    v_terminate(str);
+
+    v_return(v_cast(ok, bool));
+}
+
+
+//---------------------------------------------------------------------
+{
+    ok = v_load_library("libglib-2.0");
+
+
+    printf("ok: %d\n", ok);
+}
+
+
+
+
+

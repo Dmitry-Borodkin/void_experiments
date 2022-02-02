@@ -1,0 +1,91 @@
+{   v_import("voidc_types.void"); }
+
+{   v_import("switch.void");
+}
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_loop();
+    voidc_enable_statement_switch();
+}
+
+{   v_import("printf.void"); }
+
+
+
+{   i64 = v_sint_type(64);
+
+    ft = v_function_type(i64, 0, 0, false);
+
+    v_add_symbol_type("clock", ft);
+
+    f64 = v_f64_type();
+
+    v_add_local_symbol("f64", voidc_opaque_type, f64);
+
+//  ftyp = v_f16_type();
+//  ftyp = v_f32_type();
+    ftyp = v_f64_type();
+//  ftyp = v_f128_type();
+
+    v_add_local_symbol("ftyp", voidc_opaque_type, ftyp);
+}
+
+{
+    v = v_alloca(int);
+    v_store(0, v);
+
+    zero_ftyp = v_cast(0, ftyp);
+
+    acc = v_alloca(ftyp);
+
+    zero_ftyp = v_cast(0, ftyp);
+
+    v_store(zero_ftyp, acc);
+
+    one_ftyp = v_cast(1, ftyp);
+
+    t0 = clock();    printf("t0: %ld\n", t0);
+
+    loop
+    {
+        i = v_load(v);
+
+        f = v_icmp(LLVMIntEQ, i, 10000000);
+        if (f)  v_break();
+
+        i = v_binop(LLVMAdd, i, 1);
+
+        v_store(i, v);
+
+
+        a = v_load(acc);
+
+        a = v_binop(LLVMFAdd, a, one_ftyp);
+
+        v_store(a, acc);
+    }
+
+
+    t1 = clock();    printf("t1: %ld\n", t1);
+
+    d = v_binop(LLVMSub, t1, t0);
+
+    printf("d: %ld\n", d);
+
+
+    a = v_load(acc);
+
+    a = v_cast(a, f64);
+
+    printf("a: %g\n", a);
+}
+
+
+
+
+
+
+
+
+

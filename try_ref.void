@@ -1,0 +1,62 @@
+{   v_import("voidc_types.void"); }
+
+{   v_import("function_hack.void");
+}
+
+{   v_import("printf.void"); }
+
+
+{   v_debug_print_module(1); }
+{
+    vptr = v_alloca(int);
+
+    printf("vptr: %p\n", vptr);
+
+
+    v_store(777, vptr);
+
+    vref = v_reference(vptr);
+
+
+    printf("vref: %d\n", vref);
+
+
+    vptr_1 = v_pointer(vref);
+
+
+    printf("vptr_1: %p\n", vptr_1);
+}
+
+
+{   typ0 = v_alloca(v_type_ptr);
+
+    int_ref = v_reference_type(int, 0);
+
+    v_store(int_ref, typ0);
+
+    ft = v_function_type(void, typ0, 1, false);
+
+    f = v_function_hack("tryref", ft);
+
+    v_add_parameter_name(f, 0, "vref", int_ref);
+}
+{
+    printf("tryref: %d\n", vref);
+}
+
+
+{   v_debug_print_module(1); }
+{
+    tryref(888);
+
+    vptr = v_alloca(int);
+
+    v_store(999, vptr);
+
+    vref = v_reference(vptr);
+
+    tryref(vref);
+}
+
+
+

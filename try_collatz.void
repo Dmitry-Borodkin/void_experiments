@@ -1,0 +1,66 @@
+{   v_import("voidc_types.void"); }
+
+{   v_import("switch.void");
+}
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_loop();
+    voidc_enable_statement_switch();
+}
+
+{   v_import("printf.void"); }
+
+
+//{ v_debug_print_module(1); }
+{
+    N = v_cast(100, int);
+
+    n = v_alloca(int);  n = v_reference(n);
+
+    v_assign(n, 1);
+
+    loop
+    {
+        f = v_icmp(LLVMIntSGE, n, N);
+        if (f) v_break();
+
+        v = v_alloca(int);  v = v_reference(v);
+
+        v_assign(v, n);
+
+        loop
+        {
+            printf("%d\n", v);
+
+//          f = v_icmp(LLVMIntULT, v, n);
+//          if (f) v_break();
+
+            f = v_icmp(LLVMIntEQ, v, 1);
+            if (f) v_break();
+
+
+            odd = v_binop(LLVMAnd, v, 1);
+
+            if (odd)
+            {
+                v1 = v_binop(LLVMMul, v, 3);
+
+                v1 = v_binop(LLVMAdd, v1, 1);
+
+                v_assign(v, v1);
+            }
+            else
+            {
+                v1 = v_binop(LLVMUDiv, v, 2);   v_assign(v, v1);
+            }
+        }
+
+        printf("\n");
+
+        n1 = v_binop(LLVMAdd, n, 1);    v_assign(n, n1);
+    }
+
+}
+
+

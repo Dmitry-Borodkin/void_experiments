@@ -1,0 +1,232 @@
+{   v_import("voidc_target.void");
+    v_import("voidc_types.void");
+
+    v_import("llvm-c/Core.void");
+    v_import("llvm-c/TargetMachine.void");
+    v_import("llvm-c/Transform/PassManagerBuilder.void");
+    v_import("llvm-c/Support.void");
+
+    v_import("function_hack.void");
+    v_import("memory.void");
+    v_import("if_then_else.void");
+    v_import("block.void");
+    v_import("loop.void");
+    v_import("grammar.void");
+    v_import("expression.void");
+    v_import("defer.void");
+
+    v_import("printf.void");
+}
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_loop();
+    voidc_enable_statement_grammar();
+    voidc_enable_expression();
+    voidc_enable_statement_defer();
+}
+
+
+//---------------------------------------------------------------------
+{   triple = LLVMGetDefaultTargetTriple();
+
+    tr = *v_alloca(LLVMTargetRef);
+
+    LLVMGetTargetFromTriple(triple, &tr, 0);
+
+    cpu_name     = LLVMGetHostCPUName();
+    cpu_features = LLVMGetHostCPUFeatures();
+
+    target_machine =
+        LLVMCreateTargetMachine
+        (
+            tr,
+            triple,
+            cpu_name,
+            cpu_features,
+            LLVMCodeGenLevelAggressive,
+            LLVMRelocPIC,                       //- Sic!
+            LLVMCodeModelDefault
+        );
+
+    LLVMDisposeMessage(cpu_features);
+    LLVMDisposeMessage(cpu_name);
+    LLVMDisposeMessage(triple);
+
+    v_add_symbol("target_machine", v_type_refptr_get_element_type(LLVMTargetMachineRef), target_machine);
+}
+
+//=====================================================================
+{   int_      = v_type_get_llvm_type(int);
+    long_     = v_type_get_llvm_type(long);
+    intptr_t_ = v_type_get_llvm_type(intptr_t);
+
+    int_sz_v  = LLVMSizeOf(int_);
+    long_sz_v = LLVMSizeOf(long_);
+    ptr_sz_v  = LLVMSizeOf(intptr_t_);
+
+    v_add_constant("int_sz",  size_t, int_sz_v);
+    v_add_constant("long_sz", size_t, long_sz_v);
+    v_add_constant("ptr_sz",  size_t, ptr_sz_v);
+}
+
+{   gctx = v_target_create_global_ctx(int_sz, long_sz, ptr_sz);
+
+    v_add_symbol("my_gctx", v_target_opaque_global_ctx, gctx);
+
+
+    lctx = v_target_create_local_ctx("<target test>", gctx);
+
+    v_add_symbol("my_lctx", v_target_opaque_local_ctx, lctx);
+
+
+    v_target_set_global_ctx(gctx);
+}
+
+//=====================================================================
+{   llvm_ctx = v_target_get_llvm_ctx();
+
+    module = LLVMModuleCreateWithNameInContext("try_dll_mod", llvm_ctx);
+
+    v_set_module(module);
+}
+
+//---------------------------------------------------------------------
+{   v_add_symbol("try_variable", int, 0);
+
+}
+
+{   void_ptr = v_pointer_type(v_find_type("void"), 0);
+    char_ptr = v_pointer_type(v_find_type("char"), 0);
+
+    v_add_symbol("v_find_symbol_value", v_function_type(void_ptr, &char_ptr, 1, false), 0);
+
+    v_add_symbol("printf", v_function_type(v_find_type("int"), &char_ptr, 1, true), 0);
+}
+
+
+//---------------------------------------------------------------------
+{   v_function_hack("try_dll", v_function_type(v_find_type("void"), 0, 0, false));
+}
+{
+//  v = v_ast_unit_t_visitor_method_tag;
+//  v = *try_variable;
+
+    v = *v_cast(v_find_symbol_value("try_variable"), *int);
+
+    v += 700;
+
+    printf("try_dll: %d\n", v);
+}
+
+
+//---------------------------------------------------------------------
+{
+    module = v_get_module();
+
+    v_set_module(0);
+
+
+    pass_manager = LLVMCreatePassManager();
+
+    pm_builder = LLVMPassManagerBuilderCreate();
+
+    LLVMPassManagerBuilderSetOptLevel(pm_builder, 3);       //- -O3
+    LLVMPassManagerBuilderSetSizeLevel(pm_builder, 2);      //- -Oz
+
+    LLVMPassManagerBuilderPopulateModulePassManager(pm_builder, pass_manager);
+
+    LLVMPassManagerBuilderDispose(pm_builder);
+
+    //-----------------------------------------------------------------
+    dl = LLVMCreateTargetDataLayout(target_machine);
+    tr = LLVMGetTargetMachineTriple(target_machine);
+
+    LLVMSetModuleDataLayout(module, dl);
+    LLVMSetTarget(module, tr);
+
+    LLVMDisposeMessage(tr);
+    LLVMDisposeTargetData(dl);
+
+    LLVMRunPassManager(pass_manager, module);
+
+    LLVMDisposePassManager(pass_manager);
+
+    //-----------------------------------------------------------------
+    msg = LLVMPrintModuleToString(module);
+
+    printf("\n%s\n", msg);
+
+    LLVMDisposeMessage(msg);
+
+    //-----------------------------------------------------------------
+    LLVMTargetMachineEmitToFile(target_machine,
+                                module,
+                                "try_dll.o",
+                                LLVMObjectFile,
+                                0);
+
+    //-----------------------------------------------------------------
+    LLVMDisposeModule(module);
+
+    LLVMDisposeTargetMachine(target_machine);
+}
+
+
+//=====================================================================
+{
+    vctx = v_target_get_voidc_global_ctx();
+
+    v_target_set_global_ctx(vctx);
+
+
+    v_target_destroy_local_ctx(my_lctx);
+    v_target_destroy_global_ctx(my_gctx);
+}
+
+
+
+//=====================================================================
+{   typ = v_alloca(v_type_ptr);
+
+    char_ptr = v_pointer_type(char, 0);
+
+    v_store(char_ptr, typ);
+
+    system_ft = v_function_type(int, typ, 1, false);
+
+    v_export_symbol_type("system", system_ft);
+}
+
+{   system("clang try_dll.o -shared -o try_dll.so");
+
+}
+
+
+//---------------------------------------------------------------------
+{   var = v_malloc(int);
+
+    v_store(77, var);
+
+    v_add_symbol("try_variable", int, var);
+}
+
+
+//---------------------------------------------------------------------
+{   ok = LLVMLoadLibraryPermanently("try_dll.so");
+
+    printf("ok: %d\n", ok);
+
+    v_add_symbol("try_dll", v_function_type(void, 0, 0, false), 0);
+}
+
+
+{   try_dll();
+}
+
+
+//---------------------------------------------------------------------
+{   v_mfree(try_variable);
+}
+
+

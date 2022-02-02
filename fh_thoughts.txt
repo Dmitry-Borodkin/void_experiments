@@ -1,0 +1,115 @@
+    parent
+    |   grammar
+    |   |   module
+    |   |   |
+    0   0   0   -   не бывает
+    0   0   1   -   не бывает
+
+    0   1   0   -   создаем временный модуль    - "сразу грузим"    - 2-й unit пустой
+    0   1   1   -   добавляем в текущий модуль  -                   - 2-й unit пустой
+    1   0   0   -   -                           -                   - 2-й unit грузит объектник
+    1   0   1   -   -                           -                   - 2-й unit пустой
+    1   1   0   -   создаем временный модуль    - создаем 2-й unit  - 2-й unit грузит объектник
+    1   1   1   -   добавляем в текущий модуль  -                   - 2-й unit пустой
+
+
+- intrinsic:
+
+    - Предполагается, что грамматика есть (или? ...)
+
+    - Компилируем (в 1-й unit):
+
+        - v_add_local_symbol
+
+        - Проверка на грамматику:
+
+            - Если НЕТ - выход (комбинация "1 0 _")
+
+            - Если ДА  - intrinsic_helper ...
+
+
+- intrinsic_helper:
+
+    - Сохраняем old_module
+
+    - Проверяем old_module:
+
+        - Если ЕСТЬ - fun_module := old_module
+
+        - Если НЕТ  - создаем новый fun_module
+
+    - Начинаем новую функцию (fun_value)
+
+    - Подменяем "unit_visitor_method" (в voidc_compiler)
+
+    - Возвращаем fun_value
+
+
+- "Подменный" "unit_visitor_method"
+
+    - Компилируем stmt_list
+
+    - Заканчиваем функцию
+
+    - Запоминаем текущий fun_module
+
+    - Восстанавливаем voidc_compiler
+
+    - Восстанавливаем old_module
+
+    - Проверяем old_module:
+
+        - Если ЕСТЬ - выходим...
+
+    - (old_module - НЕТ)
+
+    - Делаем "voidc_unit_load_local_module_to_jit(fun_module);"
+
+
+
+
+- "voidc_unit_load_module_to_jit(module)"
+  "voidc_unit_load_local_module_to_jit(module)"
+
+    - Сохраняем "контекст", переходим на voidc
+
+    - Делаем "voidc_prepare_module_for_jit(module);"
+
+    - Грузим module в JIT (мб локально)
+
+    - Проверяем "parent":
+
+        - Если ЕСТЬ - (строим unit (заменяем текущий!)):
+
+            - Emit-им объектник (module -> mem_buffer)
+
+            - Компилируем:
+
+                - Строка с mem_buffer
+
+                - Вызов "voidc_unit_load_helper"
+
+    - Восстанавливаем "контекст"
+
+
+- "voidc_unit_load_helper"
+
+    - Строим mem_buffer
+
+    - Грузим mem_buffer в JIT (мб локально)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

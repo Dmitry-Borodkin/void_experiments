@@ -1,0 +1,65 @@
+{   v_import("expression.void");
+    v_import("defer.void");
+}
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_loop();
+    voidc_enable_statement_switch();
+    voidc_enable_statement_grammar();
+    voidc_enable_expression();
+    voidc_enable_statement_defer();
+}
+
+{   v_import("printf.void"); }
+
+
+//---------------------------------------------------------------------
+{
+    char_ptr = v_pointer_type(char, 0);
+
+    typ = *v_alloca(v_type_ptr) := char_ptr;
+
+    ft = v_function_type(int, &typ, 1, 0);
+
+    v_add_symbol_type("mkstemp", ft);
+
+
+    typ := int;
+
+    ft = v_function_type(int, &typ, 1, 0);
+
+    v_add_symbol_type("close", ft);
+
+
+    typ := char_ptr;
+
+    ft = v_function_type(char_ptr, &typ, 1, 0);
+
+    v_add_symbol_type("strdup", ft);
+
+
+}
+
+
+{   buf = strdup("aaa_XXXXXX");
+
+
+    fd = mkstemp(buf);
+
+    printf("fd: %d, buf: %s\n", fd, buf);
+
+
+    //- ...
+
+
+    close(fd);
+
+
+
+
+    v_mfree(buf);
+}
+
+
+

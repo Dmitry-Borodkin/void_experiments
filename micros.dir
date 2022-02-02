@@ -1,0 +1,241 @@
+                         ****  ?  ****                         │*
+                                                               │
+                                                               │
+try_hz3.void                                                   │try_hz3.void
+                                                               │
+fruits.void                                                    │fruits.void
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_v_util.void                                                │try_v_util.void
+try_v_util_internal.void                                       │try_v_util_internal.void
+                                                               │
+try_v_util_test.void                                           │try_v_util_test.void
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_determinant.void                                           │try_determinant.void
+                                                               │
+try_local_import.void                                          │try_local_import.void
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_gtk3.void                                                  │try_gtk3.void
+                                                               │
+try_argv.void                                                  │try_argv.void -- a b c
+                                                               │
+gtk3_clock.void                                                │gtk3_clock.void
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_string.void                                                │try_string.void
+                                                               │
+try_dll2.void                                                  │try_dll2.void
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_sizeof.void                                                │try_sizeof.void
+                                                               │
+try_popen.void                                                 │try_popen.void
+                                                               │
+gtk_clock.void                                                 │gtk_clock.void
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_tsearch.void                                               │try_tsearch.void
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_tblgen/                                                    │try_tblgen/micros.dir
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_shebang.void                                               │try_shebang.void
+                                                               │
+try_parsing.void                                               │try_parsing.void
+                                                               │
+───────────────────────────────────────────────────────────────│
+_README.md                                                     │_README.md
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_cairo4.void                                                │try_cairo4.void
+try_cairo5.void                                                │try_cairo5.void
+                                                               │
+try_roller/                                                    │try_roller/micros.dir
+                                                               │
+try_hz2.void                                                   │try_hz2.void
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_real.void                                                  │try_real.void
+                                                               │
+try_vararg.void                                                │try_vararg.void
+                                                               │
+───────────────────────────────────────────────────────────────│
+_local_defn.void                                               │_local_defn.void
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_gtk.void                                                   │try_gtk.void
+                                                               │
+try_cairo2.void                                                │try_cairo2.void
+try_cairo3.void                                                │try_cairo3.void
+                                                               │
+                                                               │
+try_llvmvalue.void                                             │try_llvmvalue.void
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_dll.void                                                   │try_dll.void
+                                                               │
+try_types3.void                                                │try_types3.void
+                                                               │
+───────────────────────────────────────────────────────────────│
+target_thoughts.txt                                            │target_thoughts.txt
+                                                               │
+───────────────────────────────────────────────────────────────│
+_function.void                                                 │_function.void
+_compile_type.void                                             │_compile_type.void
+                                                               │
+_function_test.void                                            │_function_test.void
+_fun_import_test.void                                          │_fun_import_test.void
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_attrs.void                                                 │try_attrs.void
+                                                               │
+───────────────────────────────────────────────────────────────│
+fh_thoughts.txt                                                │fh_thoughts.txt
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_indicomp.void                                              │try_indicomp.void
+                                                               │
+try_v_undef.void                                               │try_v_undef.void
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_eval_type.void                                             │try_eval_type.void
+                                                               │
+try_load_library.void                                          │try_load_library.void
+                                                               │
+try_v_type.void                                                │try_v_type.void
+                                                               │
+try_mkstemp.void                                               │try_mkstemp.void
+                                                               │
+try_vect.void                                                  │try_vect.void
+                                                               │
+───────────────────────────────────────────────────────────────│
+malloc size                                                    │malloc_size.void
+                                                               │
+───────────────────────────────────────────────────────────────│
+Stephen Diehl...                                               │diehl.void
+                                                               │
+───────────────────────────────────────────────────────────────│
+_defer.void                                                    │_defer.void
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_stack.void                                                 │try_stack.void
+    .asm                                                       │try_stack.asm
+                                                               │
+───────────────────────────────────────────────────────────────│
+expr_op.void                                                   │expr_op.void
+                                                               │
+_expression.void                                               │_expression.void
+                                                               │
+                                                               │
+expt_test.void                                                 │expt_test.void
+                                                               │
+                                                               │
+expr0.void                                                     │expr0.void
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
+grammar.txt                                                    │grammar.txt
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_arrays.void                                                │try_arrays.void
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_resolver.void                                              │try_resolver.void
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_aliases.void                                               │try_aliases.void
+                                                               │
+try_var.void                                                   │try_var.void
+                                                               │
+expr_thoughts.txt                                              │expr_thoughts.txt
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_hz.void                                                    │try_hz.void
+                                                               │
+try_struct.void                                                │try_struct.void
+                                                               │
+try_collatz.void                                               │try_collatz.void
+                                                               │
+try_sieve.void                                                 │try_sieve.void
+                                                               │
+try_ref.void                                                   │try_ref.void
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
+fp_bench.void                                                  │fp_bench.void
+                                                               │
+try_types2.void     vscale...                                  │try_types2.void
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_expr2.void                                                 │try_expr2.void
+                                                               │
+                                                               │
+try_data_layout.void                                           │try_data_layout.void
+                                                               │
+try_types.void                                                 │try_types.void
+                                                               │
+                                                               │
+try_mod.void                                                   │try_mod.void
+                                                               │
+try_bc.void                                                    │try_bc.void
+                                                               │
+large_nums.void                                                │large_nums.void
+                                                               │
+try_expr.void       !!!                                        │try_expr.void
+                                                               │
+                                                               │
+nss_calc.void       !!!                                        │nss_calc.void
+simple_calc.void                                               │simple_calc.void
+                                                               │
+                                                               │
+_switch.void                                                   │_switch.void
+                                                               │
+_grammar.void                                                  │_grammar.void
+                                                               │
+                                                               │
+try_target.void                                                │try_target.void
+                                                               │
+try_cairo.void      !!!                                        │try_cairo.void
+                                                               │
+                                                               │
+_loop.void                                                     │_loop.void
+                                                               │
+_arithmetic.void                                               │_arithmetic.void
+                                                               │
+_if_then_else.void                                             │_if_then_else.void
+                                                               │
+_block.void                                                    │_block.void
+                                                               │
+malloc.void                                                    │malloc.void
+                                                               │
+fun_hack.void                                                  │fun_hack.void
+                                                               │
+stmt_arg.void                                                  │stmt_arg.void
+                                                               │
+try.void                                                       │try.void
+                                                               │
+                                                               │
+═══════════════════════════════════════════════════════════════│*
+README                                                         │README.md
+                                                               │
+───────────────────────────────────────────────────────────────│
+MIT                                                            │LICENSE
+═══════════════════════════════════════════════════════════════│
+.hgignore                                                      │.hgignore
+                                                               │
+hg bookmark -f master                   WTF?                   │hg bookmark -f master
+───────────────────────────────────────────────────────────────│
+void.doit                                                      │void.doit
+───────────────────────────────────────────────────────────────│
+micros.incdirs                                                 │micros.incdirs
+                                                               │

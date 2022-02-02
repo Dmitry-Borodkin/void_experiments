@@ -1,0 +1,162 @@
+{   v_import("voidc_internals.void");
+}
+
+{   v_import("switch.void");
+}
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_loop();
+    voidc_enable_statement_switch();
+}
+
+
+{   v_import("llvm-c/Core.void");
+    v_import("llvm-c/BitReader.void");
+    v_import("llvm-c/OrcBindings.void");
+    v_import("llvm-c/Support.void");
+}
+
+{   v_import("printf.void");
+}
+
+
+{   mbuf = v_alloca(LLVMMemoryBufferRef);
+
+    LLVMCreateMemoryBufferWithContentsOfFile("../tries.bc", mbuf, 0);
+
+    mbuf = v_load(mbuf);
+
+
+    mod = v_alloca(LLVMModuleRef);
+
+    LLVMParseBitcode2(mbuf, mod);
+
+    mod = v_load(mod);
+
+
+    LLVMDisposeMemoryBuffer(mbuf);
+
+
+
+    LLVMSetDataLayout(mod, "");     //- Sic!
+
+    v_set_module(mod);
+
+
+    ft = LLVMFunctionType(void, 0, 0, 0);
+
+    v_add_symbol_type("p_increment", ft);
+
+}
+
+
+//{   v_debug_print_module(2); }
+{
+    ft = LLVMFunctionType(void, 0, 0, 0);
+
+    v_function_hack("try_fun", ft);
+}
+{
+    printf("AAAAAAAAA\n");
+
+    p_increment();
+
+    printf("ZZZZZZZZZ\n");
+}
+
+
+
+{
+    mod = v_get_module();
+
+    v_set_module(0);
+
+
+    //-----------------------------------------------------------------
+//  v_debug_print_module(1);
+
+    voidc_prepare_module_for_jit(mod);
+
+
+    v_debug_print_module(1);
+    v_verify_module(mod);
+
+    //-----------------------------------------------------------------
+    v = v_alloca(LLVMValueRef);
+
+    f = LLVMGetFirstFunction(mod);
+    v_store(f, v);
+
+    loop
+    {
+        f = v_load(v);
+
+        if (f)  {}
+        else    v_break();
+
+        l = LLVMGetLinkage(f);
+
+        switch(l)
+        {
+        case LLVMLinkOnceODRLinkage:
+
+            LLVMSetLinkage(f, LLVMExternalLinkage);
+        }
+
+        f = LLVMGetNextFunction(f);
+        v_store(f, v);
+    }
+
+
+    g = LLVMGetFirstGlobal(mod);
+    v_store(g, v);
+
+    loop
+    {
+        g = v_load(v);
+
+        if (g)  {}
+        else    v_break();
+
+        l = LLVMGetLinkage(g);
+
+        switch(l)
+        {
+        case LLVMLinkOnceODRLinkage:
+
+            LLVMSetLinkage(g, LLVMExternalLinkage);
+        }
+
+        g = LLVMGetNextGlobal(g);
+        v_store(g, v);
+    }
+
+
+
+    //-----------------------------------------------------------------
+    PH = v_alloca(LLVMOrcModuleHandle);
+
+    err = LLVMOrcAddEagerlyCompiledIR(voidc_jit, PH, mod,
+                                      voidc_resolver, 0
+                                     );
+
+    msg = LLVMGetErrorMessage(err);
+
+    c = v_load(msg);
+
+    if (c)  printf("\n%s\n]", msg);
+
+    LLVMDisposeErrorMessage(msg);
+
+
+}
+
+
+{
+    try_fun();
+}
+
+
+
+

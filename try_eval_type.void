@@ -1,0 +1,515 @@
+{   v_import("expression.void");
+    v_import("defer.void");
+}
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_loop();
+    voidc_enable_statement_switch();
+    voidc_enable_statement_grammar();
+    voidc_enable_expression();
+    voidc_enable_statement_defer();
+}
+
+{   v_import("printf.void"); }
+
+
+//---------------------------------------------------------------------
+//- Some utility ...
+//---------------------------------------------------------------------
+{
+    char_ptr = v_pointer_type(char, 0);
+
+    v_add_local_symbol("char_ptr", voidc_opaque_type, char_ptr);
+}
+
+//---------------------------------------------------------------------
+{
+    typ = v_alloca(v_type_ptr, 4);
+
+    typ[0] := v_ast_expr_ptr;
+    typ[1] := char_ptr;
+    typ[2] := v_ast_expr_ptr;
+    typ[3] := int;
+
+    ft = v_function_type(void, typ, 4, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("make_expr_call", ft);
+
+    v_add_parameter_name(f, 0, "expr",  v_ast_expr_ptr);
+    v_add_parameter_name(f, 1, "fun",   char_ptr);
+    v_add_parameter_name(f, 2, "args",  v_ast_expr_ptr);
+    v_add_parameter_name(f, 3, "count", int);
+}
+{
+    fe = v_alloca(v_ast_opaque_expr_sptr);
+    v_initialize(fe);
+    defer v_terminate(fe);
+
+    v_ast_make_expr_identifier(fe, fun);
+
+    ar_l = v_alloca(v_ast_opaque_expr_list_sptr);
+    v_initialize(ar_l);
+    defer v_terminate(ar_l);
+
+    v_make_list(ar_l, args, count);
+
+    v_ast_make_expr_call(expr, fe, ar_l);
+}
+
+//---------------------------------------------------------------------
+{
+    typ = v_alloca(v_type_ptr, 5);
+
+    typ[0] := v_ast_stmt_ptr;
+    typ[1] := char_ptr;
+    typ[2] := char_ptr;
+    typ[3] := v_ast_expr_ptr;
+    typ[4] := int;
+
+    ft = v_function_type(void, typ, 5, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("make_stmt_call", ft);
+
+    v_add_parameter_name(f, 0, "stmt",  v_ast_stmt_ptr);
+    v_add_parameter_name(f, 1, "var",   char_ptr);
+    v_add_parameter_name(f, 2, "fun",   char_ptr);
+    v_add_parameter_name(f, 3, "args",  v_ast_expr_ptr);
+    v_add_parameter_name(f, 4, "count", int);
+}
+{
+    expr = v_alloca(v_ast_opaque_expr_sptr);
+    v_initialize(expr);
+    defer v_terminate(expr);
+
+    make_expr_call(expr, fun, args, count);
+
+    v_ast_make_stmt(stmt, var, expr);
+}
+
+
+//---------------------------------------------------------------------
+//- Context type
+//---------------------------------------------------------------------
+{
+    typ = v_alloca(v_type_ptr, 2);
+
+    typ[0] := int;                      //- Next variable number
+    typ[1] := v_ast_stmt_list_ptr;      //- "Accumulator"
+
+    ctx_t = v_struct_type(typ, 2, false);
+
+    ctx_ref = v_reference_type(ctx_t, 0);
+
+    v_add_local_symbol("ctx_t",   voidc_opaque_type, ctx_t);
+    v_add_local_symbol("ctx_ref", voidc_opaque_type, ctx_ref);
+}
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+{
+    typ = v_alloca(v_type_ptr, 3);
+
+    typ[0] := v_ast_expr_ptr;   //- Result
+    typ[1] := v_type_ptr;       //- Argument
+    typ[2] := ctx_ref;          //- Working context
+
+    ft = v_function_type(void, typ, 3, false);
+    //-----------------------------------------------------------------
+    f = v_function_hack("eval_type", ft);
+
+    v_add_parameter_name(f, 0, "ret",  v_ast_expr_ptr);
+    v_add_parameter_name(f, 1, "type", v_type_ptr);
+    v_add_parameter_name(f, 2, "ctx",  ctx_ref);
+}
+{
+    fn = *v_alloca(*char);
+
+    k = v_kind(type);
+
+    switch(k)
+    {
+    case v_type_kind_void:      fn := "v_void_type";        v_break();
+    case v_type_kind_f16:       fn := "v_f16_type";         v_break();
+    case v_type_kind_f32:       fn := "v_f32_type";         v_break();
+    case v_type_kind_f64:       fn := "v_f64_type";         v_break();
+    case v_type_kind_f128:      fn := "v_f128_type";        v_break();
+    case v_type_kind_int:       fn := "v_int_type";         v_break();
+    case v_type_kind_uint:      fn := "v_uint_type";        v_break();
+    case v_type_kind_function:  fn := "v_function_type";    v_break();
+    case v_type_kind_pointer:   fn := "v_pointer_type";     v_break();
+    case v_type_kind_reference: fn := "v_reference_type";   v_break();
+    case v_type_kind_struct:    fn := "v_struct_type";      v_break();
+    case v_type_kind_array:     fn := "v_array_type";       v_break();
+    case v_type_kind_vector:    fn := "v_vector_type";      v_break();
+    case v_type_kind_svector:   fn := "v_svector_type";     v_break();
+    }
+
+    switch(k)
+    {
+    case v_type_kind_void:
+    case v_type_kind_f16:
+    case v_type_kind_f32:
+    case v_type_kind_f64:
+    case v_type_kind_f128:
+
+        make_expr_call(ret, fn, 0, 0);
+        v_break();
+
+    case v_type_kind_int:
+    case v_type_kind_uint:
+        {
+            expr = v_alloca(v_ast_opaque_expr_sptr);
+            v_initialize(expr);
+            defer v_terminate(expr);
+
+            v_ast_make_expr_integer(expr, v_type_integer_get_width(type));
+
+            make_expr_call(ret, fn, expr, 1);
+            v_break();
+        }
+
+    case v_type_kind_function:
+        {
+            args = v_alloca(v_ast_opaque_expr_sptr, 4);
+            v_initialize(args, 4);
+            defer v_terminate(args, 4);
+
+            eval_type(&args[0], v_type_function_get_return_type(type), ctx);
+
+            n = v_type_function_get_param_count(type);
+
+            v_ast_make_expr_integer(&args[2], n);
+
+            v_ast_make_expr_integer(&args[3], v_type_function_is_var_arg(type));
+
+            stmt = v_alloca(v_ast_opaque_stmt_sptr);
+            v_initialize(stmt);
+            defer v_terminate(stmt);
+
+            if (n)
+            {
+                sstr = v_alloca(v_util_opaque_std_string, 3);
+                v_initialize(sstr, 3);
+                defer v_terminate(sstr, 3);
+
+                v_std_string_set(&sstr[0], "v");
+                v_std_string_append_number(&sstr[0], ctx[0]++);
+
+                stk = v_std_string_get(&sstr[0]);
+
+                make_stmt_call(stmt, stk, "llvm.stacksave", 0, 0);
+                v_list_append(ctx[1], ctx[1], stmt);
+
+                v_std_string_set(&sstr[1], "v");
+                v_std_string_append_number(&sstr[1], ctx[0]++);
+
+                var = v_std_string_get(&sstr[1]);
+
+                tmp = v_alloca(v_ast_opaque_expr_sptr, 2);
+                v_initialize(tmp, 2);
+                defer v_terminate(tmp, 2);
+
+                v_ast_make_expr_identifier(&tmp[0], "v_type_ptr");
+                v_ast_make_expr_integer(&tmp[1], n);
+
+                make_stmt_call(stmt, var, "v_alloca", tmp, 2);
+                v_list_append(ctx[1], ctx[1], stmt);
+
+                v_ast_make_expr_identifier(&args[1], var);
+
+                arg = v_alloca(v_type_ptr, n);
+
+                v_type_function_get_param_types(type, arg);
+
+                i = *v_alloca(int) := 0;
+
+                loop
+                {
+                    if (i == n) v_break();
+
+                    v_ast_make_expr_identifier(&tmp[0], var);
+                    v_ast_make_expr_integer(&tmp[1], i);
+
+                    make_expr_call(&tmp[1], "v_getelementptr", tmp, 2);
+
+                    eval_type(&tmp[0], arg[i], ctx);
+
+                    make_stmt_call(stmt, "", "v_store", tmp, 2);
+                    v_list_append(ctx[1], ctx[1], stmt);
+
+                    ++i;
+                }
+
+                v_std_string_set(&sstr[2], "v");
+                v_std_string_append_number(&sstr[2], ctx[0]++);
+
+                res = v_std_string_get(&sstr[2]);
+
+                make_stmt_call(stmt, res, fn, args, 4);
+                v_list_append(ctx[1], ctx[1], stmt);
+
+                v_ast_make_expr_identifier(&tmp[0], stk);
+
+                make_stmt_call(stmt, "", "llvm.stackrestore", tmp, 1);
+                v_list_append(ctx[1], ctx[1], stmt);
+
+                v_ast_make_expr_identifier(ret, res);
+            }
+            else
+            {
+                v_ast_make_expr_integer(&args[1], 0);
+
+                make_expr_call(ret, fn, args, 4);
+            }
+
+            v_break();
+        }
+
+    case v_type_kind_pointer:
+    case v_type_kind_reference:
+        {
+            args = v_alloca(v_ast_opaque_expr_sptr, 2);
+            v_initialize(args, 2);
+            defer v_terminate(args, 2);
+
+            eval_type(&args[0], v_type_refptr_get_element_type(type), ctx);
+
+            v_ast_make_expr_integer(&args[1], v_type_refptr_get_address_space(type));
+
+            make_expr_call(ret, fn, args, 2);
+            v_break();
+        }
+
+    case v_type_kind_struct:
+        {
+            args = v_alloca(v_ast_opaque_expr_sptr, 4);
+            v_initialize(args, 4);
+            defer v_terminate(args, 4);
+
+            stmt = v_alloca(v_ast_opaque_stmt_sptr);
+            v_initialize(stmt);
+            defer v_terminate(stmt);
+
+            sstr = v_alloca(v_util_opaque_std_string, 3);
+            v_initialize(sstr, 3);
+            defer v_terminate(sstr, 3);
+
+            stk = *v_alloca(*char) := 0;
+            res = *v_alloca(*char) := 0;
+
+            has_body = !v_type_struct_is_opaque(type);
+
+            if (has_body)
+            {
+                n = v_type_struct_get_element_count(type);
+
+                v_ast_make_expr_integer(&args[2], n);
+
+                v_ast_make_expr_integer(&args[3], v_type_struct_is_packed(type));
+
+                if (n)
+                {
+                    v_std_string_set(&sstr[0], "v");
+                    v_std_string_append_number(&sstr[0], ctx[0]++);
+
+                    stk := v_std_string_get(&sstr[0]);
+
+                    make_stmt_call(stmt, stk, "llvm.stacksave", 0, 0);
+                    v_list_append(ctx[1], ctx[1], stmt);
+
+                    v_std_string_set(&sstr[1], "v");
+                    v_std_string_append_number(&sstr[1], ctx[0]++);
+
+                    var = v_std_string_get(&sstr[1]);
+
+                    tmp = v_alloca(v_ast_opaque_expr_sptr, 2);
+                    v_initialize(tmp, 2);
+                    defer v_terminate(tmp, 2);
+
+                    v_ast_make_expr_identifier(&tmp[0], "v_type_ptr");
+                    v_ast_make_expr_integer(&tmp[1], n);
+
+                    make_stmt_call(stmt, var, "v_alloca", tmp, 2);
+                    v_list_append(ctx[1], ctx[1], stmt);
+
+                    v_ast_make_expr_identifier(&args[1], var);
+
+                    i = *v_alloca(int) := 0;
+
+                    loop
+                    {
+                        if (i == n) v_break();
+
+                        v_ast_make_expr_identifier(&tmp[0], var);
+                        v_ast_make_expr_integer(&tmp[1], i);
+
+                        make_expr_call(&tmp[1], "v_getelementptr", tmp, 2);
+
+                        eval_type(&tmp[0], v_type_struct_get_type_at_index(type, i), ctx);
+
+                        make_stmt_call(stmt, "", "v_store", tmp, 2);
+                        v_list_append(ctx[1], ctx[1], stmt);
+
+                        ++i;
+                    }
+
+                    v_std_string_set(&sstr[2], "v");
+                    v_std_string_append_number(&sstr[2], ctx[0]++);
+
+                    res := v_std_string_get(&sstr[2]);
+                }
+                else
+                {
+                    v_ast_make_expr_integer(&args[1], 0);
+                }
+            }
+
+            name = v_type_struct_get_name(type);
+
+            if (name)
+            {
+                v_ast_make_expr_string(&args[0], name);
+
+                if (has_body)
+                {
+                    make_stmt_call(stmt, res, "v_struct_type_named", args, 1);
+                    v_list_append(ctx[1], ctx[1], stmt);
+
+                    v_ast_make_expr_identifier(&args[0], res);
+
+                    make_stmt_call(stmt, "", "v_type_struct_set_body", args, 4);
+                    v_list_append(ctx[1], ctx[1], stmt);
+                }
+                else
+                {
+                    make_expr_call(ret, "v_struct_type_named", args, 1);
+                }
+            }
+            else
+            {
+                //- assert(has_body);
+
+                make_stmt_call(stmt, res, fn, args+1, 3);
+                v_list_append(ctx[1], ctx[1], stmt);
+            }
+
+            if (stk)
+            {
+                v_ast_make_expr_identifier(&args[0], stk);
+
+                make_stmt_call(stmt, "", "llvm.stackrestore", args, 1);
+                v_list_append(ctx[1], ctx[1], stmt);
+            }
+
+            if (res)
+            {
+                v_ast_make_expr_identifier(ret, res);
+            }
+
+            v_break();
+        }
+
+    case v_type_kind_array:
+        {
+            args = v_alloca(v_ast_opaque_expr_sptr, 2);
+            v_initialize(args, 2);
+            defer v_terminate(args, 2);
+
+            eval_type(&args[0], v_type_array_get_element_type(type), ctx);
+
+            v_ast_make_expr_integer(&args[1], v_type_array_get_length(type));
+
+            make_expr_call(ret, fn, args, 2);
+            v_break();
+        }
+
+    case v_type_kind_vector:
+    case v_type_kind_svector:
+        {
+            args = v_alloca(v_ast_opaque_expr_sptr, 2);
+            v_initialize(args, 2);
+            defer v_terminate(args, 2);
+
+            eval_type(&args[0], v_type_vector_get_element_type(type), ctx);
+
+            v_ast_make_expr_integer(&args[1], v_type_vector_get_size(type));
+
+            make_expr_call(ret, fn, args, 2);
+            v_break();
+        }
+    }
+}
+
+
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("v_eval_type_intrinsic", voidc_intrinsic_t);
+
+    v_add_parameter_name(f, 0, "visitor",  voidc_visitor_ptr);
+    v_add_parameter_name(f, 1, "aux",      v_pointer_type(void, 0));
+    v_add_parameter_name(f, 2, "arg_list", v_ast_expr_list_ptr);
+}
+{
+    arg = v_alloca(v_ast_opaque_expr_sptr);
+    v_initialize(arg);
+    defer v_terminate(arg);
+
+    v_list_get_items(arg_list, 0, arg);
+
+    t = v_obtain_type(arg);
+
+    stmt_list = v_alloca(v_ast_opaque_stmt_list_sptr);
+    v_initialize(stmt_list);
+    defer v_terminate(stmt_list);
+
+    v_make_list_nil(stmt_list);
+
+    ctx = *v_alloca(ctx_t);
+
+    ctx[0] := 0;
+    ctx[1] := stmt_list;
+
+    expr = v_alloca(v_ast_opaque_expr_sptr);
+    v_initialize(expr);
+    defer v_terminate(expr);
+
+    eval_type(expr, t, ctx);
+
+    if (!v_empty(stmt_list))
+    {
+        v_ast_accept_visitor(v_cast(stmt_list, v_ast_base_ptr), visitor, aux);
+    }
+
+    v_set_result_type(v_type_ptr);
+
+    v_ast_accept_visitor(v_cast(expr, v_ast_base_ptr), visitor, aux);
+}
+
+//---------------------------------------------------------------------
+{   v_add_intrinsic("v_eval_type", v_eval_type_intrinsic); }
+
+
+//---------------------------------------------------------------------
+{v_debug_print_module(1);}
+{
+    s0 = v_alloca(int);
+
+    t1 = v_eval_type(voidc_intrinsic_t);
+
+    s1 = v_alloca(int);
+
+    printf("t0: %p, t1: %p\n", voidc_intrinsic_t, t1);
+
+    printf("s0: %p, s1: %p\n", s0, s1);
+}
+
+
+
+
+

@@ -1,0 +1,30 @@
+{   v_import("voidc_target.void");
+
+    v_import("llvm-c/Core.void");
+}
+
+{   v_import("printf.void"); }
+
+
+{
+    gc = LLVMGetGlobalContext();
+
+    t = LLVMStructCreateNamed(gc, "struct.try_mod");
+
+    printf("t: %p\n", t);
+}
+
+{
+    mod = LLVMModuleCreateWithName("try_mod");
+
+    t = LLVMGetTypeByName(mod, "struct.try_mod");
+
+    printf("t: %p\n", t);
+
+    b = LLVMGetTypeByName(mod, "struct.try_bad");
+
+    printf("b: %p\n", b);
+
+}
+
+

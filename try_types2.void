@@ -1,0 +1,133 @@
+{   v_import("voidc_types.void");
+    v_import("arithmetic.void");
+    v_import("if_then_else.void");
+    v_import("memory.void");
+    v_import("switch.void");
+
+    v_import("llvm-c/Core.void");
+}
+
+{   v_import("printf.void");
+}
+
+{   voidc_enable_statement_block();
+    voidc_enable_statement_if_then_else();
+    voidc_enable_statement_switch();
+}
+
+
+{   ivec4 = v_fvector_type(int, 4);
+
+    ivec4_ = v_type_get_llvm_type(ivec4);
+
+    isz = LLVMSizeOf(ivec4_);
+
+    v_add_local_constant("isz", size_t, isz);
+}
+
+{   printf("isz: %lu\n", isz);
+}
+
+
+
+{   ft = v_function_type(unsigned, 0, 0, false);
+
+    v_add_local_symbol("llvm.vscale.i32", ft, 0);
+
+    v_add_local_alias("llvm_vscale_i32", "llvm.vscale.i32");
+}
+
+
+{   ft = v_function_type(uint64_t, 0, 0, false);
+
+    v_add_local_symbol("llvm.vscale.i64", ft, 0);
+
+    v_add_local_alias("llvm_vscale_i64", "llvm.vscale.i64");
+}
+
+
+{
+    m = v_malloc(unsigned);
+
+    v_add_symbol("M", unsigned, m);
+}
+
+
+//{v_debug_print_module(1);}
+//{
+////  vscale = llvm_vscale_i32();
+//    vscale = llvm_vscale_i64();
+//
+////  v_store(vscale, M);
+//
+//
+//    printf("vscale: %u\n", vscale);
+//}
+
+
+{   v_mfree(M);
+}
+
+
+//{   tag = v_type_get_method_tag(v_type_ptr);
+//
+//    s = v_quark_to_string(tag);
+//
+//    q = v_load(v_type_pointer_visitor_method_tag);
+//
+//    printf("tag: %d, [%s], %d\n", tag, s, q);
+//
+//    tag = v_type_get_method_tag(voidc_opaque_type);
+//
+//    s = v_quark_to_string(tag);
+//
+//    q = v_load(v_type_struct_visitor_method_tag);
+//
+//    printf("tag: %d, [%s], %d\n", tag, s, q);
+//}
+
+{
+//  k = v_kind(v_type_ptr);
+    k = v_kind(voidc_opaque_type);
+
+    switch(k)
+    {
+    case v_type_kind_pointer:
+        printf("%d - pointer\n", k);
+        v_break();
+
+    case v_type_kind_struct:
+        printf("%d - struct\n", k);
+        v_break();
+
+    default:
+        printf("%d - ???\n", k);
+        v_break();
+    }
+}
+
+
+
+{   ivec4 = v_fvector_type(  int, 4);
+
+    v_add_local_symbol("ivec4", voidc_opaque_type, ivec4);
+
+    float = v_f32_type();
+
+    fvec4 = v_fvector_type(float, 4);
+
+    v_add_local_symbol("fvec4", voidc_opaque_type, fvec4);
+}
+
+{v_debug_print_module(1);}
+{
+    iv = v_alloca(ivec4);
+
+    iu = v_load(iv);
+
+    fu = v_cast(iu, fvec4);
+
+    ffu = v_binop(LLVMFMul, fu, fu);
+}
+
+

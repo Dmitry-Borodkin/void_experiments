@@ -1,0 +1,443 @@
+{
+    v_import("voidc_target.void");
+    v_import("voidc_types.void");
+    v_import("voidc_util.void");
+    v_import("voidc_ast.void");
+    v_import("voidc_quark.void");
+    v_import("voidc_visitor.void");
+    v_import("voidc_compiler.void");
+    v_import("vpeg_parser.void");
+    v_import("vpeg_grammar.void");
+    v_import("vpeg_context.void");
+
+    v_import("llvm-c/Core.void");
+
+    v_import("function_hack.void");
+    v_import("if_then_else.void");
+    v_import("block.void");
+    v_import("loop.void");
+    v_import("grammar.void");
+    v_import("switch.void");
+    v_import("expression.void");
+    v_import("defer.void");
+    v_import("definitions.void");
+}
+
+{   v_import("printf.void");
+}
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_loop();
+    voidc_enable_statement_grammar();
+    voidc_enable_statement_switch();
+    voidc_enable_expression();
+    voidc_enable_statement_defer();
+    voidc_enable_definitions();
+}
+
+
+//---------------------------------------------------------------------
+//- mk_stmt_var_defn - grammar action
+//---------------------------------------------------------------------
+{   tag_ptr = v_quark_ptr_from_string("v_ast_expr_node_t_visitor_method_tag");
+    opc_ptr = v_quark_ptr_from_string("op_infix_assign");
+
+    q_ref = v_reference_type(v_quark_t, 0);
+
+    v_add_symbol("expr_node_tag", q_ref, tag_ptr);
+    v_add_symbol("opc_assign",    q_ref, opc_ptr);
+}
+
+//---------------------------------------------------------------------
+mk_stmt_var_defn_grammar_action: (ret: v_util_std_any_ptr,
+                                  any: v_util_std_any_ptr,
+                                  any_count: size_t) -> void
+{
+//  printf("mk_stmt_var_defn_grammar_action\n");
+
+    name = v_std_any_get_pointer(v_util_opaque_std_string, any+0);
+
+    expr = v_std_any_get_pointer(v_ast_opaque_expr_sptr, any+1);
+
+    ast = v_alloca(v_ast_opaque_base_sptr, 2);
+    v_initialize(ast, 2);
+    defer v_terminate(ast, 2);
+
+    type  = v_cast(ast+0, v_ast_expr_ptr);
+    value = v_cast(ast+1, v_ast_expr_ptr);
+
+    v_copy(type, expr);
+
+    block
+    {
+        tag = v_ast_base_get_visitor_method_tag(ast+0);
+
+        if (tag != expr_node_tag)   v_break();
+
+        obj = v_ast_generic_get_object(ast+0);
+
+        lst = v_cast(obj, v_ast_generic_list_ptr);
+
+        op = v_alloca(v_ast_opaque_generic_list_sptr);
+        v_initialize(op);
+        defer v_terminate(op);
+
+        v_list_get_items(lst, 0, v_cast(op, v_ast_base_ptr));
+
+        opc = v_alloca(v_ast_opaque_expr_sptr);
+        v_initialize(opc);
+        defer v_terminate(opc);
+
+        v_list_get_items(op, 0, v_cast(opc, v_ast_base_ptr));
+
+        tag = v_ast_expr_integer_get_number(opc);
+
+        if (tag != opc_assign)  v_break();
+
+        v_list_get_items(lst, 1, ast+0, 2);
+    }
+//    else
+//    {
+//        //- ?!?!?!?!?!?!?
+//    }
+
+    lst = v_alloca(v_ast_opaque_expr_list_sptr);
+    v_initialize(lst);
+    defer v_terminate(lst);
+
+    v_make_list(lst, type, 2);
+
+    etmp = v_alloca(v_ast_opaque_expr_sptr);
+    v_initialize(etmp);
+    defer v_terminate(etmp);
+
+    v_ast_make_expr_identifier(etmp, "v.internal.var_defn");
+
+    v_ast_make_expr_call(etmp, etmp, lst);
+
+    stmt = v_alloca(v_ast_opaque_stmt_sptr);
+    v_initialize(stmt);
+    defer v_terminate(stmt);
+
+    v_ast_make_stmt(stmt, v_std_string_get(name), etmp);
+
+    v_std_any_set_pointer(ret, stmt);
+}
+
+
+//---------------------------------------------------------------------
+//- mk_stmt_val_defn - grammar action
+//---------------------------------------------------------------------
+mk_stmt_val_defn_grammar_action: (ret: v_util_std_any_ptr,
+                                  any: v_util_std_any_ptr,
+                                  any_count: size_t) -> void
+{
+//  printf("mk_stmt_val_defn_grammar_action\n");
+
+    name = v_std_any_get_pointer(v_util_opaque_std_string, any+0);
+
+    type = v_std_any_get_pointer(v_ast_opaque_expr_sptr, any+1);
+    expr = v_std_any_get_pointer(v_ast_opaque_expr_sptr, any+2);
+
+    lst = v_alloca(v_ast_opaque_expr_list_sptr);
+    v_initialize(lst);
+    defer v_terminate(lst);
+
+    v_make_list(lst, expr, 1);
+
+    v_list_append(lst, lst, type, 1);
+
+    etmp = v_alloca(v_ast_opaque_expr_sptr);
+    v_initialize(etmp);
+    defer v_terminate(etmp);
+
+    v_ast_make_expr_identifier(etmp, "v.internal.val_defn");
+
+    v_ast_make_expr_call(etmp, etmp, lst);
+
+    stmt = v_alloca(v_ast_opaque_stmt_sptr);
+    v_initialize(stmt);
+    defer v_terminate(stmt);
+
+    v_ast_make_stmt(stmt, v_std_string_get(name), etmp);
+
+    v_std_any_set_pointer(ret, stmt);
+}
+
+
+//---------------------------------------------------------------------
+//- v.internal.var_defn intrinsic
+//---------------------------------------------------------------------
+v_internal_var_defn_intrinsic: (visitor: voidc_visitor_ptr, aux: *void,
+                               arg_list: v_ast_expr_list_ptr) -> void
+{
+    arg = v_alloca(v_ast_opaque_expr_sptr, 2);
+    v_initialize(arg, 2);
+    defer v_terminate(arg, 2);
+
+    v_list_get_items(arg_list, 0, arg, 2);
+
+    v_set_result_type(INVIOLABLE_TAG);
+
+    v_ast_accept_visitor((arg+0: v_ast_base_ptr), visitor, aux);    //- Type
+
+    var_type = v_get_result_type();
+
+    t = v_type_refptr_get_element_type(var_type);       //- Sic!
+
+    v_set_result_type(t);
+
+    v_ast_accept_visitor((arg+1: v_ast_base_ptr), visitor, aux);    //- Value
+
+    v = v_get_result_value();
+
+    builder = v_target_get_builder();
+
+    t_ = v_type_get_llvm_type(t);
+
+    var_value = LLVMBuildAlloca(builder, t_, "");
+
+    LLVMBuildStore(builder, v, var_value);
+
+    v_set_result_type(var_type);
+    v_set_result_value(var_value);
+}
+
+
+//---------------------------------------------------------------------
+//- v.internal.val_defn intrinsic
+//---------------------------------------------------------------------
+v_internal_val_defn_intrinsic: (visitor: voidc_visitor_ptr, aux: *void,
+                               arg_list: v_ast_expr_list_ptr) -> void
+{
+    arg = v_alloca(v_ast_opaque_expr_sptr, 2);
+    v_initialize(arg, 2);
+    defer v_terminate(arg, 2);
+
+    v_list_get_items(arg_list, 0, arg, 2);
+
+    v_set_result_type(INVIOLABLE_TAG);
+
+    v_ast_accept_visitor(v_cast(arg+1, v_ast_base_ptr), visitor, aux);      //- Type
+
+    v_ast_accept_visitor(v_cast(arg+0, v_ast_base_ptr), visitor, aux);      //- Value
+}
+
+
+//---------------------------------------------------------------------
+//- Enable local definitions compiler
+//---------------------------------------------------------------------
+export
+voidc_enable_local_definitions_compiler: () -> void
+{
+    v_return_if(v_get_intrinsic("v.internal.var_defn"));
+
+    v_add_intrinsic("v.internal.var_defn", v_internal_var_defn_intrinsic);
+    v_add_intrinsic("v.internal.val_defn", v_internal_val_defn_intrinsic);
+}
+
+//---------------------------------------------------------------------
+//- Enable local definitions
+//---------------------------------------------------------------------
+export
+voidc_enable_local_definitions: () -> void
+{
+    v_return_if_not(voidc_has_grammar());
+    v_return_if(voidc_grammar_has_parser("stmt_defn"));
+
+//  printf("voidc_enable_local_definitions\n");
+
+    voidc_enable_local_definitions_compiler();
+
+
+    gr0 = v_alloca(v_peg_opaque_grammar_sptr);
+    v_initialize(gr0);
+    defer v_terminate(gr0);
+
+    v_peg_get_grammar(gr0);
+
+    grammar gr0
+    {
+    actions:
+        mk_stmt_var_defn = mk_stmt_var_defn_grammar_action;
+        mk_stmt_val_defn = mk_stmt_val_defn_grammar_action;
+
+    parsers:
+
+        stmt_defn = stmt_var_defn
+                  / stmt_val_defn
+                  ;
+
+
+        stmt_var_defn = i:identifier _':'_ tv: expr _';'                    { mk_stmt_var_defn(i, tv) }         //- Sic!!!
+                 ;
+
+
+        stmt_val_defn = i:identifier _':'_ t: expr _'='_ v:expr _';'        { mk_stmt_val_defn(i, t, v) }
+                 ;
+
+
+        stmt += stmt_defn;
+    }
+
+    v_peg_set_grammar(gr0);
+}
+
+
+//---------------------------------------------------------------------
+{   voidc_enable_local_definitions();
+}
+
+
+//{ v_debug_print_module(1); }
+{
+    v: &int := 7;
+
+
+    a: vec(int, 8) = 11*v;
+
+    printf("a[5]: %d\n", a[5]);
+
+
+    b: &vec(int, 8) := a + 11;
+
+    b7: &int = b[7];
+
+    b7 += 11;
+
+    printf("b7: %d\n", b7);
+    printf("b[7]: %d\n", b[7]);
+
+}
+
+
+//---------------------------------------------------------------------
+N = 32;
+M = 48;
+
+arr: &bool[M][N] := v_undef();
+
+{   i: &int := 0;
+    j: &int := 0;
+
+    loop
+    {
+        if (i >= N) v_break();
+
+        j := 0;
+
+        loop
+        {
+            if (j >= M) v_break();
+
+            arr[i][j] := (i == j);
+
+            ++j;
+        }
+
+        ++i;
+    }
+
+    printf("\n");
+
+    i := 0;
+
+    loop
+    {
+        if (i >= N) v_break();
+
+        j := 0;
+
+        loop
+        {
+            if (j >= M) v_break();
+
+            printf(" %d", (arr[i][j]: int));
+
+            ++j;
+        }
+
+        printf("\n");
+
+        ++i;
+    }
+}
+
+
+//---------------------------------------------------------------------
+utf8_symbols: &char[4][2][2] := v_undef();
+
+strncpy: (dst: *char, src: *const char, count: size_t) -> *char;
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    strncpy(&utf8_symbols[0][0][0], " ", 2);        //- space
+
+    strncpy(&utf8_symbols[0][1][0], "▀", 4);        //- upper half
+
+    strncpy(&utf8_symbols[1][0][0], "▄", 4);        //- lower half
+
+    strncpy(&utf8_symbols[1][1][0], "█", 4);        //- full block
+}
+
+
+//---------------------------------------------------------------------
+LLEN = 128;
+NUMS = 2 + 1*2*3*4*5*6*7;
+
+f_buf: &bool[2][LLEN] := v_undef();
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    n: &int := 1;
+    i: &int := v_undef();
+
+    loop
+    {
+        if (n > NUMS)   v_break();
+
+        p = n & 1;
+
+        i := 0;
+
+        loop
+        {
+            if (i >= LLEN)  v_break();
+            if (i > n)      v_break();
+
+            f_buf[i][p] := (n%(i+1) == 0);
+
+            ++i;
+        }
+
+        if (p)
+        {
+            i := 0;
+
+            loop
+            {
+                if (i >= LLEN)  v_break();
+                if (i > n)      v_break();
+
+                f0: int(2) = f_buf[i][0];       //- WTF?
+                f1: int(2) = f_buf[i][1];       //- WTF?
+
+                s = &utf8_symbols[f1][f0][0];
+
+                printf("%s", s);
+
+                ++i;
+            }
+
+            printf("\n");
+        }
+
+        ++n;
+    }
+}
+
+

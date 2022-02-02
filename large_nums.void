@@ -1,0 +1,162 @@
+{   v_import("loop.void");
+    v_import("arithmetic.void");
+    v_import("function_hack.void");
+}
+
+{   voidc_enable_statement_block();
+    voidc_enable_statement_if_then_else();
+    voidc_enable_statement_loop();
+}
+
+
+{   iBig = LLVMIntType(1024);
+
+    v_add_local_symbol("iBig", LLVMOpaqueType, iBig);
+}
+
+
+//---------------------------------------------------------------------
+{
+    typ0 = v_alloca(LLVMTypeRef, 2);
+    typ1 = v_getelementptr(typ0, 1);
+
+    v_store(v_util_std_string_ref, typ0);
+    v_store(iBig,                  typ1);
+
+    ft = LLVMFunctionType(void, typ0, 2, 0);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("append_iBig", ft);
+
+    p0 = LLVMGetParam(f, 0);    v_add_variable("sstr", p0);
+    p1 = LLVMGetParam(f, 1);    v_add_variable("num",  p1);
+}
+{
+    if (num) {}
+    else     v_return();
+
+    n15 = v_cast(LLVMZExt, 15, iBig);
+
+    dig = v_binop(LLVMAnd, num, n15);
+
+    dig = v_cast(LLVMTrunc, dig, int);
+
+    pc = v_getelementptr("0123456789ABCDEF", dig);
+
+    ch = v_load(pc);
+
+    ch = v_cast(LLVMZExt, ch, char32_t);
+
+    n4 = v_cast(LLVMZExt, 4, iBig);
+
+    num = v_binop(LLVMLShr, num, n4);
+
+    append_iBig(sstr, num);
+
+    v_std_string_append_char(sstr, ch);
+
+
+//    n10 = v_cast(LLVMZExt, 10, iBig);
+//
+//    rem = v_binop(LLVMURem, num, n10);
+//
+//    rem = v_cast(LLVMTrunc, rem, intptr_t);
+//
+//    num = v_binop(LLVMUDiv, num, n10);
+//
+//    append_iBig(sstr, num);
+//
+//    v_std_string_append_number(sstr, rem);
+}
+
+
+//---------------------------------------------------------------------
+{ v_debug_print_module(2); }
+{
+    typ0 = v_alloca(LLVMTypeRef);
+
+    v_store(iBig, typ0);
+
+    ft = LLVMFunctionType(void, typ0, 1, 0);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("print_iBig", ft);
+
+    p0 = LLVMGetParam(f, 0);    v_add_variable("num", p0);  LLVMSetValueName(p0, "num");
+}
+{
+    sstr = v_alloca(v_util_opaque_std_string);
+
+    v_initialize(sstr);
+
+    if (num)
+    {
+        v_std_string_set(sstr, "");
+
+        append_iBig(sstr, num);
+    }
+    else
+    {
+        v_std_string_set(sstr, "0");
+    }
+
+    str = v_std_string_get(sstr);
+
+    printf("num: 0x%s\n", str);
+
+    v_terminate(sstr);
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    num = v_cast(LLVMZExt, 2, iBig);
+
+    num = v_binop(LLVMMul, num, num);   print_iBig(num);
+    num = v_binop(LLVMMul, num, num);   print_iBig(num);
+    num = v_binop(LLVMMul, num, num);   print_iBig(num);
+    num = v_binop(LLVMMul, num, num);   print_iBig(num);
+    num = v_binop(LLVMMul, num, num);   print_iBig(num);
+    num = v_binop(LLVMMul, num, num);   print_iBig(num);
+    num = v_binop(LLVMMul, num, num);   print_iBig(num);
+    num = v_binop(LLVMMul, num, num);   print_iBig(num);
+    num = v_binop(LLVMMul, num, num);   print_iBig(num);
+
+
+    num = v_cast(LLVMSExt, -1, iBig);
+
+    print_iBig(num);
+}
+
+
+//---------------------------------------------------------------------
+{
+    typ0 = v_alloca(LLVMTypeRef, 2);
+    typ1 = v_getelementptr(typ0, 1);
+
+    v_store(int,  typ0);
+    v_store(bool, typ1);
+
+    ft = LLVMFunctionType(int, typ0, 2, 0);
+
+    v_add_symbol_type("llvm.abs.i32", ft);
+    v_add_local_alias("llvm_abs_i32", "llvm.abs.i32");
+
+    ft = LLVMFunctionType(int, typ0, 1, 0);
+
+    v_add_symbol_type("llvm.bitreverse.i32", ft);
+    v_add_local_alias("llvm_bitreverse_i32", "llvm.bitreverse.i32");
+}
+
+
+
+{
+//  n = llvm_abs_i32(-5, 0);
+
+    n = llvm_bitreverse_i32(32768);
+
+    printf("n: %d\n", n);
+}
+
+

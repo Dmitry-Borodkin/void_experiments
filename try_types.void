@@ -1,0 +1,64 @@
+{   v_import("llvm-c/Core.void");
+}
+
+{   v_import("printf.void");
+}
+
+
+{
+    gc = LLVMGetGlobalContext();
+
+    st = LLVMStructCreateNamed(gc, "struct.test");
+
+    v_add_local_symbol("st_type", LLVMOpaqueType, st);
+
+
+    LLVMStructSetBody(st, 0, 0, 0);
+
+    sz_v = LLVMSizeOf(st);
+
+    v_add_local_constant("st_size", sz_v);
+}
+
+
+{
+    l = LLVMIsLiteralStruct(st_type);
+
+    printf("st_type: %p, %d\n", st_type, l);
+
+    printf("st_size: %ld\n", st_size);
+}
+
+{
+    stz = LLVMStructType(0, 0, 0);
+
+    l = LLVMIsLiteralStruct(stz);
+
+    printf("stz: %p, %d\n", stz, l);
+}
+
+
+{
+    typ0 = v_alloca(LLVMTypeRef, 2);
+    typ1 = v_getelementptr(typ0, 1);
+
+    v_store(st_type, typ0);
+
+    i3 = LLVMIntType(3);
+
+    v_store(i3, typ1);
+
+    stt = LLVMStructType(typ0, 2, 0);
+
+
+
+}
+
+
+
+
+
+
+
+
+

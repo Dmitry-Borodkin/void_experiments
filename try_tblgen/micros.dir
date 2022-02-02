@@ -1,0 +1,33 @@
+                  ****  Типа, TableGen  ****                   │
+                                                               │
+                                                               │
+Include stack                                                  │include_stack.void
+                                                               │
+Preprocessor                                                   │preprocessor.void
+                                                               │
+                                                               │
+                                                               │
+test, kinda...                                                 │test_kinda.void
+                                                               │
+test file                                                      │test_file.txt
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+imports.void                                                   │imports.void
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
+clean...                                                       │rm -v *.voidc*
+───────────────────────────────────────────────────────────────│
+void.doit                                                      │void.doit
+                                                               │
+═══════════════════════════════════════════════════════════════│*
+micros.incdirs                                                 │micros.incdirs
+                                                               │

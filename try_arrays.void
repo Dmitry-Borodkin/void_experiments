@@ -1,0 +1,108 @@
+{   v_import("voidc_types.void"); }
+
+{   v_import("switch.void");
+}
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_loop();
+    voidc_enable_statement_switch();
+}
+
+{   v_import("printf.void"); }
+
+
+{   array_type = v_array_type(int, 10);
+
+    typ0 = v_alloca(v_type_ptr);
+
+    v_store(array_type, typ0);
+
+    ft = v_function_type(void, typ0, 1, false);
+
+    f = v_function_hack("try_array", ft);
+
+    v_add_parameter_name(f, 0, "arr",  array_type);
+
+    v_add_local_symbol("array_type", voidc_opaque_type, array_type);
+}
+{
+    v = v_alloca(array_type);
+
+    v_store(arr, v);
+
+    p = v_getelementptr(v, 0, 0);
+
+    a = v_load(p);
+
+
+    printf("arr[0]: %d\n", a);
+}
+
+
+{
+    v = v_alloca(array_type);
+
+    p = v_getelementptr(v, 0, 0);
+
+    v_store(777, p);
+
+    arr = v_load(v);
+
+
+    try_array(arr);
+}
+
+
+{   vec_type = v_fvector_type(int, 10);
+
+    v_add_local_symbol("vec_type", voidc_opaque_type, vec_type);
+}
+
+
+//{ v_debug_print_module(1); }
+{
+    v = v_alloca(vec_type);
+
+    p0 = v_getelementptr(v, 0, 0);
+    p1 = v_getelementptr(v, 0, 1);
+
+    v_store(777, p0);
+    v_store(0,   p1);
+
+    vv = v_load(v);
+
+    v2 = v_binop(LLVMAdd, vv, vv);
+
+    v_store(v2, v);
+
+
+    xx = v_load(p0);
+    yy = v_load(p1);
+
+    printf("xx: %d, yy: %d\n", xx, yy);
+
+
+    i = v_icmp(LLVMIntEQ, vv, v2);
+
+    ii = v_cast(i, vec_type);
+
+    v_store(ii, v);
+
+    xx = v_load(p0);
+    yy = v_load(p1);
+
+    printf("xx: %d, yy: %d\n", xx, yy);
+
+
+}
+
+
+{
+    v = v_cast(-1, intptr_t);
+    v = v_cast(v, v_type_ptr);
+
+    printf("t: %p\n", v);
+
+}
+

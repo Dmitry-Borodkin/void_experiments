@@ -1,0 +1,231 @@
+{   v_import("level-00");
+    v_import("level-01");
+
+    v_import("llvm-c/Core.void");
+}
+
+{   v_import("printf.void");
+}
+
+{   v_enable_level_01(); }
+
+
+//---------------------------------------------------------------------
+T = vec(int(8), 500);
+
+T_size = ((0: *T)+1 : size_t);
+
+{
+    printf("T_size: %d\n", (T_size: int));
+}
+
+{   typ = v_alloca(v_type_ptr, 2);
+
+    typ[0] := v_int_type(1);
+    typ[1] := T;
+
+    t = v_struct_type(typ, 2, false);
+
+    v_add_type("T_tst", t);
+}
+
+T_align = (&(0: *T_tst)[0][1] : size_t);
+
+{
+
+    printf("T_align: %d\n", (T_align: int));
+}
+
+
+//---------------------------------------------------------------------
+aligned_alloc: (alignment: size_t, size: size_t) -> *void;
+
+{
+    m = aligned_alloc(T_align, T_size);
+
+    printf("m: %p\n", m);
+
+    v_mfree(m);
+}
+
+
+//---------------------------------------------------------------------
+v_aligned_alloc_intrinsic: (vis: voidc_visitor_ptr, *void,
+                            arg_list: v_ast_expr_list_ptr, count: int) -> void
+{
+    arg_count = v_list_get_size(arg_list);
+
+    arg = v_alloca(v_ast_opaque_expr_sptr, arg_count);
+    v_initialize(arg, arg_count);
+    defer v_terminate(arg, arg_count);
+
+    v_list_get_items(arg_list, 0, arg, arg_count);
+
+    num_v: &LLVMValueRef := 0;
+
+    tt = v_get_result_type();
+
+    if (arg_count == 1)
+    {
+        num_v := LLVMConstInt(v_type_get_llvm_type(v_find_type("int")), 1, 0);
+    }
+    else
+    {
+        v_set_result_type(UNREFERENCE_TAG);
+
+        v_ast_accept_visitor((arg+1 : v_ast_base_ptr), vis);
+
+        num_v := v_get_result_value();
+    }
+
+    v_set_result_type(INVIOLABLE_TAG);
+
+    v_ast_accept_visitor((arg+0 : v_ast_base_ptr), vis);
+
+    type  = v_get_result_type();
+    type_ = v_type_get_llvm_type(type);
+
+    size_v  = LLVMSizeOf(type_);
+    align_v = LLVMAlignOf(type_);
+
+    builder = v_target_get_builder();
+
+    size_v = LLVMBuildMul(builder, size_v, num_v, "");
+
+    val: &LLVMValueRef[2] := 0;
+
+    val[0] := align_v;
+    val[1] := size_v;
+
+    void_res = LLVMBuildCall(builder, v_obtain_function("aligned_alloc"), &val[0], 2, "");
+
+    pt  = v_pointer_type(type, 0);
+    pt_ = v_type_get_llvm_type(pt);
+
+    ret = LLVMBuildBitCast(builder, void_res, pt_, "");
+
+    v_set_result_type(tt);
+
+    v_adopt_result(pt, ret);
+}
+
+{   v_add_intrinsic("v_aligned_alloc", v_aligned_alloc_intrinsic, 0);
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    p = v_aligned_alloc(vec(int(8), 1024), 10);
+
+    printf("p0: %p\n", p);
+    printf("p1: %p\n", p+1);
+
+    v_mfree(p);
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    v0: & int(16) := 1;
+
+//  v1: & vec(char, 2) = *(&v0 : *vec(char, 2));
+    v1: & char[2] = *(&v0 : *char[2]);
+
+    le = v1[0];
+
+    printf("le: %d\n", (le:int));
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    v: &vec(int(8), 2) := 0;
+
+    v := 77;
+
+    printf("v: (%d, %d)\n", v[0], v[1]);
+
+}
+
+
+//---------------------------------------------------------------------
+v_is_big_endian_intrinsic: (vis: voidc_visitor_ptr, *void,
+                               arg_list: v_ast_expr_list_ptr, count: int) -> void
+{
+    i16_ = v_type_get_llvm_type(v_int_type(16));
+
+    one_v = LLVMConstInt(i16_, 1, 0);
+
+    v2xi8_ = v_type_get_llvm_type(v_vector_type(v_int_type(8), 2));
+
+    vec_one_v = LLVMConstBitCast(one_v, v2xi8_);
+
+    i32_ = v_type_get_llvm_type(v_int_type(32));
+
+    res_v = LLVMConstExtractElement(vec_one_v, LLVMConstNull(i32_));
+
+    i8_ = v_type_get_llvm_type(v_int_type(8));
+
+    ret_v = LLVMConstICmp(LLVMIntEQ, res_v, LLVMConstNull(i8_));
+
+    v_set_result_type(v_uint_type(1));      //- "bool"
+    v_set_result_value(ret_v);
+}
+
+{   v_add_intrinsic("v_is_big_endian", v_is_big_endian_intrinsic, 0);
+}
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+
+
+le = !v_is_big_endian();
+
+
+{
+    printf("le: %d\n", (le:int));
+}
+
+
+//---------------------------------------------------------------------
+{
+    win32 = v_find_constant("_WIN32", 0, 0);
+
+    printf("win32: %d\n", (win32: int));
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    a: &int[3] := 0;
+
+    a[0] := 7;
+    a[1] := 8;
+    a[2] := 9;
+
+    A = v_load(&a);
+
+    printf("A: (%d, %d, %d)\n", A[0], A[1], A[2]);
+
+    C = v_load(("Hello" : *char[6]));
+
+    printf("C: (%c, %c, %c, %c, %c)\n", C[0], C[1], C[2], C[3], C[4]);
+
+}
+
+
+//---------------------------------------------------------------------
+{ v_debug_print_module(1); }
+{
+//  printf("\n[ %lc ]\n", 'Ы');
+    printf("\n[ %lc ]\n", 126);
+
+
+
+}
+
+

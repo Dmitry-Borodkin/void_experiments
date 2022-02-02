@@ -1,0 +1,76 @@
+{   v_import("function_hack.void");
+}
+
+{   v_import("printf.void"); }
+
+
+
+{
+    void_ptr = v_pointer_type(void, 0);
+    v_add_local_symbol("void_ptr", voidc_opaque_type, void_ptr);
+}
+
+
+//---------------------------------------------------------------------
+{   module = LLVMModuleCreateWithName("my_try_aliases_mod");
+
+    v_set_module(module);
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    module = v_get_module();
+
+
+    int_ = v_type_get_llvm_type(int);
+
+    c = LLVMConstInt(int_, 77, 0);
+
+
+    void_ptr_ = v_type_get_llvm_type(void_ptr);
+
+    cp = LLVMConstIntToPtr(c, void_ptr_);
+
+    LLVMAddAlias(module, void_ptr_, cp, "alias_cp");
+
+    v_add_local_symbol("alias_cp", void_ptr, 0);
+
+}
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+{
+    module = v_get_module();
+
+    //-----------------------------------------------------------------
+    v_debug_print_module(1);
+
+    voidc_prepare_module_for_jit(module);
+
+    //-----------------------------------------------------------------
+    PH = v_alloca(LLVMOrcModuleHandle);
+
+    LLVMOrcAddEagerlyCompiledIR(voidc_jit, PH, module,
+                                voidc_resolver, 0
+                               );
+
+    //-----------------------------------------------------------------
+    v_set_module(0);
+}
+
+
+//---------------------------------------------------------------------
+{   v_debug_print_module(1); }
+{
+    c = v_cast(alias_cp, int);
+
+    printf("c: %d\n", c);
+
+
+}
+
+

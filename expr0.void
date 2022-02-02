@@ -1,0 +1,1392 @@
+{   v_import("grammar.void");
+    v_import("switch.void");
+    v_import("loop.void");
+}
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_grammar();
+    voidc_enable_statement_switch();
+    voidc_enable_statement_loop();
+}
+
+
+//---------------------------------------------------------------------
+{   void_ptr = v_pointer_type(void, 0);
+    char_ptr = v_pointer_type(char, 0);
+
+    v_add_local_symbol("void_ptr", voidc_opaque_type, void_ptr);
+    v_add_local_symbol("char_ptr", voidc_opaque_type, char_ptr);
+}
+
+
+//---------------------------------------------------------------------
+{   typ0 = v_alloca(v_type_ptr, 3);
+    typ1 = v_getelementptr(typ0, 1);
+    typ2 = v_getelementptr(typ0, 2);
+
+
+    //-----------------------------------------------------------------
+    //- quark ...
+    //-----------------------------------------------------------------
+    quark = v_quark_from_string("v_ast_expr_node_t_visitor_method_tag");
+
+    quark_ll = v_cast(quark, long_long);
+
+    v_quark_t_ = v_type_get_llvm_type(v_quark_t);
+
+    quark_v = LLVMConstInt(v_quark_t_, quark_ll, 0);
+
+    v_add_local_constant("quark", v_quark_t, quark_v);
+
+    v_add_local_symbol("quark_v", LLVMOpaqueValue, quark_v);
+
+
+    //-----------------------------------------------------------------
+    //- method ...
+    //-----------------------------------------------------------------
+    v_store(voidc_visitor_ptr,      typ0);
+    v_store(void_ptr,               typ1);
+    v_store(v_ast_generic_list_ptr, typ2);
+
+    method_ft  = v_function_type(void, typ0, 3, false);
+    method_ptr = v_pointer_type(method_ft, 0);
+
+    v_add_local_symbol("method_ft",  voidc_opaque_type, method_ft);
+    v_add_local_symbol("method_ptr", voidc_opaque_type, method_ptr);
+}
+
+
+//---------------------------------------------------------------------
+{   int_ = v_type_get_llvm_type(int);
+
+    t = LLVMConstInt(int_, -1, 0);  v_add_local_constant("op_from_arg_tag", int, t);
+
+    t = LLVMConstInt(int_,  0, 0);  v_add_local_constant("op_infix_add_tag", int, t);
+    t = LLVMConstInt(int_,  1, 0);  v_add_local_constant("op_infix_sub_tag", int, t);
+    t = LLVMConstInt(int_,  2, 0);  v_add_local_constant("op_infix_mul_tag", int, t);
+    t = LLVMConstInt(int_,  3, 0);  v_add_local_constant("op_infix_div_tag", int, t);
+    t = LLVMConstInt(int_,  4, 0);  v_add_local_constant("op_infix_rem_tag", int, t);
+    t = LLVMConstInt(int_,  5, 0);  v_add_local_constant("op_infix_assign_tag", int, t);
+
+    t = LLVMConstInt(int_,  6, 0);  v_add_local_constant("op_postfix_inc_tag", int, t);
+    t = LLVMConstInt(int_,  7, 0);  v_add_local_constant("op_postfix_dec_tag", int, t);
+
+    t = LLVMConstInt(int_,  8, 0);  v_add_local_constant("op_prefix_inc_tag", int, t);
+    t = LLVMConstInt(int_,  9, 0);  v_add_local_constant("op_prefix_dec_tag", int, t);
+    t = LLVMConstInt(int_, 10, 0);  v_add_local_constant("op_prefix_plus_tag", int, t);
+    t = LLVMConstInt(int_, 11, 0);  v_add_local_constant("op_prefix_minus_tag", int, t);
+    t = LLVMConstInt(int_, 12, 0);  v_add_local_constant("op_prefix_star_tag", int, t);
+    t = LLVMConstInt(int_, 13, 0);  v_add_local_constant("op_prefix_amp_tag", int, t);
+}
+
+
+//---------------------------------------------------------------------
+{   module = LLVMModuleCreateWithName("voidc_expression_mod");
+
+    v_set_module(module);
+}
+
+
+//---------------------------------------------------------------------
+//- expr_node destroy ...
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("voidc_ast_expr_node_destroy", v_ast_generic_destroy_fun_t);
+
+    v_add_parameter_name(f, 0, "void_obj", void_ptr);
+}
+{
+//  printf("voidc_ast_expr_node_destroy\n");
+
+    obj = v_cast(void_obj, v_ast_generic_list_ptr);
+
+    v_terminate(obj);
+
+    v_mfree(obj);
+}
+
+
+//---------------------------------------------------------------------
+//- expr_node accept ...
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("voidc_ast_expr_node_accept", v_ast_generic_accept_fun_t);
+
+    v_add_parameter_name(f, 0, "void_obj", void_ptr);
+    v_add_parameter_name(f, 1, "visitor",  voidc_visitor_ptr);
+    v_add_parameter_name(f, 2, "aux",      void_ptr);
+}
+{
+    obj = v_cast(void_obj, v_ast_generic_list_ptr);
+
+    void_method = voidc_visitor_get_void_method(visitor, quark);
+
+    method = v_cast(void_method, method_ptr);
+
+    method(visitor, aux, obj);
+}
+
+
+//-----------------------------------------------------------------------
+//- expr_node vtable ...
+//-------------------------------------------------------------------
+{
+    module = v_get_module();
+
+    val0 = v_alloca(LLVMValueRef, 3);
+    val1 = v_getelementptr(val0, 1);
+    val2 = v_getelementptr(val0, 2);
+
+    destroy_f = v_obtain_function("voidc_ast_expr_node_destroy");
+    accept_f  = v_obtain_function("voidc_ast_expr_node_accept");
+
+    v_store(destroy_f, val0);
+    v_store(accept_f,  val1);
+    v_store(quark_v,   val2);
+
+    v_ast_generic_vtable_ = v_type_get_llvm_type(v_ast_generic_vtable);
+
+    vtable_v = LLVMConstNamedStruct(v_ast_generic_vtable_, val0, 3);
+
+    vtable_g = LLVMAddGlobal(module, v_ast_generic_vtable_, "voidc_ast_expr_node_vtable");
+
+    LLVMSetInitializer(vtable_g, vtable_v);
+
+    v_add_local_symbol("voidc_ast_expr_node_vtable", v_ast_generic_vtable, 0);      //- Sic!
+}
+
+
+//---------------------------------------------------------------------
+//- v_ast_make_expr_node - ...
+//---------------------------------------------------------------------
+{
+    typ0 = v_alloca(v_type_ptr, 3);
+    typ1 = v_getelementptr(typ0, 1);
+    typ2 = v_getelementptr(typ0, 2);
+
+    v_store(v_ast_base_ptr, typ0);
+    v_store(v_ast_base_ptr, typ1);
+    v_store(int,            typ2);
+
+    ft = v_function_type(void, typ0, 3, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("v_ast_make_expr_node", ft);
+
+    v_add_parameter_name(f, 0, "ret",   v_ast_base_ptr);
+    v_add_parameter_name(f, 1, "ast0",  v_ast_base_ptr);
+    v_add_parameter_name(f, 2, "count", int);
+}
+{
+    list = v_malloc(v_ast_opaque_generic_list_sptr);
+    v_initialize(list);
+
+    v_make_list(list, 0, ast0, count);
+
+    ret = v_cast(ret, v_ast_generic_ptr);
+
+    v_ast_make_generic(ret, voidc_ast_expr_node_vtable, list);
+}
+
+
+//---------------------------------------------------------------------
+//- v_ast_make_call_expr - HACK!
+//---------------------------------------------------------------------
+{
+    typ0 = v_alloca(v_type_ptr, 3);
+    typ1 = v_getelementptr(typ0, 1);
+    typ2 = v_getelementptr(typ0, 2);
+
+    v_store(v_ast_call_ptr, typ0);
+    v_store(v_ast_base_ptr, typ1);
+    v_store(int,            typ2);
+
+    ft = v_function_type(void, typ0, 3, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("v_ast_make_call_expr", ft);
+
+    v_add_parameter_name(f, 0, "ret",   v_ast_call_ptr);
+    v_add_parameter_name(f, 1, "ast0",  v_ast_base_ptr);
+    v_add_parameter_name(f, 2, "count", int);
+}
+{
+    list = v_malloc(v_ast_opaque_generic_list_sptr);
+    v_initialize(list);
+
+    v_make_list(list, 0, ast0, count);
+
+    v_ast_make_call_generic(ret, voidc_ast_expr_node_vtable, list);
+}
+
+
+//---------------------------------------------------------------------
+//- Operators utility...
+//---------------------------------------------------------------------
+{
+    typ0 = v_alloca(v_type_ptr, 4);
+    typ1 = v_getelementptr(typ0, 1);
+    typ2 = v_getelementptr(typ0, 2);
+    typ3 = v_getelementptr(typ0, 3);
+
+    v_store(v_util_std_any_ptr, typ0);
+    v_store(int,                typ1);
+    v_store(int,                typ2);
+    v_store(int,                typ3);
+
+    ft = v_function_type(void, typ0, 4, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("make_op_infix", ft);
+
+    v_add_parameter_name(f, 0, "ret",  v_util_std_any_ptr);
+    v_add_parameter_name(f, 1, "tag",  int);
+    v_add_parameter_name(f, 2, "prec", int);
+    v_add_parameter_name(f, 3, "left", int);
+}
+{
+    arg0 = v_alloca(v_ast_opaque_argument_sptr, 3);
+    v_initialize(arg0, 3);
+
+    arg1 = v_getelementptr(arg0, 1);
+    arg2 = v_getelementptr(arg0, 2);
+
+    t = v_cast(tag,  intptr_t);
+    p = v_cast(prec, intptr_t);
+    l = v_cast(left, intptr_t);
+
+    v_ast_make_arg_integer(arg0, t);
+    v_ast_make_arg_integer(arg1, p);
+    v_ast_make_arg_integer(arg2, l);
+
+    ar_l = v_alloca(v_ast_opaque_arg_list_sptr);
+    v_initialize(ar_l);
+
+    v_make_list(ar_l, arg0, 3);
+
+    v_std_any_set_pointer(ret, ar_l);
+
+    v_terminate(ar_l);
+    v_terminate(arg0, 3);
+}
+
+//---------------------------------------------------------------------
+{
+    typ0 = v_alloca(v_type_ptr, 3);
+    typ1 = v_getelementptr(typ0, 1);
+    typ2 = v_getelementptr(typ0, 2);
+
+    v_store(v_util_std_any_ptr, typ0);
+    v_store(int,                typ1);
+    v_store(int,                typ2);
+
+    ft = v_function_type(void, typ0, 3, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("make_op_unary", ft);
+
+    v_add_parameter_name(f, 0, "ret",  v_util_std_any_ptr);
+    v_add_parameter_name(f, 1, "tag",  int);
+    v_add_parameter_name(f, 2, "prec", int);
+}
+{
+    arg0 = v_alloca(v_ast_opaque_argument_sptr, 2);
+    v_initialize(arg0, 2);
+
+    arg1 = v_getelementptr(arg0, 1);
+
+    t = v_cast(tag,  intptr_t);
+    p = v_cast(prec, intptr_t);
+
+    v_ast_make_arg_integer(arg0, t);
+    v_ast_make_arg_integer(arg1, p);
+
+    ar_l = v_alloca(v_ast_opaque_arg_list_sptr);
+    v_initialize(ar_l);
+
+    v_make_list(ar_l, arg0, 2);
+
+    v_std_any_set_pointer(ret, ar_l);
+
+    v_terminate(ar_l);
+    v_terminate(arg0, 2);
+}
+
+
+//---------------------------------------------------------------------
+//- Precedence climbing algorithm...
+//---------------------------------------------------------------------
+//- compute_expr(min_prec):
+//-   result = compute_atom()
+//-
+//-   while cur token is a binary operator with precedence >= min_prec:
+//-     prec, assoc = precedence and associativity of current token
+//-     if assoc is left:
+//-       next_min_prec = prec + 1
+//-     else:
+//-       next_min_prec = prec
+//-     rhs = compute_expr(next_min_prec)
+//-     result = compute operator(result, rhs)
+//-
+//-   return result
+//---------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------
+//- Global variable(s)
+//---------------------------------------------------------------------
+{
+    module = v_get_module();
+
+    //-----------------------------------------------------------------
+    //- precedence_stack_node_t ...
+    //-----------------------------------------------------------------
+    precedence_stack_node_t = v_struct_type_named("struct.precedence_stack_node_t");
+
+    precedence_stack_node_ptr  = v_pointer_type(precedence_stack_node_t, 0);
+    precedence_stack_node_ptr_ = v_type_get_llvm_type(precedence_stack_node_ptr);
+
+    typ0 = v_alloca(v_type_ptr, 2);
+    typ1 = v_getelementptr(typ0, 1);
+
+    v_store(intptr_t,                  typ0);       //- Precedence value
+    v_store(precedence_stack_node_ptr, typ1);       //- Next node ...
+
+    v_type_struct_set_body(precedence_stack_node_t, typ0, 2, 0);
+
+    //-----------------------------------------------------------------
+    stack_g = LLVMAddGlobal(module, precedence_stack_node_ptr_, "precedence_stack");
+
+    stack_u = LLVMGetUndef(precedence_stack_node_ptr_);
+
+    LLVMSetInitializer(stack_g, stack_u);
+
+    //-----------------------------------------------------------------
+    v_add_local_symbol("precedence_stack_node_t",   voidc_opaque_type, precedence_stack_node_t);
+    v_add_local_symbol("precedence_stack_node_ptr", voidc_opaque_type, precedence_stack_node_ptr);
+
+    v_add_local_symbol("precedence_stack", precedence_stack_node_ptr, 0);       //- Sic!
+}
+
+
+//---------------------------------------------------------------------
+//- Precedence stack utility...
+//---------------------------------------------------------------------
+{
+    typ0 = v_alloca(v_type_ptr);
+
+    v_store(intptr_t, typ0);
+
+    ft = v_function_type(void, typ0, 1, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("precedence_stack_push", ft);
+
+    v_add_parameter_name(f, 0, "prec", intptr_t);
+}
+{
+//  printf("precedence_stack_push(%d)\n", prec);
+
+    node = v_malloc(precedence_stack_node_t);
+
+    p_prec = v_getelementptr(node, 0, 0);
+    p_next = v_getelementptr(node, 0, 1);
+
+    cur = v_load(precedence_stack);
+
+    v_store(prec, p_prec);
+    v_store(cur,  p_next);
+
+    v_store(node, precedence_stack);
+}
+
+//---------------------------------------------------------------------
+{
+    ft = v_function_type(intptr_t, 0, 0, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("precedence_stack_pop", ft);
+}
+{
+    node = v_load(precedence_stack);
+
+    p_prec = v_getelementptr(node, 0, 0);
+    p_next = v_getelementptr(node, 0, 1);
+
+    next = v_load(p_next);
+
+    v_store(next, precedence_stack);
+
+    prec = v_load(p_prec);
+
+    v_mfree(node);
+
+//  printf("precedence_stack_pop: %d\n", prec);
+
+    v_return(prec);
+}
+
+//---------------------------------------------------------------------
+{
+    ft = v_function_type(intptr_t, 0, 0, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("precedence_stack_peek", ft);
+}
+{
+    node = v_load(precedence_stack);
+
+    p_prec = v_getelementptr(node, 0, 0);
+
+    prec = v_load(p_prec);
+
+    v_return(prec);
+}
+
+
+//---------------------------------------------------------------------
+//- expr_start - grammar action
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("expr_start_grammar_action", v_peg_grammar_action_fun_t);
+
+    v_add_parameter_name(f, 0, "ret",       v_util_std_any_ptr);
+    v_add_parameter_name(f, 1, "any0",      v_util_std_any_ptr);
+    v_add_parameter_name(f, 2, "any_count", size_t);
+}
+{
+//  printf("expr_start_grammar_action\n");
+
+    precedence_stack_push(0);
+
+    v_std_any_set_value(ret, 1);
+}
+
+//---------------------------------------------------------------------
+//- expr_stop - grammar action
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("expr_stop_grammar_action", v_peg_grammar_action_fun_t);
+
+    v_add_parameter_name(f, 0, "ret",       v_util_std_any_ptr);
+    v_add_parameter_name(f, 1, "any0",      v_util_std_any_ptr);
+    v_add_parameter_name(f, 2, "any_count", size_t);
+}
+{
+//  printf("expr_stop_grammar_action\n");
+
+    precedence_stack_pop();
+
+    v_copy(ret, any0);
+}
+
+//---------------------------------------------------------------------
+//- expr_cleanup - grammar action
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("expr_cleanup_grammar_action", v_peg_grammar_action_fun_t);
+
+    v_add_parameter_name(f, 0, "ret",       v_util_std_any_ptr);
+    v_add_parameter_name(f, 1, "any0",      v_util_std_any_ptr);
+    v_add_parameter_name(f, 2, "any_count", size_t);
+}
+{
+//  printf("expr_cleanup_grammar_action\n");
+
+    precedence_stack_pop();
+
+    //- Just fail!
+}
+
+
+//---------------------------------------------------------------------
+//- expr_check_infix - grammar action
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("expr_check_infix_grammar_action", v_peg_grammar_action_fun_t);
+
+    v_add_parameter_name(f, 0, "ret",       v_util_std_any_ptr);
+    v_add_parameter_name(f, 1, "any0",      v_util_std_any_ptr);
+    v_add_parameter_name(f, 2, "any_count", size_t);
+}
+{
+//  printf("expr_check_infix_grammar_action\n");
+
+    min_prec = precedence_stack_peek();
+
+    op_fld = v_std_any_get_pointer(v_ast_opaque_arg_list_sptr, any0);
+
+    arg0 = v_alloca(v_ast_opaque_argument_sptr, 2);
+    arg1 = v_getelementptr(arg0, 1);
+
+    v_initialize(arg0, 2);
+
+    v_list_get_items(op_fld, 1, arg0);
+    v_list_get_items(op_fld, 2, arg1);
+
+    prec = v_ast_arg_integer_get_number(arg0);
+    left = v_ast_arg_integer_get_number(arg1);
+
+    v_terminate(arg0, 2);
+
+
+    lt = v_icmp(LLVMIntULT, prec, min_prec);
+
+    if (lt) v_return();                             //- NOK
+
+
+    next_min_prec = v_binop(LLVMAdd, prec, left);
+
+
+    precedence_stack_push(next_min_prec);
+
+
+    v_std_any_set_value(ret, 1);                    //- OK
+}
+
+
+//---------------------------------------------------------------------
+//- expr_infix - grammar action
+//---------------------------------------------------------------------
+//{   v_debug_print_module(1); }
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("expr_infix_grammar_action", v_peg_grammar_action_fun_t);
+
+    v_add_parameter_name(f, 0, "ret",       v_util_std_any_ptr);
+    v_add_parameter_name(f, 1, "any0",      v_util_std_any_ptr);
+    v_add_parameter_name(f, 2, "any_count", size_t);
+}
+{
+//  printf("expr_infix_grammar_action\n");
+
+    any1 = v_getelementptr(any0, 1);
+    any2 = v_getelementptr(any0, 2);
+
+    op  = v_std_any_get_pointer(v_ast_opaque_arg_list_sptr, any0);
+    lhs = v_std_any_get_pointer(v_ast_opaque_base_sptr,     any1);
+    rhs = v_std_any_get_pointer(v_ast_opaque_base_sptr,     any2);
+
+    op = v_cast(op, v_ast_base_ptr);
+
+    ast0 = v_alloca(v_ast_opaque_base_sptr, 3);
+    ast1 = v_getelementptr(ast0, 1);
+    ast2 = v_getelementptr(ast0, 2);
+
+    v_initialize(ast0, 3);
+
+    v_copy(ast0, op);
+    v_copy(ast1, lhs);
+    v_copy(ast2, rhs);
+
+    v_ast_make_expr_node(ast0, ast0, 3);
+
+    v_std_any_set_pointer(ret, ast0);
+
+    v_terminate(ast0, 3);
+
+    precedence_stack_pop();
+}
+
+
+//---------------------------------------------------------------------
+//- expr_make_postfix - grammar action
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("expr_make_postfix_grammar_action", v_peg_grammar_action_fun_t);
+
+    v_add_parameter_name(f, 0, "ret",       v_util_std_any_ptr);
+    v_add_parameter_name(f, 1, "any0",      v_util_std_any_ptr);
+    v_add_parameter_name(f, 2, "any_count", size_t);
+}
+{
+//  printf("expr_make_postfix_grammar_action\n");
+
+    min_prec = precedence_stack_peek();
+
+    any1 = v_getelementptr(any0, 1);
+
+    op = v_std_any_get_pointer(v_ast_opaque_arg_list_sptr, any1);
+
+    arg0 = v_alloca(v_ast_opaque_argument_sptr);
+    v_initialize(arg0);
+
+    v_list_get_items(op, 1, arg0);
+
+    prec = v_ast_arg_integer_get_number(arg0);
+
+    v_terminate(arg0);
+
+
+    lt = v_icmp(LLVMIntULT, prec, min_prec);
+
+    if (lt) v_return();                             //- NOK
+
+
+    lhs = v_std_any_get_pointer(v_ast_opaque_base_sptr, any0);
+
+    op = v_cast(op, v_ast_base_ptr);
+
+    ast0 = v_alloca(v_ast_opaque_base_sptr, 2);
+    ast1 = v_getelementptr(ast0, 1);
+
+    v_initialize(ast0, 2);
+
+    v_copy(ast0, op);
+    v_copy(ast1, lhs);
+
+    v_ast_make_expr_node(ast0, ast0, 2);
+
+    v_std_any_set_pointer(ret, ast0);               //- OK
+
+    v_terminate(ast0, 2);
+}
+
+
+//---------------------------------------------------------------------
+//- expr_push_prefix - grammar action
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("expr_push_prefix_grammar_action", v_peg_grammar_action_fun_t);
+
+    v_add_parameter_name(f, 0, "ret",       v_util_std_any_ptr);
+    v_add_parameter_name(f, 1, "any0",      v_util_std_any_ptr);
+    v_add_parameter_name(f, 2, "any_count", size_t);
+}
+{
+//  printf("expr_push_prefix_grammar_action\n");
+
+    op = v_std_any_get_pointer(v_ast_opaque_arg_list_sptr, any0);
+
+    arg0 = v_alloca(v_ast_opaque_argument_sptr);
+    v_initialize(arg0);
+
+    v_list_get_items(op, 1, arg0);
+
+    prec = v_ast_arg_integer_get_number(arg0);
+
+    precedence_stack_push(prec);
+
+    v_std_any_set_value(ret, 1);
+
+    v_terminate(arg0);
+}
+
+
+//---------------------------------------------------------------------
+//- expr_prefix - grammar action
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("expr_prefix_grammar_action", v_peg_grammar_action_fun_t);
+
+    v_add_parameter_name(f, 0, "ret",       v_util_std_any_ptr);
+    v_add_parameter_name(f, 1, "any0",      v_util_std_any_ptr);
+    v_add_parameter_name(f, 2, "any_count", size_t);
+}
+{
+//  printf("expr_prefix_grammar_action\n");
+
+    any1 = v_getelementptr(any0, 1);
+
+    op  = v_std_any_get_pointer(v_ast_opaque_arg_list_sptr, any0);
+    rhs = v_std_any_get_pointer(v_ast_opaque_base_sptr,     any1);
+
+    op = v_cast(op, v_ast_base_ptr);
+
+    ast0 = v_alloca(v_ast_opaque_base_sptr, 2);
+    ast1 = v_getelementptr(ast0, 1);
+
+    v_initialize(ast0, 2);
+
+    v_copy(ast0, op);
+    v_copy(ast1, rhs);
+
+    v_ast_make_expr_node(ast0, ast0, 2);
+
+    v_std_any_set_pointer(ret, ast0);
+
+    v_terminate(ast0, 2);
+
+    precedence_stack_pop();
+}
+
+
+//---------------------------------------------------------------------
+//- primary_arg - grammar action
+//---------------------------------------------------------------------
+//{   v_debug_print_module(1); }
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("primary_arg_grammar_action", v_peg_grammar_action_fun_t);
+
+    v_add_parameter_name(f, 0, "ret",       v_util_std_any_ptr);
+    v_add_parameter_name(f, 1, "any0",      v_util_std_any_ptr);
+    v_add_parameter_name(f, 2, "any_count", size_t);
+}
+{
+//  printf("primary_arg_grammar_action\n");
+
+    arg = v_std_any_get_pointer(v_ast_opaque_argument_sptr, any0);
+
+
+    arg0 = v_alloca(v_ast_opaque_argument_sptr, 2);
+    v_initialize(arg0, 2);
+
+    arg1 = v_getelementptr(arg0, 1);
+
+    t = v_cast(op_from_arg_tag, intptr_t);
+
+    v_ast_make_arg_integer(arg0, t);
+
+    v_copy(arg1, arg);
+
+
+    op = v_alloca(v_ast_opaque_arg_list_sptr);
+    v_initialize(op);
+
+    v_make_list(op, arg0, 2);
+
+    op_base = v_cast(op, v_ast_base_ptr);
+
+
+    ast0 = v_alloca(v_ast_opaque_base_sptr);
+    v_initialize(ast0);
+
+    v_ast_make_expr_node(ast0, op_base, 1);
+
+    v_std_any_set_pointer(ret, ast0);
+
+
+    v_terminate(ast0);
+    v_terminate(op);
+    v_terminate(arg0, 2);
+}
+
+
+
+//---------------------------------------------------------------------
+//- mk_call_expr - grammar action
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("mk_call_expr_grammar_action", v_peg_grammar_action_fun_t);
+
+    v_add_parameter_name(f, 0, "ret",       v_util_std_any_ptr);
+    v_add_parameter_name(f, 1, "any0",      v_util_std_any_ptr);
+    v_add_parameter_name(f, 2, "any_count", size_t);
+}
+{
+//  printf("mk_call_expr_grammar_action\n");
+
+    ast0 = v_std_any_get_pointer(v_ast_opaque_base_sptr, any0);
+
+    call = v_alloca(v_ast_opaque_call_sptr);
+    v_initialize(call);
+
+    v_ast_make_call_expr(call, ast0, 1);        //- Special case...
+
+    v_std_any_set_pointer(ret, call);
+
+    v_terminate(call);
+}
+
+
+//---------------------------------------------------------------------
+//- compile_ast_expr_node_t - visitor method
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("compile_ast_expr_node_t", method_ft);
+
+    v_add_parameter_name(f, 0, "visitor", voidc_visitor_ptr);
+    v_add_parameter_name(f, 1, "aux",     void_ptr);
+    v_add_parameter_name(f, 2, "list",    v_ast_generic_list_ptr);
+}
+{
+//printf("(");
+
+    count = v_list_get_size(list);
+
+    ast0 = v_alloca(v_ast_opaque_base_sptr, count);
+    v_initialize(ast0, count);
+
+    v_list_get_items(list, 0, ast0, count);
+
+
+    tag = v_ast_base_get_visitor_method_tag(ast0);
+
+    f = v_icmp(LLVMIntEQ, tag, quark);          //- Special case...
+    if (f)
+    {
+        v_ast_accept_visitor(ast0, visitor, aux);
+
+        v_terminate(ast0, count);
+        v_return();
+    }
+
+
+    op = v_cast(ast0, v_ast_arg_list_ptr);
+
+    arg0 = v_alloca(v_ast_opaque_argument_sptr);
+    v_initialize(arg0);
+
+
+    v_list_get_items(op, 0, arg0);
+
+    opc = v_ast_arg_integer_get_number(arg0);
+
+    opc = v_cast(opc, int);
+
+
+    ast1 = v_getelementptr(ast0, 1);
+    ast2 = v_getelementptr(ast0, 2);
+
+    val0 = v_alloca(LLVMValueRef, 2);
+    val1 = v_getelementptr(val0, 1);
+
+    typ0 = v_alloca(v_type_ptr, 2);
+    typ1 = v_getelementptr(typ0, 1);
+
+    builder = v_target_get_builder();
+
+    switch(opc)
+    {
+    case op_from_arg_tag:
+
+        v_list_get_items(op, 1, arg0);
+
+        ast_base = v_cast(arg0, v_ast_base_ptr);
+
+        v_add_argument_type(0);     //- Sic!
+
+        v_ast_accept_visitor(ast_base, visitor, aux);
+
+        v_get_argument(0, typ0, val0);
+
+        v_clear_arguments();
+
+        v_break();
+
+    case op_infix_add_tag:
+    case op_infix_sub_tag:
+    case op_infix_mul_tag:
+    case op_infix_div_tag:
+    case op_infix_rem_tag:
+
+        v_ast_accept_visitor(ast1, visitor, aux);
+
+        t = v_get_return_type();
+        v = v_get_return_value();
+
+        f = v_type_is_reference(t);
+        if (f)
+        {
+            t = v_type_refptr_get_element_type(t);
+            v = LLVMBuildLoad(builder, v, "");
+
+            v_store(t, typ0);
+            v_store(v, val0);
+        }
+        else
+        {
+            v_store(t, typ0);
+            v_store(v, val0);
+        }
+
+        v_ast_accept_visitor(ast2, visitor, aux);
+
+        t = v_get_return_type();
+        v = v_get_return_value();
+
+        f = v_type_is_reference(t);
+        if (f)
+        {
+            t = v_type_refptr_get_element_type(t);
+            v = LLVMBuildLoad(builder, v, "");
+
+            v_store(t, typ1);
+            v_store(v, val1);
+        }
+        else
+        {
+            v_store(t, typ1);
+            v_store(v, val1);
+        }
+
+        v_break();
+
+    case op_infix_assign_tag:
+
+        v_ast_accept_visitor(ast1, visitor, aux);
+
+        t = v_get_return_type();    v_store(t, typ0);
+        v = v_get_return_value();   v_store(v, val0);
+
+        v_ast_accept_visitor(ast2, visitor, aux);
+
+        t = v_get_return_type();
+        v = v_get_return_value();
+
+        f = v_type_is_reference(t);
+        if (f)
+        {
+            t = v_type_refptr_get_element_type(t);
+            v = LLVMBuildLoad(builder, v, "");
+
+            v_store(t, typ1);
+            v_store(v, val1);
+        }
+        else
+        {
+            v_store(t, typ1);
+            v_store(v, val1);
+        }
+
+        v_break();
+
+    case op_postfix_inc_tag:
+    case op_postfix_dec_tag:
+    case op_prefix_inc_tag:
+    case op_prefix_dec_tag:
+    case op_prefix_star_tag:
+    case op_prefix_amp_tag:
+
+        v_ast_accept_visitor(ast1, visitor, aux);
+
+        v = v_get_return_value();   v_store(v, val0);
+        t = v_get_return_type();    v_store(t, typ0);
+
+        v_break();
+
+    case op_prefix_plus_tag:
+    case op_prefix_minus_tag:
+
+        v_ast_accept_visitor(ast1, visitor, aux);
+
+        t = v_get_return_type();
+        v = v_get_return_value();
+
+        f = v_type_is_reference(t);
+        if (f)
+        {
+            t = v_type_refptr_get_element_type(t);
+            v = LLVMBuildLoad(builder, v, "");
+
+            v_store(t, typ0);
+            v_store(v, val0);
+        }
+        else
+        {
+            v_store(t, typ0);
+            v_store(v, val0);
+        }
+
+        v_break();
+    }
+
+    //- Result type
+
+    switch(opc)
+    {
+    case op_from_arg_tag:
+    case op_infix_add_tag:
+    case op_infix_sub_tag:
+    case op_infix_mul_tag:
+    case op_infix_div_tag:
+    case op_infix_rem_tag:
+    case op_infix_assign_tag:
+    case op_prefix_inc_tag:
+    case op_prefix_dec_tag:
+    case op_prefix_plus_tag:
+    case op_prefix_minus_tag:
+
+        t = v_load(typ0);
+
+        v_set_return_type(t);
+
+        v_break();
+
+    case op_postfix_inc_tag:
+    case op_postfix_dec_tag:
+
+        t = v_load(typ0);
+
+        t = v_type_refptr_get_element_type(t);
+
+        v_set_return_type(t);
+
+        v_break();
+
+    case op_prefix_star_tag:
+
+        t = v_load(typ0);
+
+        e = v_type_refptr_get_element_type(t);
+        a = v_type_refptr_get_address_space(t);
+
+        t = v_reference_type(e, a);
+
+        v_set_return_type(t);
+
+        v_break();
+
+    case op_prefix_amp_tag:
+
+        t = v_load(typ0);
+
+        e = v_type_refptr_get_element_type(t);
+        a = v_type_refptr_get_address_space(t);
+
+        t = v_pointer_type(e, a);
+
+        v_set_return_type(t);
+
+        v_break();
+    }
+
+    //- Result value
+
+    switch(opc)
+    {
+    case op_from_arg_tag:
+    case op_prefix_plus_tag:
+    case op_prefix_star_tag:
+    case op_prefix_amp_tag:
+
+        ret = v_load(val0);
+
+        v_set_return_value(ret);
+
+        v_break();
+
+    case op_infix_add_tag:
+    case op_infix_sub_tag:
+    case op_infix_mul_tag:
+    case op_infix_div_tag:
+    case op_infix_rem_tag:
+
+        c = v_alloca(LLVMOpcode);   c = v_reference(c);
+
+        switch(opc)
+        {
+        case op_infix_add_tag:  v_assign(c, LLVMAdd);   v_break();
+        case op_infix_sub_tag:  v_assign(c, LLVMSub);   v_break();
+        case op_infix_mul_tag:  v_assign(c, LLVMMul);   v_break();
+        case op_infix_div_tag:  v_assign(c, LLVMSDiv);  v_break();
+        case op_infix_rem_tag:  v_assign(c, LLVMSRem);  v_break();
+        }
+
+        v0 = v_load(val0);
+        v1 = v_load(val1);
+
+        ret = LLVMBuildBinOp(builder, c, v0, v1, "");
+
+        v_set_return_value(ret);
+
+        v_break();
+
+    case op_infix_assign_tag:
+
+        v0 = v_load(val0);
+        v1 = v_load(val1);
+
+        LLVMBuildStore(builder, v1, v0);
+
+        v_set_return_value(v0);
+
+        v_break();
+
+    case op_postfix_inc_tag:
+    case op_postfix_dec_tag:
+
+        int_ = v_type_get_llvm_type(int);
+
+        n1 = LLVMConstInt(int_, 1, 0);
+
+        v0 = v_load(val0);
+
+        vv = LLVMBuildLoad(builder, v0, "");
+
+        c = v_alloca(LLVMOpcode);   c = v_reference(c);
+
+        switch(opc)
+        {
+        case op_postfix_inc_tag:  v_assign(c, LLVMAdd);   v_break();
+        case op_postfix_dec_tag:  v_assign(c, LLVMSub);   v_break();
+        }
+
+        vv1 = LLVMBuildBinOp(builder, c, vv, n1, "");
+
+        LLVMBuildStore(builder, vv1, v0);
+
+        v_set_return_value(vv);
+
+        v_break();
+
+    case op_prefix_inc_tag:
+    case op_prefix_dec_tag:
+
+        int_ = v_type_get_llvm_type(int);
+
+        n1 = LLVMConstInt(int_, 1, 0);
+
+        v0 = v_load(val0);
+
+        vv = LLVMBuildLoad(builder, v0, "");
+
+        c = v_alloca(LLVMOpcode);   c = v_reference(c);
+
+        switch(opc)
+        {
+        case op_prefix_inc_tag:  v_assign(c, LLVMAdd);   v_break();
+        case op_prefix_dec_tag:  v_assign(c, LLVMSub);   v_break();
+        }
+
+        vv1 = LLVMBuildBinOp(builder, c, vv, n1, "");
+
+        LLVMBuildStore(builder, vv1, v0);
+
+        v_set_return_value(v0);
+
+        v_break();
+
+    case op_prefix_minus_tag:
+
+        v0 = v_load(val0);
+
+        ret = LLVMBuildNeg(builder, v0, "");
+
+        v_set_return_value(ret);
+
+        v_break();
+    }
+
+    v_terminate(arg0);
+    v_terminate(ast0, count);
+}
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+{
+    module = v_get_module();
+
+    //-----------------------------------------------------------------
+//  v_debug_print_module(1);
+
+    voidc_prepare_module_for_jit(module);
+
+    //-----------------------------------------------------------------
+    PH = v_alloca(LLVMOrcModuleHandle);
+
+    LLVMOrcAddEagerlyCompiledIR(voidc_jit, PH, module,
+                                voidc_resolver, 0
+                               );
+
+    //-----------------------------------------------------------------
+    v_set_module(0);
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    op_infix_add_grammar_value    = v_alloca(v_util_opaque_std_any, 14);
+    op_infix_sub_grammar_value    = v_getelementptr(op_infix_add_grammar_value,  1);
+    op_infix_mul_grammar_value    = v_getelementptr(op_infix_add_grammar_value,  2);
+    op_infix_div_grammar_value    = v_getelementptr(op_infix_add_grammar_value,  3);
+    op_infix_rem_grammar_value    = v_getelementptr(op_infix_add_grammar_value,  4);
+    op_infix_assign_grammar_value = v_getelementptr(op_infix_add_grammar_value,  5);
+
+    op_postfix_inc_grammar_value  = v_getelementptr(op_infix_add_grammar_value,  6);
+    op_postfix_dec_grammar_value  = v_getelementptr(op_infix_add_grammar_value,  7);
+
+    op_prefix_inc_grammar_value   = v_getelementptr(op_infix_add_grammar_value,  8);
+    op_prefix_dec_grammar_value   = v_getelementptr(op_infix_add_grammar_value,  9);
+    op_prefix_plus_grammar_value  = v_getelementptr(op_infix_add_grammar_value, 10);
+    op_prefix_minus_grammar_value = v_getelementptr(op_infix_add_grammar_value, 11);
+    op_prefix_star_grammar_value  = v_getelementptr(op_infix_add_grammar_value, 12);
+    op_prefix_amp_grammar_value   = v_getelementptr(op_infix_add_grammar_value, 13);
+
+    v_initialize(op_infix_add_grammar_value, 14);
+
+    make_op_infix(op_infix_assign_grammar_value, op_infix_assign_tag,  1000, 0);    //- right
+
+    make_op_infix(op_infix_add_grammar_value,    op_infix_add_tag,     9000, 1);    //- left
+    make_op_infix(op_infix_sub_grammar_value,    op_infix_sub_tag,     9000, 1);    //- left
+    make_op_infix(op_infix_mul_grammar_value,    op_infix_mul_tag,    10000, 1);    //- left
+    make_op_infix(op_infix_div_grammar_value,    op_infix_div_tag,    10000, 1);    //- left
+    make_op_infix(op_infix_rem_grammar_value,    op_infix_rem_tag,    10000, 1);    //- left
+
+    make_op_unary(op_prefix_inc_grammar_value,   op_prefix_inc_tag,   19000);
+    make_op_unary(op_prefix_dec_grammar_value,   op_prefix_dec_tag,   19000);
+    make_op_unary(op_prefix_plus_grammar_value,  op_prefix_plus_tag,  19000);
+    make_op_unary(op_prefix_minus_grammar_value, op_prefix_minus_tag, 19000);
+    make_op_unary(op_prefix_star_grammar_value,  op_prefix_star_tag,  19000);
+    make_op_unary(op_prefix_amp_grammar_value,   op_prefix_amp_tag,   19000);
+
+    make_op_unary(op_postfix_inc_grammar_value, op_postfix_inc_tag,   20000);
+    make_op_unary(op_postfix_dec_grammar_value, op_postfix_dec_tag,   20000);
+
+
+    gr0 = v_alloca(v_peg_opaque_grammar_sptr);
+    v_initialize(gr0);
+
+    v_peg_get_grammar(gr0);
+
+
+    grammar gr0
+    {
+    values:
+        op_infix_add    = op_infix_add_grammar_value;
+        op_infix_sub    = op_infix_sub_grammar_value;
+        op_infix_mul    = op_infix_mul_grammar_value;
+        op_infix_div    = op_infix_div_grammar_value;
+        op_infix_rem    = op_infix_rem_grammar_value;
+        op_infix_assign = op_infix_assign_grammar_value;
+
+        op_postfix_inc = op_postfix_inc_grammar_value;
+        op_postfix_dec = op_postfix_dec_grammar_value;
+
+        op_prefix_inc   = op_prefix_inc_grammar_value;
+        op_prefix_dec   = op_prefix_dec_grammar_value;
+        op_prefix_plus  = op_prefix_plus_grammar_value;
+        op_prefix_minus = op_prefix_minus_grammar_value;
+        op_prefix_star  = op_prefix_star_grammar_value;
+        op_prefix_amp   = op_prefix_amp_grammar_value;
+
+    actions:
+        expr_start        = expr_start_grammar_action;
+        expr_stop         = expr_stop_grammar_action;
+        expr_cleanup      = expr_cleanup_grammar_action;
+        expr_check_infix  = expr_check_infix_grammar_action;
+        expr_infix        = expr_infix_grammar_action;
+        expr_make_postfix = expr_make_postfix_grammar_action;
+        expr_push_prefix  = expr_push_prefix_grammar_action;
+        expr_prefix       = expr_prefix_grammar_action;
+
+        primary_arg = primary_arg_grammar_action;
+
+        mk_call_expr = mk_call_expr_grammar_action;
+
+    parsers:
+
+        expr = { expr_start() }  e:expr_ck  { expr_stop(e) };
+
+        expr_ck = expr_lr / { expr_cleanup() };
+
+        expr_lr = l:expr_lr _ op:infix _ { expr_check_infix(op) }  r:expr_ck  { expr_infix(op, l, r) }
+
+                / l:expr_lr _ op:postfix { expr_make_postfix(l, op) }
+
+                / op:prefix _ { expr_push_prefix(op) }  r:expr_ck  { expr_prefix(op, r) }
+
+                / primary;
+
+        expr_lr is left-recursive;
+
+
+        primary = '(' _ e:expr _ ')'   { e }                    //- ?!?!?
+                / a:arg                { primary_arg(a) }       //- ?!?!?
+                ;
+
+        infix = '+' !'+'    { op_infix_add }
+              / '-' !'-'    { op_infix_sub }
+              / '*'         { op_infix_mul }
+              / '/'         { op_infix_div }
+              / '%'         { op_infix_rem }
+              / ":="        { op_infix_assign }
+              ;
+
+        postfix = "++"      { op_postfix_inc }
+                / "--"      { op_postfix_dec }
+                ;
+
+        prefix = "++"       { op_prefix_inc }
+               / '+'        { op_prefix_plus }
+               / "--"       { op_prefix_dec }
+               / '-'        { op_prefix_minus }
+               / '*'        { op_prefix_star }
+               / '&'        { op_prefix_amp }
+               ;
+
+
+        call =+ e:expr  { mk_call_expr(e) };
+
+    }
+
+
+    v_peg_set_grammar(gr0);
+
+
+    void_method = v_cast(compile_ast_expr_node_t, void_ptr);
+
+    voidc_visitor_set_void_method(voidc_compiler, voidc_compiler, quark, void_method);
+
+
+    v_terminate(gr0);
+    v_terminate(op_infix_add_grammar_value, 14);
+}
+
+
+//---------------------------------------------------------------------
+{ v_debug_print_module(1); }
+{
+    v = v_alloca(int);
+
+    v = *v;
+
+    v := 100;
+
+    v++;
+
+    a = v + 2;
+
+    v := (a - 5)*(v + (25 - v)/3);
+
+    printf("v: %d, a: %d\n", v, a);
+
+    p = v_alloca(int);
+
+    r = *p := v/2;
+
+    printf("r: %d\n", r);
+
+
+    //- one = *v_alloca(int) := 1;      //- Wow...
+
+
+//    5;
+//
+//    + - + - 5;
+//
+//    2 + 2;
+//
+//    + 1 -2;
+//
+//    (a - 5)*(100 + 25/3);
+//
+//    ++a;
+//
+//    a--;
+//
+//    *a++ := *b++;
+//
+//    &*b;
+
+
+    printf("\nStill works...\n");
+}
+
+

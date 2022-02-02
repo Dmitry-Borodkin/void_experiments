@@ -1,0 +1,8 @@
+#!/usr/bin/env -S echo a b c
+
+//  #!/usr/bin/env voidc
+
+{   v_import("printf.void"); }
+
+{   printf("Hello!\n"); }
+

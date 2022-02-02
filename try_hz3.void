@@ -1,0 +1,34 @@
+{   v_import("level-00");
+    v_import("level-01");
+
+    v_import("printf.void");
+}
+
+{   v_enable_level_01(); }
+
+
+//---------------------------------------------------------------------
+double = float(64);
+
+atof: (*char) -> double;
+
+fma: (double, double, double) -> double;
+
+
+//---------------------------------------------------------------------
+{ v_debug_print_module(1); }
+{
+    u = "1";
+    u = atof(u);
+
+    v = u;
+
+    v = fma(v, u, v);
+    v = fma(v, u, v);
+    v = fma(v, u, v);
+    v = fma(v, u, v);
+
+    printf("v: %g\n", v);
+}
+
+

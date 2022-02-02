@@ -1,0 +1,169 @@
+{   v_import("voidc_target.void");
+    v_import("voidc_types.void");
+
+    v_import("function_hack.void");
+    v_import("if_then_else.void");
+    v_import("block.void");
+    v_import("loop.void");
+    v_import("expression.void");
+    v_import("defer.void");
+    v_import("definitions.void");
+
+    v_import("llvm-c/Support.void");
+}
+
+{   v_import("printf.void");
+}
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_loop();
+    voidc_enable_expression();
+    voidc_enable_statement_defer();
+    voidc_enable_definitions();
+}
+
+
+//---------------------------------------------------------------------
+//- ... <cairo/cairo.h>
+//---------------------------------------------------------------------
+{   ok = LLVMLoadLibraryPermanently("libcairo.so");
+
+    printf("ok: %d\n", ok);
+}
+
+
+{   surface_t = v_struct_type_named("struct.cairo_surface_t");
+
+    v_add_type("cairo_surface_t", surface_t);
+
+    cairo_t = v_struct_type_named("struct.cairo_t");
+
+    v_add_type("cairo_t", cairo_t);
+}
+
+
+//---------------------------------------------------------------------
+double = float(64);
+
+
+//---------------------------------------------------------------------
+cairo_format_t = int;
+
+CAIRO_FORMAT_ARGB32:    cairo_format_t = 0;
+CAIRO_FORMAT_RGB24:     cairo_format_t = 1;
+CAIRO_FORMAT_A8:        cairo_format_t = 2;
+CAIRO_FORMAT_A1:        cairo_format_t = 3;
+CAIRO_FORMAT_RGB16_565: cairo_format_t = 4;
+CAIRO_FORMAT_RGB30:     cairo_format_t = 5;
+
+cairo_image_surface_create: (cairo_format_t, width: int, height: int) -> *cairo_surface_t;
+
+cairo_surface_flush: (*cairo_surface_t) -> void;
+
+cairo_surface_write_to_png: (*cairo_surface_t, filename: *const char) -> int;
+
+cairo_surface_destroy: (*cairo_surface_t) -> void;
+
+
+cairo_create: (*cairo_surface_t) -> *cairo_t;
+
+cairo_destroy:       (*cairo_t) -> void;
+cairo_paint:         (*cairo_t) -> void;
+cairo_fill:          (*cairo_t) -> void;
+cairo_fill_preserve: (*cairo_t) -> void;
+cairo_stroke:        (*cairo_t) -> void;
+
+cairo_set_source_rgb:  (*cairo_t, r: double, g: double, b: double) -> void;
+
+cairo_set_source_rgba: (*cairo_t, r: double, g: double, b: double, a: double) -> void;
+
+cairo_rectangle: (*cairo_t, x: double, y: double, w: double, h: double) -> void;
+
+cairo_set_line_width: (*cairo_t, w: double) -> void;
+
+cairo_line_to: (*cairo_t, x: double, y: double) -> void;
+cairo_move_to: (*cairo_t, x: double, y: double) -> void;
+
+
+//---------------------------------------------------------------------
+dragon_curve: (cr: *cairo_t, x0: double, y0: double, x1: double, y1: double, orientation: int) -> void
+{
+    if (orientation == 0)
+    {
+        cairo_line_to(cr, x1, y1);
+
+        v_return();
+    }
+
+    dx2 = (x1 - x0) / 2;
+    dy2 = (y1 - y0) / 2;
+
+    if (orientation > 0)
+    {
+        x2 = x0 + dx2 - dy2;
+        y2 = y0 + dy2 + dx2;
+
+        orientation = orientation - 1;
+
+        dragon_curve(cr, x0, y0, x2, y2,  orientation);
+        dragon_curve(cr, x2, y2, x1, y1, -orientation);
+    }
+    else    //- orientation < 0
+    {
+        x2 = x0 + dx2 + dy2;
+        y2 = y0 + dy2 - dx2;
+
+        orientation = orientation + 1;
+
+        dragon_curve(cr, x0, y0, x2, y2, -orientation);
+        dragon_curve(cr, x2, y2, x1, y1,  orientation);
+    }
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    surface = cairo_image_surface_create(CAIRO_FORMAT_RGB30, 1024, 768);
+
+    defer cairo_surface_destroy(surface);
+
+    {   cr = cairo_create(surface);
+        defer cairo_destroy(cr);
+
+        cairo_set_source_rgb(cr, 1, 1, 1);
+        cairo_paint(cr);
+
+        cairo_set_line_width(cr, 1);
+
+        cairo_set_source_rgba(cr, 0, 0, 0, (8:double)/9);
+
+        h = (1:double)/2;
+
+        x0 = 256 + h;
+        x1 = 768 + h;
+
+        y  = 384 + h;
+
+        cairo_move_to(cr, x0, y);
+
+        dragon_curve(cr, x0, y, x1, y, 19);
+
+        cairo_stroke(cr);
+    }
+
+    cairo_surface_flush(surface);
+
+    cairo_surface_write_to_png(surface, "try_cairo3.png");
+}
+
+
+//---------------------------------------------------------------------
+system: (*const char) -> int;
+
+
+{   system("display try_cairo3.png");
+}
+
+

@@ -1,0 +1,3 @@
+export VOIDC_IMPORT=/home/bdn/work/voidc
+
+time /home/bdn/work/voidc/build/voidc $1.void

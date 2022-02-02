@@ -1,0 +1,684 @@
+{   v_import("voidc_target.void");
+    v_import("voidc_types.void");
+    v_import("voidc_util.void");
+    v_import("voidc_ast.void");
+    v_import("voidc_quark.void");
+    v_import("voidc_visitor.void");
+    v_import("voidc_compiler.void");
+
+    v_import("llvm-c/Core.void");
+
+    v_import("function_hack.void");
+    v_import("memory.void");
+    v_import("if_then_else.void");
+    v_import("block.void");
+    v_import("loop.void");
+    v_import("grammar.void");
+    v_import("switch.void");
+    v_import("expression.void");
+    v_import("defer.void");
+}
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_loop();
+    voidc_enable_statement_switch();
+    voidc_enable_statement_grammar();
+    voidc_enable_expression();
+    voidc_enable_statement_defer();
+}
+
+{   v_import("printf.void"); }
+
+
+//---------------------------------------------------------------------
+//- Some utility ...
+//---------------------------------------------------------------------
+{
+    void_ptr = v_pointer_type(void, 0);
+    v_add_type("void_ptr", void_ptr);
+
+    char_ptr = v_pointer_type(char, 0);
+    v_add_type("char_ptr", char_ptr);
+}
+
+
+//---------------------------------------------------------------------
+//- Context type
+//---------------------------------------------------------------------
+{
+    typ = v_alloca(v_type_ptr, 5);
+
+    //- "Return" expressions:
+
+    typ[0] := v_ast_expr_ptr;           //- "Direct"
+    typ[1] := v_ast_expr_ptr;           //- "Indirect" (!!!)
+
+    //- Expressions stack:
+
+    typ[2] := int;                      //- Current stack height
+    typ[3] := int;                      //- Maximum stack height
+
+    //- Statements list:
+
+    typ[4] := v_ast_stmt_list_ptr;      //- "Accumulator"
+
+    //- Context type
+
+    ctx_t = v_struct_type(typ, 5, false);
+
+    ctx_ref = v_reference_type(ctx_t, 0);
+
+    v_add_type("ctx_t",   ctx_t);
+    v_add_type("ctx_ref", ctx_ref);
+}
+
+//---------------------------------------------------------------------
+{
+    int_ = v_type_get_llvm_type(int);
+
+    v_add_constant("ret_direct",   int, LLVMConstInt(int_, 0, 0));
+    v_add_constant("ret_indirect", int, LLVMConstInt(int_, 1, 0));
+
+    v_add_constant("stk_current",  int, LLVMConstInt(int_, 2, 0));
+    v_add_constant("stk_maximum",  int, LLVMConstInt(int_, 3, 0));
+
+    v_add_constant("accumulator",  int, LLVMConstInt(int_, 4, 0));
+}
+
+
+//---------------------------------------------------------------------
+//- Context utility
+//---------------------------------------------------------------------
+{
+    typ = *v_alloca(v_type_ptr) := ctx_ref;
+
+    ft = v_function_type(int, &typ, 1, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("ctx_stk_push", ft);
+
+    v_add_parameter_name(f, 0, "ctx", ctx_ref);
+}
+{
+    ret = ctx[stk_current]++;
+
+    if (ctx[stk_maximum] == ret)
+    {
+        ctx[stk_maximum] := ret + 1;
+    }
+
+    v_return(ret);
+}
+
+//---------------------------------------------------------------------
+{
+    typ = *v_alloca(v_type_ptr) := ctx_ref;
+
+    ft = v_function_type(void, &typ, 1, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("ctx_stk_pop", ft);
+
+    v_add_parameter_name(f, 0, "ctx", ctx_ref);
+}
+{
+    ctx[stk_current]--;
+}
+
+
+//---------------------------------------------------------------------
+//- Some utility...
+//---------------------------------------------------------------------
+{
+    typ = v_alloca(v_type_ptr, 4);
+
+    typ[0] := v_ast_expr_ptr;
+    typ[1] := char_ptr;
+    typ[2] := v_ast_expr_ptr;
+    typ[3] := int;
+
+    ft = v_function_type(void, typ, 4, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("make_expr_call", ft);
+
+    v_add_parameter_name(f, 0, "expr",  v_ast_expr_ptr);
+    v_add_parameter_name(f, 1, "fun",   char_ptr);
+    v_add_parameter_name(f, 2, "args",  v_ast_expr_ptr);
+    v_add_parameter_name(f, 3, "count", int);
+}
+{
+    fe = v_alloca(v_ast_opaque_expr_sptr);
+    v_initialize(fe);
+    defer v_terminate(fe);
+
+    v_ast_make_expr_identifier(fe, fun);
+
+    ar_l = v_alloca(v_ast_opaque_expr_list_sptr);
+    v_initialize(ar_l);
+    defer v_terminate(ar_l);
+
+    v_make_list(ar_l, args, count);
+
+    v_ast_make_expr_call(expr, fe, ar_l);
+}
+
+//---------------------------------------------------------------------
+{
+    typ = v_alloca(v_type_ptr, 5);
+
+    typ[0] := v_ast_stmt_ptr;
+    typ[1] := char_ptr;
+    typ[2] := char_ptr;
+    typ[3] := v_ast_expr_ptr;
+    typ[4] := int;
+
+    ft = v_function_type(void, typ, 5, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("make_stmt_call", ft);
+
+    v_add_parameter_name(f, 0, "stmt",  v_ast_stmt_ptr);
+    v_add_parameter_name(f, 1, "var",   char_ptr);
+    v_add_parameter_name(f, 2, "fun",   char_ptr);
+    v_add_parameter_name(f, 3, "args",  v_ast_expr_ptr);
+    v_add_parameter_name(f, 4, "count", int);
+}
+{
+    expr = v_alloca(v_ast_opaque_expr_sptr);
+    v_initialize(expr);
+    defer v_terminate(expr);
+
+    make_expr_call(expr, fun, args, count);
+
+    v_ast_make_stmt(stmt, var, expr);
+}
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("indicomp_ast_expr_call_t", v_ast_expr_call_visitor_method_t);
+
+    v_add_parameter_name(f, 0, "visitor",  voidc_visitor_ptr);
+    v_add_parameter_name(f, 1, "aux",      void_ptr);
+    v_add_parameter_name(f, 2, "fun",      v_ast_expr_ptr);
+    v_add_parameter_name(f, 3, "args",     v_ast_expr_list_ptr);
+}
+{
+    ctx = *v_cast(aux, *ctx_t);
+
+    sv_ret_direct   = v_load(&ctx[ret_direct]);
+    sv_ret_indirect = v_load(&ctx[ret_indirect]);
+    sv_stk_current  = v_load(&ctx[stk_current]);
+
+    tmp = v_alloca(v_ast_opaque_expr_sptr, 3);
+    v_initialize(tmp, 3);
+    defer v_terminate(tmp, 3);
+
+
+    sstr = v_alloca(v_util_opaque_std_string, 2);
+    v_initialize(sstr, 2);
+    defer v_terminate(sstr, 2);
+
+    v_std_string_set(&sstr[0], "v.e");
+    v_std_string_append_number(&sstr[0] , ctx_stk_push(ctx));
+
+    fun_var = v_std_string_get(&sstr[0]);
+
+    v_ast_make_expr_identifier(&tmp[1], fun_var);
+
+
+    ctx[ret_direct]   := &tmp[0];
+    ctx[ret_indirect] := &tmp[1];
+
+    v_ast_accept_visitor(v_cast(fun, v_ast_base_ptr), visitor, aux);
+
+
+    stmt = v_alloca(v_ast_opaque_stmt_sptr);
+    v_initialize(stmt);
+    defer v_terminate(stmt);
+
+
+    v_ast_make_stmt(stmt, "", &tmp[0]);
+    v_list_append(ctx[accumulator], ctx[accumulator], stmt);
+
+
+    args_e = v_alloca(v_ast_opaque_expr_sptr);
+    v_initialize(args_e);
+    defer v_terminate(args_e);
+
+    v_ast_make_expr_identifier(args_e, "v.args");
+
+
+    n = v_list_get_size(args);
+
+    if (n)
+    {
+        i = *v_alloca(int) := 0;
+
+        loop
+        {
+            if (i == n) v_break();
+
+            v_std_string_set(&sstr[1], "v.e");
+            v_std_string_append_number(&sstr[1] , ctx_stk_push(ctx));
+
+            arg_var = v_std_string_get(&sstr[1]);
+
+            v_ast_make_expr_identifier(&tmp[1], arg_var);
+
+            v_list_get_items(args, i, &tmp[2]);
+
+            v_ast_accept_visitor(v_cast(&tmp[2], v_ast_base_ptr), visitor, aux);
+
+            v_ast_make_stmt(stmt, "", &tmp[0]);
+            v_list_append(ctx[accumulator], ctx[accumulator], stmt);
+
+            ++i;
+        }
+
+        v_std_string_set(&sstr[1], "v.e");
+        v_std_string_append_number(&sstr[1] , sv_stk_current+1);
+
+        args_var = v_std_string_get(&sstr[1]);
+
+
+        v_copy(&tmp[0], args_e);
+
+        v_ast_make_expr_identifier(&tmp[1], args_var);
+
+        v_ast_make_expr_integer(&tmp[2], n);
+
+        make_stmt_call(stmt, "", "v_make_list", tmp, 3);
+    }
+    else
+    {
+        make_stmt_call(stmt, "", "v_make_list_nil", args_e, 1);
+    }
+
+    v_list_append(ctx[accumulator], ctx[accumulator], stmt);
+
+
+    ctx[ret_direct]   := sv_ret_direct;
+    ctx[ret_indirect] := sv_ret_indirect;
+    ctx[stk_current]  := sv_stk_current;
+
+
+    v_copy(&tmp[0], ctx[ret_indirect]);
+
+    v_ast_make_expr_identifier(&tmp[1], fun_var);       //- Again?
+
+    v_copy(&tmp[2], args_e);
+
+    make_expr_call(ctx[ret_direct], "v_ast_make_expr_call", tmp, 3);
+}
+
+
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("indicomp_ast_expr_identifier_t", v_ast_expr_identifier_visitor_method_t);
+
+    v_add_parameter_name(f, 0, "visitor",  voidc_visitor_ptr);
+    v_add_parameter_name(f, 1, "aux",      void_ptr);
+    v_add_parameter_name(f, 2, "sstr",     v_util_std_string_ptr);
+}
+{
+    ctx = *v_cast(aux, *ctx_t);
+
+    tmp = v_alloca(v_ast_opaque_expr_sptr, 2);
+    v_initialize(tmp, 2);
+    defer v_terminate(tmp, 2);
+
+
+    v_copy(&tmp[0], ctx[ret_indirect]);
+
+    str = v_std_string_get(sstr);
+
+    v_ast_make_expr_string(&tmp[1], str);
+
+
+    ar_l = v_alloca(v_ast_opaque_expr_list_sptr);
+    v_initialize(ar_l);
+    defer v_terminate(ar_l);
+
+    v_make_list(ar_l, tmp, 2);
+
+
+    v_ast_make_expr_identifier(&tmp[0], "v_ast_make_expr_identifier");
+
+    v_ast_make_expr_call(ctx[ret_direct], &tmp[0], ar_l);
+}
+
+
+
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("indicomp_ast_expr_integer_t", v_ast_expr_integer_visitor_method_t);
+
+    v_add_parameter_name(f, 0, "visitor",  voidc_visitor_ptr);
+    v_add_parameter_name(f, 1, "aux",      void_ptr);
+    v_add_parameter_name(f, 2, "num",      intptr_t);
+}
+{
+    ctx = *v_cast(aux, *ctx_t);
+
+    tmp = v_alloca(v_ast_opaque_expr_sptr, 2);
+    v_initialize(tmp, 2);
+    defer v_terminate(tmp, 2);
+
+
+    v_copy(&tmp[0], ctx[ret_indirect]);
+
+    v_ast_make_expr_integer(&tmp[1], num);
+
+
+    ar_l = v_alloca(v_ast_opaque_expr_list_sptr);
+    v_initialize(ar_l);
+    defer v_terminate(ar_l);
+
+    v_make_list(ar_l, tmp, 2);
+
+
+    v_ast_make_expr_identifier(&tmp[0], "v_ast_make_expr_integer");
+
+    v_ast_make_expr_call(ctx[ret_direct], &tmp[0], ar_l);
+}
+
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("indicomp_ast_expr_string_t", v_ast_expr_string_visitor_method_t);
+
+    v_add_parameter_name(f, 0, "visitor",  voidc_visitor_ptr);
+    v_add_parameter_name(f, 1, "aux",      void_ptr);
+    v_add_parameter_name(f, 2, "sstr",     v_util_std_string_ptr);
+}
+{
+    ctx = *v_cast(aux, *ctx_t);
+
+    tmp = v_alloca(v_ast_opaque_expr_sptr, 2);
+    v_initialize(tmp, 2);
+    defer v_terminate(tmp, 2);
+
+
+    v_copy(&tmp[0], ctx[ret_indirect]);
+
+    str = v_std_string_get(sstr);
+
+    v_ast_make_expr_string(&tmp[1], str);
+
+
+    ar_l = v_alloca(v_ast_opaque_expr_list_sptr);
+    v_initialize(ar_l);
+    defer v_terminate(ar_l);
+
+    v_make_list(ar_l, tmp, 2);
+
+
+    v_ast_make_expr_identifier(&tmp[0], "v_ast_make_expr_string");
+
+    v_ast_make_expr_call(ctx[ret_direct], &tmp[0], ar_l);
+}
+
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("indicomp_ast_expr_char_t", v_ast_expr_char_visitor_method_t);
+
+    v_add_parameter_name(f, 0, "visitor",  voidc_visitor_ptr);
+    v_add_parameter_name(f, 1, "aux",      void_ptr);
+    v_add_parameter_name(f, 2, "c",        char32_t);
+}
+{
+    ctx = *v_cast(aux, *ctx_t);
+
+    tmp = v_alloca(v_ast_opaque_expr_sptr, 2);
+    v_initialize(tmp, 2);
+    defer v_terminate(tmp, 2);
+
+
+    v_copy(&tmp[0], ctx[ret_indirect]);
+
+    v_ast_make_expr_char(&tmp[1], c);
+
+
+    ar_l = v_alloca(v_ast_opaque_expr_list_sptr);
+    v_initialize(ar_l);
+    defer v_terminate(ar_l);
+
+    v_make_list(ar_l, tmp, 2);
+
+
+    v_ast_make_expr_identifier(&tmp[0], "v_ast_make_expr_char");
+
+    v_ast_make_expr_call(ctx[ret_direct], &tmp[0], ar_l);
+}
+
+
+//=====================================================================
+{
+    vis = v_malloc(voidc_opaque_visitor_sptr);
+    v_initialize(vis);
+
+    voidc_make_visitor(vis);
+
+    v_add_symbol("indicomp_visitor", voidc_opaque_visitor_sptr, vis);
+}
+
+//---------------------------------------------------------------------
+{
+    vis = indicomp_visitor;
+
+    v_visitor_set_method_ast_expr_call_t      (vis, vis, indicomp_ast_expr_call_t);
+    v_visitor_set_method_ast_expr_identifier_t(vis, vis, indicomp_ast_expr_identifier_t);
+    v_visitor_set_method_ast_expr_integer_t   (vis, vis, indicomp_ast_expr_integer_t);
+    v_visitor_set_method_ast_expr_string_t    (vis, vis, indicomp_ast_expr_string_t);
+    v_visitor_set_method_ast_expr_char_t      (vis, vis, indicomp_ast_expr_char_t);
+
+
+    q_node = v_quark_from_string("v_ast_expr_node_t_visitor_method_tag");
+    q_call = v_quark_from_string("op_postfix_call");
+
+    voidc_visitor_set_void_method(vis, vis, q_node, voidc_visitor_get_void_method(voidc_compiler, q_node));
+    voidc_visitor_set_void_method(vis, vis, q_call, voidc_visitor_get_void_method(voidc_compiler, q_call));
+
+}
+
+
+//=====================================================================
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("v_indicomp_intrinsic", voidc_intrinsic_t);
+
+    v_add_parameter_name(f, 0, "visitor",  voidc_visitor_ptr);
+    v_add_parameter_name(f, 1, "aux",      void_ptr);
+    v_add_parameter_name(f, 2, "arg_list", v_ast_expr_list_ptr);
+}
+{
+    expr = v_alloca(v_ast_opaque_expr_sptr, 3);
+    v_initialize(expr, 3);
+    defer v_terminate(expr, 3);
+
+    v_list_get_items(arg_list, 0, expr+1, 2);
+
+    stmt_list = v_alloca(v_ast_opaque_stmt_list_sptr, 3);
+    v_initialize(stmt_list, 3);
+    defer v_terminate(stmt_list, 3);
+
+    v_make_list_nil(&stmt_list[0]);
+
+
+    ctx = *v_alloca(ctx_t);
+
+    ctx[ret_direct]   := &expr[0];
+    ctx[ret_indirect] := &expr[1];
+
+    ctx[stk_current]  := 0;
+    ctx[stk_maximum]  := 0;
+
+    ctx[accumulator]  := &stmt_list[0];
+
+
+    v_ast_accept_visitor(v_cast(&expr[2], v_ast_base_ptr), indicomp_visitor, &ctx);
+
+
+    stmt = v_alloca(v_ast_opaque_stmt_sptr);
+    v_initialize(stmt);
+    defer v_terminate(stmt);
+
+    v_ast_make_stmt(stmt, "", &expr[0]);
+    v_list_append(&stmt_list[0], &stmt_list[0], stmt);
+
+
+    n = ctx[stk_maximum];
+
+    if (n)
+    {
+        v_make_list_nil(&stmt_list[1]);
+
+        v_save_variables();
+
+        make_stmt_call(stmt, "stk", "llvm.stacksave", 0, 0);
+        v_list_append(&stmt_list[1], &stmt_list[1], stmt);
+
+
+        tmp = v_alloca(v_ast_opaque_expr_sptr, 2);
+        v_initialize(tmp, 2);
+        defer v_terminate(tmp, 2);
+
+
+        v_ast_make_expr_identifier(&tmp[0], "v_ast_opaque_expr_list_sptr");
+
+        make_stmt_call(stmt, "v.args", "v_alloca", tmp, 1);
+        v_list_append(&stmt_list[1], &stmt_list[1], stmt);
+
+        v_ast_make_expr_identifier(&tmp[0], "v.args");
+
+        make_stmt_call(stmt, "", "v_initialize", tmp, 1);
+        v_list_append(&stmt_list[1], &stmt_list[1], stmt);
+
+
+        v_ast_make_expr_identifier(&tmp[0], "v_ast_opaque_expr_sptr");
+        v_ast_make_expr_integer(&tmp[1], n);
+
+        make_stmt_call(stmt, "v.e0", "v_alloca", tmp, 2);
+        v_list_append(&stmt_list[1], &stmt_list[1], stmt);
+
+        v_ast_make_expr_identifier(&tmp[0], "v.e0");
+
+        make_stmt_call(stmt, "", "v_initialize", tmp, 2);
+        v_list_append(&stmt_list[1], &stmt_list[1], stmt);
+
+
+        if (n > 1)
+        {
+            sstr = v_alloca(v_util_opaque_std_string);
+            v_initialize(sstr);
+            defer v_terminate(sstr);
+
+
+            v_ast_make_expr_identifier(&tmp[0], "v.e0");
+
+            i = *v_alloca(int) := 1;
+
+            loop
+            {
+                if (i == n) v_break();
+
+                v_std_string_set(sstr, "v.e");
+                v_std_string_append_number(sstr, i);
+
+                e_i = v_std_string_get(sstr);
+
+                v_ast_make_expr_integer(&tmp[1], i);
+
+                make_stmt_call(stmt, e_i, "v_getelementptr", tmp, 2);
+                v_list_append(&stmt_list[1], &stmt_list[1], stmt);
+
+                ++i;
+            }
+        }
+
+
+        v_make_list_nil(&stmt_list[2]);
+
+
+        v_ast_make_expr_identifier(&tmp[0], "v.e0");
+        v_ast_make_expr_integer(&tmp[1], n);
+
+        make_stmt_call(stmt, "", "v_terminate", tmp, 2);
+        v_list_append(&stmt_list[2], &stmt_list[2], stmt);
+
+
+        v_ast_make_expr_identifier(&tmp[0], "v.args");
+
+        make_stmt_call(stmt, "", "v_terminate", tmp, 1);
+        v_list_append(&stmt_list[2], &stmt_list[2], stmt);
+
+
+        v_ast_make_expr_identifier(&tmp[0], "stk");
+
+        make_stmt_call(stmt, "", "llvm.stackrestore", tmp, 1);
+        v_list_append(&stmt_list[2], &stmt_list[2], stmt);
+
+
+        v_ast_accept_visitor(v_cast(&stmt_list[1], v_ast_base_ptr), visitor, aux);
+    }
+
+
+    v_ast_accept_visitor(v_cast(&stmt_list[0], v_ast_base_ptr), visitor, aux);
+
+
+    if (n)
+    {
+        v_ast_accept_visitor(v_cast(&stmt_list[2], v_ast_base_ptr), visitor, aux);
+
+        v_restore_variables();
+    }
+}
+
+//---------------------------------------------------------------------
+{   v_add_intrinsic("v_indicomp", v_indicomp_intrinsic); }
+
+
+
+
+
+
+
+//=====================================================================
+{v_debug_print_module(1);}
+{
+    expr = v_alloca(v_ast_opaque_expr_sptr);
+    v_initialize(expr);
+    defer v_terminate(expr);
+
+//  v_indicomp(expr, qwer());
+
+//  v_indicomp(expr, qwer(asdf, "zxcv", 'Q', 777));
+
+    v_indicomp(expr, qwer(asdf, qaz("zxcv", 999)('a', 7), 'Q', 777));
+
+}
+
+
+
+
+
+
+
+
+
+//=====================================================================
+{
+    v_terminate(indicomp_visitor);
+
+    v_mfree(indicomp_visitor);
+}
+

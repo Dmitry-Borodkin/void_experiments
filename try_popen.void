@@ -1,0 +1,132 @@
+{   v_import("level-00");
+    v_import("level-01");
+
+    v_import("llvm-c/Core.void");
+}
+
+{   v_import("printf.void");
+}
+
+{   v_enable_level_01(); }
+
+
+//---------------------------------------------------------------------
+{   FILE = v_struct_type_named("FILE");
+
+    v_export_type("FILE", FILE);
+}
+
+v_fopen: (filename: *const char, mode: *const char) -> *FILE;       //- Sic!
+
+fwrite: (buf: *const void, size: size_t, count: size_t, stream: *FILE) -> size_t;
+
+fclose: (stream: *FILE) -> void;
+
+fflush: (*FILE) -> int;
+
+
+//---------------------------------------------------------------------
+fprintf: (stream: *FILE, format: *const char, ...) -> int;
+
+stdout: &*FILE;
+stderr: &*FILE;
+
+fgets: (buf: *char, len: int, stream: *FILE) -> *char;
+
+fscanf: (stream: *FILE, format: *const char, ...) -> int;
+
+fputs: (buf: *char, stream: *FILE) -> int;
+
+
+//---------------------------------------------------------------------
+popen: (cmd: *const char, mode: *const char) -> *FILE;
+
+pclose: (*FILE) -> int;
+
+system: (cmd: *const char) -> int;
+
+
+//---------------------------------------------------------------------
+exit: (status: int) -> void;
+
+
+//---------------------------------------------------------------------
+sprintf: (str: *char, format: *const char, ...) -> int;
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+{
+    buflen = 4096;
+
+    buf = v_malloc(char, buflen);
+    defer v_mfree(buf);
+
+    tmp = buf;
+    cmd = buf + buflen/2;
+
+    {   p = popen("mktemp", "r");
+        defer pclose(p);
+
+        fscanf(p, "%2000s", tmp);
+    }
+
+    defer
+    {
+        sprintf(cmd, "rm %s", tmp);
+
+        system(cmd);
+    }
+
+    //-----------------------------------------------------------------
+    {   p = popen("bash", "w");
+        defer pclose(p);
+
+        fprintf(p, "clang -x c - -O3 -c -o %s <<HEREDOC\n", tmp);
+
+        fputs("#include <time.h>\n", p);
+
+        fputs("double my_clock(void)\n", p);
+        fputs("{\n", p);
+        fputs("  struct timespec rawtime;\n", p);
+        fputs("  struct tm * timeinfo;\n", p);
+        fputs("  double ret;\n", p);
+
+        fputs("  clock_gettime(CLOCK_REALTIME, &rawtime);\n", p);
+        fputs("  timeinfo = localtime(&rawtime.tv_sec);\n", p);
+
+        fputs("  ret = timeinfo->tm_hour;\n", p);
+        fputs("  ret = 60*ret + timeinfo->tm_min;\n", p);
+        fputs("  ret = 60*ret + timeinfo->tm_sec;\n", p);
+        fputs("  ret += rawtime.tv_nsec * 1e-9;\n", p);
+
+        fputs("  return ret;\n", p);
+        fputs("}\n", p);
+
+        fputs("HEREDOC\n", p);
+    }
+
+    //-----------------------------------------------------------------
+    mb: &LLVMMemoryBufferRef := 0;
+
+    LLVMCreateMemoryBufferWithContentsOfFile(tmp, &mb, 0);
+
+    voidc_add_local_object_file_to_jit(mb);
+}
+
+
+//---------------------------------------------------------------------
+my_clock: () -> float(64);
+
+{
+    s = my_clock();
+
+    ss = s % 60;
+    mm = (s / 60) % 60;
+    hh = s / (60*60);
+
+    printf("hh: %d, mm: %d, ss: %g\n", (hh: int), (mm: int), ss);
+}
+
+

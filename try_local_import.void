@@ -1,0 +1,47 @@
+{   v_import("level-00");
+    v_import("level-01");
+}
+
+{   v_enable_level_01(); }
+
+
+//---------------------------------------------------------------------
+//local_import_intrinsic: (vis: voidc_visitor_ptr, *void,
+//                         args: v_ast_expr_list_ptr, count: int) -> void
+//{
+//    arg = v_alloca(v_ast_opaque_expr_sptr);
+//    v_initialize(arg);
+//    defer v_terminate(arg);
+//
+//    v_list_get_items(args, 0, arg);
+//
+//    filename = v_ast_expr_string_get_string(arg);
+//
+//    v_import(filename);
+//}
+//
+//{   v_add_intrinsic("local_import", local_import_intrinsic, 0);
+//}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(99); }
+{
+    a: &int := 7;
+
+    v_local_import("printf.void");
+
+    printf("It works!\n\n");
+
+    a += 5;
+
+    printf("a: %d\n\n", a);
+}
+
+{
+    printf("Does not work...\n");
+}
+
+
+
+

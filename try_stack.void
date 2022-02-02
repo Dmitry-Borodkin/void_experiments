@@ -1,0 +1,145 @@
+{   v_import("expression.void");
+}
+
+{   v_import("llvm-c/TargetMachine.void");
+}
+
+{   v_import("printf.void"); }
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_loop();
+    voidc_enable_statement_switch();
+    voidc_enable_expression();
+}
+
+
+//---------------------------------------------------------------------
+{
+    v_add_local_alias("llvm_stacksave",    "llvm.stacksave");
+    v_add_local_alias("llvm_stackrestore", "llvm.stackrestore");
+}
+
+//---------------------------------------------------------------------
+{   N = *v_malloc(int) := 42;
+
+    v_add_local_symbol("N", v_reference_type(int, 0), &N);
+}
+
+
+//=====================================================================
+{   module = LLVMModuleCreateWithName("try_stack_module");
+
+    v_set_module(module);
+}
+
+
+//---------------------------------------------------------------------
+{   ft = v_function_type(void, 0, 0, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("try_function", ft);
+}
+{
+    i = *v_alloca(int) := 0;
+
+    loop
+    {
+        if (i >= N) v_break();
+
+//      sp = llvm_stacksave();
+
+        v = *v_alloca(int) := i;
+
+        printf("i: %d, &v: %p\n", i, &v);
+
+//      llvm_stackrestore(sp);
+
+        ++i;
+    }
+}
+
+
+//---------------------------------------------------------------------
+{   ft = v_function_type(void, 0, 0, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("try_function2", ft);
+}
+{
+    c = *v_alloca(int) := 0;
+    n = *v_alloca(int) := N;
+
+    loop
+    {
+        if (n <= 0) v_break();
+
+        switch(n)
+        {
+        default:    c += 1;
+        case 9:     c += 1;
+        case 8:     c += 1;
+        case 7:     c += 1;
+        case 6:     c += 1;
+        case 5:     c += 1;
+        case 4:     c += 1;
+        case 3:     c += 1;
+        case 2:     c += 1;
+        case 1:     c += 1;
+        }
+
+        n -= 10;
+    }
+
+    printf("c: %d\n", c);
+}
+
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+{
+    module = v_get_module();
+
+    //-----------------------------------------------------------------
+    v_debug_print_module(1);
+
+    voidc_prepare_module_for_jit(module);
+
+    //-----------------------------------------------------------------
+    v_debug_print_module(1);
+    v_verify_module(module);
+
+
+    LLVMSetTargetMachineAsmVerbosity(voidc_target_machine, 1);
+
+    msg = *v_alloca(*char) := 0;
+
+    LLVMTargetMachineEmitToFile(voidc_target_machine, module, "try_stack.asm", LLVMAssemblyFile, &msg);
+
+
+    //-----------------------------------------------------------------
+    voidc_add_local_module_to_jit(module);
+
+    //-----------------------------------------------------------------
+    v_set_module(0);
+}
+
+
+
+//---------------------------------------------------------------------
+{   try_function2();
+}
+
+
+
+
+
+//---------------------------------------------------------------------
+{   v_mfree(&N);
+}
+
+
+
+

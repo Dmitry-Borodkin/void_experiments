@@ -1,0 +1,424 @@
+unit = "{" {stmt} "}"
+
+stmt = [[ident "="] expr] ";"
+
+expr = prim {"(" [expr {"," expr}] ")"}
+
+prim = ident | integer | string | char
+
+
+
+
+
+
+
+#----------------------------------------------------------------------
+unit <- _ '{' _ stmt_list _ '}'
+      / _ !.
+
+stmt_list <- stmt_list_lr
+           /
+
+stmt_list_lr <- stmt_list_lr _ stmt
+              / stmt
+
+stmt <- identifier _ '=' _ expr _ ';'
+      / expr _ ';'
+      / ';'
+
+expr <- expr _ '(' _ expr_list _ ')'
+      / prim
+
+expr_list <- expr_list_lr
+           /
+
+expr_list_lr <- expr_list_lr _ ',' _ expr
+              / expr
+
+prim <- identifier
+      / integer
+      / string
+      / char
+
+#----------------------------------------------------------------------
+identifier <- ident_start ident_cont*
+
+ident_start <- [a-zA-Z_]
+
+ident_cont <- ident_start / dec_digit
+
+integer <- ('-' / '+'?) dec_natural !ident_cont
+
+dec_natural <- dec_positive
+             / '0'
+
+dec_positive <- dec_positive dec_digit
+              / [1-9]
+
+dec_digit <- [0-9]
+
+string <- '\"' str_body '\"'
+        / "\"\""
+
+char <- '\'' str_char '\''
+
+str_body <- str_body str_char
+          / str_char
+
+str_char <- ![\n\r\t\'\"] character
+
+character <- '\\' esc_sequence
+           / !'\\' .
+
+esc_sequence <- 'n' / 'r' / 't' / '\'' / '\"' / '\\'
+
+#----------------------------------------------------------------------
+_ <- (space / comment)*
+
+comment <- "//" (!EOL .)* EOL
+
+space <- ' ' / '\t' / EOL
+
+EOL <- '\n' / "\r\n" / '\r'
+
+
+
+
+
+
+
+
+
+
+
+    //-------------------------------------------------------------
+    //- unit <- _ <'{'> _ l:stmt_list _ '}'     { mk_unit(l, $1s) }
+    //-       / _ !.                            { mk_EOF() }
+
+    //-------------------------------------------------------------
+    //- stmt_list <- stmt_list_lr
+    //-            /                    { mk_stmt_list(0, 0) }
+
+    //-------------------------------------------------------------
+    //- stmt_list_lr <- l:stmt_list_lr _ s:stmt     { mk_stmt_list(l, s) }
+    //-               / s:stmt                      { mk_stmt_list(0, s) }
+
+    //-------------------------------------------------------------
+    //- stmt <- v:identifier _ '=' _ e:expr _ ';'   { mk_stmt(v, e) }
+    //-       / e:expr _ ';'                        { mk_stmt(0, e) }
+    //-       / ';'                                 { mk_stmt(0, 0) }
+
+    //-------------------------------------------------------------
+    //- expr <- f:expr _ '(' _ a:expr_list _ ')'   { mk_expr_call(f, a) }
+    //-       / prim
+
+    //-------------------------------------------------------------
+    //- expr_list <- expr_list_lr
+    //-            /                 { mk_expr_list(0, 0) }
+
+    //-------------------------------------------------------------
+    //- expr_list_lr <- l:expr_list_lr _ ',' _ e:expr  { mk_expr_list(l, e) }
+    //-               / e:expr                         { mk_expr_list(0, e) }
+
+    //-------------------------------------------------------------
+    //- prim <- i:identifier     { mk_expr_identifier(i) }
+    //-       / n:integer        { mk_expr_integer(n) }
+    //-       / s:string         { mk_expr_string(s) }
+    //-       / c:char           { mk_expr_char(c) }
+
+    //=============================================================
+    //- identifier <- ident_start ident_cont*       { $0 }
+
+    //-------------------------------------------------------------
+    //- ident_start <- [a-zA-Z_]
+
+    //-------------------------------------------------------------
+    //- ident_cont <- ident_start / dec_digit
+
+    //-------------------------------------------------------------
+    //- integer <- '+'? n:dec_natural !ident_cont   { mk_pos_integer(n) }
+    //-          / '-'  n:dec_natural !ident_cont   { mk_neg_integer(n) }
+
+    //-------------------------------------------------------------
+    //- dec_natural <- dec_positive
+    //-              / '0'              { mk_dec_numdigit('0') }
+
+    //-------------------------------------------------------------
+    //- dec_positive <- n:dec_positive d:dec_digit      { mk_dec_integer(n, d) }
+    //-               / d:[1-9]                         { mk_dec_numdigit(d) }
+
+    //-------------------------------------------------------------
+    //- dec_digit <- [0-9]
+
+    //-------------------------------------------------------------
+    //- string <- '\"' s:str_body '\"'      { s }
+    //-         / "\"\""                    { "" }
+
+    //-------------------------------------------------------------
+    //- char <- '\'' c:str_char '\''        { c }
+
+    //-------------------------------------------------------------
+    //- str_body <- s:str_body c:str_char   { mk_string(s, c) }
+    //-           / c:str_char              { mk_string("", c) }
+
+    //-------------------------------------------------------------
+    //- str_char <- ![\n\r\t'"] character
+
+    //-------------------------------------------------------------
+    //- character <- '\\' esc_sequence
+    //-            / !'\\' .
+
+    //-------------------------------------------------------------
+    //- esc_sequence <- 'n'                 { '\n' }
+    //-               / 'r'                 { '\r' }
+    //-               / 't'                 { '\t' }
+    //-               / '\''
+    //-               / '\"'
+    //-               / '\\'
+
+    //-------------------------------------------------------------
+    //- _ <- (space / comment)*
+
+    //-------------------------------------------------------------
+    //- comment <- "//" (!EOL .)* EOL
+
+    //-------------------------------------------------------------
+    //- shebang <- ({ is_SOF($0s) } "#!" (!EOL .)* EOL)?
+
+    //-------------------------------------------------------------
+    //- space <- ' ' / '\t' / EOL
+
+    //-------------------------------------------------------------
+    //- EOL <- '\n' / "\r\n" / '\r'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#----------------------------------------------------------------------
+unit <- _ '{' _ stmt_list _ '}'
+      / _ !.
+
+stmt_list <- stmt_list_lr
+           /
+
+stmt_list_lr <- stmt_list_lr _ stmt
+              / stmt
+
+
+stmt <- identifier _ '=' _ expr _ ';'
+      / expr _ ';'
+      / ';'
+
+
+expr <- expr _ '(' _ expr_list _ ')'
+      / prim
+
+
+expr_list <- expr_list_lr
+           /
+
+
+expr_list_lr <- expr_list_lr _ ',' _ expr
+              / expr
+
+
+prim <- identifier
+      / integer
+      / string
+      / char
+
+
+#----------------------------------------------------------------------
+identifier <- ident_start ident_cont*
+
+ident_start <- [a-zA-Z_]
+
+ident_cont <- ident_start / dec_digit
+
+
+integer <- dec_natural
+         / '-' dec_natural
+
+dec_natural <- dec_positive
+             / '0'
+
+dec_positive <- dec_positive dec_digit
+              / [1-9]
+
+
+dec_digit <- [0-9]
+
+
+string <- '\"' str_body '\"'
+        / "\"\""
+
+
+char <- '\'' str_char '\''
+
+
+str_body <- str_body str_char
+          / str_char
+
+
+str_char <- ![\n\r\t'"] character
+
+
+character <- '\\' esc_sequence
+           / !'\\' .
+
+esc_sequence <- 'n' / 'r' / 't' / '\'' / '\"' / '\\'
+
+
+#----------------------------------------------------------------------
+_ <- (space / comment)*
+
+comment <- "//" (!EOL .)* EOL
+
+space <- ' ' / '\t' / EOL
+
+EOL <- '\n' / "\r\n" / '\r'
+
+
+
+
+
+
+
+
+
+
+    //-------------------------------------------------------------
+    //- unit <- _ <'{'> _ l:stmt_list _ '}'     { mk_unit(l, $1s) }
+    //-       / _ !.                            { mk_EOF() }
+
+    //-------------------------------------------------------------
+    //- stmt_list <- stmt_list_lr
+    //-            /                    { mk_stmt_list_nil() }
+
+    //-------------------------------------------------------------
+    //- stmt_list_lr <- l:stmt_list_lr _ s:stmt     { mk_stmt_list(l, s) }
+    //-               / s:stmt                      { mk_stmt_list(0, s) }
+
+    //-------------------------------------------------------------
+    //- stmt <- v:identifier _ '=' _ e:expr _ ';'   { mk_stmt(v, e) }
+    //-       / e:expr _ ';'                        { mk_stmt(0, e) }
+    //-       / ';'                                 { mk_stmt(0, 0) }
+
+    //-------------------------------------------------------------
+    //- expr <- f:expr _ '(' _ a:expr_list _ ')'   { mk_expr_call(f, a) }
+    //-       / prim
+
+    //-------------------------------------------------------------
+    //- expr_list <- expr_list_lr
+    //-            /                 { mk_expr_list(0, 0) }
+
+    //-------------------------------------------------------------
+    //- expr_list_lr <- l:expr_list_lr _ ',' _ e:expr  { mk_expr_list(l, e) }
+    //-               / e:expr                         { mk_expr_list(0, e) }
+
+    //-------------------------------------------------------------
+    //- prim <- i:identifier     { mk_expr_identifier(i) }
+    //-       / n:integer        { mk_expr_integer(n) }
+    //-       / s:string         { mk_expr_string(s) }
+    //-       / c:char           { mk_expr_char(c) }
+
+
+    //=============================================================
+    //- identifier <- ident_start ident_cont*       { $0 }
+
+    //-------------------------------------------------------------
+    //- ident_start <- [a-zA-Z_]
+
+    //-------------------------------------------------------------
+    //- ident_cont <- ident_start / dec_digit
+
+
+    //-------------------------------------------------------------
+    //- integer <- dec_natural
+    //-          / '-' n:dec_natural    { mk_neg_integer(n) }
+
+    //-------------------------------------------------------------
+    //- dec_natural <- dec_positive
+    //-              / '0'              { 0 }
+
+    //-------------------------------------------------------------
+    //- dec_positive <- n:dec_positive d:dec_digit      { mk_dec_integer(n, d) }
+    //-               / d:[1-9]                         { mk_dec_integer(0, d) }
+
+    //-------------------------------------------------------------
+    //- dec_digit <- [0-9]
+
+
+    //-------------------------------------------------------------
+    //- string <- '\"' s:str_body '\"'      { s }
+    //-         / "\"\""                    { "" }
+
+    //-------------------------------------------------------------
+    //- char <- '\'' c:str_char '\''        { c }
+
+    //-------------------------------------------------------------
+    //- str_body <- s:str_body c:str_char   { mk_string(s, c) }
+    //-           / c:str_char              { mk_string("", c) }
+
+    //-------------------------------------------------------------
+    //- str_char <- ![\n\r\t'"] character
+
+    //-------------------------------------------------------------
+    //- character <- '\\' esc_sequence
+    //-            / !'\\' .
+
+    //-------------------------------------------------------------
+    //- esc_sequence <- 'n'                 { '\n' }
+    //-               / 'r'                 { '\r' }
+    //-               / 't'                 { '\t' }
+    //-               / '\''
+    //-               / '\"'
+    //-               / '\\'
+
+
+    //-------------------------------------------------------------
+    //- _ <- (space / comment)*
+
+    //-------------------------------------------------------------
+    //- comment <- "//" (!EOL .)* EOL
+
+    //-------------------------------------------------------------
+    //- space <- ' ' / '\t' / EOL
+
+    //-------------------------------------------------------------
+    //- EOL <- '\n' / "\r\n" / '\r'
+
+

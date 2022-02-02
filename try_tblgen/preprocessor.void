@@ -1,0 +1,266 @@
+{   v_import("imports.void");
+
+    v_import("include_stack.void");
+}
+
+{   enable_imports(); }
+
+
+//---------------------------------------------------------------------
+{   voidc_unit_begin_module("preprocessor_mod"); }
+
+
+//---------------------------------------------------------------------
+private
+defset: & *void := 0;       //- Defines set
+
+preprocessor_defset_terminate: () -> void
+{
+    v_tdestroy(defset, 0);
+}
+
+private
+defset_find: (name: *const char) -> bool
+{
+    q = v_quark_from_string(name);
+
+    key = (q: *void);
+
+    r = v_tfind(key, &defset, 0);
+
+    v_return(r != 0);
+}
+
+private
+defset_insert: (name: *const char) -> void
+{
+    q = v_quark_from_string(name);
+
+    key = (q: *void);
+
+    v_tsearch(key, &defset, 0);
+}
+
+
+//---------------------------------------------------------------------
+export
+preprocessor_define: (name: *const char) -> void
+{
+    defset_insert(name);
+}
+
+//---------------------------------------------------------------------
+export
+preprocessor_ifdef: (name: *const char) -> bool
+{
+    v_return(defset_find(name));
+}
+
+
+//=====================================================================
+private
+pp_define_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, size_t) -> void
+{
+    name = v_std_any_get_pointer(v_util_opaque_std_string, any+0);
+
+    preprocessor_define(v_std_string_get(name));
+
+    v_std_any_set_value(ret, true);
+}
+
+//---------------------------------------------------------------------
+private
+check_pp_ifdef_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, size_t) -> void
+{
+    counter = include_stack_peek_ifdef_counter();
+
+    ++counter;
+
+    name = v_std_any_get_pointer(v_util_opaque_std_string, any+0);
+
+    vdef = preprocessor_ifdef(v_std_string_get(name));
+
+    flag = v_std_any_get_value(intptr_t, any+1) != 0;
+
+    if (flag == vdef)   v_std_any_set_value(ret, true);
+}
+
+//---------------------------------------------------------------------
+private
+pp_else_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, size_t) -> void
+{
+    counter = include_stack_peek_ifdef_counter();
+
+    if (counter <= 0)
+    {
+        fprintf(stderr, "#else without #ifdef\n");
+
+        exit(-1);
+    }
+
+    v_std_any_set_value(ret, true);
+}
+
+//---------------------------------------------------------------------
+private
+pp_endif_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, size_t) -> void
+{
+    counter = include_stack_peek_ifdef_counter();
+
+    if (counter <= 0)
+    {
+        fprintf(stderr, "#endif without #ifdef\n");
+
+        exit(-1);
+    }
+
+    --counter;
+
+    v_std_any_set_value(ret, true);
+}
+
+
+//---------------------------------------------------------------------
+private
+check_SOL_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, size_t) -> void
+{
+    pos = v_std_any_get_value(size_t, any+0);
+
+    line:   &size_t := 0;
+    column: &size_t := 0;
+
+    v_peg_get_line_column(pos, line, column);
+
+    if (column == 0)  v_std_any_set_value(ret, true);
+}
+
+
+//---------------------------------------------------------------------
+fgetc: (*FILE) -> int;
+
+private
+pp_fgetc: (* void) -> int
+{
+    loop
+    {
+        f = include_stack_peek();
+
+        c = fgetc(f);
+
+        if (c >= 0) v_return(c);
+
+        fclose(f);
+
+        if (include_stack_peek_ifdef_counter())
+        {
+            fprintf(stderr, "Reached EOF without matching #endif\n");
+
+            exit(-1);
+        }
+
+        include_stack_pop();
+
+        if (include_stack_empty())  v_return(-1);
+    }
+}
+
+
+//---------------------------------------------------------------------
+export
+make_preprocessor_context: (ctx: v_peg_context_ptr) -> void
+{
+    grm = v_alloca(v_peg_opaque_grammar_sptr);
+    v_initialize(grm);
+    defer v_terminate(grm);
+
+    v_peg_make_grammar(grm);        //- New grammar from scratch!
+
+    grammar grm
+    {
+    actions:
+
+        pp_define = pp_define_grammar_action;
+
+        check_pp_ifdef = check_pp_ifdef_grammar_action;
+
+        pp_else  = pp_else_grammar_action;
+        pp_endif = pp_endif_grammar_action;
+
+        check_SOL = check_SOL_grammar_action;
+
+    parsers:
+
+        pp_directive = PreDefine / PreIfdef / PreElse / PreEndif;
+
+
+        PreDefine = SOL __ "#define" _stp_ n:MacroName __ (BCPLComment / EOL)   { pp_define(n) };
+
+        pp_ifdef  = SOL __ "#ifdef"  _stp_ n:MacroName __ (BCPLComment / EOL)   { n };
+        pp_ifndef = SOL __ "#ifndef" _stp_ n:MacroName __ (BCPLComment / EOL)   { n };
+
+        pp_else   = SOL __ "#else"  __ (BCPLComment / EOL);
+        pp_endif  = SOL __ "#endif" __ (BCPLComment / EOL);
+
+
+        MacroName = ualpha (ualpha / [0-9])*    { $0 };
+
+        ualpha = [a-zA-Z_];
+
+
+        PreIfdef  = n:pp_ifdef  ( { check_pp_ifdef(n, 1) }  / skip_ifdef )
+
+                  / n:pp_ifndef ( { check_pp_ifdef(n, 0) }  / skip_ifdef )
+
+                  ;
+
+
+        PreElse   = pp_else  { pp_else() }  skip_lines  pp_endif  { pp_endif() };
+
+
+        PreEndif  = pp_endif { pp_endif() };
+
+
+        skip_ifdef = skip_lines (pp_else {pp_else()} / pp_endif {pp_endif()});
+
+
+        skip_lines = ( !(pp_ifdef / pp_ifndef / pp_else / pp_endif) (!EOL .)* EOL
+
+                     / (pp_ifdef / pp_ifndef) skip_lines (pp_else skip_lines)? pp_endif
+
+                     )*;
+
+
+        BCPLComment = "//" (!EOL .)* EOL;
+
+        CComment = "/*" (CComment / !"*/" .)* "*/";
+
+        line_CComment = "/*" (line_CComment / !("*/" / EOL) .)* "*/";
+
+        _ = (pp_directive / space / CComment / BCPLComment)*;
+
+        __ = (line_space / line_CComment)*;
+
+        space = ' ' / '\t' / EOL;
+
+        line_space = ' ' / '\t';
+
+        _stp_ = line_space+;
+
+        EOL = '\n' / "\r\n" / '\r';
+
+        SOL = { check_SOL($0s) };
+    }
+
+    v_peg_make_context(ctx, pp_fgetc, 0, grm);
+}
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+{   voidc_unit_end_module(); }
+
+{   voidc_atexit(preprocessor_defset_terminate); }
+
+
+

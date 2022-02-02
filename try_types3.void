@@ -1,0 +1,14 @@
+{   v_import("printf.void"); }
+
+{   t = int;
+
+    v = v_reference(v_alloca(t));
+
+    v_assign(v, 99);
+
+    printf("v: %d\n", v);
+}
+
+
+
+

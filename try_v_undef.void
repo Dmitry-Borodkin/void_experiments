@@ -1,0 +1,85 @@
+{
+    v_import("voidc_target.void");
+    v_import("voidc_types.void");
+    v_import("voidc_ast.void");
+    v_import("voidc_util.void");
+    v_import("voidc_visitor.void");
+
+    v_import("llvm-c/Core.void");
+
+    v_import("function_hack.void");
+    v_import("if_then_else.void");
+    v_import("block.void");
+    v_import("expression.void");
+    v_import("defer.void");
+    v_import("definitions.void");
+}
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_expression();
+    voidc_enable_statement_defer();
+    voidc_enable_definitions();
+}
+
+{   v_import("printf.void"); }
+
+
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("v_undef_intrinsic", voidc_intrinsic_t);
+
+    v_add_parameter_name(f, 0, "visitor",  voidc_visitor_ptr);
+    v_add_parameter_name(f, 1, "aux",      v_pointer_type(void, 0));
+    v_add_parameter_name(f, 2, "arg_list", v_ast_expr_list_ptr);
+}
+{
+    if (v_list_get_size(arg_list))
+    {
+        arg = v_alloca(v_ast_opaque_expr_sptr);
+        v_initialize(arg);
+        defer v_terminate(arg);
+
+        v_list_get_items(arg_list, 0, arg);
+
+        v_set_result_type(INVIOLABLE_TAG);
+
+        v_ast_accept_visitor(v_cast(arg, v_ast_base_ptr), visitor, aux);
+    }
+
+    t = v_get_result_type();
+
+    v = LLVMGetUndef(v_type_get_llvm_type(t));
+
+//  v_set_result_type(t);
+    v_set_result_value(v);
+}
+
+//---------------------------------------------------------------------
+{   v_add_intrinsic("v_undef", v_undef_intrinsic); }
+
+
+//---------------------------------------------------------------------
+//{v_debug_print_module(1);}
+{
+    u = *v_alloca(int) := v_undef();
+
+    v1 = v_undef(int);
+
+    u := v1 + 2;
+}
+
+//---------------------------------------------------------------------
+var: &int[5] := v_undef();
+
+
+{   var[0] := 77;
+}
+
+{   printf("var[0]: %d\n", var[0]);
+}
+
+
+
+

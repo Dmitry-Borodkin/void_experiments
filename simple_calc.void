@@ -1,0 +1,210 @@
+{   v_import("grammar.void");
+    v_import("switch.void");
+}
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_loop();
+    voidc_enable_statement_grammar();
+    voidc_enable_statement_switch();
+}
+
+
+//---------------------------------------------------------------------
+{
+    double = LLVMDoubleType();
+
+    v_add_local_symbol("double", LLVMOpaqueType, double);
+
+    typ0 = v_alloca(LLVMTypeRef, 2);
+    typ1 = v_getelementptr(typ0, 1);
+
+    v_store(double, typ0);
+    v_store(double, typ1);
+
+    ft = LLVMFunctionType(double, typ0, 2, 0);
+
+    v_add_symbol_type("pow", ft);
+}
+
+
+//---------------------------------------------------------------------
+//{   v_debug_print_module(1); }
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("calc_binop_grammar_action", v_peg_grammar_action_fun_t);
+
+    p0 = LLVMGetParam(f, 0);    v_add_variable("ret",       p0);
+    p1 = LLVMGetParam(f, 1);    v_add_variable("arg_list",  p1);
+    p2 = LLVMGetParam(f, 2);    v_add_variable("arg_count", p2);
+}
+{
+    opc = v_std_any_get_value(char32_t, arg_list);
+
+    arg_1 = v_getelementptr(arg_list, 1);
+    arg_2 = v_getelementptr(arg_list, 2);
+
+    lhs = v_std_any_get_value(intptr_t, arg_1);
+    rhs = v_std_any_get_value(intptr_t, arg_2);
+
+//  printf("binop(\'%c\', %d, %d)\n", opc, lhs, rhs);
+
+    v = v_alloca(intptr_t);
+
+    switch(opc)
+    {
+    case '+':
+
+        r = v_binop(LLVMAdd, lhs, rhs);
+
+        v_store(r, v);
+        v_break();
+
+    case '-':
+
+        r = v_binop(LLVMSub, lhs, rhs);
+
+        v_store(r, v);
+        v_break();
+
+    case '*':
+
+        r = v_binop(LLVMMul, lhs, rhs);
+
+        v_store(r, v);
+        v_break();
+
+    case '/':
+
+        r = v_binop(LLVMSDiv, lhs, rhs);
+
+        v_store(r, v);
+        v_break();
+
+    case '%':
+
+        r = v_binop(LLVMSRem, lhs, rhs);
+
+        v_store(r, v);
+        v_break();
+
+    case '^':
+
+        ld = v_cast(LLVMSIToFP, lhs, double);
+        rd = v_cast(LLVMSIToFP, rhs, double);
+
+        d = pow(ld, rd);
+
+        r = v_cast(LLVMFPToSI, d, intptr_t);
+
+        v_store(r, v);
+        v_break();
+    }
+
+    r = v_load(v);
+
+    v_std_any_set_value(ret, r);
+}
+
+
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("do_expr_grammar_action", v_peg_grammar_action_fun_t);
+
+    p0 = LLVMGetParam(f, 0);    v_add_variable("ret",       p0);
+    p1 = LLVMGetParam(f, 1);    v_add_variable("arg_list",  p1);
+    p2 = LLVMGetParam(f, 2);    v_add_variable("arg_count", p2);
+}
+{
+    val = v_std_any_get_value(intptr_t, arg_list);
+
+
+    arg0 = v_alloca(v_ast_opaque_argument_ptr, 2);
+    v_initialize(arg0, 2);
+
+    arg1 = v_getelementptr(arg0, 1);
+
+    stmt = v_alloca(v_ast_opaque_stmt_ptr);
+    v_initialize(stmt);
+
+
+    v_ast_make_arg_string(arg0, "value: %d\n");
+
+    v_ast_make_arg_integer(arg1, val);
+
+    v_ast_make_stmt_call(stmt, "", "printf", arg0, 2);
+
+
+    v_std_any_set_pointer(ret, stmt);
+
+
+    v_terminate(stmt);
+    v_terminate(arg0, 2);
+}
+
+
+//---------------------------------------------------------------------
+{
+    gr0 = v_alloca(v_peg_opaque_grammar_ptr);
+    v_initialize(gr0);
+
+    v_peg_get_grammar(gr0);
+
+
+    grammar gr0
+    {
+    actions:
+        calc_binop = calc_binop_grammar_action;
+        do_expr    = do_expr_grammar_action;
+
+    parsers:
+
+        expr = l:expr _ op:[-+] _ r:prod    { calc_binop(op, l, r) }
+             / prod;
+
+        expr is left-recursive;
+
+
+        prod = l:prod _ op:[*/%] _ r:powr   { calc_binop(op, l, r) }
+             / powr;
+
+        prod is left recursive;
+
+
+        powr = l:prim _ '^' _ r:powr        { calc_binop('^', l, r) }
+             / prim;
+
+
+
+        prim = '(' _ e:expr _ ')'       { e }
+             / integer;
+
+
+        stmt =+ "expr" !ident_cont _ e:expr _ ';'   { do_expr(e) };
+
+    }
+
+
+    v_peg_set_grammar(gr0);
+
+
+    v_terminate(gr0);
+}
+
+//{   v_debug_print_module(1); }
+{
+
+    expr 2 + 2;
+
+    expr 1 - 2;
+
+    expr (1 - 5)*(100 + 25/3);
+
+    expr 4^3^2^1;
+
+    expr 0^0;
+
+}
+
+

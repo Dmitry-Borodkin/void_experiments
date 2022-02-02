@@ -1,0 +1,82 @@
+{   v_import("expression.void");
+    v_import("defer.void");
+}
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_loop();
+    voidc_enable_statement_switch();
+    voidc_enable_statement_grammar();
+    voidc_enable_expression();
+    voidc_enable_statement_defer();
+}
+
+{   v_import("printf.void"); }
+
+
+//---------------------------------------------------------------------
+{   typ = *v_alloca(v_type_ptr) := v_pointer_type(void, 0);
+
+    ft = v_function_type(size_t, &typ, 1, false);
+
+    v_add_symbol_type("malloc_usable_size", ft);
+}
+
+
+{   N = *v_malloc(int) := 37;
+
+    v_add_local_symbol("N", v_reference_type(int, 0), &N);
+}
+
+//{v_debug_print_module(1);}
+{
+    ptr = v_malloc(char, N);
+    defer v_mfree(ptr);
+
+    sz = malloc_usable_size(ptr);
+
+    printf("sz: %ld\n", sz);
+
+}
+
+
+{   v_mfree(&N);
+}
+
+
+//---------------------------------------------------------------------
+//{v_debug_print_module(1);}
+{
+    s = *v_alloca(char[7]);
+
+    s[0] := 'H';
+    s[1] := 'e';
+    s[2] := 'l';
+    s[3] := 'l';
+    s[4] := 'o';
+    s[5] := '!';
+    s[6] := 0;
+
+    printf("%s\n", &s);
+}
+
+
+//---------------------------------------------------------------------
+{
+    v = *v_alloca(float(64)) := 1;
+
+//  v /= 50;
+    v /= 3;
+
+
+    printf("v: %.99g\n", v);
+
+//  printf("vv: %.99g\n", v*(v_cast(1, uint(64))<<58));
+    printf("vv: %.99g\n", v*(v_cast(1, uint(64))<<54));
+
+
+    printf("h: %llX\n", *v_cast(&v, * uint(64)));
+}
+
+
+

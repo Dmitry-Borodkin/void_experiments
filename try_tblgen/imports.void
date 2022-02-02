@@ -1,0 +1,114 @@
+{
+    v_export_import("llvm-c/Core.void");
+
+    v_export_import("level-00");
+    v_export_import("level-01");
+}
+
+{   v_export_import("printf.void");
+}
+
+//---------------------------------------------------------------------
+{   voidc_enable_definitions();
+}
+
+{   v_set_export_flag(true); }
+
+
+//=====================================================================
+{   module = LLVMModuleCreateWithName("imports_module_N1");
+
+    v_set_module(module);
+
+    //-----------------------------------------------------------------
+    LLVMDisposeMemoryBuffer(voidc_get_unit_buffer());
+    voidc_set_unit_buffer(0);
+}
+
+//---------------------------------------------------------------------
+voidc_unit_begin_module: (name: *const char) -> LLVMModuleRef
+{
+    module = LLVMModuleCreateWithName(name);
+
+    v_set_module(module);
+
+    LLVMDisposeMemoryBuffer(voidc_get_unit_buffer());
+    voidc_set_unit_buffer(0);
+
+    v_return(module);
+}
+
+//---------------------------------------------------------------------
+voidc_unit_end_module: () -> void
+{
+    module = v_get_module();
+
+    voidc_unit_load_module_to_jit(module);
+
+    LLVMDisposeModule(module);
+    v_set_module(0);
+}
+
+
+//---------------------------------------------------------------------
+{
+    module = v_get_module();
+
+    //-----------------------------------------------------------------
+//  v_debug_print_module(1);
+
+    voidc_unit_load_module_to_jit(module);
+
+    LLVMDisposeModule(module);
+    v_set_module(0);
+}
+
+
+//=====================================================================
+{   voidc_unit_begin_module("imports_module_N2"); }
+
+//---------------------------------------------------------------------
+enable_imports: () -> void
+{
+    v_enable_level_01();
+}
+
+
+//---------------------------------------------------------------------
+{   FILE = v_struct_type_named("FILE");
+
+    v_export_type("FILE", FILE);
+}
+
+v_fopen: (filename: *const char, mode: *const char) -> *FILE;       //- Sic!
+
+fwrite: (buf: *const void, size: size_t, count: size_t, stream: *FILE) -> size_t;
+
+fclose: (stream: *FILE) -> void;
+
+
+//---------------------------------------------------------------------
+fprintf: (stream: *FILE, format: *const char, ...) -> int;
+
+stdout: &*FILE;
+stderr: &*FILE;
+
+
+//---------------------------------------------------------------------
+exit: (status: int) -> void;
+
+
+//---------------------------------------------------------------------
+sprintf: (str: *char, format: *const char, ...) -> int;
+
+memset: (s: *void, c: int, n: size_t) -> *void;
+
+memcpy: (d: *void, s: *const void, n: size_t) -> *void;
+
+memcmp: (s1: *const void, s2: *const void, n: size_t) -> int;
+
+
+//---------------------------------------------------------------------
+{   voidc_unit_end_module(); }
+
+

@@ -1,0 +1,466 @@
+{   v_import("block.void");
+    v_import("if_then_else.void");
+}
+
+{   voidc_enable_statement_block();
+    voidc_enable_statement_if_then_else();
+}
+
+
+{   typ0 = v_alloca(LLVMTypeRef, 2);
+    typ1 = v_getelementptr(typ0, 1);
+
+
+    //-----------------------------------------------------------------
+    //- quark ...
+    //-----------------------------------------------------------------
+    quark = v_quark_from_string("v_ast_stmt_loop_t_visitor_method_tag");
+
+    quark_ll = v_cast(LLVMZExt, quark, long_long);
+
+    quark_v = LLVMConstInt(v_quark_t, quark_ll, 0);
+
+    v_add_local_constant("quark", quark_v);
+
+    v_add_local_symbol("quark_v", LLVMOpaqueValue, quark_v);
+
+
+    //-----------------------------------------------------------------
+    //- method ...
+    //-----------------------------------------------------------------
+    v_store(voidc_visitor_ref, typ0);
+    v_store(v_ast_stmt_ref,    typ1);
+
+    method_ft  = LLVMFunctionType(void, typ0, 2, 0);
+    method_ref = LLVMPointerType(method_ft, 0);
+
+    v_add_local_symbol("method_ft",  LLVMOpaqueType, method_ft);
+    v_add_local_symbol("method_ref", LLVMOpaqueType, method_ref);
+
+
+    //-----------------------------------------------------------------
+    //- ast_stmt_loop_t ...
+    //-----------------------------------------------------------------
+    gc = LLVMGetGlobalContext();
+
+    ast_stmt_loop_t = LLVMStructCreateNamed(gc, "struct.ast_stmt_loop_t");
+
+    v_store(v_ast_opaque_stmt_ptr, typ0);
+
+    LLVMStructSetBody(ast_stmt_loop_t, typ0, 1, 0);
+
+    ast_stmt_loop_ref = LLVMPointerType(ast_stmt_loop_t, 0);
+
+    v_add_local_symbol("ast_stmt_loop_t",   LLVMOpaqueType, ast_stmt_loop_t);
+    v_add_local_symbol("ast_stmt_loop_ref", LLVMOpaqueType, ast_stmt_loop_ref);
+}
+
+
+//---------------------------------------------------------------------
+{   module = LLVMModuleCreateWithName("my_stmt_loop_mod");
+
+    v_set_module(module);
+}
+
+
+//---------------------------------------------------------------------
+//- destroy ...
+//---------------------------------------------------------------------
+{
+    typ0 = v_alloca(LLVMTypeRef);
+
+    v_store(void_ptr, typ0);
+
+    destroy_ft = LLVMFunctionType(void, typ0, 1, 0);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("voidc_ast_stmt_loop_destroy", destroy_ft);
+
+    p0 = LLVMGetParam(f, 0);    v_add_variable("void_obj", p0);
+}
+{
+    obj = v_cast(LLVMBitCast, void_obj, ast_stmt_loop_ref);
+
+    stmt = v_getelementptr(obj, 0, 0);
+
+    v_terminate(stmt);
+
+    v_mfree(obj);
+}
+
+
+//---------------------------------------------------------------------
+//- accept ...
+//---------------------------------------------------------------------
+{
+    typ0 = v_alloca(LLVMTypeRef, 2);
+    typ1 = v_getelementptr(typ0, 1);
+
+    v_store(void_ptr,          typ0);
+    v_store(voidc_visitor_ref, typ1);
+
+    accept_ft = LLVMFunctionType(void, typ0, 2, 0);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("voidc_ast_stmt_loop_accept", accept_ft);
+
+    p0 = LLVMGetParam(f, 0);    v_add_variable("void_obj", p0);
+    p1 = LLVMGetParam(f, 1);    v_add_variable("visitor",  p1);
+}
+{
+    obj = v_cast(LLVMBitCast, void_obj, ast_stmt_loop_ref);
+
+    stmt = v_getelementptr(obj, 0, 0);
+
+    void_method = voidc_visitor_get_void_method(visitor, quark);
+
+    method = v_cast(LLVMBitCast, void_method, method_ref);
+
+    method(visitor, stmt);
+}
+
+
+//-----------------------------------------------------------------------
+//- vtable ...
+//-------------------------------------------------------------------
+{
+    module = v_get_module();
+
+    val0 = v_alloca(LLVMValueRef, 3);
+    val1 = v_getelementptr(val0, 1);
+    val2 = v_getelementptr(val0, 2);
+
+    destroy_f = v_find_function("voidc_ast_stmt_loop_destroy");
+    accept_f  = v_find_function("voidc_ast_stmt_loop_accept");
+
+    v_store(destroy_f, val0);
+    v_store(accept_f,  val1);
+    v_store(quark_v,   val2);
+
+    vtable_v = LLVMConstNamedStruct(v_ast_generic_vtable, val0, 3);
+
+    vtable_g = LLVMAddGlobal(module, v_ast_generic_vtable, "voidc_ast_stmt_loop_vtable");
+
+    LLVMSetInitializer(vtable_g, vtable_v);
+
+    v_add_local_symbol("voidc_ast_stmt_loop_vtable", v_ast_generic_vtable, vtable_g);
+}
+
+
+//---------------------------------------------------------------------
+//- v_ast_make_stmt_loop - ...
+//---------------------------------------------------------------------
+{
+    typ0 = v_alloca(LLVMTypeRef, 2);
+    typ1 = v_getelementptr(typ0, 1);
+
+    v_store(v_ast_stmt_ref, typ0);
+    v_store(v_ast_stmt_ref, typ1);
+
+    ft = LLVMFunctionType(void, typ0, 2, 0);
+
+    f = v_function_hack("v_ast_make_stmt_loop", ft);
+
+    p0 = LLVMGetParam(f, 0);    v_add_variable("ret",  p0);
+    p1 = LLVMGetParam(f, 1);    v_add_variable("stmt", p1);
+}
+{
+    obj = v_malloc(ast_stmt_loop_t);
+
+    obj_stmt = v_getelementptr(obj, 0, 0);
+
+    v_initialize(obj_stmt);
+
+    v_copy(obj_stmt, stmt);
+
+    v_ast_make_stmt_generic(ret, voidc_ast_stmt_loop_vtable, obj);
+}
+
+
+//---------------------------------------------------------------------
+//- mk_stmt_loop - grammar action
+//---------------------------------------------------------------------
+{
+    typ0 = v_alloca(LLVMTypeRef, 3);
+    typ1 = v_getelementptr(typ0, 1);
+    typ2 = v_getelementptr(typ0, 2);
+
+    v_store(v_util_std_any_ref, typ0);
+    v_store(v_util_std_any_ref, typ1);
+    v_store(size_t,             typ2);
+
+    ft = LLVMFunctionType(void, typ0, 3, 0);
+
+    f = v_function_hack("mk_stmt_loop_grammar_action", ft);
+
+    p0 = LLVMGetParam(f, 0);    v_add_variable("ret",       p0);
+    p1 = LLVMGetParam(f, 1);    v_add_variable("arg_list",  p1);
+    p2 = LLVMGetParam(f, 2);    v_add_variable("arg_count", p2);
+}
+{
+    stmt = v_std_any_get_pointer(v_ast_opaque_stmt_ptr, arg_list);
+
+    stmt_ret = v_alloca(v_ast_opaque_stmt_ptr);
+    v_initialize(stmt_ret);
+
+    v_ast_make_stmt_loop(stmt_ret, stmt);
+
+    v_std_any_set_pointer(ret, stmt_ret);
+
+    v_terminate(stmt_ret);
+}
+
+
+//---------------------------------------------------------------------
+//- compile_ast_stmt_loop_t - visitor method
+//---------------------------------------------------------------------
+{
+    f = v_function_hack("compile_ast_stmt_loop_t", method_ft);
+
+    p0 = LLVMGetParam(f, 0);    v_add_variable("visitor", p0);
+    p1 = LLVMGetParam(f, 1);    v_add_variable("stmt",    p1);
+}
+{
+    v_save_variables();
+
+    cur_b = LLVMGetInsertBlock(voidc_builder);
+
+    cur_f = LLVMGetBasicBlockParent(cur_b);
+
+    loop_start_b = LLVMAppendBasicBlock(cur_f, "loop_start_b");
+    loop_stop_b  = LLVMAppendBasicBlock(cur_f, "loop_stop_b");
+
+    loop_start_bv = LLVMBasicBlockAsValue(loop_start_b);
+    loop_stop_bv  = LLVMBasicBlockAsValue(loop_stop_b);
+
+    v_add_variable("voidc_internal_brahch_target_continue", loop_start_bv);
+    v_add_variable("voidc_internal_branch_target_break",    loop_stop_bv);
+
+
+    LLVMBuildBr(voidc_builder, loop_start_b);
+
+
+    LLVMPositionBuilderAtEnd(voidc_builder, loop_start_b);
+
+
+    base_ast = v_cast(LLVMBitCast, stmt, v_ast_base_ref);
+
+    v_ast_accept_visitor(base_ast, visitor);
+
+
+    cur_b = LLVMGetInsertBlock(voidc_builder);
+
+    trm_v = LLVMGetBasicBlockTerminator(cur_b);
+
+    if (trm_v) {}
+    else
+    {
+        LLVMBuildBr(voidc_builder, loop_start_b);
+    }
+
+
+    LLVMPositionBuilderAtEnd(voidc_builder, loop_stop_b);
+
+
+    v_restore_variables();
+}
+
+
+//---------------------------------------------------------------------
+//- v_break ...
+//---------------------------------------------------------------------
+{
+    v_function_hack("voidc_intrinsic_break", voidc_intrinsic_t);
+}
+{
+    break_bv = v_get_variable("voidc_internal_branch_target_break");
+
+    break_b = LLVMValueAsBasicBlock(break_bv);
+
+    LLVMBuildBr(voidc_builder, break_b);
+}
+
+
+//---------------------------------------------------------------------
+//- v_continue ...
+//---------------------------------------------------------------------
+{
+    v_function_hack("voidc_intrinsic_continue", voidc_intrinsic_t);
+}
+{
+    continue_bv = v_get_variable("voidc_internal_branch_target_continue");
+
+    continue_b = LLVMValueAsBasicBlock(continue_bv);
+
+    LLVMBuildBr(voidc_builder, continue_b);
+}
+
+
+//---------------------------------------------------------------------
+//- void voidc_enable_statement_loop(void);
+//---------------------------------------------------------------------
+{
+    ft = LLVMFunctionType(void, 0, 0, 0);
+
+    f = v_function_hack("voidc_enable_statement_loop", ft);
+}
+{
+    vhg = voidc_has_grammar();
+
+    if (vhg)
+    {
+        pvm = voidc_visitor_get_void_method(voidc_compiler, quark);
+
+        if (pvm)  v_return();
+    }
+    else
+    {
+        v_return();
+    }
+
+    pp0 = v_alloca(v_peg_opaque_parser_ptr, 4);
+    v_initialize(pp0, 4);
+
+    pp1 = v_getelementptr(pp0, 1);
+    pp2 = v_getelementptr(pp0, 2);
+    pp3 = v_getelementptr(pp0, 3);
+
+    v_peg_make_literal_parser(pp0, "loop");
+
+    v_peg_make_identifier_parser(pp1, "_");
+
+    v_peg_make_identifier_parser(pp2, "stmt");
+    v_peg_make_catch_variable_parser(pp2, "s", pp2);
+
+
+    ar0 = v_alloca(v_peg_opaque_argument_ptr);
+    v_initialize(ar0);
+
+    v_peg_make_identifier_argument(ar0, "s");
+
+
+    act = v_alloca(v_peg_opaque_action_ptr);
+    v_initialize(act);
+
+    v_peg_make_call_action(act, "mk_stmt_loop", ar0, 1);
+
+    v_peg_make_action_parser(pp3, act);
+
+
+    v_peg_make_sequence_parser(pp0, pp0, 4);
+
+
+    gr0 = v_alloca(v_peg_opaque_grammar_ptr);
+    v_initialize(gr0);
+
+    v_peg_get_grammar(gr0);
+
+
+    v_peg_grammar_set_action(gr0, gr0, "mk_stmt_loop", mk_stmt_loop_grammar_action);
+
+
+    v_peg_grammar_set_parser(gr0, gr0, "stmt_loop", pp0, 0);
+
+
+    v_peg_make_identifier_parser(pp0, "stmt_loop");
+
+
+    v_peg_grammar_get_parser(gr0, "stmt", pp1, 0);
+
+    v_peg_make_choice_parser(pp0, pp0, 2);
+
+    v_peg_grammar_set_parser(gr0, gr0, "stmt", pp0, 0);
+
+
+    v_peg_set_grammar(gr0);
+
+
+    void_method = v_cast(LLVMBitCast, compile_ast_stmt_loop_t, void_ptr);
+
+    voidc_visitor_set_void_method(voidc_compiler, voidc_compiler, quark, void_method);
+
+
+    v_add_intrinsic("v_break",    voidc_intrinsic_break);
+    v_add_intrinsic("v_continue", voidc_intrinsic_continue);
+
+
+    v_terminate(gr0);
+    v_terminate(act);
+    v_terminate(ar0);
+    v_terminate(pp0, 4);
+}
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+{
+    module = v_get_module();
+
+    //-----------------------------------------------------------------
+//  v_debug_print_module(1);
+
+    voidc_prepare_module_for_jit(module);
+
+    //-----------------------------------------------------------------
+    PH = v_alloca(LLVMOrcModuleHandle);
+
+    LLVMOrcAddEagerlyCompiledIR(voidc_jit, PH, module,
+                                voidc_resolver, 0
+                               );
+
+    //-----------------------------------------------------------------
+    v_set_module(0);
+}
+
+
+//---------------------------------------------------------------------
+{   v_import("arithmetic.void"); }
+{
+    voidc_enable_statement_loop();
+}
+
+
+{
+    vn0 = v_alloca(int, 2);
+    vn1 = v_getelementptr(vn0, 1);
+
+    v_store(0, vn0);
+
+    loop
+    {
+        i = v_load(vn0);
+
+        c = v_icmp(LLVMIntEQ, i, 5);
+
+        if (c)  v_break();
+
+
+        v_store(0, vn1);
+
+        loop
+        {
+            j = v_load(vn1);
+
+            c = v_icmp(LLVMIntEQ, j, 7);
+
+            if (c)  v_break();
+
+
+            printf("i,j: %d, %d\n", i, j);
+
+
+            j1 = v_binop(LLVMAdd, j, 1);
+
+            v_store(j1, vn1);
+        }
+
+
+        i1 = v_binop(LLVMAdd, i, 1);
+
+        v_store(i1, vn0);
+    }
+}
+
+
+

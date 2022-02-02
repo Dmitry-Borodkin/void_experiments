@@ -1,0 +1,138 @@
+{
+    v_import("llvm-c/Core.void");
+
+}
+
+{   v_import("loop.void");
+    v_import("arithmetic.void");
+    v_import("function_hack.void");
+    v_import("memory.void");
+}
+
+{   voidc_enable_statement_block();
+    voidc_enable_statement_if_then_else();
+    voidc_enable_statement_loop();
+}
+
+{   v_import("printf.void");
+}
+
+
+{
+    Nv = LLVMConstInt(int, 130, 0);
+
+    v_add_local_constant("N", Nv);
+}
+
+
+//{ v_debug_print_module(99); }
+{
+    va = v_malloc(LLVMValueRef, N);
+    vs = v_malloc(LLVMValueRef, N);
+
+    //-----------------------------------------------------------------
+    v = v_alloca(int);
+
+    v_store(0, v);
+
+    loop
+    {
+        i = v_load(v);
+
+        f = v_icmp(LLVMIntEQ, i, N);
+        if (f)  v_break();
+
+
+        t = LLVMIntType(i);
+
+
+        a = LLVMAlignOf(t);
+
+        vai = v_getelementptr(va, i);
+
+        v_store(a, vai);
+
+
+        s = LLVMSizeOf(t);
+
+        vsi = v_getelementptr(vs, i);
+
+        v_store(s, vsi);
+
+
+        i = v_binop(LLVMAdd, i, 1);
+
+        v_store(i, v);
+    }
+
+    //-----------------------------------------------------------------
+    aa = LLVMConstArray(int, va, N);
+    ss = LLVMConstArray(int, vs, N);
+
+    v_add_local_constant("AA", aa);
+    v_add_local_constant("SS", ss);
+
+
+    v_mfree(vs);
+    v_mfree(va);
+}
+
+{
+    T = LLVMArrayType(int, N);
+
+    v_add_local_symbol("T", LLVMOpaqueType, T);
+}
+
+{
+    aa = v_malloc(T);
+    ss = v_malloc(T);
+
+    v_store(AA, aa);
+    v_store(SS, ss);
+
+
+    //-----------------------------------------------------------------
+    v = v_alloca(int);
+
+    v_store(0, v);
+
+    loop
+    {
+        i = v_load(v);
+
+        f = v_icmp(LLVMIntEQ, i, N);
+        if (f)  v_break();
+
+
+        aai = v_getelementptr(aa, 0, i);
+
+        a = v_load(aai);
+
+
+        ssi = v_getelementptr(ss, 0, i);
+
+        s = v_load(ssi);
+
+
+        printf("%d: %d, %d\n", i, a, s);
+
+
+        i = v_binop(LLVMAdd, i, 1);
+
+        v_store(i, v);
+    }
+
+
+    v_mfree(ss);
+    v_mfree(aa);
+}
+
+
+
+
+
+
+
+
+
+

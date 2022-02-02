@@ -1,0 +1,134 @@
+{   v_import("voidc_target.void");
+    v_import("voidc_types.void");
+
+    v_import("if_then_else.void");
+    v_import("block.void");
+    v_import("loop.void");
+    v_import("expression.void");
+    v_import("defer.void");
+    v_import("definitions.void");
+
+    v_import("llvm-c/Support.void");
+}
+
+{   v_import("printf.void");
+}
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_loop();
+    voidc_enable_expression();
+    voidc_enable_statement_defer();
+    voidc_enable_definitions();
+}
+
+
+//---------------------------------------------------------------------
+//- ... <cairo/cairo.h>
+//---------------------------------------------------------------------
+{   ok = LLVMLoadLibraryPermanently("libcairo.so");
+
+    printf("ok: %d\n", ok);
+}
+
+
+{   surface_t = v_struct_type_named("struct.cairo_surface_t");
+
+    v_add_type("cairo_surface_t", surface_t);
+
+    cairo_t = v_struct_type_named("struct.cairo_t");
+
+    v_add_type("cairo_t", cairo_t);
+}
+
+
+//---------------------------------------------------------------------
+double = float(64);
+
+
+//---------------------------------------------------------------------
+cairo_format_t = int;
+
+CAIRO_FORMAT_ARGB32:    cairo_format_t = 0;
+CAIRO_FORMAT_RGB24:     cairo_format_t = 1;
+CAIRO_FORMAT_A8:        cairo_format_t = 2;
+CAIRO_FORMAT_A1:        cairo_format_t = 3;
+CAIRO_FORMAT_RGB16_565: cairo_format_t = 4;
+CAIRO_FORMAT_RGB30:     cairo_format_t = 5;
+
+cairo_image_surface_create: (cairo_format_t, width: int, height: int) -> *cairo_surface_t;
+
+cairo_surface_flush: (*cairo_surface_t) -> void;
+
+cairo_surface_write_to_png: (*cairo_surface_t, filename: *const char) -> int;
+
+cairo_surface_destroy: (*cairo_surface_t) -> void;
+
+
+cairo_create: (*cairo_surface_t) -> *cairo_t;
+
+cairo_destroy:       (*cairo_t) -> void;
+cairo_paint:         (*cairo_t) -> void;
+cairo_fill:          (*cairo_t) -> void;
+cairo_fill_preserve: (*cairo_t) -> void;
+cairo_stroke:        (*cairo_t) -> void;
+
+cairo_set_source_rgb:  (*cairo_t, r: double, g: double, b: double) -> void;
+
+cairo_set_source_rgba: (*cairo_t, r: double, g: double, b: double, a: double) -> void;
+
+cairo_rectangle: (*cairo_t, x: double, y: double, w: double, h: double) -> void;
+
+cairo_set_line_width: (*cairo_t, w: double) -> void;
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+//  surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 800, 600);
+//  surface = cairo_image_surface_create(CAIRO_FORMAT_RGB24, 800, 600);
+    surface = cairo_image_surface_create(CAIRO_FORMAT_RGB30, 800, 600);
+
+    defer cairo_surface_destroy(surface);
+
+    {   cr = cairo_create(surface);
+        defer cairo_destroy(cr);
+
+        cairo_set_source_rgb(cr, 1, 1, 1);
+        cairo_paint(cr);
+
+        cairo_set_line_width(cr, 1);
+
+        i = *v_alloca(int) := 1;
+
+        loop
+        {
+            if (i == 30) v_break();
+
+            c = i / (30:double);
+
+            cairo_set_source_rgb(cr, 0, 1-c, c);
+
+            n = i*10 + (1:double)/2;
+
+            cairo_rectangle(cr, n, n, 800-2*n, 600-2*n);
+            cairo_stroke(cr);
+
+            ++i;
+        }
+    }
+
+    cairo_surface_flush(surface);
+
+    cairo_surface_write_to_png(surface, "try_cairo2.png");
+}
+
+
+//---------------------------------------------------------------------
+system: (*const char) -> int;
+
+
+{   system("display try_cairo2.png");
+}
+
+

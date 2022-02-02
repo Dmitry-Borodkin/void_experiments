@@ -1,0 +1,264 @@
+Brackets: ⟦ ⟧
+
+
+═══════════════════════════════════════════════════════════════════════
+⟦ A && B ⟧
+
+
+res = v_alloca(bool);
+
+v_store(false, res);
+
+block
+{
+    a = ⟦ A ⟧;
+
+    if (a)  ;
+    else    v_break();
+
+    b = ⟦ B ⟧;
+
+    v_store(b, res);
+}
+
+⟦ result ⟧ = v_load(res);
+
+
+───────────────────────────────────────────────────────────────────────
+⟦ A && B && C ⟧
+
+
+res = v_alloca(bool);
+
+v_store(false, res);
+
+block
+{
+    a = ⟦ A ⟧;
+
+    if (a)  ;
+    else    v_break();
+
+    b = ⟦ B ⟧;
+
+    if (b)  ;
+    else    v_break();
+
+    c = ⟦ C ⟧;
+
+    v_store(c, res);
+}
+
+⟦ result ⟧ = v_load(res);
+
+
+───────────────────────────────────────────────────────────────────────
+⟦ A && B && C && D ⟧
+
+
+res = v_alloca(bool);
+
+v_store(false, res);
+
+block
+{
+    a = ⟦ A ⟧;
+
+    if (a)  ;
+    else    v_break();
+
+    b = ⟦ B ⟧;
+
+    if (b)  ;
+    else    v_break();
+
+    c = ⟦ C ⟧;
+
+    if (c)  ;
+    else    v_break();
+
+    d = ⟦ D ⟧;
+
+    v_store(d, res);
+}
+
+⟦ result ⟧ = v_load(res);
+
+
+═══════════════════════════════════════════════════════════════════════
+⟦ A || B ⟧
+
+
+res = v_alloca(bool);
+
+v_store(true, res);
+
+block
+{
+    a = ⟦ A ⟧;
+
+    if (a)  v_break();
+
+    b = ⟦ B ⟧;
+
+    v_store(b, res);
+}
+
+⟦ result ⟧ = v_load(res);
+
+
+───────────────────────────────────────────────────────────────────────
+⟦ A || B || C ⟧
+
+
+res = v_alloca(bool);
+
+v_store(true, res);
+
+block
+{
+    a = ⟦ A ⟧;
+
+    if (a)  v_break();
+
+    b = ⟦ B ⟧;
+
+    if (b)  v_break();
+
+    c = ⟦ C ⟧;
+
+    v_store(c, res);
+}
+
+⟦ result ⟧ = v_load(res);
+
+
+───────────────────────────────────────────────────────────────────────
+⟦ A || B || C || D ⟧
+
+
+res = v_alloca(bool);
+
+v_store(true, res);
+
+block
+{
+    a = ⟦ A ⟧;
+
+    if (a)  v_break();
+
+    b = ⟦ B ⟧;
+
+    if (b)  v_break();
+
+    c = ⟦ C ⟧;
+
+    if (c)  v_break();
+
+    d = ⟦ D ⟧;
+
+    v_store(d, res);
+}
+
+⟦ result ⟧ = v_load(res);
+
+
+
+═══════════════════════════════════════════════════════════════════════
+⟦ A < B ⟧
+
+
+{
+    a = ⟦ A ⟧;
+
+    b = ⟦ B ⟧;
+
+    ⟦ result ⟧ = a ⟦<⟧ b;
+}
+
+
+───────────────────────────────────────────────────────────────────────
+⟦ A < B < C ⟧
+
+
+res = v_alloca(bool);
+
+v_store(false, res);
+
+block
+{
+    a = ⟦ A ⟧;
+
+    b = ⟦ B ⟧;
+
+    r = a ⟦<⟧ b;
+
+    if (r)  ;
+    else    v_break();
+
+    c = ⟦ C ⟧;
+
+    r = b ⟦<⟧ c;
+
+    v_store(r, res);
+}
+
+⟦ result ⟧ = v_load(res);
+
+
+───────────────────────────────────────────────────────────────────────
+⟦ A < B < C < D ⟧
+
+
+res = v_alloca(bool);
+
+v_store(false, res);
+
+block
+{
+    a = ⟦ A ⟧;
+
+    b = ⟦ B ⟧;
+
+    r = a ⟦<⟧ b;
+
+    if (r)  ;
+    else    v_break();
+
+    c = ⟦ C ⟧;
+
+    r = b ⟦<⟧ c;
+
+    if (r)  ;
+    else    v_break();
+
+    d = ⟦ D ⟧;
+
+    r = c ⟦<⟧ d;
+
+    v_store(r, res);
+}
+
+⟦ result ⟧ = v_load(res);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

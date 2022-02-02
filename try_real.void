@@ -1,0 +1,492 @@
+{   v_import("level-00");
+    v_import("level-01");
+
+    v_import("llvm-c/Core.void");
+}
+
+{   v_enable_level_01();
+}
+
+{   v_import("printf.void");
+}
+
+
+//---------------------------------------------------------------------
+v_function_name_intrinsic: (vis: voidc_visitor_ptr, *void,
+                            args: v_ast_expr_list_ptr, count: int) -> void
+{
+    builder = v_target_get_builder();
+
+    cur_b = LLVMGetInsertBlock(builder);
+
+    cur_f = LLVMGetBasicBlockParent(cur_b);
+
+    name = LLVMGetValueName(cur_f);
+
+    expr = v_alloca(v_ast_opaque_expr_sptr);
+    v_initialize(expr);
+    defer v_terminate(expr);
+
+    v_ast_make_expr_string(expr, name);
+
+    v_set_result_type(v_pointer_type(char, 0));
+
+    v_ast_accept_visitor((expr : v_ast_base_ptr), vis);
+}
+
+
+//---------------------------------------------------------------------
+v_real_intrinsic: (vis: voidc_visitor_ptr, *void,
+                   args: v_ast_expr_list_ptr, count: int) -> void
+{
+    arg = v_alloca(v_ast_opaque_expr_sptr, 2);
+    v_initialize(arg, 2);
+    defer v_terminate(arg, 2);
+
+    v_list_get_items(args, 0, arg, 2);
+
+    t_str = v_ast_expr_string_get_string(arg + 1);      //- Suffix string
+
+    t: &v_type_ptr := 0;    //- Sic!
+
+    if (t_str[0] == 0)      //- Empty suffix
+    {
+        t := v_get_result_type();
+
+        if (t == INVIOLABLE_TAG  ||  t == UNREFERENCE_TAG)
+        {
+            t := v_f64_type();      //- "double"
+        }
+    }
+    else    //- Suffix determine type (kinda)
+    {
+        if (t_str[1])       //- Got bit width
+        {
+            width_v = LLVMConstIntOfString(v_type_get_llvm_type(unsigned), t_str+1, 10);
+
+            width = (LLVMConstIntGetZExtValue(width_v) : unsigned);
+
+            switch(width)
+            {
+            case  16:   t := v_f16_type();  v_break();
+            case  32:   t := v_f32_type();  v_break();
+            case  64:   t := v_f64_type();  v_break();
+            case 128:   t := v_f128_type(); v_break();
+            }
+        }
+        else
+        {
+            t := v_f32_type();      //- "float"
+        }
+    }
+
+    src: &*const char := v_ast_expr_string_get_string(arg + 0);         //- Value string (source)
+
+    dst = v_alloca(v_util_opaque_std_string);
+    v_initialize(dst);
+    defer v_terminate(dst);
+
+    loop
+    {
+        if (!*src)  v_break();
+
+        if (*src != '\'')   v_std_string_append_char(dst, *src);
+
+        ++src;
+    }
+
+    v = LLVMConstRealOfString(v_type_get_llvm_type(t), v_std_string_get(dst));
+
+//    str = v_ast_expr_string_get_string(arg + 0);        //- Value string
+//
+////    t: &v_type_ptr := v_get_result_type();
+////
+////    if (t == INVIOLABLE_TAG  ||  t == UNREFERENCE_TAG)
+////    {
+////        t := v_f64_type();
+////    }
+////
+////    arg = v_alloca(v_ast_opaque_expr_sptr);
+////    v_initialize(arg);
+////    defer v_terminate(arg);
+////
+////    v_list_get_items(list, 0, (arg : v_ast_base_ptr));
+////
+////    v_list_get_items((arg : v_ast_expr_list_ptr), 0, arg);
+////
+////    str = v_ast_expr_string_get_string(arg);
+//
+//    v = LLVMConstRealOfString(v_type_get_llvm_type(t), str);
+
+    v_adopt_result(t, v);
+}
+
+
+//---------------------------------------------------------------------
+v_integer_intrinsic: (vis: voidc_visitor_ptr, *void,
+                      args: v_ast_expr_list_ptr, count: int) -> void
+{
+    arg = v_alloca(v_ast_opaque_expr_sptr, 2);
+    v_initialize(arg, 2);
+    defer v_terminate(arg, 2);
+
+    v_list_get_items(args, 0, arg, 2);
+
+    t_str = v_ast_expr_string_get_string(arg + 1);      //- Suffix string
+
+    t: &v_type_ptr := v_undef();
+
+    if (t_str[0] == 0)      //- Empty suffix
+    {
+        t := v_get_result_type();
+
+        if (t == INVIOLABLE_TAG  ||  t == UNREFERENCE_TAG)
+        {
+            t := v_find_type("int");
+        }
+    }
+    else    //- Suffix determine type (kinda)
+    {
+        signed = (t_str[0] == 'i'  ||  t_str[0] == 'I');
+
+        if (t_str[1])       //- Got bit width
+        {
+            width_v = LLVMConstIntOfString(v_type_get_llvm_type(unsigned), t_str+1, 10);
+
+            width = (LLVMConstIntGetZExtValue(width_v) : unsigned);
+
+            if (signed) t := v_int_type(width);
+            else        t := v_uint_type(width);
+        }
+        else
+        {
+            if (signed) t := v_find_type("int");
+            else        t := v_find_type("unsigned");
+        }
+    }
+
+    radix: &uint(8) := 10;
+
+    src: &*const char := v_ast_expr_string_get_string(arg + 0);         //- Value string (source)
+
+    dst = v_alloca(v_util_opaque_std_string);
+    v_initialize(dst);
+    defer v_terminate(dst);
+
+    if (src[0] == '-')
+    {
+        ++src;
+
+        v_std_string_set(dst, "-");
+    }
+    else
+    {
+        v_std_string_set(dst, "");
+
+        if (src[0] == '+')  ++src;
+    }
+
+    radix: &uint(8) := 10;
+
+    if (src[0] == '0')
+    {
+        switch((src[1] : char32_t))
+        {
+        case 0: v_break();
+
+        case 'x': case 'X':     radix := 16;  src += 2;   v_break();
+        case 'b': case 'B':     radix :=  2;  src += 2;   v_break();
+
+        default:                radix :=  8;  src += 1;   v_break();
+        }
+    }
+
+    loop
+    {
+        if (!*src)  v_break();
+
+        if (*src != '\'')   v_std_string_append_char(dst, *src);
+
+        ++src;
+    }
+
+//  v_std_string_append(dst, src);
+
+    v = LLVMConstIntOfString(v_type_get_llvm_type(t), v_std_string_get(dst), radix);
+
+    v_adopt_result(t, v);
+}
+
+
+//---------------------------------------------------------------------
+{
+    v_add_intrinsic("v_function_name", v_function_name_intrinsic, 0);
+
+    v_add_intrinsic("v_real",    v_real_intrinsic, 0);
+    v_add_intrinsic("v_integer", v_integer_intrinsic, 0);
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+//  v = v_real("-3.333333e-5");
+//  v: float(32) = v_real("0x1p10");
+//  v: &float(128) := v_real("0x1p0");
+    v: &float(128) := (1 : float(128)) / 7;
+
+    printf("v: %.99g\n", (v : float(64)));
+
+    p = (&v : *uint(32));
+
+    printf("p: %8X%8X%8X%8X\n", p[3], p[2], p[1], p[0]);
+}
+
+
+//---------------------------------------------------------------------
+{
+    v: &int(256) := v_integer("0x1234567890\'1234567890\'1234567890\'1234567890\'1234567890", "");
+
+    p = (&v : *uint(32));
+
+    printf("p: %08X%08X%08X%08X%08X%08X%08X%08X\n", p[7], p[6], p[5], p[4], p[3], p[2], p[1], p[0]);
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    Z: size_t = 0;
+
+    N = ~Z >> 1;
+
+    printf("N: %zu\n", N);
+
+    M: intptr_t = -9223372036854775808;
+
+    printf("M: %lld\n", (M : long_long) );
+
+}
+
+
+//---------------------------------------------------------------------
+//- mk_real_literal - grammar action
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+mk_real_literal_grammar_action: (ret: v_util_std_any_ptr,
+                                any: v_util_std_any_ptr,
+                                any_count: size_t) -> void
+{
+//    str = v_std_string_get(v_std_any_get_pointer(v_util_opaque_std_string, any+0));
+//
+//    expr = v_alloca(v_ast_opaque_expr_sptr);
+//    v_initialize(expr);
+//    defer v_terminate(expr);
+//
+//    v_ast_make_expr_string(expr, str);
+//
+//    lst = v_alloca(v_ast_opaque_expr_list_sptr);
+//    v_initialize(lst);
+//    defer v_terminate(lst);
+//
+//    v_make_list(lst, expr, 1);
+
+    str0 = v_std_string_get(v_std_any_get_pointer(v_util_opaque_std_string, any+0));
+    str1 = v_std_string_get(v_std_any_get_pointer(v_util_opaque_std_string, any+1));
+
+    expr = v_alloca(v_ast_opaque_expr_sptr, 2);
+    v_initialize(expr, 2);
+    defer v_terminate(expr, 2);
+
+    v_ast_make_expr_string(expr+0, str0);
+    v_ast_make_expr_string(expr+1, str1);
+
+    lst = v_alloca(v_ast_opaque_expr_list_sptr);
+    v_initialize(lst);
+    defer v_terminate(lst);
+
+    v_make_list(lst, expr, 2);
+
+    v_ast_make_expr_identifier(expr, "v_real");
+
+    v_ast_make_expr_call(expr, expr, lst);
+
+    v_std_any_set_pointer(ret, expr);
+}
+
+
+//---------------------------------------------------------------------
+//- mk_big_integer - grammar action
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+mk_big_integer_grammar_action: (ret: v_util_std_any_ptr,
+                                any: v_util_std_any_ptr,
+                                any_count: size_t) -> void
+{
+//    printf("mk_big_integer_grammar_action\n");
+//    defer printf("mk_big_integer_grammar_action leave\n");
+
+    str0 = v_std_string_get(v_std_any_get_pointer(v_util_opaque_std_string, any+0));
+    str1 = v_std_string_get(v_std_any_get_pointer(v_util_opaque_std_string, any+1));
+
+    expr = v_alloca(v_ast_opaque_expr_sptr, 2);
+    v_initialize(expr, 2);
+    defer v_terminate(expr, 2);
+
+    v_ast_make_expr_string(expr+0, str0);
+    v_ast_make_expr_string(expr+1, str1);
+
+    lst = v_alloca(v_ast_opaque_expr_list_sptr);
+    v_initialize(lst);
+    defer v_terminate(lst);
+
+    v_make_list(lst, expr, 2);
+
+    v_ast_make_expr_identifier(expr, "v_integer");
+
+    v_ast_make_expr_call(expr, expr, lst);
+
+    v_std_any_set_pointer(ret, expr);
+}
+
+
+//---------------------------------------------------------------------
+{
+    gr0 = v_alloca(v_peg_opaque_grammar_sptr);
+    v_initialize(gr0);
+    defer v_terminate(gr0);
+
+    v_peg_get_grammar(gr0);
+
+    grammar gr0
+    {
+    actions:
+        mk_big_integer  = mk_big_integer_grammar_action;
+        mk_real_literal = mk_real_literal_grammar_action;
+
+    parsers:
+        big_integer = <[-+]? big_number> <integer_suffix?> !ident_cont  { mk_big_integer($1, $2) };
+
+        big_number = '0' ([xX] hex_digits / [bB] bin_digits / oct_digits)?
+                   / nzdec_digits
+                   ;
+
+
+        hex_digits = hex_digit ('\''? hex_digit)*;
+
+        hex_digit = [0-9a-fA-F];
+
+        dec_digits = dec_digit ('\''? dec_digit)*;
+
+        bin_digits = bin_digit ('\''? bin_digit)*;
+
+        bin_digit = [01];
+
+        oct_digits = oct_digit ('\''? oct_digit)*;
+
+        oct_digit = [0-7];
+
+
+        integer_suffix = [iIuU] nzdec_digits?;
+
+        nzdec_digits = [1-9] ('\''? dec_digit)*;
+
+        prim =+ big_integer;
+
+
+        real_literal = <[-+]? real_number> <real_suffix?> !ident_cont   { mk_real_literal($1, $2) };
+
+        real_number = dec_digits? '.' dec_digits dec_exponent?
+                    / dec_digits  '.' dec_exponent?
+                    / dec_digits dec_exponent
+                    / '0' [xX] (hex_digits? '.' hex_digits / hex_digits '.'?) hex_exponent
+                    ;
+
+        dec_exponent = [eE] [-+]? dec_digits;
+
+        hex_exponent = [pP] [-+]? dec_digits;
+
+        real_suffix = [fF] nzdec_digits?;
+
+        prim += real_literal;
+    }
+
+    v_peg_set_grammar(gr0);
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    printf("0x%X\n", 0xDEADBEEF);
+
+    printf("0x%X\n", 0b10101010);
+
+    printf("0%o\n", 0777);
+
+
+    vv = 0xDEADBEEF'DEADBEEF'DEADBEEF'DEADBEEF'DEADBEEF'DEADBEEF'DEADBEEF'DEADBEEFu256;
+
+    v: &int(256) := vv;
+
+    p = (&v : *uint(32));
+
+    printf("p: 0x%08X%08X%08X%08X%08X%08X%08X%08X\n", p[7], p[6], p[5], p[4], p[3], p[2], p[1], p[0]);
+
+}
+
+//---------------------------------------------------------------------
+{
+    printf("fname: %s\n", v_function_name());
+}
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    vv = 3.14'15'92'65'358979323846264338327950288419716939937510582f128;
+
+    v: &float(128) := vv;
+
+    printf("v: %.99g\n", (v : float(64)));
+
+    p = (&v : *uint(32));
+
+    printf("p: %8X%8X%8X%8X\n", p[3], p[2], p[1], p[0]);
+
+
+    printf("w: %.99g\n", 0x0.1p0);
+}
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    vv = -020i1024;
+
+    v: &int(1024) := vv;
+
+    p = (&v : *uint(32));
+
+    printf("p: 0x");
+
+    i: &int := 1024/32 - 1;
+
+    loop
+    {
+        if (i < 0)  v_return();
+
+        printf("%08X", p[i]);
+
+        --i;
+    }
+
+    printf("\n");
+}
+
+//---------------------------------------------------------------------
+{
+    vv = 0i256;
+
+}
+
+
+

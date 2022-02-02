@@ -1,0 +1,529 @@
+//---------------------------------------------------------------------
+//- Not so simple calculator...
+//---------------------------------------------------------------------
+{   v_import("grammar.void");
+    v_import("switch.void");
+}
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_loop();
+    voidc_enable_statement_grammar();
+    voidc_enable_statement_switch();
+}
+
+
+//---------------------------------------------------------------------
+{   module = LLVMModuleCreateWithName("my_stmt_grammar_mod");
+
+    v_set_module(module);
+}
+
+
+//---------------------------------------------------------------------
+{
+    typ0 = v_alloca(v_type_ptr, 2);
+    typ1 = v_getelementptr(typ0, 1);
+
+    v_store(intptr_t, typ0);
+    v_store(intptr_t, typ1);
+
+    ft = v_function_type(intptr_t, typ0, 2, 0);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("my_integer_power", ft);
+
+    v_add_parameter_name(f, 0, "x", intptr_t);
+    v_add_parameter_name(f, 1, "n", intptr_t);
+}
+{
+    base = v_alloca(intptr_t, 3);
+    exp  = v_getelementptr(base, 1);
+    res  = v_getelementptr(base, 2);
+
+    base = v_reference(base);   v_assign(base, x);
+    exp  = v_reference(exp);    v_assign(exp,  n);
+    res  = v_reference(res);    v_assign(res,  1);
+
+    n1 = v_cast(1, intptr_t);
+
+    loop
+    {
+        if (exp)  {}
+        else      v_break();
+
+        odd = v_binop(LLVMAnd, exp, n1);
+
+        if (odd)
+        {
+            r = v_binop(LLVMMul, res, base);
+
+            v_assign(res, r);
+        }
+
+        e = v_binop(LLVMLShr, exp, n1);
+
+        v_assign(exp, e);
+
+        b = v_binop(LLVMMul, base, base);
+
+        v_assign(base, b);
+    }
+
+    v_return(res);
+}
+
+
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("do_expr_grammar_action", v_peg_grammar_action_fun_t);
+
+    v_add_parameter_name(f, 0, "ret",       v_util_std_any_ptr);
+    v_add_parameter_name(f, 1, "any0",      v_util_std_any_ptr);
+    v_add_parameter_name(f, 2, "any_count", size_t);
+}
+{
+    str0 = v_std_any_get_pointer(v_util_opaque_std_string, any0);
+    str0 = v_std_string_get(str0);
+
+
+    any1 = v_getelementptr(any0, 1);
+
+    val = v_std_any_get_value(intptr_t, any1);
+
+
+    arg0 = v_alloca(v_ast_opaque_argument_sptr, 3);
+    v_initialize(arg0, 3);
+
+    arg1 = v_getelementptr(arg0, 1);
+    arg2 = v_getelementptr(arg0, 2);
+
+    stmt = v_alloca(v_ast_opaque_stmt_sptr);
+    v_initialize(stmt);
+
+
+    v_ast_make_arg_string(arg0, "%s  ->  %d\n");
+
+    v_ast_make_arg_string (arg1, str0);
+    v_ast_make_arg_integer(arg2, val);
+
+    v_ast_make_stmt_call(stmt, "", "printf", arg0, 3);
+
+
+    v_std_any_set_pointer(ret, stmt);
+
+
+    v_terminate(stmt);
+    v_terminate(arg0, 3);
+}
+
+
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("binop_grammar_action", v_peg_grammar_action_fun_t);
+
+    v_add_parameter_name(f, 0, "ret",       v_util_std_any_ptr);
+    v_add_parameter_name(f, 1, "any0",      v_util_std_any_ptr);
+    v_add_parameter_name(f, 2, "any_count", size_t);
+}
+{
+    opc = v_std_any_get_value(char32_t, any0);
+    opc = v_cast(opc, intptr_t);
+
+    arg_1 = v_getelementptr(any0, 1);
+    arg_2 = v_getelementptr(any0, 2);
+
+    prio = v_std_any_get_value(intptr_t, arg_1);
+    left = v_std_any_get_value(intptr_t, arg_2);
+
+    n24 = v_cast(24, intptr_t);
+    n1  = v_cast( 1, intptr_t);
+
+    val = v_binop(LLVMShl, opc, n24);
+
+    prio = v_binop(LLVMShl, prio, n1);
+
+    val = v_binop(LLVMOr, val, prio);
+    val = v_binop(LLVMOr, val, left);
+
+    v_std_any_set_value(ret, val);
+}
+
+
+//---------------------------------------------------------------------
+//- Precedence climbing algorithm...
+//---------------------------------------------------------------------
+//- compute_expr(min_prec):
+//-   result = compute_atom()
+//-
+//-   while cur token is a binary operator with precedence >= min_prec:
+//-     prec, assoc = precedence and associativity of current token
+//-     if assoc is left:
+//-       next_min_prec = prec + 1
+//-     else:
+//-       next_min_prec = prec
+//-     rhs = compute_expr(next_min_prec)
+//-     result = compute operator(result, rhs)
+//-
+//-   return result
+//---------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------
+//- Global variable(s)
+//---------------------------------------------------------------------
+{
+    module = v_get_module();
+
+    //-----------------------------------------------------------------
+    //- precedence_stack_node_t ...
+    //-----------------------------------------------------------------
+    precedence_stack_node_t = v_struct_type_named("struct.precedence_stack_node_t");
+
+    precedence_stack_node_ptr  = v_pointer_type(precedence_stack_node_t, 0);
+    precedence_stack_node_ptr_ = v_type_get_llvm_type(precedence_stack_node_ptr);
+
+    typ0 = v_alloca(v_type_ptr, 2);
+    typ1 = v_getelementptr(typ0, 1);
+
+    v_store(intptr_t,                  typ0);       //- Precedence value
+    v_store(precedence_stack_node_ptr, typ1);       //- Next node ...
+
+    v_type_struct_set_body(precedence_stack_node_t, typ0, 2, 0);
+
+    //-----------------------------------------------------------------
+    stack_g = LLVMAddGlobal(module, precedence_stack_node_ptr_, "precedence_stack");
+
+    stack_u = LLVMGetUndef(precedence_stack_node_ptr_);
+
+    LLVMSetInitializer(stack_g, stack_u);
+
+    //-----------------------------------------------------------------
+    v_add_local_symbol("precedence_stack_node_t",   voidc_opaque_type, precedence_stack_node_t);
+    v_add_local_symbol("precedence_stack_node_ptr", voidc_opaque_type, precedence_stack_node_ptr);
+
+    v_add_local_symbol("precedence_stack", precedence_stack_node_ptr, 0);       //- Sic!
+}
+
+
+//---------------------------------------------------------------------
+//- Precedence stack utility...
+//---------------------------------------------------------------------
+{
+    typ0 = v_alloca(v_type_ptr);
+
+    v_store(intptr_t, typ0);
+
+    ft = v_function_type(void, typ0, 1, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("precedence_stack_push", ft);
+
+    v_add_parameter_name(f, 0, "prec", intptr_t);
+}
+{
+//  printf("precedence_stack_push(%d)\n", prec);
+
+    node = v_malloc(precedence_stack_node_t);
+
+    p_prec = v_getelementptr(node, 0, 0);
+    p_next = v_getelementptr(node, 0, 1);
+
+    cur = v_load(precedence_stack);
+
+    v_store(prec, p_prec);
+    v_store(cur,  p_next);
+
+    v_store(node, precedence_stack);
+}
+
+//---------------------------------------------------------------------
+{
+    ft = v_function_type(intptr_t, 0, 0, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("precedence_stack_pop", ft);
+}
+{
+    node = v_load(precedence_stack);
+
+    p_prec = v_getelementptr(node, 0, 0);
+    p_next = v_getelementptr(node, 0, 1);
+
+    next = v_load(p_next);
+
+    v_store(next, precedence_stack);
+
+    prec = v_load(p_prec);
+
+    v_mfree(node);
+
+//  printf("precedence_stack_pop: %d\n", prec);
+
+    v_return(prec);
+}
+
+//---------------------------------------------------------------------
+{
+    ft = v_function_type(intptr_t, 0, 0, false);
+
+    //-----------------------------------------------------------------
+    f = v_function_hack("precedence_stack_peek", ft);
+}
+{
+    node = v_load(precedence_stack);
+
+    p_prec = v_getelementptr(node, 0, 0);
+
+    prec = v_load(p_prec);
+
+    v_return(prec);
+}
+
+
+//---------------------------------------------------------------------
+//- expr_start - grammar action
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("expr_start_grammar_action", v_peg_grammar_action_fun_t);
+
+    v_add_parameter_name(f, 0, "ret",       v_util_std_any_ptr);
+    v_add_parameter_name(f, 1, "any0",      v_util_std_any_ptr);
+    v_add_parameter_name(f, 2, "any_count", size_t);
+}
+{
+//  printf("expr_start_grammar_action\n");
+
+    precedence_stack_push(0);
+
+    v_std_any_set_value(ret, 1);
+}
+
+//---------------------------------------------------------------------
+//- expr_stop - grammar action
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("expr_stop_grammar_action", v_peg_grammar_action_fun_t);
+
+    v_add_parameter_name(f, 0, "ret",       v_util_std_any_ptr);
+    v_add_parameter_name(f, 1, "any0",      v_util_std_any_ptr);
+    v_add_parameter_name(f, 2, "any_count", size_t);
+}
+{
+//  printf("expr_stop_grammar_action\n");
+
+    precedence_stack_pop();
+
+    v_copy(ret, any0);
+}
+
+//---------------------------------------------------------------------
+//- expr_cleanup - grammar action
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("expr_cleanup_grammar_action", v_peg_grammar_action_fun_t);
+
+    v_add_parameter_name(f, 0, "ret",       v_util_std_any_ptr);
+    v_add_parameter_name(f, 1, "any0",      v_util_std_any_ptr);
+    v_add_parameter_name(f, 2, "any_count", size_t);
+}
+{
+//  printf("expr_cleanup_grammar_action\n");
+
+    precedence_stack_pop();
+
+    //- Just fail!
+}
+
+
+//---------------------------------------------------------------------
+//- expr_check - grammar action
+//---------------------------------------------------------------------
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("expr_check_grammar_action", v_peg_grammar_action_fun_t);
+
+    v_add_parameter_name(f, 0, "ret",       v_util_std_any_ptr);
+    v_add_parameter_name(f, 1, "any0",      v_util_std_any_ptr);
+    v_add_parameter_name(f, 2, "any_count", size_t);
+}
+{
+    min_prec = precedence_stack_peek();
+
+    opc = v_std_any_get_value(intptr_t, any0);
+
+    n1  = v_cast(1, intptr_t);
+
+    left = v_binop(LLVMAnd, opc, n1);
+
+    prec = v_binop(LLVMLShr, opc, n1);
+
+    mask = v_cast(8388607, intptr_t);     //- 2^23-1
+
+    prec = v_binop(LLVMAnd, prec, mask);
+
+
+    lt = v_icmp(LLVMIntULT, prec, min_prec);
+
+    if (lt) v_return();                             //- NOK
+
+
+    next_min_prec = v_binop(LLVMAdd, prec, left);
+
+
+    precedence_stack_push(next_min_prec);
+
+
+    v_std_any_set_value(ret, 1);                    //- OK
+}
+
+
+//---------------------------------------------------------------------
+//- expr_binop - grammar action
+//---------------------------------------------------------------------
+//{   v_debug_print_module(2); }
+{
+    //-----------------------------------------------------------------
+    f = v_function_hack("expr_binop_grammar_action", v_peg_grammar_action_fun_t);
+
+    v_add_parameter_name(f, 0, "ret",       v_util_std_any_ptr);
+    v_add_parameter_name(f, 1, "any0",      v_util_std_any_ptr);
+    v_add_parameter_name(f, 2, "any_count", size_t);
+}
+{
+    opc = v_std_any_get_value(intptr_t, any0);
+
+    n24 = v_cast(24, intptr_t);
+
+    opc = v_binop(LLVMLShr, opc, n24);
+
+    opc = v_cast(opc, int);
+
+
+    arg_1 = v_getelementptr(any0, 1);
+    arg_2 = v_getelementptr(any0, 2);
+
+    lhs = v_std_any_get_value(intptr_t, arg_1);
+    rhs = v_std_any_get_value(intptr_t, arg_2);
+
+//  printf("expr_binop(\'%c\', %d, %d)\n", opc, lhs, rhs);
+
+
+    res = v_alloca(intptr_t);   res = v_reference(res);
+
+    switch(opc)
+    {
+    case '+':   r = v_binop(LLVMAdd,  lhs, rhs);    v_assign(res, r);   v_break();
+    case '-':   r = v_binop(LLVMSub,  lhs, rhs);    v_assign(res, r);   v_break();
+    case '*':   r = v_binop(LLVMMul,  lhs, rhs);    v_assign(res, r);   v_break();
+    case '/':   r = v_binop(LLVMSDiv, lhs, rhs);    v_assign(res, r);   v_break();
+    case '%':   r = v_binop(LLVMSRem, lhs, rhs);    v_assign(res, r);   v_break();
+    case '^':   r = my_integer_power(lhs, rhs);     v_assign(res, r);   v_break();
+    }
+
+    v_std_any_set_value(ret, res);
+
+    precedence_stack_pop();
+}
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+{
+    module = v_get_module();
+
+    //-----------------------------------------------------------------
+//  v_debug_print_module(1);
+
+    voidc_prepare_module_for_jit(module);
+
+    //-----------------------------------------------------------------
+    PH = v_alloca(LLVMOrcModuleHandle);
+
+    LLVMOrcAddEagerlyCompiledIR(voidc_jit, PH, module,
+                                voidc_resolver, 0
+                               );
+
+    //-----------------------------------------------------------------
+    v_set_module(0);
+}
+
+
+//---------------------------------------------------------------------
+{
+    gr0 = v_alloca(v_peg_opaque_grammar_sptr);
+    v_initialize(gr0);
+
+    v_peg_get_grammar(gr0);
+
+
+    grammar gr0
+    {
+    actions:
+        do_expr = do_expr_grammar_action;
+        binop   = binop_grammar_action;
+
+        expr_start   = expr_start_grammar_action;
+        expr_stop    = expr_stop_grammar_action;
+        expr_cleanup = expr_cleanup_grammar_action;
+        expr_check   = expr_check_grammar_action;
+        expr_binop   = expr_binop_grammar_action;
+
+    parsers:
+
+        expr = { expr_start() }  e:expr_lr  { expr_stop(e) }
+             / { expr_cleanup() };
+
+
+        expr_lr = l:expr_lr _ op:binop { expr_check(op) } _ r:expr_lr  { expr_binop(op, l, r) }
+                / prim;
+
+
+        expr_lr is left-recursive;
+
+
+        prim = '(' _ e:expr _ ')'   { e }
+             / integer;
+
+
+        binop = op:[-+]     { binop( op, 1000, 1) }     //- left
+              / op:[*/%]    { binop( op, 2000, 1) }     //- left
+              / '^'         { binop('^', 3000, 0) };    //- right
+
+
+        stmt =+ "expr" !ident_cont _ <e:expr> _ ';'   { do_expr($1, e) };
+
+    }
+
+
+    v_peg_set_grammar(gr0);
+
+
+    v_terminate(gr0);
+}
+
+
+//{   v_debug_print_module(1); }
+{
+
+    expr 2 + 2;
+
+    expr 1 - 2;
+
+    expr (1 - 5)*(242 + 25/3);
+
+    expr 4^3^2^1^0;
+
+    expr 0^0;
+
+    expr 2^23-1;
+}
+
+
+

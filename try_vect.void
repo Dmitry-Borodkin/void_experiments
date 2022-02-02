@@ -1,0 +1,59 @@
+{   v_import("expression.void");
+    v_import("defer.void");
+}
+
+{   voidc_enable_statement_if_then_else();
+    voidc_enable_statement_block();
+    voidc_enable_statement_loop();
+    voidc_enable_statement_switch();
+    voidc_enable_statement_grammar();
+    voidc_enable_expression();
+    voidc_enable_statement_defer();
+}
+
+{   v_import("printf.void"); }
+
+
+//---------------------------------------------------------------------
+{
+    typ = *v_alloca(v_type_ptr) := v_vector_type(bool, 4);
+
+    ft = v_function_type(bool, &typ, 1, false);
+
+    v_add_local_symbol("llvm.vector.reduce.or.v4i1", ft, 0);
+
+    v_add_local_alias("llvm_vector_reduce_or_v4i1", "llvm.vector.reduce.or.v4i1");
+
+//    v_add_local_symbol("llvm.vector.reduce.or", ft, 0);
+//
+//    v_add_local_alias("llvm_vector_reduce_or", "llvm.vector.reduce.or");
+}
+
+{v_debug_print_module(1);}
+{
+    v = *v_alloca(vec(int, 4)) := 1;
+
+    c = llvm_vector_reduce_or_v4i1(v != 1);
+
+//  d = llvm_vector_reduce_or(v != 0);
+
+
+    printf("c: %d\n", c);
+}
+
+
+//---------------------------------------------------------------------
+{v_debug_print_module(1);}
+{
+    v = *v_alloca(vec(int, 4)) := 2;
+
+    b = v_cast(v, bool);        //- Error!
+
+    if (b)  printf("true\n");
+    else    printf("false\n");
+
+}
+
+
+
+

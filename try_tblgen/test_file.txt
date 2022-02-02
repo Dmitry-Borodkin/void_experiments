@@ -1,0 +1,22 @@
+    #define aaaa
+1
+ 2
+    #ifdef aaaa
+  3
+    #endif
+ 4
+    #ifdef bbbbb
+5
+    #endif
+ 6
+    #ifndef bbbbb
+  7
+        #define ZZZ
+ 8
+        #ifdef ZZZ
+9
+        #else
+ 0
+        #endif
+  1
+    #endif
