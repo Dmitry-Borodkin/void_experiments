@@ -3,6 +3,7 @@
     v_import("voidc_util.void");
 
     v_import("function_hack.void");
+    v_import("memory.void");
     v_import("if_then_else.void");
     v_import("block.void");
     v_import("loop.void");
@@ -22,7 +23,8 @@
 
 
 //---------------------------------------------------------------------
-N = 256;
+//N = 256;
+  N = 2048;
 
 
 //---------------------------------------------------------------------
@@ -81,13 +83,48 @@ my_divrem: (a: &uint(N), b: uint(N)) -> uint(N)
 
 
 //---------------------------------------------------------------------
+small_divrem: (a: &uint(N), d: uint(32)) -> uint(32)
+{
+    //- little endian
+    //- N % 32 == 0
+
+    K = N / 32;
+
+    A = *(&a : *uint(32)[K]);
+
+    k: &int := K-1;
+
+    v: &uint(64) := 0;
+
+    loop
+    {
+        if (k < 0) v_break();
+
+        v := (v << 32) | A[k];
+
+        u = v / d;
+        r = v % d;
+
+        A[k] := (u : uint(32));
+
+        v := r;
+
+        --k;
+    }
+
+    v_return((v : uint(32)));
+}
+
+
+//---------------------------------------------------------------------
 //{ v_debug_print_module(1); }
 {
     v: uint(N) = -1;
 
-    s = v_alloca(char, N*3/10+5);
+    s = v_malloc(int(8), N*3/10+5);
+    defer v_mfree(s);
 
-    p: &*char := s;
+    p: &*int(8) := s;
 
     t: &uint(N) := v;
 
@@ -98,9 +135,11 @@ my_divrem: (a: &uint(N), b: uint(N)) -> uint(N)
 //        d  = t % 10;
 //        t := t / 10;
 
-        d = my_divrem(t, 10);
+//      d = my_divrem(t, 10);
 
-        *p++ := ('0' + d : char);
+        d = small_divrem(t, 10);
+
+        *p++ := (d : int(8));
     }
 
     --p;
@@ -109,7 +148,7 @@ my_divrem: (a: &uint(N), b: uint(N)) -> uint(N)
 
     loop
     {
-        printf("%c", *p);
+        printf("%d", *p);
 
         if (p <= s) v_break();
 
