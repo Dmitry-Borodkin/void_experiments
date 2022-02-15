@@ -240,7 +240,7 @@ on_activate: (app: *GtkApplication, data: *void) -> void
 
     g_signal_connect_data(app, "activate", (on_activate: *(()->void)), 0, 0, 0);
 
-    g_application_run(app, 1, &"Нечто");
+    g_application_run(app, 1, &("Нечто" : *char));
 }
 
 

@@ -211,7 +211,7 @@ le = !v_is_big_endian();
 
     printf("A: (%d, %d, %d)\n", A[0], A[1], A[2]);
 
-    C = v_load(("Hello" : *char[6]));
+    C = "Hello";
 
     printf("C: (%c, %c, %c, %c, %c)\n", C[0], C[1], C[2], C[3], C[4]);
 

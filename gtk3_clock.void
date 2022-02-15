@@ -78,6 +78,34 @@ system: (cmd: *const char) -> int;
 
 
 //---------------------------------------------------------------------
+my_source =
+"""
+#include <time.h>
+#include <gtk/gtk.h>
+
+double my_clock(void)
+{
+    struct timespec rawtime;
+    struct tm * timeinfo;
+    double ret;
+
+    clock_gettime(CLOCK_REALTIME, &rawtime);
+    timeinfo = localtime(&rawtime.tv_sec);
+
+    ret = timeinfo->tm_hour;
+    ret = 60*ret + timeinfo->tm_min;
+    ret = 60*ret + timeinfo->tm_sec;
+    ret += rawtime.tv_nsec * 1e-9;
+
+    return ret;
+}
+
+void *my_gtk_hook = gtk_application_new;
+
+""";
+
+
+//---------------------------------------------------------------------
 buffer: &*char := 0;
 
 {   buflen = 1024;
@@ -108,31 +136,7 @@ buffer: &*char := 0;
 
         fprintf(p, "clang -x c - -O3 $(pkg-config gtk+-3.0 --cflags --libs) -shared -fPIC -o %s <<HEREDOC\n", buffer);
 
-        fputs(
-            """
-            #include <time.h>
-            #include <gtk/gtk.h>
-
-            double my_clock(void)
-            {
-                struct timespec rawtime;
-                struct tm * timeinfo;
-                double ret;
-
-                clock_gettime(CLOCK_REALTIME, &rawtime);
-                timeinfo = localtime(&rawtime.tv_sec);
-
-                ret = timeinfo->tm_hour;
-                ret = 60*ret + timeinfo->tm_min;
-                ret = 60*ret + timeinfo->tm_sec;
-                ret += rawtime.tv_nsec * 1e-9;
-
-                return ret;
-            }
-
-            void *my_gtk_hook = gtk_application_new;
-
-            """, p);
+        fputs(my_source, p);
 
         fputs("\nHEREDOC\n", p);
     }
@@ -398,7 +402,7 @@ on_activate: (app: *GtkApplication, data: *void) -> void
 
     g_signal_connect_data(app, "activate", (on_activate: *(()->void)), 0, 0, 0);
 
-    g_application_run(app, 1, &"Часики");
+    g_application_run(app, 1, &("Часики" : *char));
 }
 
 

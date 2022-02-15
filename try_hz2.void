@@ -23,63 +23,78 @@
 
 
 //---------------------------------------------------------------------
-//N = 256;
-  N = 2048;
+{   FILE = v_struct_type_named("FILE");
+
+    v_export_type("FILE", FILE);
+}
+
+stdout: &*FILE;
+stderr: &*FILE;
+
+fflush: (*FILE) -> int;
+
+log: (float(64)) -> float(64);
 
 
 //---------------------------------------------------------------------
-//{ v_debug_print_module(1); }
+//N = 256;
+  N = 65536;
+//N = 8388608;
 
-my_div: (a: uint(N), b: uint(N)) -> uint(N)
-{
-//void udiv256(I n, I d, I* q) {
-//    *q = 0;
-//    while (n >= d) {
-//        I i = 0, d_t = d;
-//        while (n >= (d_t << 1) && ++i)
+
+////---------------------------------------------------------------------
+////{ v_debug_print_module(1); }
+//
+//my_div: (a: uint(N), b: uint(N)) -> uint(N)
+//{
+////void udiv256(I n, I d, I* q) {
+////    *q = 0;
+////    while (n >= d) {
+////        I i = 0, d_t = d;
+////        while (n >= (d_t << 1) && ++i)
+////            d_t <<= 1;
+////        *q |= (I)1 << i;
+////        n -= d_t;
+////    }
+////}
+//
+//    n: &uint(N+1) := a;
+//    d: &uint(N) := b;
+//
+//    q: &uint(N) := 0;
+//
+//    loop
+//    {
+//        if (n < d)  v_break();
+//
+//        i:   &uint(N) := 0;
+//        d_t: &uint(N+1) := d;
+//
+//        loop
+//        {
+//            if (!(n >= (d_t << 1)  &&  ++i)) v_break();
+//
 //            d_t <<= 1;
-//        *q |= (I)1 << i;
+//        }
+//
+//        q |= (1 << i);
+//
 //        n -= d_t;
 //    }
+//
+//    v_return(q);
 //}
-
-    n: &uint(N+1) := a;
-    d: &uint(N) := b;
-
-    q: &uint(N) := 0;
-
-    loop
-    {
-        if (n < d)  v_break();
-
-        i:   &uint(N) := 0;
-        d_t: &uint(N+1) := d;
-
-        loop
-        {
-            if (!(n >= (d_t << 1)  &&  ++i)) v_break();
-
-            d_t <<= 1;
-        }
-
-        q |= (1 << i);
-
-        n -= d_t;
-    }
-
-    v_return(q);
-}
-
-my_divrem: (a: &uint(N), b: uint(N)) -> uint(N)
-{
-    a1 = my_div(a, b);
-
-    r = a - a1*b;
-
-    a := a1;
-
-    v_return(r);
-}
+//
+//my_divrem: (a: &uint(N), b: uint(N)) -> uint(N)
+//{
+//    a1 = my_div(a, b);
+//
+//    r = a - a1*b;
+//
+//    a := a1;
+//
+//    v_return(r);
+//}
 
 
 //---------------------------------------------------------------------
@@ -117,11 +132,25 @@ small_divrem: (a: &uint(N), d: uint(32)) -> uint(32)
 
 
 //---------------------------------------------------------------------
+//{
+//    printf("---\n");
+//    fflush(stdout);
+//}
+
+
+//---------------------------------------------------------------------
 //{ v_debug_print_module(1); }
 {
+//    printf("---\n");
+//    fflush(stdout);
+
     v: uint(N) = -1;
 
-    s = v_malloc(int(8), N*3/10+5);
+    len = (N*log(2)/log(10)+1 : int);
+
+    printf("len: %d\n", len);
+
+    s = v_malloc(int(8), len);
     defer v_mfree(s);
 
     p: &*int(8) := s;
@@ -144,10 +173,17 @@ small_divrem: (a: &uint(N), d: uint(32)) -> uint(32)
 
     --p;
 
-    printf("v: ");
+    l: &int := -1;
 
     loop
     {
+        if (++l == 100)
+        {
+            printf("\\\n");
+
+            l := 0;
+        }
+
         printf("%d", *p);
 
         if (p <= s) v_break();

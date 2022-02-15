@@ -353,7 +353,7 @@ printf("on_activate - thread: %p\n", g_thread_self());
 
     g_signal_connect_data(app, "activate", (on_activate: *(()->void)), 0, 0, 0);
 
-    g_application_run(app, 1, &"Часики");
+    g_application_run(app, 1, &("Часики" : *char));
 }
 
 
