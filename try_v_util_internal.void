@@ -417,6 +417,7 @@
 //  v_debug_print_module(1);
 
     voidc_unit_load_module_to_jit(module);
+    voidc_add_module_to_jit(module);
 
     LLVMDisposeModule(module);
     v_set_module(0);
@@ -552,7 +553,7 @@
     //- {
     //-     v_export_symbol_type(fun_name, fun_type);
     //-
-    //-     v_util_function_dict_set(p_dict, val_t_type, fun_name);
+    //-     v_util_function_dict_set(q_dict, val_t_type, fun_name);
     //- }
     //-------------------------------------------------------------
     util_reg_helper_f = v_obtain_function("v_util_registering_helper");
@@ -601,7 +602,7 @@
     //-
     //-     fun_type = v_function_type(void, arg0, 2, false);
     //-
-    //-     v_util_registering_helper(p_dict, val_t_type, fun_name, fun_type);
+    //-     v_util_registering_helper(q_dict, val_t_type, fun_name, fun_type);
     //- }
     //-------------------------------------------------------------
     init_term_helper_f = v_obtain_function("init_term_helper");
@@ -2035,6 +2036,7 @@
 //  v_debug_print_module(1);
 
     voidc_unit_load_module_to_jit(module);
+    voidc_add_module_to_jit(module);
 
     LLVMDisposeModule(module);
     v_set_module(0);
