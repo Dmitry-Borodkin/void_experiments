@@ -80,9 +80,9 @@ mk_str_literal_intrinsic: (vis: voidc_visitor_ptr, *void,
 
 
 //---------------------------------------------------------------------
-strdup: (*const char) -> *char;
+_strdup: (*const char) -> *char;
 
-{   s = strdup("QWERTY");
+{   s = _strdup("QWERTY");
 
     v_add_symbol("qwerty", v_pointer_type(char, 0), s);
 }

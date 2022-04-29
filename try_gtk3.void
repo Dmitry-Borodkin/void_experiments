@@ -10,58 +10,33 @@
 
 
 //---------------------------------------------------------------------
-{
-    FILE = v_struct_type_named("FILE");
+{   FILE = v_struct_type_named("FILE");
 
     v_add_type("FILE", FILE);
-
-    FILE_ptr = v_pointer_type(FILE, 0);
-
-    typ = v_alloca(v_type_ptr, 2);
-
-    char_ptr = v_pointer_type(char, 0);
-
-    typ[0] := char_ptr;
-    typ[1] := char_ptr;
-
-    popen_ft = v_function_type(FILE_ptr, typ, 2, false);
-
-    typ[0] := FILE_ptr;
-
-    pclose_ft = v_function_type(int, typ, 1, false);
-
-    if (v_find_constant("_WIN32", 0, 0))
-    {
-        v_add_symbol("_popen",  popen_ft,  0);
-        v_add_symbol("_pclose", pclose_ft, 0);
-
-        v_add_alias("popen",  "_popen");
-        v_add_alias("pclose", "_pclose");
-    }
-    else
-    {
-        v_add_symbol("popen",  popen_ft,  0);
-        v_add_symbol("pclose", pclose_ft, 0);
-    }
 }
 
 
 //---------------------------------------------------------------------
+v_popen: (command: *const char, prop: *const char) -> *FILE;
+
+v_pclose: (*FILE) -> int;
+
 fscanf: (stream: *FILE, format: *const char, ...) -> int;
 
 
+//{ v_debug_print_module(1); }
 //---------------------------------------------------------------------
 {   buffer: &*char := 0;
     defer v_mfree(buffer);
 
-    libname :&*char = 0;
+    libname: &*char := 0;
 
     if (v_find_constant("_WIN32", 0, 0))
     {
         buffer := v_malloc(char, 1024);
 
-        {   p = popen("bash -c \"dlltool -I $(pkg-config --variable=libdir gtk+-3.0)/libgtk-3.dll.a\"", "r");
-            defer pclose(p);
+        {   p = v_popen("bash -c \"dlltool -I $(pkg-config --variable=libdir gtk+-3.0)/libgtk-3.dll.a\"", "r");
+            defer v_pclose(p);
 
             fscanf(p, "%1023s", buffer);
         }
