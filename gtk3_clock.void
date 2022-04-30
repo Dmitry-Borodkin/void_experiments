@@ -324,8 +324,7 @@ draw_cb: (widget: *GtkWidget, cr: *cairo_t, *void) -> void
     cairo_save(cr);
     cairo_set_line_width(cr, m_line_width/3);
 
-//  flash = !(50*milli < time%5 < 4950*milli);
-    flash = !(50*milli < time%5  &&  time%5 < 4950*milli);
+    flash = !(50*milli < time%5 < 4950*milli);
 
     if (flash)  cairo_set_source_rgb(cr, 1, 0, 0);                              //- RED!
     else        cairo_set_source_rgb(cr, 700*milli, 700*milli, 700*milli);      //- Gray
