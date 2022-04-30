@@ -1,0 +1,76 @@
+{   v_import("level-00");
+    v_import("level-01");
+
+    v_import("llvm-c/Core.void");
+    v_import("llvm-c/Support.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_level_01(); }
+
+
+//---------------------------------------------------------------------
+{
+    gr0 = v_alloca(v_peg_opaque_grammar_sptr);
+    v_initialize(gr0);
+    defer v_terminate(gr0);
+
+    v_peg_get_grammar(gr0);
+
+    grammar gr0
+    {
+    parsers:
+        string += "\"\"\"" <(!"\"\"\"" .)*> "\"\"\"" { $1 };
+    }
+
+    v_peg_set_grammar(gr0);
+}
+
+
+//---------------------------------------------------------------------
+{
+    FILE = v_struct_type_named("FILE");
+
+    v_add_type("FILE", FILE);
+}
+
+
+//---------------------------------------------------------------------
+v_popen: (command: *const char, prop: *const char) -> *FILE;
+
+v_pclose: (*FILE) -> int;
+
+fprintf: (stream: *FILE, format: *const char, ...) -> int;
+
+
+//---------------------------------------------------------------------
+my_source =
+"""
+#include <stdio.h>
+
+void check(void)
+{
+    FILE *p = popen("command", "mode");
+
+    pclose(p);
+}
+
+""";
+
+
+//---------------------------------------------------------------------
+{
+    p = v_popen("bash", "w");
+    defer v_pclose(p);
+
+    fprintf(p, "clang -x c -S -emit-llvm -c - -o - <<HEREDOC\n");
+
+    fprintf(p, my_source);
+
+    fprintf(p, "\nHEREDOC\n");
+}
+
+
+
+
