@@ -1,0 +1,74 @@
+{   v_import("level-00");
+    v_import("level-01");
+
+    v_import("printf.void");
+}
+
+{   v_enable_level_01(); }
+
+
+//---------------------------------------------------------------------
+mk_stmt_while_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, size_t) -> void
+{
+    cond = v_std_any_get_pointer(v_ast_opaque_expr_sptr, any+0);
+    stmt = v_std_any_get_pointer(v_ast_opaque_stmt_sptr, any+1);
+
+    stmp: &v_ast_opaque_stmt_sptr[3] := v_undef();
+    v_initialize(&stmp[0], 3);
+    defer v_terminate(&stmp[0], 3);
+
+    brk = stmp[0];
+    ifs = stmp[1];
+    lps = stmp[2];
+
+    v_ast_make_stmt_call(&brk, "", "v_break", 0, 0);
+
+    v_ast_make_stmt_if_then_else(&ifs, cond, stmt, &brk);
+
+    v_ast_make_stmt_loop(&lps, &ifs);
+
+    v_std_any_set_pointer(ret, &lps);
+}
+
+
+//---------------------------------------------------------------------
+{
+    gr0 = v_alloca(v_peg_opaque_grammar_sptr);
+    v_initialize(gr0);
+    defer v_terminate(gr0);
+
+    v_peg_get_grammar(gr0);
+
+    grammar gr0
+    {
+    actions:
+        mk_stmt_while = mk_stmt_while_grammar_action;
+
+    parsers:
+        stmt_while = "while" !ident_cont _ '(' _ c:expr _ ')' _ s:stmt  { mk_stmt_while(c, s) };
+
+        stmt += stmt_while;
+    }
+
+    v_peg_set_grammar(gr0);
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+
+{
+    p: & *char := "Hello world!";
+
+    c: & char := v_undef();
+
+    printf("---\n");
+
+    while(c := *p++)  printf("[%c]\n", c);
+
+    printf("---\n");
+}
+
+
+
+
