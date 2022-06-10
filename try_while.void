@@ -10,24 +10,63 @@
 //---------------------------------------------------------------------
 mk_stmt_while_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, size_t) -> void
 {
-    cond = v_std_any_get_pointer(v_ast_opaque_expr_sptr, any+0);
+    cond = v_std_any_get_pointer(v_ast_opaque_stmt_sptr, any+0);
     stmt = v_std_any_get_pointer(v_ast_opaque_stmt_sptr, any+1);
+
+    cexp: &v_ast_opaque_expr_sptr := v_undef();
+    v_initialize(&cexp);
+    defer v_terminate(&cexp);
 
     stmp: &v_ast_opaque_stmt_sptr[3] := v_undef();
     v_initialize(&stmp[0], 3);
     defer v_terminate(&stmp[0], 3);
 
     brk = stmp[0];
-    ifs = stmp[1];
-    lps = stmp[2];
 
     v_ast_make_stmt_call(&brk, "", "v_break", 0, 0);
 
-    v_ast_make_stmt_if_then_else(&ifs, cond, stmt, &brk);
+    name = v_ast_stmt_get_name(cond);
 
-    v_ast_make_stmt_loop(&lps, &ifs);
+    if (name[0])
+    {
+        cnd = stmp[1];
+        ifs = stmp[2];
 
-    v_std_any_set_pointer(ret, &lps);
+        v_copy(&cnd, cond);
+
+        v_ast_make_expr_identifier(&cexp, name);
+
+        v_ast_make_stmt_if_then_else(&ifs, &cexp, stmt, &brk);
+
+        slst: &v_ast_opaque_stmt_list_sptr := v_undef();
+        v_initialize(&slst);
+        defer v_terminate(&slst);
+
+        v_make_list(&slst, &stmp[1], 2);
+
+        blk = stmp[1];
+
+        v_ast_make_stmt_block(&blk, &slst, false);
+
+        lps = stmp[2];
+
+        v_ast_make_stmt_loop(&lps, &blk);
+
+        v_std_any_set_pointer(ret, &lps);
+    }
+    else
+    {
+        v_ast_stmt_get_expr(cond, &cexp);
+
+        ifs = stmp[1];
+        lps = stmp[2];
+
+        v_ast_make_stmt_if_then_else(&ifs, &cexp, stmt, &brk);
+
+        v_ast_make_stmt_loop(&lps, &ifs);
+
+        v_std_any_set_pointer(ret, &lps);
+    }
 }
 
 
@@ -45,7 +84,13 @@ mk_stmt_while_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr,
         mk_stmt_while = mk_stmt_while_grammar_action;
 
     parsers:
-        stmt_while = "while" !ident_cont _ '(' _ c:expr _ ')' _ s:stmt  { mk_stmt_while(c, s) };
+        cond_while = i:identifier _':'_ t: expr _'='_ v:expr         { mk_stmt_val_defn(i, t, v) }
+                   / i:identifier _':'_ tv: expr                     { mk_stmt_var_defn(i, tv) }         //- Sic!!!
+                   / i:identifier _ '=' _ v:expr                     { mk_stmt(i, v) }
+                   / v:expr                                          { mk_stmt(0, v) }
+                   ;
+
+        stmt_while = "while" _ '(' _ c:cond_while _ ')' _ s:stmt  { mk_stmt_while(c, s) };
 
         stmt += stmt_while;
     }
@@ -60,11 +105,12 @@ mk_stmt_while_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr,
 {
     p: & *char := "Hello world!";
 
-    c: & char := v_undef();
-
     printf("---\n");
 
-    while(c := *p++)  printf("[%c]\n", c);
+//  while(c: &char := *p++)  printf("[%c]\n", c);
+//  while(c: &char = *p++)   printf("[%c]\n", c);
+//  while(c: char = *p++)    printf("[%c]\n", c);
+    while(c = *p++)          printf("[%c]\n", c);
 
     printf("---\n");
 }
