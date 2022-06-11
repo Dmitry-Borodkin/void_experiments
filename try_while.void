@@ -22,6 +22,8 @@ mk_stmt_while_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr,
     defer v_terminate(&stmp[0], 3);
 
     brk = stmp[0];
+    stm = stmp[1];
+    lps = stmp[2];
 
     v_ast_make_stmt_call(&brk, "", "v_break", 0, 0);
 
@@ -44,29 +46,18 @@ mk_stmt_while_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr,
 
         v_make_list(&slst, &stmp[1], 2);
 
-        blk = stmp[1];
-
-        v_ast_make_stmt_block(&blk, &slst, false);
-
-        lps = stmp[2];
-
-        v_ast_make_stmt_loop(&lps, &blk);
-
-        v_std_any_set_pointer(ret, &lps);
+        v_ast_make_stmt_block(&stm, &slst, false);
     }
     else
     {
         v_ast_stmt_get_expr(cond, &cexp);
 
-        ifs = stmp[1];
-        lps = stmp[2];
-
-        v_ast_make_stmt_if_then_else(&ifs, &cexp, stmt, &brk);
-
-        v_ast_make_stmt_loop(&lps, &ifs);
-
-        v_std_any_set_pointer(ret, &lps);
+        v_ast_make_stmt_if_then_else(&stm, &cexp, stmt, &brk);
     }
+
+    v_ast_make_stmt_loop(&lps, &stm);
+
+    v_std_any_set_pointer(ret, &lps);
 }
 
 
@@ -105,16 +96,36 @@ mk_stmt_while_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr,
 {
     p: & *char := "Hello world!";
 
-    printf("---\n");
+    printf("/-\\\n");
 
 //  while(c: &char := *p++)  printf("[%c]\n", c);
 //  while(c: &char = *p++)   printf("[%c]\n", c);
 //  while(c: char = *p++)    printf("[%c]\n", c);
-    while(c = *p++)          printf("[%c]\n", c);
+//  while(c = *p++)          printf("[%c]\n", c);
 
-    printf("---\n");
+//  c: &char := v_undef();
+//  while(c := *p++)         printf("[%c]\n", c);
+
+    while(c = *p++)
+    {
+        if (c == '!')
+        {
+            printf(" ! \n");
+
+            v_break();
+        }
+
+        if (c == ' ')
+        {
+            printf("   \n");
+
+            v_continue();
+        }
+
+        printf("[%c]\n", c);
+    }
+
+    printf("\\-/\n");
 }
-
-
 
 
