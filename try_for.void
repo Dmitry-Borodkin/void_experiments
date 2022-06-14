@@ -1,0 +1,215 @@
+{   v_import("level-00");
+    v_import("level-01");
+
+    v_import("printf.void");
+}
+
+{   v_enable_level_01(); }
+
+
+//---------------------------------------------------------------------
+mk_stmt_for_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, size_t) -> void
+{
+    init = v_std_any_get_pointer(v_ast_opaque_expr_sptr, any+0);
+    cond = v_std_any_get_pointer(v_ast_opaque_expr_sptr, any+1);
+    incr = v_std_any_get_pointer(v_ast_opaque_expr_sptr, any+2);
+    stmt = v_std_any_get_pointer(v_ast_opaque_stmt_sptr, any+3);
+
+    //- {   <init>;
+    //-
+    //-     v.internal.incr.flag = v_alloca(bool);
+    //-
+    //-     v_store(false, v.internal.incr.flag);
+    //-
+    //-     loop
+    //-     {
+    //-         if (v_load(v.internal.incr.flag))   <incr>;
+    //-         else                                v_store(true, v.internal.incr.flag);
+    //-
+    //-         if (<cond>) <stmt>
+    //-         else        v_break();
+    //-     }
+    //- }
+
+    stmp = v_alloca(v_ast_opaque_stmt_sptr, 10);
+    v_initialize(stmp, 10);
+    defer v_terminate(stmp, 10);
+
+    etmp = v_alloca(v_ast_opaque_expr_sptr, 3);
+    v_initialize(etmp, 3);
+    defer v_terminate(etmp, 3);
+
+
+    //- stmp+0 - block
+
+
+    if (init)
+    {
+        v_copy(etmp+0, init);
+    }
+    else
+    {
+        v_terminate(etmp+0);
+        v_initialize(etmp+0);
+    }
+
+    v_ast_make_stmt(stmp+1, "", etmp+0);
+
+
+    v_ast_make_expr_identifier(etmp+0, "bool");
+
+    v_ast_make_stmt_call(stmp+2, "v.internal.incr.flag", "v_alloca", etmp+0, 1);
+
+
+    v_ast_make_expr_identifier(etmp+0, "false");
+    v_ast_make_expr_identifier(etmp+1, "v.internal.incr.flag");
+
+    v_ast_make_stmt_call(stmp+3, "", "v_store", etmp+0, 2);
+
+
+    //- stmp+4 - loop
+    //- stmp+5 - block
+
+
+    //- stmp+6 - if
+
+
+    //- etmp+0 - v_load
+
+
+    elst = v_alloca(v_ast_opaque_expr_list_sptr);
+    v_initialize(elst);
+    defer v_terminate(elst);
+
+    v_make_list(elst, etmp+1, 1);
+
+    v_ast_make_expr_identifier(etmp+2, "v_load");
+
+    v_ast_make_expr_call(etmp+0, etmp+2, elst);
+
+
+    if (incr)
+    {
+        v_copy(etmp+1, incr);
+    }
+    else
+    {
+        v_terminate(etmp+1);
+        v_initialize(etmp+1);
+    }
+
+    v_ast_make_stmt(stmp+7, "", etmp+1);
+
+
+    v_ast_make_expr_identifier(etmp+1, "true");
+    v_ast_make_expr_identifier(etmp+2, "v.internal.incr.flag");
+
+    v_ast_make_stmt_call(stmp+8, "", "v_store", etmp+1, 2);
+
+
+    v_ast_make_stmt_if_then_else(stmp+6, etmp+0, stmp+7, stmp+8);
+
+
+    //- stmp+7 - if
+
+
+    v_ast_make_stmt_call(stmp+8, "", "v_break", 0, 0);
+
+
+    if (cond)   v_copy(etmp+0, cond);
+    else        v_ast_make_expr_identifier(etmp+0, "true");
+
+    v_ast_make_stmt_if_then_else(stmp+7, etmp+0, stmt, stmp+8);
+
+
+    slst = v_alloca(v_ast_opaque_stmt_list_sptr);
+    v_initialize(slst);
+    defer v_terminate(slst);
+
+    v_make_list(slst, stmp+6, 2);
+
+    v_ast_make_stmt_block(stmp+5, slst, false);
+
+
+    v_ast_make_stmt_loop(stmp+4, stmp+5);
+
+
+    v_make_list(slst, stmp+1, 4);
+
+    v_ast_make_stmt_block(stmp+0, slst, false);
+
+    v_std_any_set_pointer(ret, stmp+0);
+}
+
+
+//---------------------------------------------------------------------
+{
+    gr0 = v_alloca(v_peg_opaque_grammar_sptr);
+    v_initialize(gr0);
+    defer v_terminate(gr0);
+
+    v_peg_get_grammar(gr0);
+
+    grammar gr0
+    {
+    actions:
+        mk_stmt_for = mk_stmt_for_grammar_action;
+
+    parsers:
+        stmt_for = "for" _'('_ i:expr? _';'_ c:expr? _';'_ e:expr? _')'_ s:stmt     { mk_stmt_for(i, c, e, s) };
+
+        stmt += stmt_for;
+    }
+
+    v_peg_set_grammar(gr0);
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+
+{
+    printf("/-\\\n");
+
+
+    i: &int := v_undef();
+
+
+//    for(i := 0; i < 10; i++)
+//    {
+//        printf("[%d]\n", i);
+//    }
+
+
+//    for(i := 0; ; i++)
+//    {
+//        if (i >= 10) v_break();
+//
+//        printf("[%d]\n", i);
+//    }
+
+
+    for(i := 0; i < 10; i++)
+    {
+        if (i == 9)
+        {
+            printf(" ! \n");
+
+            v_break();
+        }
+
+        if (i % 3 == 0)
+        {
+            printf(" %d \n", i);
+
+            v_continue();
+        }
+
+        printf("[%d]\n", i);
+    }
+
+
+    printf("\\-/\n");
+}
+
+
