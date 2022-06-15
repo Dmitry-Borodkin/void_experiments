@@ -8,6 +8,29 @@
 
 
 //---------------------------------------------------------------------
+v_internal_copy_variable_intrinsic: (vis: voidc_visitor_ptr, *void,
+                                     args: v_ast_expr_list_ptr, count: int) -> void
+{
+    expr = v_alloca(v_ast_opaque_expr_sptr, 2);
+    v_initialize(expr, 2);
+    defer v_terminate(expr, 2);
+
+    v_list_get_items(args, 0, expr, 2);
+
+    name_dst = v_ast_expr_string_get_string(expr+0);
+    name_src = v_ast_expr_string_get_string(expr+1);
+
+    src_type  = v_get_variable_type(name_src);
+    src_value = v_get_variable_value(name_src);
+
+    v_add_variable(name_dst, src_type, src_value);
+}
+
+{   v_add_intrinsic("v.internal.copy_variable", v_internal_copy_variable_intrinsic, 0);
+}
+
+
+//---------------------------------------------------------------------
 mk_stmt_for_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, size_t) -> void
 {
     init = v_std_any_get_pointer(v_ast_opaque_expr_sptr, any+0);
@@ -17,27 +40,57 @@ mk_stmt_for_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, s
 
     //- {   <init>;
     //-
-    //-     v.internal.incr.flag = v_alloca(bool);
-    //-
-    //-     v_store(false, v.internal.incr.flag);
-    //-
     //-     loop
     //-     {
-    //-         if (v_load(v.internal.incr.flag))   <incr>;
-    //-         else                                v_store(true, v.internal.incr.flag);
+    //-         v.internal.copy_variable("voidc.internal_branch_target_break_for_variable",
+    //-                                  "voidc.internal_branch_target_break_variable")
     //-
-    //-         if (<cond>) <stmt>
-    //-         else        v_break();
+    //-         v.internal.copy_variable("voidc.internal_branch_target_break_for",
+    //-                                  "voidc.internal_branch_target_break")
+    //-
+    //-         block
+    //-         {
+    //-             v.internal.copy_variable("voidc.internal_branch_target_continue_variable",
+    //-                                      "voidc.internal_branch_target_break_variable")
+    //-
+    //-             v.internal.copy_variable("voidc.internal_branch_target_continue",
+    //-                                      "voidc.internal_branch_target_break")
+    //-
+    //-             v.internal.copy_variable("voidc.internal_branch_target_break_variable",
+    //-                                      "voidc.internal_branch_target_break_for_variable")
+    //-
+    //-             v.internal.copy_variable("voidc.internal_branch_target_break",
+    //-                                      "voidc.internal_branch_target_break_for")
+    //-
+    //-             if (<cond>) <stmt>
+    //-             else        v_break();
+    //-         }
+    //-
+    //-         <incr>;
     //-     }
     //- }
 
-    stmp = v_alloca(v_ast_opaque_stmt_sptr, 10);
-    v_initialize(stmp, 10);
-    defer v_terminate(stmp, 10);
+    etmp = v_alloca(v_ast_opaque_expr_sptr, 8);
+    v_initialize(etmp, 8);
+    defer v_terminate(etmp, 8);
 
-    etmp = v_alloca(v_ast_opaque_expr_sptr, 3);
-    v_initialize(etmp, 3);
-    defer v_terminate(etmp, 3);
+    e_break_for_var = etmp+2;
+    e_break_var     = etmp+3;
+    e_break_for     = etmp+4;
+    e_break         = etmp+5;
+    e_cont_var      = etmp+6;
+    e_cont          = etmp+7;
+
+    v_ast_make_expr_string(e_break_for_var, "voidc.internal_branch_target_break_for_variable");
+    v_ast_make_expr_string(e_break_var,     "voidc.internal_branch_target_break_variable");
+    v_ast_make_expr_string(e_break_for,     "voidc.internal_branch_target_break_for");
+    v_ast_make_expr_string(e_break,         "voidc.internal_branch_target_break");
+    v_ast_make_expr_string(e_cont_var,      "voidc.internal_branch_target_continue_variable");
+    v_ast_make_expr_string(e_cont,          "voidc.internal_branch_target_continue");
+
+    stmp = v_alloca(v_ast_opaque_stmt_sptr, 13);
+    v_initialize(stmp, 13);
+    defer v_terminate(stmp, 13);
 
 
     //- stmp+0 - block
@@ -56,85 +109,87 @@ mk_stmt_for_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, s
     v_ast_make_stmt(stmp+1, "", etmp+0);
 
 
-    v_ast_make_expr_identifier(etmp+0, "bool");
-
-    v_ast_make_stmt_call(stmp+2, "v.internal.incr.flag", "v_alloca", etmp+0, 1);
-
-
-    v_ast_make_expr_identifier(etmp+0, "false");
-    v_ast_make_expr_identifier(etmp+1, "v.internal.incr.flag");
-
-    v_ast_make_stmt_call(stmp+3, "", "v_store", etmp+0, 2);
+    //- stmp+2 - loop
+    //- stmp+3 - block
 
 
-    //- stmp+4 - loop
-    //- stmp+5 - block
+    v_copy(etmp+0, e_break_for_var);
+    v_copy(etmp+1, e_break_var);
+
+    v_ast_make_stmt_call(stmp+4, "", "v.internal.copy_variable", etmp+0, 2);
+
+    v_copy(etmp+0, e_break_for);
+    v_copy(etmp+1, e_break);
+
+    v_ast_make_stmt_call(stmp+5, "", "v.internal.copy_variable", etmp+0, 2);
 
 
-    //- stmp+6 - if
+    //- stmp+6 - block
 
 
-    //- etmp+0 - v_load
+    v_copy(etmp+0, e_cont_var);
+    v_copy(etmp+1, e_break_var);
+
+    v_ast_make_stmt_call(stmp+7, "", "v.internal.copy_variable", etmp+0, 2);
+
+    v_copy(etmp+0, e_cont);
+    v_copy(etmp+1, e_break);
+
+    v_ast_make_stmt_call(stmp+8, "", "v.internal.copy_variable", etmp+0, 2);
+
+    v_copy(etmp+0, e_break_var);
+    v_copy(etmp+1, e_break_for_var);
+
+    v_ast_make_stmt_call(stmp+9, "", "v.internal.copy_variable", etmp+0, 2);
+
+    v_copy(etmp+0, e_break);
+    v_copy(etmp+1, e_break_for);
+
+    v_ast_make_stmt_call(stmp+10, "", "v.internal.copy_variable", etmp+0, 2);
 
 
-    elst = v_alloca(v_ast_opaque_expr_list_sptr);
-    v_initialize(elst);
-    defer v_terminate(elst);
-
-    v_make_list(elst, etmp+1, 1);
-
-    v_ast_make_expr_identifier(etmp+2, "v_load");
-
-    v_ast_make_expr_call(etmp+0, etmp+2, elst);
+    //- stmp+11 - if
 
 
-    if (incr)
-    {
-        v_copy(etmp+1, incr);
-    }
-    else
-    {
-        v_terminate(etmp+1);
-        v_initialize(etmp+1);
-    }
-
-    v_ast_make_stmt(stmp+7, "", etmp+1);
-
-
-    v_ast_make_expr_identifier(etmp+1, "true");
-    v_ast_make_expr_identifier(etmp+2, "v.internal.incr.flag");
-
-    v_ast_make_stmt_call(stmp+8, "", "v_store", etmp+1, 2);
-
-
-    v_ast_make_stmt_if_then_else(stmp+6, etmp+0, stmp+7, stmp+8);
-
-
-    //- stmp+7 - if
-
-
-    v_ast_make_stmt_call(stmp+8, "", "v_break", 0, 0);
+    v_ast_make_stmt_call(stmp+12, "", "v_break", 0, 0);
 
 
     if (cond)   v_copy(etmp+0, cond);
     else        v_ast_make_expr_identifier(etmp+0, "true");
 
-    v_ast_make_stmt_if_then_else(stmp+7, etmp+0, stmt, stmp+8);
+    v_ast_make_stmt_if_then_else(stmp+11, etmp+0, stmt, stmp+12);
 
 
     slst = v_alloca(v_ast_opaque_stmt_list_sptr);
     v_initialize(slst);
     defer v_terminate(slst);
 
-    v_make_list(slst, stmp+6, 2);
+    v_make_list(slst, stmp+7, 5);
 
-    v_ast_make_stmt_block(stmp+5, slst, false);
-
-
-    v_ast_make_stmt_loop(stmp+4, stmp+5);
+    v_ast_make_stmt_block(stmp+6, slst, true);
 
 
-    v_make_list(slst, stmp+1, 4);
+    if (incr)
+    {
+        v_copy(etmp+0, incr);
+    }
+    else
+    {
+        v_terminate(etmp+0);
+        v_initialize(etmp+0);
+    }
+
+    v_ast_make_stmt(stmp+7, "", etmp+0);
+
+
+    v_make_list(slst, stmp+4, 4);
+
+    v_ast_make_stmt_block(stmp+3, slst, false);
+
+    v_ast_make_stmt_loop(stmp+2, stmp+3);
+
+
+    v_make_list(slst, stmp+1, 2);
 
     v_ast_make_stmt_block(stmp+0, slst, false);
 
