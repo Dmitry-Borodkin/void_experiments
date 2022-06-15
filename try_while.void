@@ -92,7 +92,6 @@ mk_stmt_while_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr,
 
 //---------------------------------------------------------------------
 //{ v_debug_print_module(1); }
-
 {
     p: & *char := "Hello world!";
 
@@ -126,6 +125,19 @@ mk_stmt_while_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr,
       }
 
     printf("\\-/\n");
+}
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    buf: &char[100] := v_undef();
+
+    src: &*char := "Hello world!";
+    dst: &*char := &buf[0];
+
+    while(*dst++ := *src++);
+
+    printf("\n%s\n", &buf[0]);
 }
 
 

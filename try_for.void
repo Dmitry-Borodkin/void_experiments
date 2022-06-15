@@ -33,12 +33,12 @@ v_internal_copy_variable_intrinsic: (vis: voidc_visitor_ptr, *void,
 //---------------------------------------------------------------------
 mk_stmt_for_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, size_t) -> void
 {
-    init = v_std_any_get_pointer(v_ast_opaque_expr_sptr, any+0);
-    cond = v_std_any_get_pointer(v_ast_opaque_expr_sptr, any+1);
-    incr = v_std_any_get_pointer(v_ast_opaque_expr_sptr, any+2);
-    stmt = v_std_any_get_pointer(v_ast_opaque_stmt_sptr, any+3);
+    init = v_std_any_get_pointer(v_ast_opaque_stmt_list_sptr, any+0);
+    cond = v_std_any_get_pointer(v_ast_opaque_stmt_sptr,      any+1);
+    incr = v_std_any_get_pointer(v_ast_opaque_stmt_list_sptr, any+2);
+    stmt = v_std_any_get_pointer(v_ast_opaque_stmt_sptr,      any+3);
 
-    //- {   <init>;
+    //- {   <init>...
     //-
     //-     loop
     //-     {
@@ -48,6 +48,7 @@ mk_stmt_for_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, s
     //-         v.internal.copy_variable("voidc.internal_branch_target_break_for",
     //-                                  "voidc.internal_branch_target_break")
     //-
+    //-         if (<cond>)     //- Kinda...
     //-         block
     //-         {
     //-             v.internal.copy_variable("voidc.internal_branch_target_continue_variable",
@@ -62,136 +63,156 @@ mk_stmt_for_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, s
     //-             v.internal.copy_variable("voidc.internal_branch_target_break",
     //-                                      "voidc.internal_branch_target_break_for")
     //-
-    //-             if (<cond>) <stmt>
-    //-             else        v_break();
+    //-             <stmt>
     //-         }
+    //-         else v_break();
     //-
-    //-         <incr>;
+    //-         <incr>...
     //-     }
     //- }
 
-    etmp = v_alloca(v_ast_opaque_expr_sptr, 8);
-    v_initialize(etmp, 8);
-    defer v_terminate(etmp, 8);
+    etmp = v_alloca(v_ast_opaque_expr_sptr, 9);
+    v_initialize(etmp, 9);
+    defer v_terminate(etmp, 9);
 
     e_break_for_var = etmp+2;
-    e_break_var     = etmp+3;
-    e_break_for     = etmp+4;
+    e_break_for     = etmp+3;
+    e_break_var     = etmp+4;
     e_break         = etmp+5;
-    e_cont_var      = etmp+6;
-    e_cont          = etmp+7;
+    e_continue_var  = etmp+6;
+    e_continue      = etmp+7;
+    e_cond          = etmp+8;
 
     v_ast_make_expr_string(e_break_for_var, "voidc.internal_branch_target_break_for_variable");
-    v_ast_make_expr_string(e_break_var,     "voidc.internal_branch_target_break_variable");
     v_ast_make_expr_string(e_break_for,     "voidc.internal_branch_target_break_for");
+    v_ast_make_expr_string(e_break_var,     "voidc.internal_branch_target_break_variable");
     v_ast_make_expr_string(e_break,         "voidc.internal_branch_target_break");
-    v_ast_make_expr_string(e_cont_var,      "voidc.internal_branch_target_continue_variable");
-    v_ast_make_expr_string(e_cont,          "voidc.internal_branch_target_continue");
+    v_ast_make_expr_string(e_continue_var,  "voidc.internal_branch_target_continue_variable");
+    v_ast_make_expr_string(e_continue,      "voidc.internal_branch_target_continue");
 
-    stmp = v_alloca(v_ast_opaque_stmt_sptr, 13);
-    v_initialize(stmp, 13);
-    defer v_terminate(stmp, 13);
+
+    init_len = v_list_get_size(init);
+
+    cond_len: &int := 0;
+
+    if (cond)
+    {
+        name = v_ast_stmt_get_name(cond);
+
+        if (name[0])  cond_len := 1;
+    }
+
+    incr_len = v_list_get_size(incr);
+
+
+    stmp_len: &int := 1 + init_len + 4 + cond_len + 1;
+
+    if (incr_len > 6)   stmp_len += incr_len;
+    else                stmp_len += 6;
+
+
+    stmp = v_alloca(v_ast_opaque_stmt_sptr, stmp_len);
+    v_initialize(stmp, stmp_len);
+    defer v_terminate(stmp, stmp_len);
 
 
     //- stmp+0 - block
 
 
-    if (init)
-    {
-        v_copy(etmp+0, init);
-    }
-    else
-    {
-        v_terminate(etmp+0);
-        v_initialize(etmp+0);
-    }
-
-    v_ast_make_stmt(stmp+1, "", etmp+0);
+    v_list_get_items(init, 0, stmp+1, init_len);
 
 
-    //- stmp+2 - loop
-    //- stmp+3 - block
+    stmp_init = stmp + 1 + init_len;
+
+    //- stmp_init+0 - loop
+    //- stmp_init+1 - block
 
 
     v_copy(etmp+0, e_break_for_var);
     v_copy(etmp+1, e_break_var);
 
-    v_ast_make_stmt_call(stmp+4, "", "v.internal.copy_variable", etmp+0, 2);
+    v_ast_make_stmt_call(stmp_init+2, "", "v.internal.copy_variable", etmp+0, 2);
 
     v_copy(etmp+0, e_break_for);
     v_copy(etmp+1, e_break);
 
-    v_ast_make_stmt_call(stmp+5, "", "v.internal.copy_variable", etmp+0, 2);
+    v_ast_make_stmt_call(stmp_init+3, "", "v.internal.copy_variable", etmp+0, 2);
 
 
-    //- stmp+6 - block
+    if (cond_len)
+    {
+        v_copy(stmp_init+4, cond);
+
+        name = v_ast_stmt_get_name(cond);
+
+        v_ast_make_expr_identifier(e_cond, name);
+    }
+    else
+    {
+        if (cond)   v_ast_stmt_get_expr(cond, e_cond);
+        else        v_ast_make_expr_identifier(e_cond, "true");
+    }
 
 
-    v_copy(etmp+0, e_cont_var);
+    stmp_cond = stmp_init + 4 + cond_len;
+
+    //- stmp_cond+0 - if
+    //- stmp_cond+1 - block
+
+
+    v_copy(etmp+0, e_continue_var);
     v_copy(etmp+1, e_break_var);
 
-    v_ast_make_stmt_call(stmp+7, "", "v.internal.copy_variable", etmp+0, 2);
+    v_ast_make_stmt_call(stmp_cond+2, "", "v.internal.copy_variable", etmp+0, 2);
 
-    v_copy(etmp+0, e_cont);
+    v_copy(etmp+0, e_continue);
     v_copy(etmp+1, e_break);
 
-    v_ast_make_stmt_call(stmp+8, "", "v.internal.copy_variable", etmp+0, 2);
+    v_ast_make_stmt_call(stmp_cond+3, "", "v.internal.copy_variable", etmp+0, 2);
 
     v_copy(etmp+0, e_break_var);
     v_copy(etmp+1, e_break_for_var);
 
-    v_ast_make_stmt_call(stmp+9, "", "v.internal.copy_variable", etmp+0, 2);
+    v_ast_make_stmt_call(stmp_cond+4, "", "v.internal.copy_variable", etmp+0, 2);
 
     v_copy(etmp+0, e_break);
     v_copy(etmp+1, e_break_for);
 
-    v_ast_make_stmt_call(stmp+10, "", "v.internal.copy_variable", etmp+0, 2);
+    v_ast_make_stmt_call(stmp_cond+5, "", "v.internal.copy_variable", etmp+0, 2);
 
 
-    //- stmp+11 - if
-
-
-    v_ast_make_stmt_call(stmp+12, "", "v_break", 0, 0);
-
-
-    if (cond)   v_copy(etmp+0, cond);
-    else        v_ast_make_expr_identifier(etmp+0, "true");
-
-    v_ast_make_stmt_if_then_else(stmp+11, etmp+0, stmt, stmp+12);
+    v_copy(stmp_cond+6, stmt);
 
 
     slst = v_alloca(v_ast_opaque_stmt_list_sptr);
     v_initialize(slst);
     defer v_terminate(slst);
 
-    v_make_list(slst, stmp+7, 5);
+    v_make_list(slst, stmp_cond+2, 5);
 
-    v_ast_make_stmt_block(stmp+6, slst, true);
-
-
-    if (incr)
-    {
-        v_copy(etmp+0, incr);
-    }
-    else
-    {
-        v_terminate(etmp+0);
-        v_initialize(etmp+0);
-    }
-
-    v_ast_make_stmt(stmp+7, "", etmp+0);
+    v_ast_make_stmt_block(stmp_cond+1, slst, true);
 
 
-    v_make_list(slst, stmp+4, 4);
-
-    v_ast_make_stmt_block(stmp+3, slst, false);
-
-    v_ast_make_stmt_loop(stmp+2, stmp+3);
+    v_ast_make_stmt_call(stmp_cond+2, "", "v_break", 0, 0);
 
 
-    v_make_list(slst, stmp+1, 2);
+    v_ast_make_stmt_if_then_else(stmp_cond+0, e_cond, stmp_cond+1, stmp_cond+2);
+
+
+    v_list_get_items(incr, 0, stmp_cond+1, incr_len);
+
+
+    v_make_list(slst, stmp_init+2, 2+cond_len+1+incr_len);
+
+    v_ast_make_stmt_block(stmp_init+1, slst, false);
+
+    v_ast_make_stmt_loop(stmp_init+0, stmp_init+1);
+
+
+    v_make_list(slst, stmp+1, init_len+1);
 
     v_ast_make_stmt_block(stmp+0, slst, false);
+
 
     v_std_any_set_pointer(ret, stmp+0);
 }
@@ -211,7 +232,27 @@ mk_stmt_for_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, s
         mk_stmt_for = mk_stmt_for_grammar_action;
 
     parsers:
-        stmt_for = "for" _'('_ i:expr? _';'_ c:expr? _';'_ e:expr? _')'_ s:stmt     { mk_stmt_for(i, c, e, s) };
+        simple_stmt = i:identifier _':'_ t: expr _'='_ v:expr       { mk_stmt_val_defn(i, t, v) }
+                    / i:identifier _':'_ tv: expr                   { mk_stmt_var_defn(i, tv) }         //- Sic!!!
+                    / i:identifier _ '=' _ v:expr                   { mk_stmt(i, v) }
+                    / v:expr                                        { mk_stmt(0, v) }
+                    ;
+
+        simple_stmt_list_lr = l:simple_stmt_list_lr _','_ s:simple_stmt     { mk_stmt_list(l, s) }
+                            / s:simple_stmt                                 { mk_stmt_list(0, s) }
+                            ;
+
+        simple_stmt_list_lr is left-recursive;
+
+        simple_stmt_list = simple_stmt_list_lr
+                         /                          { mk_stmt_list(0, 0) }
+                         ;
+
+        stmt_for = "for" _'('_ i:simple_stmt_list _';'_
+                               c:simple_stmt?     _';'_
+                               r:simple_stmt_list
+                         _')'_ s:stmt                       { mk_stmt_for(i, c, r, s) }
+                 ;
 
         stmt += stmt_for;
     }
@@ -227,16 +268,13 @@ mk_stmt_for_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, s
     printf("/-\\\n");
 
 
-    i: &int := v_undef();
-
-
-//    for(i := 0; i < 10; i++)
+//    for(i: &int := 0; i < 10; ++i)
 //    {
 //        printf("[%d]\n", i);
 //    }
 
 
-//    for(i := 0; ; i++)
+//    for(i: &int := 0; ; ++i)
 //    {
 //        if (i >= 10) v_break();
 //
@@ -244,23 +282,29 @@ mk_stmt_for_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, s
 //    }
 
 
-    for(i := 0; i < 10; i++)
+//    for(i: &int := 0; i < 10; ++i)
+//    {
+//        if (i == 9)
+//        {
+//            printf(" ! \n");
+//
+//            v_break();
+//        }
+//
+//        if (i % 3 == 0)
+//        {
+//            printf(" %d \n", i);
+//
+//            v_continue();
+//        }
+//
+//        printf("[%d]\n", i);
+//    }
+
+
+    for(i: &int := 0, j: &int := 1; i < 10; ++i, j*=2)
     {
-        if (i == 9)
-        {
-            printf(" ! \n");
-
-            v_break();
-        }
-
-        if (i % 3 == 0)
-        {
-            printf(" %d \n", i);
-
-            v_continue();
-        }
-
-        printf("[%d]\n", i);
+        printf("[%d] %d\n", i, j);
     }
 
 
