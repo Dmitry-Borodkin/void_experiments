@@ -1,0 +1,260 @@
+{   v_import("level-00");
+    v_import("level-01");
+
+    v_import("printf.void");
+}
+
+{   v_enable_level_01(); }
+
+
+//---------------------------------------------------------------------
+mk_stmt_if_then_else_2_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, size_t) -> void
+{
+    init = v_std_any_get_pointer(v_ast_opaque_stmt_list_sptr,    any+0);
+    cstm = v_std_any_get_pointer(v_ast_opaque_stmt_sptr,         any+1);
+    tstm = v_std_any_get_pointer(v_ast_opaque_stmt_sptr,         any+2);
+    estm = v_std_any_get_pointer(v_ast_opaque_stmt_sptr,         any+3);
+
+    //- {   <init>...
+    //-
+    //-     if (<cstm>)     //- Kinda...
+    //-     <tstm>
+    //-     else <estm>
+    //- }
+
+
+    init_len: &int := 0;
+
+    if (init) init_len := v_list_get_size(init);
+
+    cstm_len: &int := 0;
+
+    name = v_ast_stmt_get_name(cstm);
+
+    if (name[0])  cstm_len := 1;
+
+
+    stmp_len: &int := 1 + init_len + cstm_len + 1;
+
+
+    stmp = v_alloca(v_ast_opaque_stmt_sptr, stmp_len);
+    v_initialize(stmp, stmp_len);
+    defer v_terminate(stmp, stmp_len);
+
+
+    //- stmp+0 - block
+
+
+    if (init_len)   v_list_get_items(init, 0, stmp+1, init_len);
+
+
+    stmp_init = stmp + 1 + init_len;
+
+
+    etmp = v_alloca(v_ast_opaque_expr_sptr);
+    v_initialize(etmp);
+    defer v_terminate(etmp);
+
+    if (cstm_len)
+    {
+        v_copy(stmp_init+0, cstm);
+
+        v_ast_make_expr_identifier(etmp, name);
+    }
+    else
+    {
+        v_ast_stmt_get_expr(cstm, etmp);
+    }
+
+
+    stmp_cstm = stmp_init + cstm_len;
+
+
+    //- stmp_cstm+0 - if
+
+
+    v_ast_make_stmt_if_then_else(stmp_cstm+0, etmp, tstm, estm);
+
+
+    slst = v_alloca(v_ast_opaque_stmt_list_sptr);
+    v_initialize(slst);
+    defer v_terminate(slst);
+
+    v_make_list(slst, stmp+1, init_len+cstm_len+1);
+
+    v_ast_make_stmt_block(stmp+0, slst, false);
+
+
+    v_std_any_set_pointer(ret, stmp+0);
+}
+
+
+//---------------------------------------------------------------------
+mk_stmt_switch_2_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, size_t) -> void
+{
+    init = v_std_any_get_pointer(v_ast_opaque_stmt_list_sptr,    any+0);
+    estm = v_std_any_get_pointer(v_ast_opaque_stmt_sptr,         any+1);
+    glst = v_std_any_get_pointer(v_ast_opaque_generic_list_sptr, any+2);
+
+    //- {   <init>...
+    //-
+    //-     switch (<estm>)     //- Kinda...
+    //-     <glst>
+    //- }
+
+
+    init_len: &int := 0;
+
+    if (init) init_len := v_list_get_size(init);
+
+    estm_len: &int := 0;
+
+    name = v_ast_stmt_get_name(estm);
+
+    if (name[0])  estm_len := 1;
+
+
+    stmp_len: &int := 1 + init_len + estm_len + 1;
+
+
+    stmp = v_alloca(v_ast_opaque_stmt_sptr, stmp_len);
+    v_initialize(stmp, stmp_len);
+    defer v_terminate(stmp, stmp_len);
+
+
+    //- stmp+0 - block
+
+
+    if (init_len)   v_list_get_items(init, 0, stmp+1, init_len);
+
+
+    stmp_init = stmp + 1 + init_len;
+
+
+    etmp = v_alloca(v_ast_opaque_expr_sptr);
+    v_initialize(etmp);
+    defer v_terminate(etmp);
+
+    if (estm_len)
+    {
+        v_copy(stmp_init+0, estm);
+
+        v_ast_make_expr_identifier(etmp, name);
+    }
+    else
+    {
+        v_ast_stmt_get_expr(estm, etmp);
+    }
+
+
+    stmp_estm = stmp_init + estm_len;
+
+
+    //- stmp_estm+0 - switch
+
+
+    v_ast_make_stmt_switch(stmp_estm+0, etmp, glst);
+
+
+    slst = v_alloca(v_ast_opaque_stmt_list_sptr);
+    v_initialize(slst);
+    defer v_terminate(slst);
+
+    v_make_list(slst, stmp+1, init_len+estm_len+1);
+
+    v_ast_make_stmt_block(stmp+0, slst, false);
+
+
+    v_std_any_set_pointer(ret, stmp+0);
+}
+
+
+//---------------------------------------------------------------------
+{
+    gr0 = v_alloca(v_peg_opaque_grammar_sptr);
+    v_initialize(gr0);
+    defer v_terminate(gr0);
+
+    v_peg_get_grammar(gr0);
+
+    grammar gr0
+    {
+    actions:
+        mk_stmt_if_then_else_2 = mk_stmt_if_then_else_2_grammar_action;
+        mk_stmt_switch_2       = mk_stmt_switch_2_grammar_action;
+
+    parsers:
+        simple_stmt = i:identifier _':'_ t: expr _'='_ v:expr       { mk_stmt_val_defn(i, t, v) }
+                    / i:identifier _':'_ tv: expr                   { mk_stmt_var_defn(i, tv) }         //- Sic!!!
+                    / i:identifier _ '=' _ v:expr                   { mk_stmt(i, v) }
+                    / v:expr                                        { mk_stmt(0, v) }
+                    ;
+
+        simple_stmt_list_lr = l:simple_stmt_list_lr _','_ s:simple_stmt     { mk_stmt_list(l, s) }
+                            / s:simple_stmt                                 { mk_stmt_list(0, s) }
+                            ;
+
+        simple_stmt_list_lr is left-recursive;
+
+        simple_stmt_list = simple_stmt_list_lr
+                         /                          { mk_stmt_list(0, 0) }
+                         ;
+
+        init_stmt_list = i:simple_stmt_list _ ';'   { i };
+
+
+        stmt_if_then_else =+ "if" _ '(' _ i:init_stmt_list? _ c:simple_stmt _ ')' _ t:stmt
+                             e:(_ "else" !ident_cont _ stmt)?           { mk_stmt_if_then_else_2(i, c, t, e) };
+
+
+        stmt_switch =+ "switch" _'('_ i:init_stmt_list? _ e:simple_stmt _')'_
+                       '{'_ l:case_list _'}'    { mk_stmt_switch_2(i, e, l) };
+    }
+
+    v_peg_set_grammar(gr0);
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    i: &int := 0;
+
+    loop
+    {
+        if (i >= 10) v_break();
+
+        if (v: int = i < 5) printf("T %d %d\n", v, i);
+        else                printf("F %d %d\n", v, i);
+
+        ++i;
+    }
+
+}
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    printf("\n");
+
+    i: &int := 0;
+
+    loop
+    {
+        if (i >= 20) v_break();
+
+        switch(f3: int = i%3==0, f5: int = i%5==0; ff = f3+f5)
+        {
+        case 0:     printf("%d\n", i);  v_break();
+
+        case 1:     if (f3) printf("Fiz\n"); else printf("Buz\n"); v_break();
+
+        case 2:     printf("FizBuz\n"); v_break();
+        }
+
+        ++i;
+    }
+
+}
+
+
