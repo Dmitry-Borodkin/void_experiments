@@ -56,15 +56,14 @@
 }
 
 //---------------------------------------------------------------------
-va_arg_intrinsic: (vis: voidc_visitor_ptr, *void, list: v_ast_generic_list_ptr) -> void
+va_arg_intrinsic: (vis: voidc_visitor_ptr, *void,
+                   args: v_ast_expr_list_ptr, count: int) -> void
 {
     arg = v_alloca(v_ast_opaque_expr_sptr, 2);
     v_initialize(arg, 2);
     defer v_terminate(arg, 2);
 
-    v_list_get_items(list, 0, (arg : v_ast_base_ptr));
-
-    v_list_get_items((arg : v_ast_expr_list_ptr), 0, arg, 2);
+    v_list_get_items(args, 0, arg, 2);
 
     tt = v_get_result_type();
 

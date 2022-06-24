@@ -1,6 +1,9 @@
                          ****  ?  ****                         │*
                                                                │
                                                                │
+try_aggregate.void                                             │try_aggregate.void
+                                                               │
+                                                               │
 try_if_switch.void                                             │try_if_switch.void
                                                                │
 try_for.void                                                   │try_for.void

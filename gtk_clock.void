@@ -168,7 +168,7 @@ g_thread_self: () -> *void;
 //---------------------------------------------------------------------
 on_timeout: (aux: *void) -> int
 {
-printf("on_timeout  - thread: %p\n", g_thread_self());
+    if (!aux) v_return(false);
 
     gtk_widget_queue_draw((aux: *GtkWidget));
 
@@ -340,9 +340,7 @@ on_activate: (app: *GtkApplication, data: *void) -> void
 
     gtk_window_present(window);
 
-printf("on_activate - thread: %p\n", g_thread_self());
-
-    g_timeout_add(2000, on_timeout, drawing_area);
+    g_timeout_add(20, on_timeout, drawing_area);
 }
 
 
