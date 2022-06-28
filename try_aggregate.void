@@ -94,6 +94,37 @@ v_aggregate_intrinsic: (vis: voidc_visitor_ptr, *void,
 
 
 //---------------------------------------------------------------------
+v_typed_intrinsic: (vis: voidc_visitor_ptr, *void,
+                    args: v_ast_expr_list_ptr, count: int) -> void
+{
+    expr = v_alloca(v_ast_opaque_expr_sptr, 2);
+    v_initialize(expr, 2);
+    defer v_terminate(expr, 2);
+
+    v_list_get_items(args, 0, expr, 2);
+
+    tt = v_get_result_type();
+
+    v_set_result_type(INVIOLABLE_TAG);
+
+    v_ast_accept_visitor((expr+0 : v_ast_base_ptr), vis);       //- Type
+
+    t = v_get_result_type();        //- ?
+
+    v_ast_accept_visitor((expr+1 : v_ast_base_ptr), vis);       //- Value
+
+    v = v_get_result_value();
+
+    v_set_result_type(tt);
+
+    v_adopt_result(t, v);
+}
+
+{   v_add_intrinsic("v_typed", v_typed_intrinsic, 0);
+}
+
+
+//---------------------------------------------------------------------
 strcmp: (*const char, *const char) -> int;
 
 
@@ -259,6 +290,8 @@ r: &(*char)[5] := v_aggregate("zero", "one", "two", "three", "four");
 
 rr: &char[2][5] := v_aggregate("a", "b", "c");
 
+rrr = v_typed(char[2][5], v_aggregate("A", "B", "C", "D", "E"));
+
 
 {
     vs = (&s : intptr_t);
@@ -275,13 +308,44 @@ rr: &char[2][5] := v_aggregate("a", "b", "c");
 
     printf("%s%s%s%s%s\n", rr[0], rr[1], rr[2], rr[3], rr[4]);
 
+    rr := rrr;
 
-
-
+    printf("%s%s%s%s%s\n", rr[0], rr[1], rr[2], rr[3], rr[4]);
 }
 
 
+//---------------------------------------------------------------------
+{ v_debug_print_module(1); }
+
+node_t = v_struct("struct.node_t");
+
+node_t = v_struct("struct.node_t")(int, *node_t);
 
 
+{   n0: &node_t := v_aggregate(0, 0);
+    n1: &node_t := v_aggregate(1, &n0);
+    n2: &node_t := v_aggregate(2, &n1);
+    n3: &node_t := v_aggregate(3, &n2);
+    n4: &node_t := v_aggregate(4, &n3);
+    n5: &node_t := v_aggregate(5, &n4);
+    n6: &node_t := v_aggregate(6, &n5);
+
+    printf("\n");
+
+    p: &*node_t := &n6;
+
+    loop
+    {
+        if (!p) v_break();
+
+        n = *p;
+
+        printf("%d ", n[0]);
+
+        p := n[1];
+    }
+
+    printf("\n");
+}
 
 
