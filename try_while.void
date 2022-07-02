@@ -10,54 +10,86 @@
 //---------------------------------------------------------------------
 mk_stmt_while_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, size_t) -> void
 {
-    cond = v_std_any_get_pointer(v_ast_opaque_stmt_sptr, any+0);
-    stmt = v_std_any_get_pointer(v_ast_opaque_stmt_sptr, any+1);
+    cond = v_std_any_get_pointer(v_ast_opaque_stmt_list_sptr, any+0);
+    stmt = v_std_any_get_pointer(v_ast_opaque_stmt_sptr,      any+1);
+
+    //- loop
+    //- {
+    //-     <cond>...
+    //-
+    //-     if (<cond>) <stmt>
+    //-     else        v_break();
+    //- }
+
+
+    cond_len: &int := v_list_get_size(cond);
+
+    cstm = v_alloca(v_ast_opaque_stmt_sptr);
+    v_initialize(cstm);
+    defer v_terminate(cstm);
+
+    v_list_get_items(cond, cond_len-1, cstm);
+
 
     cexp = v_alloca(v_ast_opaque_expr_sptr);
     v_initialize(cexp);
     defer v_terminate(cexp);
 
-    stmp = v_alloca(v_ast_opaque_stmt_sptr, 3);
-    v_initialize(stmp, 3);
-    defer v_terminate(stmp, 3);
-
-    brk = stmp+0;
-    stm = stmp+1;
-    lps = stmp+2;
-
-    v_ast_make_stmt_call(brk, "", "v_break", 0, 0);
-
-    name = v_ast_stmt_get_name(cond);
+    name = v_ast_stmt_get_name(cstm);
 
     if (name[0])
     {
-        cnd = stmp+1;
-        ifs = stmp+2;
-
-        v_copy(cnd, cond);
-
         v_ast_make_expr_identifier(cexp, name);
+    }
+    else
+    {
+        v_ast_stmt_get_expr(cstm, cexp);
 
-        v_ast_make_stmt_if_then_else(ifs, cexp, stmt, brk);
+        --cond_len;
+    }
+
+
+    //- cstm - break
+
+    v_ast_make_stmt_call(cstm, "", "v_break", 0, 0);
+
+
+    stmp_len = cond_len + 1;
+
+
+    stmp = v_alloca(v_ast_opaque_stmt_sptr, stmp_len);
+    v_initialize(stmp, stmp_len);
+    defer v_terminate(stmp, stmp_len);
+
+
+    stmp_cond = stmp + cond_len;
+
+    //- stmp_cond - if
+
+    v_ast_make_stmt_if_then_else(stmp_cond, cexp, stmt, cstm);
+
+
+    //- stmp+0 - loop
+
+    if (cond_len)
+    {
+        //- stmp+0 - block
+
+        v_list_get_items(cond, 0, stmp+0, cond_len);
 
         slst = v_alloca(v_ast_opaque_stmt_list_sptr);
         v_initialize(slst);
         defer v_terminate(slst);
 
-        v_make_list(slst, stmp+1, 2);
+        v_make_list(slst, stmp+0, cond_len+1);
 
-        v_ast_make_stmt_block(stm, slst, false);
-    }
-    else
-    {
-        v_ast_stmt_get_expr(cond, cexp);
-
-        v_ast_make_stmt_if_then_else(stm, cexp, stmt, brk);
+        v_ast_make_stmt_block(stmp+0, slst, false);
     }
 
-    v_ast_make_stmt_loop(lps, stm);
 
-    v_std_any_set_pointer(ret, lps);
+    v_ast_make_stmt_loop(stmp+0, stmp+0);
+
+    v_std_any_set_pointer(ret, stmp+0);
 }
 
 
@@ -75,13 +107,21 @@ mk_stmt_while_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr,
         mk_stmt_while = mk_stmt_while_grammar_action;
 
     parsers:
-        cond_while = i:identifier _':'_ t: expr _'='_ v:expr         { mk_stmt_val_defn(i, t, v) }
-                   / i:identifier _':'_ tv: expr                     { mk_stmt_var_defn(i, tv) }         //- Sic!!!
-                   / i:identifier _ '=' _ v:expr                     { mk_stmt(i, v) }
-                   / v:expr                                          { mk_stmt(0, v) }
-                   ;
+        simple_stmt = i:identifier _':'_ t:expr _'='_ v:expr        { mk_stmt_val_defn(i, t, v) }
+                    / i:identifier _':'_ tv:expr                    { mk_stmt_var_defn(i, tv) }         //- Sic!!!
+                    / i:identifier _'='_ v:expr                     { mk_stmt(i, v) }
+                    / v:expr                                        { mk_stmt(0, v) }
+                    ;
 
-        stmt_while = "while" _ '(' _ c:cond_while _ ')' _ s:stmt  { mk_stmt_while(c, s) };
+        simple_stmt_list_lr = l:simple_stmt_list_lr _','_ s:simple_stmt     { mk_stmt_list(l, s) }
+                            / s:simple_stmt                                 { mk_stmt_list(0, s) }
+                            ;
+
+        simple_stmt_list_lr is left-recursive;
+
+
+        stmt_while = "while" _'('_ c:simple_stmt_list_lr _')'_ s:stmt   { mk_stmt_while(c, s) };
+
 
         stmt += stmt_while;
     }
@@ -105,24 +145,24 @@ mk_stmt_while_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr,
 //  c: &char := v_undef();
 //  while(c := *p++)         printf("[%c]\n", c);
 
-      while(c = *p++)
-      {
-          if (c == '!')
-          {
-              printf(" ! \n");
+    while(c = *p++)
+    {
+        if (c == '!')
+        {
+            printf(" ! \n");
 
-              v_break();
-          }
+            v_break();
+        }
 
-          if (c == ' ')
-          {
-              printf("   \n");
+        if (c == ' ')
+        {
+            printf("   \n");
 
-              v_continue();
-          }
+            v_continue();
+        }
 
-          printf("[%c]\n", c);
-      }
+        printf("[%c]\n", c);
+    }
 
     printf("\\-/\n");
 }
@@ -136,6 +176,18 @@ mk_stmt_while_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr,
     dst: &*char := &buf[0];
 
     while(*dst++ := *src++);
+
+    printf("\n%s\n", &buf[0]);
+}
+
+//---------------------------------------------------------------------
+{
+    buf: &char[100] := v_undef();
+
+    src: &*char := "Hello world!";
+    dst: &*char := &buf[0];
+
+    while(d = *dst++, s = *src++)   d := s;
 
     printf("\n%s\n", &buf[0]);
 }
