@@ -34,7 +34,7 @@ v_internal_copy_variable_intrinsic: (vis: voidc_visitor_ptr, *void,
 mk_stmt_for_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, size_t) -> void
 {
     init = v_std_any_get_pointer(v_ast_opaque_stmt_list_sptr, any+0);
-    cond = v_std_any_get_pointer(v_ast_opaque_stmt_sptr,      any+1);
+    cond = v_std_any_get_pointer(v_ast_opaque_stmt_list_sptr, any+1);
     incr = v_std_any_get_pointer(v_ast_opaque_stmt_list_sptr, any+2);
     stmt = v_std_any_get_pointer(v_ast_opaque_stmt_sptr,      any+3);
 
@@ -47,6 +47,8 @@ mk_stmt_for_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, s
     //-
     //-         v.internal.copy_variable("voidc.internal_branch_target_break_for",
     //-                                  "voidc.internal_branch_target_break");
+    //-
+    //-         <cond>...
     //-
     //-         if (<cond>)     //- Kinda...
     //-         block
@@ -93,22 +95,53 @@ mk_stmt_for_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, s
 
     init_len = v_list_get_size(init);
 
-    cond_len: &int := 0;
+    cond_len: &int := v_list_get_size(cond);
 
-    if (cond)
+    cstm = v_alloca(v_ast_opaque_stmt_sptr);
+    v_initialize(cstm);
+    defer v_terminate(cstm);
+
+    if (cond_len)
     {
-        name = v_ast_stmt_get_name(cond);
+        v_list_get_items(cond, cond_len-1, cstm);
 
-        if (name[0])  cond_len := 1;
+        name = v_ast_stmt_get_name(cstm);
+
+        if (name[0])
+        {
+            v_ast_make_expr_identifier(e_cond, name);
+        }
+        else
+        {
+            v_ast_stmt_get_expr(cstm, e_cond);
+
+            --cond_len;
+        }
     }
+    else
+    {
+        v_ast_make_expr_identifier(e_cond, "true");
+    }
+
+
+    //- cstm - break
+
+    v_ast_make_stmt_call(cstm, "", "v_break", 0, 0);
+
 
     incr_len = v_list_get_size(incr);
 
 
-    stmp_len: &int := 1 + init_len + 4 + cond_len + 1;
+    stmp_len: &int := 4 + 1;        //- Inner block ("if then")
 
-    if (incr_len > 6)   stmp_len += incr_len;
-    else                stmp_len += 6;
+    {   l = 2 + cond_len + 1 + incr_len;
+
+        if (stmp_len < l)   stmp_len := l;      //- Loop's block
+
+        l = init_len + 1;
+
+        if (stmp_len < l)   stmp_len := l;      //- Outer block
+    }
 
 
     stmp = v_alloca(v_ast_opaque_stmt_sptr, stmp_len);
@@ -116,100 +149,79 @@ mk_stmt_for_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, s
     defer v_terminate(stmp, stmp_len);
 
 
-    //- stmp+0 - block
-
-
-    v_list_get_items(init, 0, stmp+1, init_len);
-
-
-    stmp_init = stmp + 1 + init_len;
-
-    //- stmp_init+0 - loop
-    //- stmp_init+1 - block
-
-
-    v_copy(etmp+0, e_break_for_var);
-    v_copy(etmp+1, e_break_var);
-
-    v_ast_make_stmt_call(stmp_init+2, "", "v.internal.copy_variable", etmp+0, 2);
-
-    v_copy(etmp+0, e_break_for);
-    v_copy(etmp+1, e_break);
-
-    v_ast_make_stmt_call(stmp_init+3, "", "v.internal.copy_variable", etmp+0, 2);
-
-
-    if (cond_len)
-    {
-        v_copy(stmp_init+4, cond);
-
-        name = v_ast_stmt_get_name(cond);
-
-        v_ast_make_expr_identifier(e_cond, name);
-    }
-    else
-    {
-        if (cond)   v_ast_stmt_get_expr(cond, e_cond);
-        else        v_ast_make_expr_identifier(e_cond, "true");
-    }
-
-
-    stmp_cond = stmp_init + 4 + cond_len;
-
     //- stmp_cond+0 - if
-    //- stmp_cond+1 - block
+
+    stmp_cond = stmp + 2 + cond_len;
 
 
     v_copy(etmp+0, e_continue_var);
     v_copy(etmp+1, e_break_var);
 
-    v_ast_make_stmt_call(stmp_cond+2, "", "v.internal.copy_variable", etmp+0, 2);
+    v_ast_make_stmt_call(stmp+0, "", "v.internal.copy_variable", etmp+0, 2);
 
     v_copy(etmp+0, e_continue);
     v_copy(etmp+1, e_break);
 
-    v_ast_make_stmt_call(stmp_cond+3, "", "v.internal.copy_variable", etmp+0, 2);
+    v_ast_make_stmt_call(stmp+1, "", "v.internal.copy_variable", etmp+0, 2);
 
     v_copy(etmp+0, e_break_var);
     v_copy(etmp+1, e_break_for_var);
 
-    v_ast_make_stmt_call(stmp_cond+4, "", "v.internal.copy_variable", etmp+0, 2);
+    v_ast_make_stmt_call(stmp+2, "", "v.internal.copy_variable", etmp+0, 2);
 
     v_copy(etmp+0, e_break);
     v_copy(etmp+1, e_break_for);
 
-    v_ast_make_stmt_call(stmp_cond+5, "", "v.internal.copy_variable", etmp+0, 2);
+    v_ast_make_stmt_call(stmp+3, "", "v.internal.copy_variable", etmp+0, 2);
 
 
-    v_copy(stmp_cond+6, stmt);
+    v_copy(stmp+4, stmt);
 
 
     slst = v_alloca(v_ast_opaque_stmt_list_sptr);
     v_initialize(slst);
     defer v_terminate(slst);
 
-    v_make_list(slst, stmp_cond+2, 5);
+    v_make_list(slst, stmp+0, 5);
 
-    v_ast_make_stmt_block(stmp_cond+1, slst, true);
+    v_ast_make_stmt_block(stmp+0, slst, true);
 
-
-    v_ast_make_stmt_call(stmp_cond+2, "", "v_break", 0, 0);
-
-
-    v_ast_make_stmt_if_then_else(stmp_cond+0, e_cond, stmp_cond+1, stmp_cond+2);
+    v_ast_make_stmt_if_then_else(stmp_cond+0, e_cond, stmp+0, cstm);
 
 
-    v_list_get_items(incr, 0, stmp_cond+1, incr_len);
+    //- stmp_init+0 - loop
+
+    stmp_init = stmp + init_len;
 
 
-    v_make_list(slst, stmp_init+2, 2+cond_len+1+incr_len);
+    v_copy(etmp+0, e_break_for_var);
+    v_copy(etmp+1, e_break_var);
 
-    v_ast_make_stmt_block(stmp_init+1, slst, false);
+    v_ast_make_stmt_call(stmp+0, "", "v.internal.copy_variable", etmp+0, 2);
 
-    v_ast_make_stmt_loop(stmp_init+0, stmp_init+1);
+    v_copy(etmp+0, e_break_for);
+    v_copy(etmp+1, e_break);
+
+    v_ast_make_stmt_call(stmp+1, "", "v.internal.copy_variable", etmp+0, 2);
 
 
-    v_make_list(slst, stmp+1, init_len+1);
+    if (cond_len) v_list_get_items(cond, 0, stmp+2, cond_len);
+
+
+    if (incr_len) v_list_get_items(incr, 0, stmp_cond+1, incr_len);
+
+
+    v_make_list(slst, stmp+0, 2+cond_len+1+incr_len);
+
+    v_ast_make_stmt_block(stmp+0, slst, false);
+
+    v_ast_make_stmt_loop(stmp_init+0, stmp+0);
+
+
+    if (init_len) v_list_get_items(init, 0, stmp+0, init_len);
+
+
+    v_make_list(slst, stmp+0, init_len+1);
 
     v_ast_make_stmt_block(stmp+0, slst, false);
 
@@ -249,7 +261,7 @@ mk_stmt_for_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, s
                          ;
 
         stmt_for = "for" _'('_ i:simple_stmt_list _';'_
-                               c:simple_stmt?     _';'_
+                               c:simple_stmt_list _';'_
                                r:simple_stmt_list
                          _')'_ s:stmt                       { mk_stmt_for(i, c, r, s) }
                  ;
@@ -302,7 +314,7 @@ mk_stmt_for_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, s
 //    }
 
 
-    for(i: &int := 0, F: &int := 1; c = i < 10; F*=++i)
+    for(i: &int := 0, F: &int := 1; c = i < 5, i < 10; F*=++i)
     {
         printf("[%d] %d, %d\n", i, (c: int), F);
     }
