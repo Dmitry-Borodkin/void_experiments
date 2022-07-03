@@ -17,8 +17,9 @@ mk_stmt_while_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr,
     //- {
     //-     <cond>...
     //-
-    //-     if (<cond>) <stmt>
-    //-     else        v_break();
+    //-     if (<cond>)     //- Kinda...
+    //-     <stmt>
+    //-     else  v_break();
     //- }
 
 
