@@ -1,5 +1,6 @@
 {   v_import("level-00");
     v_import("level-01");
+    v_import("level-02");
 
     v_import("llvm-c/Core.void");
     v_import("llvm-c/Support.void");
@@ -7,24 +8,8 @@
     v_import("printf.void");
 }
 
-{   v_enable_level_01(); }
-
-
-//---------------------------------------------------------------------
-{
-    gr0 = v_alloca(v_peg_opaque_grammar_sptr);
-    v_initialize(gr0);
-    defer v_terminate(gr0);
-
-    v_peg_get_grammar(gr0);
-
-    grammar gr0
-    {
-    parsers:
-        string += "\"\"\"" <(!"\"\"\"" .)*> "\"\"\"" { $1 };
-    }
-
-    v_peg_set_grammar(gr0);
+{   v_enable_level_01();
+    v_enable_level_02();
 }
 
 
@@ -245,10 +230,8 @@ cairo_set_line_cap: (*cairo_t, int) -> void;
 
 
 //---------------------------------------------------------------------
-milli = 1 / (1000: double);
-
-m_radius     = 420*milli;
-m_line_width =  25*milli;
+m_radius     = 0.42;
+m_line_width = 0.025;
 
 draw_cb: (widget: *GtkWidget, cr: *cairo_t, *void) -> void
 {
@@ -269,12 +252,12 @@ draw_cb: (widget: *GtkWidget, cr: *cairo_t, *void) -> void
     cairo_set_line_width(cr, m_line_width);
 
     cairo_save(cr);
-    cairo_set_source_rgba(cr, 337*milli, 612*milli, 117*milli, 900*milli);      //- Green
+    cairo_set_source_rgba(cr, 0.337, 0.612, 0.117, 0.9);        //- Green
     cairo_paint(cr);
     cairo_restore(cr);
     cairo_arc(cr, 0, 0, m_radius, 0, 2*M_PI);
     cairo_save(cr);
-    cairo_set_source_rgba(cr, 1, 1, 1, 800*milli);
+    cairo_set_source_rgba(cr, 1, 1, 1, 0.8);
     cairo_fill_preserve(cr);
     cairo_restore(cr);
     cairo_stroke_preserve(cr);
@@ -282,21 +265,18 @@ draw_cb: (widget: *GtkWidget, cr: *cairo_t, *void) -> void
 
     //- Clock ticks
 
-    i: &int := 0;
-    loop
+    for (i: &int := 0; i < 12; ++i)
     {
-        if (i >= 12)  v_break();
-
-        inset: &double := 50*milli;
+        inset: &double := 0.05;
 
         cairo_save(cr);
         cairo_set_line_cap(cr, 1);      //- Kinda ROUND...
 
         if (i % 3 != 0)
         {
-            inset *= 800*milli;
+            inset *= 0.8;
 
-            cairo_set_line_width(cr, 30*milli);
+            cairo_set_line_width(cr, 0.03);
         }
 
         cairo_move_to(cr, (m_radius - inset) * cos(i*(M_PI/6)),
@@ -307,8 +287,6 @@ draw_cb: (widget: *GtkWidget, cr: *cairo_t, *void) -> void
 
         cairo_stroke(cr);
         cairo_restore(cr);
-
-        ++i;
     }
 
     time = my_clock();
@@ -324,26 +302,26 @@ draw_cb: (widget: *GtkWidget, cr: *cairo_t, *void) -> void
     cairo_save(cr);
     cairo_set_line_width(cr, m_line_width/3);
 
-    flash = !(50*milli < time%5 < 4950*milli);
+    flash = !(0.05 < time%5 < 4.95);
 
-    if (flash)  cairo_set_source_rgb(cr, 1, 0, 0);                              //- RED!
-    else        cairo_set_source_rgb(cr, 700*milli, 700*milli, 700*milli);      //- Gray
+    if (flash)  cairo_set_source_rgb(cr, 1, 0, 0);              //- RED!
+    else        cairo_set_source_rgb(cr, 0.7, 0.7, 0.7);        //- Gray
 
     cairo_move_to(cr, 0, 0);
-    cairo_line_to(cr, sin(seconds)*(m_radius * 900*milli), -cos(seconds)*(m_radius * 900*milli));
+    cairo_line_to(cr, sin(seconds)*(m_radius * 0.9), -cos(seconds)*(m_radius * 0.9));
     cairo_stroke(cr);
     cairo_restore(cr);
 
     //- Draw the minutes hand
-    cairo_set_source_rgba(cr, 117*milli, 337*milli, 612*milli, 900*milli);      // Blue
+    cairo_set_source_rgba(cr, 0.117, 0.337, 0.612, 0.9);        // Blue
     cairo_move_to(cr, 0, 0);
-    cairo_line_to(cr, sin(minutes)*(m_radius * 800*milli), -cos(minutes)*(m_radius * 800*milli));
+    cairo_line_to(cr, sin(minutes)*(m_radius * 0.8), -cos(minutes)*(m_radius * 0.8));
     cairo_stroke(cr);
 
     //- Draw the hours hand
-    cairo_set_source_rgba(cr, 337*milli, 612*milli, 117*milli, 900*milli);      // Green
+    cairo_set_source_rgba(cr, 0.337, 0.612, 0.117, 0.9);        // Green
     cairo_move_to(cr, 0, 0);
-    cairo_line_to(cr, sin(hours)*(m_radius * 500*milli), -cos(hours)*(m_radius * 500*milli));
+    cairo_line_to(cr, sin(hours)*(m_radius * 0.5), -cos(hours)*(m_radius * 0.5));
     cairo_stroke(cr);
     cairo_restore(cr);
 

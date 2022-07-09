@@ -1,0 +1,629 @@
+{   v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+
+    v_import("llvm-c/Core.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_level_01();
+    v_enable_level_02();
+}
+
+
+//---------------------------------------------------------------------
+opk_assign   = 0;
+opk_logical  = 1;
+opk_relation = 2;
+opk_binary   = 3;
+opk_unary    = 4;
+
+op_table_item_t = v_struct("struct.op_table_item")
+(
+    *const char,    //- 0 - Name
+    int,            //- 1 - Kind
+    v_quark_t,      //- 2 - Quark (left)
+    v_quark_t       //- 3 - Quark (right)
+
+                    //- ? - ???
+);
+
+OP_TABLE_SIZE = 41;
+
+op_table: &op_table_item_t[OP_TABLE_SIZE] :=
+{
+    {"op_infix_assign",      opk_assign   },
+    {"op_infix_add_assign",  opk_assign   },
+    {"op_infix_sub_assign",  opk_assign   },
+    {"op_infix_mul_assign",  opk_assign   },
+    {"op_infix_div_assign",  opk_assign   },
+    {"op_infix_rem_assign",  opk_assign   },
+    {"op_infix_shl_assign",  opk_assign   },
+    {"op_infix_shr_assign",  opk_assign   },
+    {"op_infix_and_assign",  opk_assign   },
+    {"op_infix_xor_assign",  opk_assign   },
+    {"op_infix_or_assign",   opk_assign   },
+
+    {"op_infix_logical_or",  opk_logical  },
+    {"op_infix_logical_and", opk_logical  },
+
+    {"op_infix_lt",          opk_relation },
+    {"op_infix_le",          opk_relation },
+    {"op_infix_gt",          opk_relation },
+    {"op_infix_ge",          opk_relation },
+    {"op_infix_eq",          opk_relation },
+    {"op_infix_ne",          opk_relation },
+
+    {"op_infix_or",          opk_binary   },
+    {"op_infix_xor",         opk_binary   },
+    {"op_infix_and",         opk_binary   },
+
+    {"op_infix_shl",         opk_binary   },
+    {"op_infix_shr",         opk_binary   },
+    {"op_infix_add",         opk_binary   },
+    {"op_infix_sub",         opk_binary   },
+    {"op_infix_mul",         opk_binary   },
+    {"op_infix_div",         opk_binary   },
+    {"op_infix_rem",         opk_binary   },
+
+    {"op_prefix_inc",        opk_unary    },
+    {"op_prefix_dec",        opk_unary    },
+    {"op_prefix_plus",       opk_unary    },
+    {"op_prefix_minus",      opk_unary    },
+    {"op_prefix_star",       opk_unary    },
+    {"op_prefix_amp",        opk_unary    },
+    {"op_prefix_bang",       opk_unary    },
+    {"op_prefix_tilda",      opk_unary    },
+
+    {"op_postfix_inc",       opk_unary    },
+    {"op_postfix_dec",       opk_unary    },
+    {"op_postfix_call",      opk_unary    },
+    {"op_postfix_index",     opk_unary    }
+};
+
+{   sstr = v_alloca(v_util_opaque_std_string);
+    v_initialize(sstr);
+    defer v_terminate(sstr);
+
+    int_ = v_type_get_llvm_type(int);
+
+    for (i: &int := 0; i < OP_TABLE_SIZE; ++i)
+    {
+        op_table[i][2] := v_quark_from_string(op_table[i][0]);
+
+        if (op_table[i][1] == opk_binary)
+        {
+            v_std_string_set(sstr, op_table[i][0]);
+
+            v_std_string_append(sstr, ".right");
+
+            op_table[i][3] := v_quark_from_string(v_std_string_get(sstr));
+        }
+
+        v_std_string_set(sstr, "id");
+
+        v_std_string_append(sstr, op_table[i][0]+2);
+
+        v_add_constant(v_std_string_get(sstr), int, LLVMConstInt(int_, i, 0));
+    }
+}
+
+
+//---------------------------------------------------------------------
+lookup_function_dict: (vis: voidc_visitor_ptr, q: v_quark_t, t: v_type_ptr,
+                       void_fun: &*void, void_aux: &*void,
+                       f: &LLVMValueRef, ft: &v_type_ptr
+                      ) -> bool
+{
+    fname = v_util_function_dict_get(q, t);
+    if (!fname) v_return(false);
+
+    if (void_fun := v_get_intrinsic(fname, &void_aux))  v_return(true);
+
+    if (void_fun := voidc_visitor_get_intrinsic(vis, fname, &void_aux)) v_return(true);
+
+    ft := v_find_symbol_type(fname);
+
+    if (!ft)  v_return(false);
+
+    module = v_get_module();
+
+    f := LLVMGetNamedFunction(module, fname);
+
+    if (f)  v_return(true);
+
+    ft_ = v_type_get_llvm_type(ft);
+
+    f := LLVMAddFunction(module, fname, ft_);
+
+    v_return(true);
+}
+
+
+//---------------------------------------------------------------------
+intrinsic_p1_t = (vis: voidc_visitor_ptr, aux: *void,
+                  ast: v_ast_expr_ptr,
+                  t0: v_type_ptr, v0: LLVMValueRef
+                 ) -> void;
+
+intrinsic_p2_t = (vis: voidc_visitor_ptr, aux: *void,
+                  ast: v_ast_expr_ptr,
+                  t0: v_type_ptr, v0: LLVMValueRef,
+                  t1: v_type_ptr, v1: LLVMValueRef
+                 ) -> void;
+
+
+//---------------------------------------------------------------------
+op_assign_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
+                      args: v_ast_expr_list_ptr, count: int) -> void
+{
+    ast = v_alloca(v_ast_opaque_expr_sptr, 2);
+    v_initialize(ast, 2);
+    defer v_terminate(ast, 2);
+
+    v_list_get_items(args, 0, ast, 2);
+
+    tt = v_get_result_type();
+
+    v_set_result_type(INVIOLABLE_TAG);
+
+    v_ast_accept_visitor((ast+0 : v_ast_base_ptr), vis);
+
+    t0 = v_get_result_type();
+    v0 = v_get_result_value();
+
+    q = op_table[(aux: int)][2];    //- Quark
+
+    builder = v_target_get_builder();
+
+    void_fun: &*void := 0;
+    void_aux: &*void := 0;
+
+    f:  &LLVMValueRef := 0;
+    ft: &v_type_ptr   := 0;
+
+    if (lookup_function_dict(vis, q, t0, void_fun, void_aux, f, ft))
+    {
+        //- Got overloading!
+
+        if (fun = (void_fun: *intrinsic_p1_t))
+        {
+            v_set_result_type(tt);
+
+            fun(vis, void_aux, ast, t0, v0);
+        }
+        else
+        {
+            val: &LLVMValueRef[2] := {v0};
+
+            fpar = v_type_function_get_param_types(ft);
+
+            v_set_result_type(fpar[1]);
+
+            v_ast_accept_visitor((ast+1 : v_ast_base_ptr), vis);
+
+            val[1] := v_get_result_value();
+
+            ft_ = v_type_get_llvm_type(ft);
+
+            vr = LLVMBuildCall2(builder, ft_, f, &val[0], 2, "");
+
+            v_set_result_type(tt);
+
+            v_adopt_result(v_type_function_get_return_type(ft), vr);
+        }
+
+        v_return();
+    }
+
+    e0 = v_type_refptr_get_element_type(t0);
+
+    switch((aux: int))
+    {
+    case id_infix_add_assign:
+    case id_infix_sub_assign:
+
+        if (v_type_is_pointer(e0))
+        {
+            v_set_result_type(intptr_t);
+
+            v_break();
+        }
+
+        //- Fallthrough
+
+    default:
+
+        v_set_result_type(e0);
+    }
+
+    v_ast_accept_visitor((ast+1 : v_ast_base_ptr), vis);
+
+    t1 = v_get_result_type();
+    v1 = v_get_result_value();
+
+    compile: &*((v_type_ptr, LLVMValueRef, LLVMValueRef) -> LLVMValueRef) := 0;
+
+    switch((aux: int))
+    {
+    case id_infix_add_assign:   compile := voidc_internal_compile_add_helper;   v_break();
+    case id_infix_sub_assign:   compile := voidc_internal_compile_sub_helper;   v_break();
+    case id_infix_mul_assign:   compile := voidc_internal_compile_mul_helper;   v_break();
+    case id_infix_div_assign:   compile := voidc_internal_compile_div_helper;   v_break();
+    case id_infix_rem_assign:   compile := voidc_internal_compile_rem_helper;   v_break();
+    case id_infix_shl_assign:   compile := voidc_internal_compile_shl_helper;   v_break();
+    case id_infix_shr_assign:   compile := voidc_internal_compile_shr_helper;   v_break();
+    case id_infix_and_assign:   compile := voidc_internal_compile_and_helper;   v_break();
+    case id_infix_xor_assign:   compile := voidc_internal_compile_xor_helper;   v_break();
+    case id_infix_or_assign:    compile := voidc_internal_compile_or_helper;    v_break();
+    }
+
+
+    vr: &LLVMValueRef := v1;
+
+    if (compile)
+    {
+        v = LLVMBuildLoad2(builder, v_type_get_llvm_type(e0), v0, "");
+
+        vr := compile(e0, v, v1);
+    }
+    else
+    {
+        if (v_type_is_pointer(v_type_get_scalar_type(e0)))      //- WTF ?!?!?!?
+        {
+            vr := v_convert_to_type(t1, v1, e0);
+        }
+    }
+
+    LLVMBuildStore(builder, vr, v0);
+
+
+    v_set_result_type(tt);
+
+    v_adopt_result(t0, v0);
+}
+
+
+//---------------------------------------------------------------------
+op_binary_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
+                      args: v_ast_expr_list_ptr, count: int) -> void
+{
+    ast = v_alloca(v_ast_opaque_expr_sptr, 2);
+    v_initialize(ast, 2);
+    defer v_terminate(ast, 2);
+
+    v_list_get_items(args, 0, ast, 2);
+
+    tt = v_get_result_type();
+
+    //- First argument
+
+    v_set_result_type(INVIOLABLE_TAG);
+
+    v_ast_accept_visitor((ast+0 : v_ast_base_ptr), vis);
+
+    t0 = v_get_result_type();
+    v0 = v_get_result_value();
+
+    q0 = op_table[(aux: int)][2];       //- Quark (left)
+
+    void_fun: &*void := 0;
+    void_aux: &*void := 0;
+
+    f:  &LLVMValueRef := 0;
+    ft: &v_type_ptr   := 0;
+
+    builder = v_target_get_builder();
+
+    if (lookup_function_dict(vis, q0, t0, void_fun, void_aux, f, ft))
+    {
+        //- Got overloading!
+
+        if (fun = (void_fun: *intrinsic_p1_t))
+        {
+            v_set_result_type(tt);
+
+            fun(vis, void_aux, ast, t0, v0);
+        }
+        else
+        {
+            val: &LLVMValueRef[2] := {v0};
+
+            fpar = v_type_function_get_param_types(ft);
+
+            v_set_result_type(fpar[1]);
+
+            v_ast_accept_visitor((ast+1 : v_ast_base_ptr), vis);
+
+            val[1] := v_get_result_value();
+
+            ft_ = v_type_get_llvm_type(ft);
+
+            vr = LLVMBuildCall2(builder, ft_, f, &val[0], 2, "");
+
+            v_set_result_type(tt);
+
+            v_adopt_result(v_type_function_get_return_type(ft), vr);
+        }
+
+        v_return();
+    }
+
+    //- Second argument
+
+    v_set_result_type(INVIOLABLE_TAG);
+
+    v_ast_accept_visitor((ast+1 : v_ast_base_ptr), vis);
+
+    t1 = v_get_result_type();
+    v1 = v_get_result_value();
+
+    q1 = op_table[(aux: int)][3];       //- Quark (right)
+
+    if (lookup_function_dict(vis, q1, t1, void_fun, void_aux, f, ft))
+    {
+        //- Got overloading!
+
+        if (fun = (void_fun: *intrinsic_p2_t))
+        {
+            v_set_result_type(tt);
+
+            fun(vis, void_aux, ast, t0, v0, t1, v1);
+        }
+        else
+        {
+            fpar = v_type_function_get_param_types(ft);
+
+            v_set_result_type(fpar[0]);
+
+            v_adopt_result(t0, v0);
+
+            val: &LLVMValueRef[2] := {v_get_result_value(), v1};
+
+            ft_ = v_type_get_llvm_type(ft);
+
+            vr = LLVMBuildCall2(builder, ft_, f, &val[0], 2, "");
+
+            v_set_result_type(tt);
+
+            v_adopt_result(v_type_function_get_return_type(ft), vr);
+        }
+
+        v_return();
+    }
+
+    //- Default treatment...
+
+    v_set_result_type(UNREFERENCE_TAG);
+
+    v_adopt_result(t0, v0);
+
+    t0: &v_type_ptr   := v_get_result_type();
+    v0: &LLVMValueRef := v_get_result_value();
+
+    v_set_result_type(UNREFERENCE_TAG);
+
+    v_adopt_result(t1, v1);
+
+    t1: &v_type_ptr   := v_get_result_type();
+    v1: &LLVMValueRef := v_get_result_value();
+
+    {   compile: &*((&v_type_ptr, &LLVMValueRef, &v_type_ptr, &LLVMValueRef) -> LLVMValueRef) := 0;
+
+        switch((aux: int))
+        {
+        case id_infix_add:  compile := voidc_internal_compile_infix_add_helper; v_break();
+        case id_infix_sub:  compile := voidc_internal_compile_infix_sub_helper; v_break();
+        }
+
+        if (compile)
+        {
+            v = compile(t0, v0, t1, v1);
+
+            v_set_result_type(tt);
+
+            v_adopt_result(t0, v);
+
+            v_return();
+        }
+    }
+
+    compile: &*((v_type_ptr, LLVMValueRef, LLVMValueRef) -> LLVMValueRef) := 0;
+
+    switch((aux: int))
+    {
+    case id_infix_mul:  compile := voidc_internal_compile_mul_helper;   v_break();
+    case id_infix_div:  compile := voidc_internal_compile_div_helper;   v_break();
+    case id_infix_rem:  compile := voidc_internal_compile_rem_helper;   v_break();
+    case id_infix_shl:  compile := voidc_internal_compile_shl_helper;   v_break();
+    case id_infix_shr:  compile := voidc_internal_compile_shr_helper;   v_break();
+    case id_infix_and:  compile := voidc_internal_compile_and_helper;   v_break();
+    case id_infix_xor:  compile := voidc_internal_compile_xor_helper;   v_break();
+    case id_infix_or:   compile := voidc_internal_compile_or_helper;    v_break();
+    }
+
+    voidc_internal_convert_to_common_type_helper(t0, v0, t1, v1);
+
+    v = compile(t0, v0, v1);
+
+    v_set_result_type(tt);
+
+    v_adopt_result(t0, v);
+}
+
+
+
+//=====================================================================
+{
+    v_add_intrinsic("v.op_infix_assign",     op_assign_intrinsic, (id_infix_assign:     *void));
+    v_add_intrinsic("v.op_infix_add_assign", op_assign_intrinsic, (id_infix_add_assign: *void));
+    v_add_intrinsic("v.op_infix_sub_assign", op_assign_intrinsic, (id_infix_sub_assign: *void));
+    v_add_intrinsic("v.op_infix_mul_assign", op_assign_intrinsic, (id_infix_mul_assign: *void));
+    v_add_intrinsic("v.op_infix_div_assign", op_assign_intrinsic, (id_infix_div_assign: *void));
+    v_add_intrinsic("v.op_infix_rem_assign", op_assign_intrinsic, (id_infix_rem_assign: *void));
+    v_add_intrinsic("v.op_infix_shl_assign", op_assign_intrinsic, (id_infix_shl_assign: *void));
+    v_add_intrinsic("v.op_infix_shr_assign", op_assign_intrinsic, (id_infix_shr_assign: *void));
+    v_add_intrinsic("v.op_infix_and_assign", op_assign_intrinsic, (id_infix_and_assign: *void));
+    v_add_intrinsic("v.op_infix_xor_assign", op_assign_intrinsic, (id_infix_xor_assign: *void));
+    v_add_intrinsic("v.op_infix_or_assign",  op_assign_intrinsic, (id_infix_or_assign:  *void));
+
+    v_add_intrinsic("v.op_infix_add", op_binary_intrinsic, (id_infix_add: *void));
+    v_add_intrinsic("v.op_infix_sub", op_binary_intrinsic, (id_infix_sub: *void));
+    v_add_intrinsic("v.op_infix_mul", op_binary_intrinsic, (id_infix_mul: *void));
+    v_add_intrinsic("v.op_infix_div", op_binary_intrinsic, (id_infix_div: *void));
+    v_add_intrinsic("v.op_infix_rem", op_binary_intrinsic, (id_infix_rem: *void));
+    v_add_intrinsic("v.op_infix_shl", op_binary_intrinsic, (id_infix_shl: *void));
+    v_add_intrinsic("v.op_infix_shr", op_binary_intrinsic, (id_infix_shr: *void));
+    v_add_intrinsic("v.op_infix_and", op_binary_intrinsic, (id_infix_and: *void));
+    v_add_intrinsic("v.op_infix_xor", op_binary_intrinsic, (id_infix_xor: *void));
+    v_add_intrinsic("v.op_infix_or",  op_binary_intrinsic, (id_infix_or:  *void));
+
+    //- ...
+
+}
+
+
+
+//---------------------------------------------------------------------
+
+
+
+
+//=====================================================================
+double = float(64);
+
+complex = v_struct("struct.complex")
+(
+    double,     //- real
+    double      //- imag
+);
+
+
+//---------------------------------------------------------------------
+complex_add_assign: (a: &complex, b: complex) -> &complex
+{
+    a := { a[0]+b[0], a[1]+b[1] };
+
+    v_return(a);
+}
+
+complex_sub_assign: (a: &complex, b: complex) -> &complex
+{
+    a := { a[0]-b[0], a[1]-b[1] };
+
+    v_return(a);
+}
+
+complex_mul_assign: (a: &complex, b: complex) -> &complex
+{
+    a := { a[0]*b[0] - a[1]*b[1], a[0]*b[1] + a[1]*b[0] };
+
+    v_return(a);
+}
+
+complex_div_assign: (a: &complex, b: complex) -> &complex
+{
+    d = b[0]*b[0] + b[1]*b[1];
+
+    a := { (a[0]*b[0] + a[1]*b[1])/d, (a[1]*b[0] - a[0]*b[1])/d };
+
+    v_return(a);
+}
+
+//---------------------------------------------------------------------
+{
+    complex_ref = v_reference_type(complex, 0);
+
+    v_util_function_dict_set(v_quark_from_string("op_infix_add_assign"), complex_ref, "complex_add_assign");
+    v_util_function_dict_set(v_quark_from_string("op_infix_sub_assign"), complex_ref, "complex_sub_assign");
+    v_util_function_dict_set(v_quark_from_string("op_infix_mul_assign"), complex_ref, "complex_mul_assign");
+    v_util_function_dict_set(v_quark_from_string("op_infix_div_assign"), complex_ref, "complex_div_assign");
+}
+
+
+//---------------------------------------------------------------------
+complex_add: (a: complex, b: complex) -> complex
+{
+    v_return({ a[0]+b[0], a[1]+b[1] });
+}
+
+complex_sub: (a: complex, b: complex) -> complex
+{
+    v_return({ a[0]-b[0], a[1]-b[1] });
+}
+
+complex_mul: (a: complex, b: complex) -> complex
+{
+    v_return({ a[0]*b[0] - a[1]*b[1], a[0]*b[1] + a[1]*b[0] });
+}
+
+complex_div: (a: complex, b: complex) -> complex
+{
+    d = b[0]*b[0] + b[1]*b[1];
+
+    v_return({ (a[0]*b[0] + a[1]*b[1])/d, (a[1]*b[0] - a[0]*b[1])/d });
+}
+
+//---------------------------------------------------------------------
+{
+    v_util_function_dict_set(v_quark_from_string("op_infix_add"), complex, "complex_add");
+    v_util_function_dict_set(v_quark_from_string("op_infix_sub"), complex, "complex_sub");
+    v_util_function_dict_set(v_quark_from_string("op_infix_mul"), complex, "complex_mul");
+    v_util_function_dict_set(v_quark_from_string("op_infix_div"), complex, "complex_div");
+}
+
+
+//---------------------------------------------------------------------
+sin: (double) -> double;
+cos: (double) -> double;
+
+M_PI = 3.14159265358979323846264338327950288419716939937510582;
+
+
+//---------------------------------------------------------------------
+U: complex = { 1, 0 };
+I: complex = { 0, 1 };
+
+//{ v_debug_print_module(1); }
+{
+    alpha = M_PI / 180;
+
+    a: complex = {cos(alpha), sin(alpha)};
+
+    z: &complex := U;
+
+    for (i: &int := 0; i <= 360; ++i)
+    {
+        printf("(%g, %g)\n", z[0], z[1]);
+
+        z /= a;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+//=====================================================================
+{
+
+
+
+
+
+
+
+}
+
+
+
+
+
