@@ -92,7 +92,7 @@ op_table: &op_table_item_t[OP_TABLE_SIZE] :=
     {
         op_table[i][2] := v_quark_from_string(op_table[i][0]);
 
-        if (op_table[i][1] == opk_binary)
+        if (k = op_table[i][1],  k == opk_binary  ||  k == opk_relation)
         {
             v_std_string_set(sstr, op_table[i][0]);
 
@@ -210,9 +210,15 @@ op_assign_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
         }
         else
         {
-            val: &LLVMValueRef[2] := {v0};
+            val: &LLVMValueRef[2] := v_undef();
 
             fpar = v_type_function_get_param_types(ft);
+
+            v_set_result_type(fpar[0]);
+
+            v_adopt_result(t0, v0);
+
+            val[0] := v_get_result_value();
 
             v_set_result_type(fpar[1]);
 
@@ -343,9 +349,15 @@ op_binary_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
         }
         else
         {
-            val: &LLVMValueRef[2] := {v0};
+            val: &LLVMValueRef[2] := v_undef();
 
             fpar = v_type_function_get_param_types(ft);
+
+            v_set_result_type(fpar[0]);
+
+            v_adopt_result(t0, v0);
+
+            val[0] := v_get_result_value();
 
             v_set_result_type(fpar[1]);
 
@@ -388,13 +400,21 @@ op_binary_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
         }
         else
         {
+            val: &LLVMValueRef[2] := v_undef();
+
             fpar = v_type_function_get_param_types(ft);
 
             v_set_result_type(fpar[0]);
 
             v_adopt_result(t0, v0);
 
-            val: &LLVMValueRef[2] := {v_get_result_value(), v1};
+            val[0] := v_get_result_value();
+
+            v_set_result_type(fpar[1]);
+
+            v_adopt_result(t1, v1);
+
+            val[1] := v_get_result_value();
 
             ft_ = v_type_get_llvm_type(ft);
 
@@ -648,9 +668,15 @@ op_relation_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
             }
             else
             {
-                vv: &LLVMValueRef[2] := {v0};
+                vv: &LLVMValueRef[2] := v_undef();
 
                 fpar = v_type_function_get_param_types(ft);
+
+                v_set_result_type(fpar[0]);
+
+                v_adopt_result(t0, v0);
+
+                vv[0] := v_get_result_value();
 
                 v_set_result_type(fpar[1]);
 
@@ -697,13 +723,21 @@ op_relation_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
                 }
                 else
                 {
+                    vv: &LLVMValueRef[2] := v_undef();
+
                     fpar = v_type_function_get_param_types(ft);
 
                     v_set_result_type(fpar[0]);
 
                     v_adopt_result(t0, v0);
 
-                    vv: &LLVMValueRef[2] := {v_get_result_value(), v1};
+                    vv[0] := v_get_result_value();
+
+                    v_set_result_type(fpar[1]);
+
+                    v_adopt_result(t1, v1);
+
+                    vv[1] := v_get_result_value();
 
                     ft_ = v_type_get_llvm_type(ft);
 
@@ -984,6 +1018,13 @@ complex_div: (a: complex, b: complex) -> complex
     v_util_function_dict_set(v_quark_from_string("op_infix_sub"), complex, "complex_sub");
     v_util_function_dict_set(v_quark_from_string("op_infix_mul"), complex, "complex_mul");
     v_util_function_dict_set(v_quark_from_string("op_infix_div"), complex, "complex_div");
+
+    complex_ref = v_reference_type(complex, 0);
+
+    v_util_function_dict_set(v_quark_from_string("op_infix_add"), complex_ref, "complex_add");
+    v_util_function_dict_set(v_quark_from_string("op_infix_sub"), complex_ref, "complex_sub");
+    v_util_function_dict_set(v_quark_from_string("op_infix_mul"), complex_ref, "complex_mul");
+    v_util_function_dict_set(v_quark_from_string("op_infix_div"), complex_ref, "complex_div");
 }
 
 
@@ -1008,7 +1049,7 @@ I: complex = { 0, 1 };
 
     for (i: &int := 0; i <= 360; ++i)
     {
-//      printf("(%g, %g)\n", z[0], z[1]);
+        if (i%30 == 0)  printf("(%g, %g)\n", z[0], z[1]);
 
         z /= a;
     }
@@ -1093,6 +1134,13 @@ number_div: (a: number, b: number) -> number
     v_util_function_dict_set(v_quark_from_string("op_infix_sub"), number, "number_sub");
     v_util_function_dict_set(v_quark_from_string("op_infix_mul"), number, "number_mul");
     v_util_function_dict_set(v_quark_from_string("op_infix_div"), number, "number_div");
+
+    number_ref = v_reference_type(number, 0);
+
+    v_util_function_dict_set(v_quark_from_string("op_infix_add"), number_ref, "number_add");
+    v_util_function_dict_set(v_quark_from_string("op_infix_sub"), number_ref, "number_sub");
+    v_util_function_dict_set(v_quark_from_string("op_infix_mul"), number_ref, "number_mul");
+    v_util_function_dict_set(v_quark_from_string("op_infix_div"), number_ref, "number_div");
 }
 
 
@@ -1103,13 +1151,6 @@ number_lt: (a: number, b: number) -> bool   { v_return(a[0] <  b[0]); }
 number_le: (a: number, b: number) -> bool   { v_return(a[0] <= b[0]); }
 number_gt: (a: number, b: number) -> bool   { v_return(a[0] >  b[0]); }
 number_ge: (a: number, b: number) -> bool   { v_return(a[0] >= b[0]); }
-
-number_ref_eq: (a: &number, b: number) -> bool   { v_return(a[0] == b[0]); }
-number_ref_ne: (a: &number, b: number) -> bool   { v_return(a[0] != b[0]); }
-number_ref_lt: (a: &number, b: number) -> bool   { v_return(a[0] <  b[0]); }
-number_ref_le: (a: &number, b: number) -> bool   { v_return(a[0] <= b[0]); }
-number_ref_gt: (a: &number, b: number) -> bool   { v_return(a[0] >  b[0]); }
-number_ref_ge: (a: &number, b: number) -> bool   { v_return(a[0] >= b[0]); }
 
 //---------------------------------------------------------------------
 {
@@ -1122,17 +1163,17 @@ number_ref_ge: (a: &number, b: number) -> bool   { v_return(a[0] >= b[0]); }
 
     number_ref = v_reference_type(number, 0);
 
-    v_util_function_dict_set(v_quark_from_string("op_infix_eq"), number_ref, "number_ref_eq");
-    v_util_function_dict_set(v_quark_from_string("op_infix_ne"), number_ref, "number_ref_ne");
-    v_util_function_dict_set(v_quark_from_string("op_infix_lt"), number_ref, "number_ref_lt");
-    v_util_function_dict_set(v_quark_from_string("op_infix_le"), number_ref, "number_ref_le");
-    v_util_function_dict_set(v_quark_from_string("op_infix_gt"), number_ref, "number_ref_gt");
-    v_util_function_dict_set(v_quark_from_string("op_infix_ge"), number_ref, "number_ref_ge");
+    v_util_function_dict_set(v_quark_from_string("op_infix_eq"), number_ref, "number_eq");
+    v_util_function_dict_set(v_quark_from_string("op_infix_ne"), number_ref, "number_ne");
+    v_util_function_dict_set(v_quark_from_string("op_infix_lt"), number_ref, "number_lt");
+    v_util_function_dict_set(v_quark_from_string("op_infix_le"), number_ref, "number_le");
+    v_util_function_dict_set(v_quark_from_string("op_infix_gt"), number_ref, "number_gt");
+    v_util_function_dict_set(v_quark_from_string("op_infix_ge"), number_ref, "number_ge");
 }
 
 
 //---------------------------------------------------------------------
-{ v_debug_print_module(1); }
+//{ v_debug_print_module(1); }
 {
     a: number = { 0.1 };
     b: number = { 0.9 };
