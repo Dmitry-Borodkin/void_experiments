@@ -27,7 +27,7 @@ fscanf: (stream: *FILE, format: *const char, ...) -> int;
 //{ v_debug_print_module(1); }
 //---------------------------------------------------------------------
 {   buffer: &*char := 0;
-    defer v_mfree(buffer);
+    defer v_free(buffer);
 
     libname: &*char := 0;
 

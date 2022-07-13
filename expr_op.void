@@ -3366,7 +3366,7 @@
     v_terminate(arg);
     v_terminate(op);
 
-    v_mfree(val0);
+    v_free(val0);
 }
 
 

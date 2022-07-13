@@ -45,7 +45,7 @@ aligned_alloc: (alignment: size_t, size: size_t) -> *void;
 
     printf("m: %p\n", m);
 
-    v_mfree(m);
+    v_free(m);
 }
 
 
@@ -121,7 +121,7 @@ v_aligned_alloc_intrinsic: (vis: voidc_visitor_ptr, *void,
     printf("p0: %p\n", p);
     printf("p1: %p\n", p+1);
 
-    v_mfree(p);
+    v_free(p);
 }
 
 

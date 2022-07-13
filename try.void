@@ -45,7 +45,7 @@
     printf("val000: %d\n", val000);
     printf("val999: %d\n", val999);
 
-    v_mfree(buf000);
+    v_free(buf000);
 }
 
 
@@ -58,7 +58,7 @@
 
     printf("\nval: %ld\n", val);
 
-    v_mfree(buf);
+    v_free(buf);
 }
 
 

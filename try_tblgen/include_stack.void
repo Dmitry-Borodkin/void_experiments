@@ -59,7 +59,7 @@ include_stack_pop: () -> void
 
     include_stack := node[2];
 
-    v_mfree(&node);
+    v_free(&node);
 }
 
 //---------------------------------------------------------------------

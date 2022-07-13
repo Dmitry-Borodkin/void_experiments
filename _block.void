@@ -83,7 +83,7 @@
 
     v_destroy(stmt_list);
 
-    v_mfree(obj);
+    v_free(obj);
 }
 
 

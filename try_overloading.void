@@ -567,13 +567,13 @@ op_relation_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
     defer
     {
         v_terminate(ast, N);
-        v_mfree(ast);
+        v_free(ast);
     }
 
     Nm1 = N - 1;
 
     rel = v_malloc(int, Nm1);
-    defer v_mfree(rel);
+    defer v_free(rel);
 
     {   i = N - 2;
 

@@ -386,7 +386,7 @@ on_activate: (app: *GtkApplication, data: *void) -> void
 
     fprintf(p, "rm %s\n", buffer);
 
-    v_mfree(buffer);
+    v_free(buffer);
 }
 
 

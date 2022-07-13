@@ -553,7 +553,7 @@
     if (!v_empty(body))
     {
         argtypes = *v_alloca(* v_type_ptr) := 0;
-        defer if (argtypes) v_mfree(argtypes);
+        defer if (argtypes) v_free(argtypes);
 
         count = v_type_function_get_param_count(fun_type);
 
@@ -978,7 +978,7 @@
     args = v_cast(ast+0, v_ast_generic_list_ptr);
 
     argtypes = *v_alloca(* v_type_ptr) := 0;
-    defer if (argtypes) v_mfree(argtypes);
+    defer if (argtypes) v_free(argtypes);
 
     is_vararg = *v_alloca(bool) := false;
 

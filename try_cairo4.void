@@ -165,7 +165,7 @@ random_triangle: (cr: *cairo_t, w: int, h: int) -> void
     stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
 
     data = v_malloc(uint(8), stride*h);
-    defer v_mfree(data);
+    defer v_free(data);
 
     surface = cairo_image_surface_create_for_data(data, CAIRO_FORMAT_RGB24, w, h, stride);
     defer cairo_surface_destroy(surface);
@@ -195,7 +195,7 @@ random_triangle: (cr: *cairo_t, w: int, h: int) -> void
     cairo_surface_write_to_png(surface, "try_cairo4.png");
 
     line = v_malloc(uint(8), w);
-    defer v_mfree(line);
+    defer v_free(line);
 
     f = fopen("try_cairo4.bin", "wb");
     defer fclose(f);

@@ -31,7 +31,7 @@
 //{v_debug_print_module(1);}
 {
     ptr = v_malloc(char, N);
-    defer v_mfree(ptr);
+    defer v_free(ptr);
 
     sz = malloc_usable_size(ptr);
 
@@ -40,7 +40,7 @@
 }
 
 
-{   v_mfree(&N);
+{   v_free(&N);
 }
 
 

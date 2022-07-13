@@ -151,7 +151,7 @@ small_divrem: (a: &uint(N), d: uint(32)) -> uint(32)
     printf("len: %d\n", len);
 
     s = v_malloc(int(8), len);
-    defer v_mfree(s);
+    defer v_free(s);
 
     p: &*int(8) := s;
 

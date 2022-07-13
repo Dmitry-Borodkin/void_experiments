@@ -112,7 +112,7 @@
 
     printf("p: %p\n", p);
 
-    v_mfree(p);
+    v_free(p);
 }
 
 

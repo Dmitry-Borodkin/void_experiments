@@ -93,7 +93,7 @@
     v_destroy(stmt_then);
     v_destroy(stmt_else);
 
-    v_mfree(obj);
+    v_free(obj);
 }
 
 

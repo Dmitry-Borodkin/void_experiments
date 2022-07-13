@@ -95,7 +95,7 @@ determinant_intrinsic: (vis: voidc_visitor_ptr, *void,
     N = (v_type_array_get_length(t) : int);
 
     VV = v_malloc(LLVMValueRef, N*N);
-    defer v_mfree(VV);
+    defer v_free(VV);
 
     V = v_alloca(*LLVMValueRef, N);
 

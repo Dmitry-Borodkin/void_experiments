@@ -679,6 +679,6 @@
 {
     v_terminate(indicomp_visitor);
 
-    v_mfree(indicomp_visitor);
+    v_free(indicomp_visitor);
 }
 

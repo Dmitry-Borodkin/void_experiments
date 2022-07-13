@@ -39,7 +39,7 @@ fputs: (buf: *char, stream: *FILE) -> int;
     buflen = 4096;
 
     buf = v_malloc(char, buflen);
-    defer v_mfree(buf);
+    defer v_free(buf);
 
     tmp = buf;
     cmd = buf + buflen/2;

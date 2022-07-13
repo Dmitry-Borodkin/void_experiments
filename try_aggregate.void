@@ -20,7 +20,7 @@ v_aggregate_intrinsic: (vis: voidc_visitor_ptr, *void,
     defer
     {
         v_terminate(expr, N);
-        v_mfree(expr);
+        v_free(expr);
     }
 
     v_list_get_items(args, 0, expr, N);
@@ -185,13 +185,13 @@ v_struct_intrinsic: (vis: voidc_visitor_ptr, *void,
     defer
     {
         v_terminate(expr, N);
-        v_mfree(expr);
+        v_free(expr);
     }
 
     v_list_get_items(args+1, 0, expr, N);
 
     typs = v_malloc(v_type_ptr, N);
-    defer v_mfree(typs);
+    defer v_free(typs);
 
     i: &int := 0;
 

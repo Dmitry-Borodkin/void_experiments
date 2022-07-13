@@ -73,8 +73,8 @@
     v_add_local_constant("SS", ss);
 
 
-    v_mfree(vs);
-    v_mfree(va);
+    v_free(vs);
+    v_free(va);
 }
 
 {
@@ -123,8 +123,8 @@
     }
 
 
-    v_mfree(ss);
-    v_mfree(aa);
+    v_free(ss);
+    v_free(aa);
 }
 
 

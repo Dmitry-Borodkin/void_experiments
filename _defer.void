@@ -102,7 +102,7 @@
 
     v_terminate(stmt);
 
-    v_mfree(obj);
+    v_free(obj);
 }
 
 
@@ -436,7 +436,7 @@
     bufsize = 1024;
 
     buf = v_malloc(char, bufsize);
-    defer v_mfree(buf);
+    defer v_free(buf);
 
     loop
     {

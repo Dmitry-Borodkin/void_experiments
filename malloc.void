@@ -155,10 +155,10 @@
 
 
 //---------------------------------------------------------------------
-//- v_mfree
+//- v_free
 //---------------------------------------------------------------------
 {
-    f = v_function_hack("voidc_mfree_intrinsic", voidc_intrinsic_t);
+    f = v_function_hack("voidc_free_intrinsic", voidc_intrinsic_t);
 
     p0 = LLVMGetParam(f, 0);    v_add_variable("visitor",  p0);
     p1 = LLVMGetParam(f, 1);    v_add_variable("arg_list", p1);
@@ -203,7 +203,7 @@
 }
 
 {   v_add_intrinsic("v_malloc", voidc_malloc_intrinsic);
-    v_add_intrinsic("v_mfree",  voidc_mfree_intrinsic);
+    v_add_intrinsic("v_free",   voidc_free_intrinsic);
 }
 
 

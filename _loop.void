@@ -85,7 +85,7 @@
 
     v_terminate(stmt);
 
-    v_mfree(obj);
+    v_free(obj);
 }
 
 
