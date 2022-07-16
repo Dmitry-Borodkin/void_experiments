@@ -3,7 +3,6 @@
                                                                │
 try_overloading.void                                           │try_overloading.void
                                                                │
-                                                               │
 try_aggregate.void                                             │try_aggregate.void
                                                                │
 try_if_switch.void                                             │try_if_switch.void

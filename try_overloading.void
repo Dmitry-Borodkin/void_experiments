@@ -1,14 +1,20 @@
 {   v_import("level-00");
     v_import("level-01");
-    v_import("level-02");
 
     v_import("llvm-c/Core.void");
+
+    v_import("level-02/literals.void");
+    v_import("level-02/loops_etc.void");
+    v_import("level-02/aggregates.void");
 
     v_import("printf.void");
 }
 
 {   v_enable_level_01();
-    v_enable_level_02();
+
+    voidc_enable_literals();
+    voidc_enable_loops_etc();
+    voidc_enable_aggregates();
 }
 
 
