@@ -1,0 +1,115 @@
+{   v_import("level-00");
+    v_import("level-01");
+
+    v_import("llvm-c/Core.void");
+
+    v_import("level-02/literals.void");
+    v_import("level-02/loops_etc.void");
+    v_import("level-02/aggregates.void");
+    v_import("level-02/overloading.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_level_01();
+
+    voidc_enable_literals();
+    voidc_enable_loops_etc();
+    voidc_enable_aggregates();
+    voidc_enable_overloading();
+}
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+op_postfix_dot:     &v_ast_opaque_generic_list_sptr := v_undef();
+op_postfix_tildato: &v_ast_opaque_generic_list_sptr := v_undef();
+
+voidc_projections_internal_globals_cleaner: (*void) -> void
+{
+    v_terminate(&op_postfix_dot);
+    v_terminate(&op_postfix_tildato);
+}
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+{
+    v_initialize(&op_postfix_dot);
+    v_initialize(&op_postfix_tildato);
+
+    v_ast_make_operator_unary(&op_postfix_dot,     "op_postfix_dot",     30000);        //- "Postfix" priority
+    v_ast_make_operator_unary(&op_postfix_tildato, "op_postfix_tildato", 30000);        //- "Postfix" priority
+
+//  v_add_cleaner(voidc_projections_internal_globals_cleaner, 0);
+    v_add_local_cleaner(voidc_projections_internal_globals_cleaner, 0);
+}
+
+
+
+
+//---------------------------------------------------------------------
+mk_projection_grammar_action: (ret: v_util_std_any_ptr, any: v_util_std_any_ptr, size_t) -> void
+{
+    op   = v_std_any_get_pointer(v_ast_opaque_generic_list_sptr, any+0);
+    args = v_std_any_get_pointer(v_ast_opaque_expr_list_sptr,    any+1);
+
+
+
+
+
+
+
+
+
+}
+
+
+
+//---------------------------------------------------------------------
+{
+    any = v_alloca(v_util_opaque_std_any, 2);
+    v_initialize(any, 2);
+    defer v_terminate(any, 2);
+
+    any_dot     = any + 0;
+    any_tildato = any + 1;
+
+    v_std_any_set_pointer(any_dot,     &op_postfix_dot);
+    v_std_any_set_pointer(any_tildato, &op_postfix_tildato);
+
+    gr0 = v_alloca(v_peg_opaque_grammar_sptr);
+    v_initialize(gr0);
+    defer v_terminate(gr0);
+
+    v_peg_get_grammar(gr0);
+
+    grammar gr0
+    {
+    values:
+        op_postfix_dot     = any_dot;
+        op_postfix_tildato = any_tildato;
+
+    actions:
+        mk_projection = mk_projection_grammar_action;
+
+    parsers:
+        postfix += '.' _ i:identifier _'('_ al:expr_list _')'   { mk_projection(op_postfix_dot,     i, al) }
+                 / '.' _ i:identifier                           { mk_projection(op_postfix_dot,     i,  0) }
+                 / "~>"_ i:identifier _'('_ al:expr_list _')'   { mk_projection(op_postfix_tildato, i, al) }
+                 / "~>"_ i:identifier                           { mk_projection(op_postfix_tildato, i,  0) }
+                 ;
+    }
+
+    v_peg_set_grammar(gr0);
+}
+
+
+
+
+
+
+
+
+
