@@ -1,0 +1,28 @@
+{   v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+}
+
+{   v_import("printf.void");
+}
+
+{   v_enable_level_01();
+    v_enable_level_02();
+}
+
+
+//---------------------------------------------------------------------
+{ v_debug_print_module(1); }
+{
+    aaa: &char[4] := "aaa";
+
+    aaa := {'a', 'b', 0};
+
+
+    printf("%s\n", aaa);
+}
+
+
+
+
+
