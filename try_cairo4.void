@@ -1,14 +1,14 @@
-{   v_import("voidc_target.void");
-    v_import("voidc_types.void");
+{   v_import("level-00/voidc_target.void");
+    v_import("level-00/voidc_types.void");
 
-    v_import("function_hack.void");
-    v_import("memory.void");
-    v_import("if_then_else.void");
-    v_import("block.void");
-    v_import("loop.void");
-    v_import("expression.void");
-    v_import("defer.void");
-    v_import("definitions.void");
+    v_import("level-01/function_hack.void");
+    v_import("level-01/memory.void");
+    v_import("level-01/if_then_else.void");
+    v_import("level-01/block.void");
+    v_import("level-01/loop.void");
+    v_import("level-01/expression.void");
+    v_import("level-01/defer.void");
+    v_import("level-01/definitions.void");
 
     v_import("llvm-c/Support.void");
 }
@@ -157,8 +157,8 @@ random_triangle: (cr: *cairo_t, w: int, h: int) -> void
 //---------------------------------------------------------------------
 //{ v_debug_print_module(1); }
 {
-    w = 15000;
-    h =  5000;
+    w = 1500;
+    h =  500;
 
 //  surface = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
 
@@ -182,7 +182,7 @@ random_triangle: (cr: *cairo_t, w: int, h: int) -> void
 
         loop
         {
-            if (i == 100000) v_break();
+            if (i == 1000) v_break();
 
             random_triangle(cr, w, h);
 
