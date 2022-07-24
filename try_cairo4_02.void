@@ -317,14 +317,7 @@ random_star: (cr: *cairo_t, w: int, h: int) -> void
     w = 1500;
     h =  500;
 
-//  surface = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
-
-    stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
-
-    data = v_malloc(uint(8), stride*h);
-    defer v_free(data);
-
-    surface = cairo_image_surface_create_for_data(data, CAIRO_FORMAT_RGB24, w, h, stride);
+    surface = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
     defer surface.destroy();
 
     {   cr = cairo_create(surface);

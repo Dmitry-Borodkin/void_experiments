@@ -1,0 +1,297 @@
+{   v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+
+    v_import("llvm-c/Core.void");
+    v_import("llvm-c/Support.void");
+}
+
+{   v_import("printf.void");
+}
+
+{   v_enable_level_01();
+    v_enable_level_02();
+}
+
+
+//---------------------------------------------------------------------
+FILE = v_struct("FILE");
+
+
+//---------------------------------------------------------------------
+v_popen: (command: *const char, prop: *const char) -> *FILE;
+
+v_pclose: (*FILE) -> int;
+
+fprintf: (stream: *FILE, format: *const char, ...) -> int;
+
+fscanf: (stream: *FILE, format: *const char, ...) -> int;
+
+fputs: (buf: *char, stream: *FILE) -> int;
+
+sprintf: (str: *char, format: *const char, ...) -> int;
+
+system: (cmd: *const char) -> int;
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+my_source: &char[] :=
+"""
+#include <stddef.h>
+#include <zlib.h>
+
+size_t z_stream_size = sizeof(z_stream) / sizeof(void*);
+
+#define Z_STREAM_OFFSETOF(field) \
+size_t z_stream_offsetof_##field = offsetof(z_stream, field);
+
+Z_STREAM_OFFSETOF(zalloc)
+Z_STREAM_OFFSETOF(zfree)
+Z_STREAM_OFFSETOF(opaque)
+Z_STREAM_OFFSETOF(next_in)
+Z_STREAM_OFFSETOF(avail_in)
+Z_STREAM_OFFSETOF(next_out)
+Z_STREAM_OFFSETOF(avail_out)
+
+int
+my_deflateInit(z_stream *strm, int level)
+{
+    return deflateInit(strm, level);
+}
+
+int
+my_inflateInit(z_stream *strm)
+{
+    return inflateInit(strm);
+}
+
+""";
+
+
+//---------------------------------------------------------------------
+buffer: &*char := 0;
+
+{   buflen = 1024;
+
+    buffer := v_malloc(char, buflen);
+
+    {   p = v_popen("mktemp", "r");
+        defer v_pclose(p);
+
+        fscanf(p, "%500s", buffer);
+    }
+
+    if (v_find_constant("_WIN32", 0, 0))
+    {
+        cmd = buffer + 512;
+
+        sprintf(cmd, "cygpath -m %s", buffer);
+
+        p = v_popen(cmd, "r");
+        defer v_pclose(p);
+
+        fscanf(p, "%1000s", buffer);
+    }
+
+    //-----------------------------------------------------------------
+    {   p = v_popen("bash", "w");
+        defer v_pclose(p);
+
+        fprintf(p, "clang -x c - -O3 $(pkg-config zlib --cflags --libs) -shared -fPIC -o %s <<HEREDOC\n", buffer);
+
+        fprintf(p, "%s\nHEREDOC\n", my_source);
+    }
+}
+
+//---------------------------------------------------------------------
+{   ok = LLVMLoadLibraryPermanently(buffer);
+
+    printf("ok: %d\n", ok);
+}
+
+
+//---------------------------------------------------------------------
+z_stream_size: &const size_t;
+
+z_stream = v_struct("struct.z_stream");
+
+{   content = v_array_type(v_pointer_type(void, 0), z_stream_size);
+
+    v_type_struct_set_body(z_stream, &content, 1, false);
+
+    v_add_type("ulong", v_uint_type(v_type_integer_get_width(long)));
+}
+
+z_stream_offsetof_zalloc:    &const size_t;
+z_stream_offsetof_zfree:     &const size_t;
+z_stream_offsetof_opaque:    &const size_t;
+z_stream_offsetof_next_in:   &const size_t;
+z_stream_offsetof_avail_in:  &const size_t;
+z_stream_offsetof_next_out:  &const size_t;
+z_stream_offsetof_avail_out: &const size_t;
+
+z_stream_field_type_zalloc    = *void;
+z_stream_field_type_zfree     = *void;
+z_stream_field_type_opaque    = *void;
+z_stream_field_type_next_in   = *const uint(8);
+z_stream_field_type_avail_in  = ulong;
+z_stream_field_type_next_out  = *uint(8);
+z_stream_field_type_avail_out = ulong;
+
+z_data = v_struct("z_data", {size_t, v_type_ptr});
+
+z_stream_field_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
+                           ast: v_ast_expr_ptr,
+                           t0: v_type_ptr, v0: LLVMValueRef
+                           ) -> void
+{
+    data = *(aux: *z_data);
+
+    char_ptr  = v_pointer_type(char, 0);
+    char_ptr_ = v_type_get_llvm_type(char_ptr);
+
+    char_   = v_type_get_llvm_type(char);
+    size_t_ = v_type_get_llvm_type(size_t);
+
+    builder = v_target_get_builder();
+
+    v = LLVMBuildBitCast(builder, v0, char_ptr_, "");
+
+    v = LLVMBuildGEP2(builder, char_, v, &LLVMConstInt(size_t_, data[0], 0), 1, "");
+
+    t  = v_reference_type(data[1], 0);
+    t_ = v_type_get_llvm_type(t);
+
+    v = LLVMBuildBitCast(builder, v, t_, "");
+
+    v_adopt_result(t, v);
+}
+
+z_stream_field_data_zalloc:    &z_data := v_undef();
+z_stream_field_data_zfree:     &z_data := v_undef();
+z_stream_field_data_opaque:    &z_data := v_undef();
+z_stream_field_data_next_in:   &z_data := v_undef();
+z_stream_field_data_avail_in:  &z_data := v_undef();
+z_stream_field_data_next_out:  &z_data := v_undef();
+z_stream_field_data_avail_out: &z_data := v_undef();
+
+{
+    z_stream_field_data_zalloc    := {z_stream_offsetof_zalloc,    z_stream_field_type_zalloc};
+    z_stream_field_data_zfree     := {z_stream_offsetof_zfree,     z_stream_field_type_zfree};
+    z_stream_field_data_opaque    := {z_stream_offsetof_opaque,    z_stream_field_type_opaque};
+    z_stream_field_data_next_in   := {z_stream_offsetof_next_in,   z_stream_field_type_next_in};
+    z_stream_field_data_avail_in  := {z_stream_offsetof_avail_in,  z_stream_field_type_avail_in};
+    z_stream_field_data_next_out  := {z_stream_offsetof_next_out,  z_stream_field_type_next_out};
+    z_stream_field_data_avail_out := {z_stream_offsetof_avail_out, z_stream_field_type_avail_out};
+
+    z_stream_ref = v_reference_type(z_stream, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q(".zalloc"),    z_stream_ref, "z_stream.field.zalloc");
+    v_util_function_dict_set(q(".zfree"),     z_stream_ref, "z_stream.field.zfree");
+    v_util_function_dict_set(q(".opaque"),    z_stream_ref, "z_stream.field.opaque");
+    v_util_function_dict_set(q(".next_in"),   z_stream_ref, "z_stream.field.next_in");
+    v_util_function_dict_set(q(".avail_in"),  z_stream_ref, "z_stream.field.avail_in");
+    v_util_function_dict_set(q(".next_out"),  z_stream_ref, "z_stream.field.next_out");
+    v_util_function_dict_set(q(".avail_out"), z_stream_ref, "z_stream.field.avail_out");
+
+    v_add_intrinsic("z_stream.field.zalloc",    z_stream_field_intrinsic, &z_stream_field_data_zalloc);
+    v_add_intrinsic("z_stream.field.zfree",     z_stream_field_intrinsic, &z_stream_field_data_zfree);
+    v_add_intrinsic("z_stream.field.opaque",    z_stream_field_intrinsic, &z_stream_field_data_opaque);
+    v_add_intrinsic("z_stream.field.next_in",   z_stream_field_intrinsic, &z_stream_field_data_next_in);
+    v_add_intrinsic("z_stream.field.avail_in",  z_stream_field_intrinsic, &z_stream_field_data_avail_in);
+    v_add_intrinsic("z_stream.field.next_out",  z_stream_field_intrinsic, &z_stream_field_data_next_out);
+    v_add_intrinsic("z_stream.field.avail_out", z_stream_field_intrinsic, &z_stream_field_data_avail_out);
+}
+
+
+my_deflateInit: (*z_stream, level: int) -> int;
+
+deflate: (*z_stream, flush: int) -> int;
+
+deflateEnd: (*z_stream) -> int;
+
+
+my_inflateInit: (*z_stream) -> int;
+
+inflate: (*z_stream, flush: int) -> int;
+
+inflateEnd: (*z_stream) -> int;
+
+
+//---------------------------------------------------------------------
+strlen: (*char) -> size_t;
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    printf("sz: %d\n", (z_stream_size: int));
+
+    strm: &z_stream := v_undef();
+
+
+    strm.zalloc := 0;
+    strm.zfree  := 0;
+    strm.opaque := 0;
+
+    r = my_deflateInit(&strm, 9);
+
+    printf("init: %d\n", r);
+
+
+    strm.next_in  := my_source;
+    strm.avail_in := strlen(my_source);
+
+
+    N = 64;
+
+    buf = v_malloc(char, N);
+    defer v_free(buf);
+
+
+    flush: &int := 0;
+
+    loop
+    {
+        strm.next_out  := buf;
+        strm.avail_out := N;
+
+        deflate(&strm, flush);
+
+        n = N - strm.avail_out;
+
+        printf("n: %d\n", (n: int));
+
+        for (i: &size_t := 0; i < n; ++i)
+        {
+            printf("%02X", buf[i]);
+        }
+
+        printf("\n");
+
+        if (n != N  &&  flush) v_break();
+
+        flush := 4;
+    }
+
+
+    r = deflateEnd(&strm);
+
+    printf("end: %d\n", r);
+}
+
+
+//---------------------------------------------------------------------
+{
+    p = v_popen("bash", "w");
+    defer v_pclose(p);
+
+    fprintf(p, "rm %s\n", buffer);
+
+    v_free(buffer);
+}
+
+
