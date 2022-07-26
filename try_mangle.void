@@ -35,8 +35,8 @@ system: (cmd: *const char) -> int;
 
 
 //---------------------------------------------------------------------
-//{ v_debug_print_module(1); }
 my_source: &char[] :=
+
 """
 #include <stddef.h>
 #include <zlib.h>
@@ -112,41 +112,31 @@ buffer: &*char := 0;
 
 
 //---------------------------------------------------------------------
-z_stream_size: &const size_t;
-
 z_stream = v_struct("struct.z_stream");
 
-{   content = v_array_type(v_pointer_type(void, 0), z_stream_size);
+z_stream_size: &const size_t;
 
-    v_type_struct_set_body(z_stream, &content, 1, false);
+{   printf("sz: %d\n", (z_stream_size: int));
+
+    content_typ = v_array_type(v_pointer_type(void, 0), z_stream_size);
+
+    v_type_struct_set_body(z_stream, &content_typ, 1, false);
+
 
     v_add_type("ulong", v_uint_type(v_type_integer_get_width(long)));
 }
 
-z_stream_offsetof_zalloc:    &const size_t;
-z_stream_offsetof_zfree:     &const size_t;
-z_stream_offsetof_opaque:    &const size_t;
-z_stream_offsetof_next_in:   &const size_t;
-z_stream_offsetof_avail_in:  &const size_t;
-z_stream_offsetof_next_out:  &const size_t;
-z_stream_offsetof_avail_out: &const size_t;
+//---------------------------------------------------------------------
+z_data_t = v_struct("z_data_t", {size_t, v_type_ptr});
 
-z_stream_field_type_zalloc    = *void;
-z_stream_field_type_zfree     = *void;
-z_stream_field_type_opaque    = *void;
-z_stream_field_type_next_in   = *const uint(8);
-z_stream_field_type_avail_in  = ulong;
-z_stream_field_type_next_out  = *uint(8);
-z_stream_field_type_avail_out = ulong;
 
-z_data = v_struct("z_data", {size_t, v_type_ptr});
-
+//---------------------------------------------------------------------
 z_stream_field_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
                            ast: v_ast_expr_ptr,
                            t0: v_type_ptr, v0: LLVMValueRef
                            ) -> void
 {
-    data = *(aux: *z_data);
+    data = *(aux: *z_data_t);
 
     char_ptr  = v_pointer_type(char, 0);
     char_ptr_ = v_type_get_llvm_type(char_ptr);
@@ -168,42 +158,187 @@ z_stream_field_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
     v_adopt_result(t, v);
 }
 
-z_stream_field_data_zalloc:    &z_data := v_undef();
-z_stream_field_data_zfree:     &z_data := v_undef();
-z_stream_field_data_opaque:    &z_data := v_undef();
-z_stream_field_data_next_in:   &z_data := v_undef();
-z_stream_field_data_avail_in:  &z_data := v_undef();
-z_stream_field_data_next_out:  &z_data := v_undef();
-z_stream_field_data_avail_out: &z_data := v_undef();
 
+
+//---------------------------------------------------------------------
+generate_z_stream_fields_table: (vis: voidc_visitor_ptr, *void, args: v_ast_expr_list_ptr) -> void
 {
-    z_stream_field_data_zalloc    := {z_stream_offsetof_zalloc,    z_stream_field_type_zalloc};
-    z_stream_field_data_zfree     := {z_stream_offsetof_zfree,     z_stream_field_type_zfree};
-    z_stream_field_data_opaque    := {z_stream_offsetof_opaque,    z_stream_field_type_opaque};
-    z_stream_field_data_next_in   := {z_stream_offsetof_next_in,   z_stream_field_type_next_in};
-    z_stream_field_data_avail_in  := {z_stream_offsetof_avail_in,  z_stream_field_type_avail_in};
-    z_stream_field_data_next_out  := {z_stream_offsetof_next_out,  z_stream_field_type_next_out};
-    z_stream_field_data_avail_out := {z_stream_offsetof_avail_out, z_stream_field_type_avail_out};
+    ast = v_alloca(v_ast_opaque_base_sptr);
+    v_initialize(ast);
+    defer v_terminate(ast);
+
+    v_list_get_items(args, 0, (ast: v_ast_expr_ptr));
+
+    v_ast_expr_call_get_arg_list((ast: v_ast_expr_ptr), (ast: v_ast_expr_list_ptr));
+
+    v_list_get_items((ast: v_ast_expr_list_ptr), 1, (ast: v_ast_expr_ptr));
+
+    ast_list = (ast: v_ast_generic_list_ptr);
+
+    count = v_list_get_size(ast_list);
+
+
+    table = v_malloc(z_data_t, count);
+
+    v_add_symbol("z_stream_data_table", 0, table);        //- Sic!
+
+
+    elst = v_alloca(v_ast_opaque_expr_list_sptr, 2);
+    v_initialize(elst, 2);
+    defer v_terminate(elst, 2);
+
+    expr = v_alloca(v_ast_opaque_expr_sptr);
+    v_initialize(expr);
+    defer v_terminate(expr);
+
+    stmt = v_alloca(v_ast_opaque_stmt_sptr);
+    v_initialize(stmt);
+    defer v_terminate(stmt);
+
+
+    v_ast_make_expr_string(expr, "z_stream_data_table");
+
+    v_make_list(elst+0, expr, 1);
+
+    v_ast_make_expr_identifier(expr, "v_find_symbol_value");
+
+    v_ast_make_expr_call(expr, expr, elst+0);
+
+    v_make_list(elst+0, expr, 1);
+
+    v_ast_make_expr_identifier(expr, "z_data_t");
+
+    v_make_list(elst+1, expr, 1);
+
+    v_ast_make_expr_integer(expr, 0);
+
+    v_list_append(elst+1, elst+1, expr);
+
+    v_ast_make_expr_identifier(expr, "v_ptr");
+
+    v_ast_make_expr_call(expr, expr, elst+1);
+
+    v_list_append(elst+0, elst+0, expr, 1);
+
+    v_ast_make_expr_identifier(expr, "v_cast");
+
+    v_ast_make_expr_call(expr, expr, elst+0);
+
+    v_ast_make_stmt(stmt, "table", expr);
+
+
+    v_set_result_type(INVIOLABLE_TAG);
+
+    v_ast_accept_visitor((stmt: v_ast_base_ptr), vis);
+
+
+    sstr = v_alloca(v_util_opaque_std_string);
+    v_initialize(sstr);
+    defer v_terminate(sstr);
 
     z_stream_ref = v_reference_type(z_stream, 0);
 
-    q = v_quark_from_string;
+    for (i: &int := 0; i < count; ++i)
+    {
+        v_list_get_items(ast_list, i, (elst: v_ast_base_ptr));
 
-    v_util_function_dict_set(q(".zalloc"),    z_stream_ref, "z_stream.field.zalloc");
-    v_util_function_dict_set(q(".zfree"),     z_stream_ref, "z_stream.field.zfree");
-    v_util_function_dict_set(q(".opaque"),    z_stream_ref, "z_stream.field.opaque");
-    v_util_function_dict_set(q(".next_in"),   z_stream_ref, "z_stream.field.next_in");
-    v_util_function_dict_set(q(".avail_in"),  z_stream_ref, "z_stream.field.avail_in");
-    v_util_function_dict_set(q(".next_out"),  z_stream_ref, "z_stream.field.next_out");
-    v_util_function_dict_set(q(".avail_out"), z_stream_ref, "z_stream.field.avail_out");
+        v_list_get_items(elst, 0, expr);
 
-    v_add_intrinsic("z_stream.field.zalloc",    z_stream_field_intrinsic, &z_stream_field_data_zalloc);
-    v_add_intrinsic("z_stream.field.zfree",     z_stream_field_intrinsic, &z_stream_field_data_zfree);
-    v_add_intrinsic("z_stream.field.opaque",    z_stream_field_intrinsic, &z_stream_field_data_opaque);
-    v_add_intrinsic("z_stream.field.next_in",   z_stream_field_intrinsic, &z_stream_field_data_next_in);
-    v_add_intrinsic("z_stream.field.avail_in",  z_stream_field_intrinsic, &z_stream_field_data_avail_in);
-    v_add_intrinsic("z_stream.field.next_out",  z_stream_field_intrinsic, &z_stream_field_data_next_out);
-    v_add_intrinsic("z_stream.field.avail_out", z_stream_field_intrinsic, &z_stream_field_data_avail_out);
+        name = v_ast_expr_identifier_get_name(expr);
+
+        v_list_get_items(elst, 1, expr);
+
+        v_set_result_type(INVIOLABLE_TAG);
+
+        v_ast_accept_visitor((expr: v_ast_base_ptr), vis);
+
+        type = (v_get_result_value() : v_type_ptr);
+
+
+        v_std_string_set(sstr, "z_stream_offsetof_");
+
+        v_std_string_append(sstr, name);
+
+        sz = *(v_find_symbol_value(v_std_string_get(sstr)) : *size_t);
+
+        table[i] := {sz, type};
+
+
+        v_std_string_set(sstr, ".");
+
+        v_std_string_append(sstr, name);
+
+        quark = v_quark_from_string(v_std_string_get(sstr));
+
+        v_std_string_set(sstr, "z_stream.field.");
+
+        v_std_string_append(sstr, name);
+
+        itname = v_std_string_get(sstr);
+
+        v_util_function_dict_set(quark, z_stream_ref, itname);
+
+
+        //- v_add_intrinsic(itname, z_stream_field_intrinsic, table+i);
+
+        v_ast_make_expr_string(expr, itname);
+
+        v_make_list(elst+0, expr, 1);
+
+        v_ast_make_expr_identifier(expr, "z_stream_field_intrinsic");
+
+        v_list_append(elst+0, elst+0, expr);
+
+        v_ast_make_expr_identifier(expr, "table");
+
+        v_make_list(elst+1, expr, 1);
+
+        v_ast_make_expr_integer(expr, i);
+
+        v_list_append(elst+1, elst+1, expr);
+
+        v_ast_make_expr_identifier(expr, "v_getelementptr");
+
+        v_ast_make_expr_call(expr, expr, elst+1);
+
+        v_list_append(elst+0, elst+0, expr);
+
+        v_ast_make_expr_identifier(expr, "v_add_intrinsic");
+
+        v_ast_make_expr_call(expr, expr, elst+0);
+
+
+        v_set_result_type(INVIOLABLE_TAG);
+
+        v_ast_accept_visitor((expr: v_ast_base_ptr), vis);
+    }
+
+    free: (*void) -> void;
+
+    v_add_local_cleaner(free, table);
+
+    voidc_flush_unit_symbols();             //- Sic!
+}
+
+//---------------------------------------------------------------------
+{
+    v_add_intrinsic("generate_z_stream_fields_table", generate_z_stream_fields_table, 0);
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    generate_z_stream_fields_table
+    ((
+        zalloc:    *void,
+        zfree:     *void,
+        opaque:    *void,
+        next_in:   *const uint(8),
+        avail_in:  ulong,
+        next_out:  *uint(8),
+        avail_out: ulong
+    ));
 }
 
 
@@ -222,16 +357,8 @@ inflateEnd: (*z_stream) -> int;
 
 
 //---------------------------------------------------------------------
-strlen: (*char) -> size_t;
-
-
-//---------------------------------------------------------------------
-//{ v_debug_print_module(1); }
 {
-    printf("sz: %d\n", (z_stream_size: int));
-
     strm: &z_stream := v_undef();
-
 
     strm.zalloc := 0;
     strm.zfree  := 0;
@@ -242,11 +369,13 @@ strlen: (*char) -> size_t;
     printf("init: %d\n", r);
 
 
+    strlen: (*char) -> size_t;
+
     strm.next_in  := my_source;
     strm.avail_in := strlen(my_source);
 
 
-    N = 64;
+    N = 100;
 
     buf = v_malloc(char, N);
     defer v_free(buf);
