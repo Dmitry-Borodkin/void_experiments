@@ -1,0 +1,655 @@
+{   v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+
+    v_import("llvm-c/Core.void");
+}
+
+{   v_import("printf.void");
+}
+
+{   v_enable_level_01();
+    v_enable_level_02();
+}
+
+
+//---------------------------------------------------------------------
+double = float(64);
+
+abs: (double) -> double;
+
+snprintf: (s: *char, l: size_t, f: *const char, ...) -> int;
+
+
+//---------------------------------------------------------------------
+EPSILON = 1e-9;
+
+is_equal: (x: double, y: double) -> bool
+{
+    if (x == y)  v_return(true);
+
+    size = abs(x) + abs(y);
+
+    if (size <= EPSILON)  v_return(true);
+
+    diff = abs(x - y);
+
+    if (diff <= EPSILON)  v_return(true);
+
+    if (size > 1  &&  diff/size <= EPSILON)  v_return(true);
+
+    v_return(false);
+}
+
+is_finite: (x: double) -> bool
+{
+    v_return(abs(x) < 1e15);        //- ?...
+}
+
+infinity = 1e1000;
+
+det_3: (v: double[9]) -> double
+{
+    v00 = v[0]; v01 = v[1]; v02 = v[2];
+    v10 = v[3]; v11 = v[4]; v12 = v[5];
+    v20 = v[6]; v21 = v[7]; v22 = v[8];
+
+    v_return( v00 * (v11*v22 - v12*v21)
+            - v10 * (v01*v22 - v02*v21)
+            + v20 * (v01*v12 - v02*v11) );
+}
+
+
+//---------------------------------------------------------------------
+seq_equal: (a: *double, b: *double, n: int) -> bool
+{
+    ret: &bool := true;
+
+    for (i: &int := 0; i < n; ++i)  if (!is_equal( a[i], b[i]))  { ret := false;  v_break(); }
+
+    if (ret)  v_return(true);
+
+    ret := true;
+
+    for (i: &int := 0; i < n; ++i)  if (!is_equal(-a[i], b[i]))  { ret := false;  v_break(); }
+
+    v_return(ret);
+}
+
+
+//=====================================================================
+//- Vector (2D)
+//=====================================================================
+Vector = v_struct("Vector2D", {double, double});
+
+vector_x_ref: (v: &Vector) -> &double   { v_return(v[0]); }
+vector_y_ref: (v: &Vector) -> &double   { v_return(v[1]); }
+vector_x:     (v:  Vector) ->  double   { v_return(v[0]); }
+vector_y:     (v:  Vector) ->  double   { v_return(v[1]); }
+
+{   vector_ref = v_reference_type(Vector, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q(".x"), vector_ref, "vector_x_ref");
+    v_util_function_dict_set(q(".y"), vector_ref, "vector_y_ref");
+    v_util_function_dict_set(q(".x"), Vector,     "vector_x");
+    v_util_function_dict_set(q(".y"), Vector,     "vector_y");
+}
+
+//---------------------------------------------------------------------
+vector_op_infix_shl_right: (s: &v_util_std_string_ptr, v: Vector) -> &v_util_std_string_ptr
+{
+    n = 1 + snprintf(0, 0, "(%g, %g)", v.x, v.y);
+
+    buf = v_alloca(char, n);
+
+    snprintf(buf, n, "(%g, %g)", v.x, v.y);
+
+    v_std_string_append(s, buf);
+}
+
+{   vector_ref = v_reference_type(Vector, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q("op_infix_shl.right"), Vector,     "vector_op_infix_shl_right");
+    v_util_function_dict_set(q("op_infix_shl.right"), vector_ref, "vector_op_infix_shl_right");
+}
+
+//---------------------------------------------------------------------
+vector_op_infix_add: (a: Vector, b: Vector) -> Vector
+{
+    v_return({ a.x+b.x, a.y+b.y });
+}
+
+vector_op_infix_sub: (a: Vector, b: Vector) -> Vector
+{
+    v_return({ a.x-b.x, a.y-b.y });
+}
+
+vector_op_prefix_plus: (a: Vector) -> Vector
+{
+    v_return(a);
+}
+
+vector_op_prefix_minus: (a: Vector) -> Vector
+{
+    v_return({ -a.x, -a.y });
+}
+
+vector_op_infix_mul: (a: Vector, k: double) -> Vector
+{
+    v_return({ a.x*k, a.y*k });
+}
+
+vector_op_infix_mul_right: (k: double, a: Vector) -> Vector
+{
+    v_return({ k*a.x, k*a.y });
+}
+
+vector_op_infix_div: (a: Vector, k: double) -> Vector
+{
+    v_return({ a.x/k, a.y/k });
+}
+
+vector_op_infix_eq: (a: Vector, b: Vector) -> bool
+{
+    v_return( is_equal(a.x, b.x)  &&  is_equal(a.y, b.y) );
+}
+
+vector_op_infix_ne: (a: Vector, b: Vector) -> bool
+{
+    v_return( !vector_op_infix_eq(a, b) );
+}
+
+{   vector_ref = v_reference_type(Vector, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q("op_infix_add"),       Vector, "vector_op_infix_add");
+    v_util_function_dict_set(q("op_infix_sub"),       Vector, "vector_op_infix_sub");
+    v_util_function_dict_set(q("op_infix_mul"),       Vector, "vector_op_infix_mul");
+    v_util_function_dict_set(q("op_infix_mul.right"), Vector, "vector_op_infix_mul_right");
+    v_util_function_dict_set(q("op_infix_div"),       Vector, "vector_op_infix_div");
+    v_util_function_dict_set(q("op_infix_eq"),        Vector, "vector_op_infix_eq");
+    v_util_function_dict_set(q("op_infix_ne"),        Vector, "vector_op_infix_ne");
+
+    v_util_function_dict_set(q("op_infix_add"),       vector_ref, "vector_op_infix_add");
+    v_util_function_dict_set(q("op_infix_sub"),       vector_ref, "vector_op_infix_sub");
+    v_util_function_dict_set(q("op_infix_mul"),       vector_ref, "vector_op_infix_mul");
+    v_util_function_dict_set(q("op_infix_mul.right"), vector_ref, "vector_op_infix_mul_right");
+    v_util_function_dict_set(q("op_infix_div"),       vector_ref, "vector_op_infix_div");
+    v_util_function_dict_set(q("op_infix_eq"),        vector_ref, "vector_op_infix_eq");
+    v_util_function_dict_set(q("op_infix_ne"),        vector_ref, "vector_op_infix_ne");
+}
+
+//---------------------------------------------------------------------
+vector_zero:     Vector = {0, 0};
+vector_unit_x:   Vector = {1, 0};
+vector_unit_y:   Vector = {0, 1};
+vector_infinity: Vector = {infinity, infinity};
+
+//---------------------------------------------------------------------
+vector_dot: (a: Vector, b: Vector) -> double
+{
+    v_return( a.x*b.x + a.y*b.y );
+}
+
+vector_crs: (a: Vector, b: Vector) -> double
+{
+    v_return( a.x*b.y - a.y*b.x );
+}
+
+vector_is_fininite: (a: Vector) -> bool
+{
+    v_return( is_finite(a.x)  &&  is_finite(a.y) );
+}
+
+{   vector_ref = v_reference_type(Vector, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q(".dot()"),       Vector, "vector_dot");
+    v_util_function_dict_set(q(".crs()"),       Vector, "vector_dot");
+    v_util_function_dict_set(q(".is_finite()"), Vector, "vector_is_finite");
+
+    v_util_function_dict_set(q(".dot()"),       vector_ref, "vector_dot");
+    v_util_function_dict_set(q(".crs()"),       vector_ref, "vector_dot");
+    v_util_function_dict_set(q(".is_finite()"), vector_ref, "vector_is_finite");
+}
+
+
+//=====================================================================
+//- Projective point (2D)
+//=====================================================================
+Point = v_struct("Point2D", {double, double, double});
+
+point_x_ref: (p: &Point) -> &double   { v_return(p[0]); }
+point_y_ref: (p: &Point) -> &double   { v_return(p[1]); }
+point_w_ref: (p: &Point) -> &double   { v_return(p[2]); }
+point_x:     (p:  Point) ->  double   { v_return(p[0]); }
+point_y:     (p:  Point) ->  double   { v_return(p[1]); }
+point_w:     (p:  Point) ->  double   { v_return(p[2]); }
+
+{   point_ref = v_reference_type(Point, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q(".x"), point_ref, "point_x_ref");
+    v_util_function_dict_set(q(".y"), point_ref, "point_y_ref");
+    v_util_function_dict_set(q(".w"), point_ref, "point_w_ref");
+    v_util_function_dict_set(q(".x"), Point,     "point_x");
+    v_util_function_dict_set(q(".y"), Point,     "point_y");
+    v_util_function_dict_set(q(".w"), Point,     "point_w");
+}
+
+//---------------------------------------------------------------------
+point_op_infix_shl_right: (s: &v_util_std_string_ptr, p: Point) -> &v_util_std_string_ptr
+{
+    n = 1 + snprintf(0, 0, "(%g, %g, %g)", p.x, p.y, p.w);
+
+    buf = v_alloca(char, n);
+
+    snprintf(buf, n, "(%g, %g, %g)", p.x, p.y, p.w);
+
+    v_std_string_append(s, buf);
+}
+
+{   point_ref = v_reference_type(Point, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q("op_infix_shl.right"), Point,     "point_op_infix_shl_right");
+    v_util_function_dict_set(q("op_infix_shl.right"), point_ref, "point_op_infix_shl_right");
+}
+
+//---------------------------------------------------------------------
+point_op_infix_add: (p: Point, v: Vector) -> Point
+{
+    v_return({ p.x + p.w*v.x, p.y + p.w*v.y, p.w });
+}
+
+point_op_infix_sub: (a: Point, b: Point) -> Vector
+{
+    v_return({ a.x/a.w - b.x/b.w, a.y/a.w - b.y/b.w });
+}
+
+{   point_ref = v_reference_type(Point, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q("op_infix_add"), Point, "point_op_infix_add");
+    v_util_function_dict_set(q("op_infix_sub"), Point, "point_op_infix_sub");
+
+    v_util_function_dict_set(q("op_infix_add"), point_ref, "point_op_infix_add");
+    v_util_function_dict_set(q("op_infix_sub"), point_ref, "point_op_infix_sub");
+}
+
+//---------------------------------------------------------------------
+point_norm_ref: (p: &Point) -> bool
+{
+    pa: &double[3] := {p.x, p.y, p.w};
+
+    d: &double := 0;
+
+    for (i: &int := 0; i < 3; ++i)
+    {
+        if (!is_finite(pa[i]))  v_return(false);
+
+        if (di = abs(pa[i]), d < di)  d := di;
+    }
+
+    if (d == 0)  v_return(false);
+    if (d == 1)  v_return(true);
+
+    p.x /= d;
+    p.y /= d;
+    p.w /= d;
+
+    v_return(true);
+}
+
+point_norm: (p: Point) -> Point
+{
+    pa: &double[3] := {p.x, p.y, p.w};
+
+    d: &double := 0;
+
+    for (i: &int := 0; i < 3; ++i)
+    {
+        if (di = abs(pa[i]), d < di)  d := di;
+    }
+
+    if (d == 1)  v_return(p);
+
+    v_return({ p.x/d, p.y/d, p.w/d });
+}
+
+{   point_ref = v_reference_type(Point, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q(".norm()"), point_ref, "point_norm_ref");
+    v_util_function_dict_set(q(".norm()"), Point,     "point_norm");
+}
+
+//---------------------------------------------------------------------
+point_is_affine_ref: (p: &Point) -> bool
+{
+    if (!p.norm())  v_return(false);
+
+    v_return( abs(p.w) > EPSILON );
+}
+
+point_is_affine: (p: Point) -> bool
+{
+    v_return( abs(p.norm().w) > EPSILON );
+}
+
+{   point_ref = v_reference_type(Point, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q(".is_affine()"), point_ref, "point_is_affine_ref");
+    v_util_function_dict_set(q(".is_affine()"), Point,     "point_is_affine");
+}
+
+//---------------------------------------------------------------------
+point_op_infix_eq_ref: (a: &Point, b: &Point) -> bool
+{
+    if (!(a.norm()  &&  b.norm()))  v_return(false);
+
+    sa: &double[] := {a.x, a.y, a.w};
+    sb: &double[] := {b.x, b.y, b.w};
+
+    v_return(seq_equal(sa, sb, 3));
+}
+
+point_op_infix_eq: (a: Point, b: Point) -> bool
+{
+    a = a.norm();
+    b = a.norm();
+
+    sa: &double[] := {a.x, a.y, a.w};
+    sb: &double[] := {b.x, b.y, b.w};
+
+    v_return(seq_equal(sa, sb, 3));
+}
+
+point_op_infix_ne_ref: (a: &Point, b: &Point) -> bool
+{
+    v_return(!point_op_infix_eq_ref(a, b));
+}
+
+point_op_infix_ne: (a: Point, b: Point) -> bool
+{
+    v_return(!point_op_infix_eq(a, b));
+}
+
+{   point_ref = v_reference_type(Point, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q("op_infix_eq"), point_ref, "point_op_infix_eq_ref");
+    v_util_function_dict_set(q("op_infix_ne"), point_ref, "point_op_infix_ne_ref");
+    v_util_function_dict_set(q("op_infix_eq"), Point,     "point_op_infix_eq");
+    v_util_function_dict_set(q("op_infix_ne"), Point,     "point_op_infix_ne");
+}
+
+//---------------------------------------------------------------------
+point_zero:   Point = {0, 0, 1};
+point_unit_x: Point = {1, 0, 1};
+point_unit_y: Point = {0, 1, 1};
+point_inf_x:  Point = {1, 0, 0};
+point_inf_y:  Point = {0, 1, 0};
+
+
+//=====================================================================
+//- Projective line (2D)
+//=====================================================================
+Line = v_struct("Line2D", {double, double, double});
+
+line_cx_ref: (l: &Line) -> &double  { v_return(l[0]); }
+line_cy_ref: (l: &Line) -> &double  { v_return(l[1]); }
+line_cw_ref: (l: &Line) -> &double  { v_return(l[2]); }
+line_cx:     (l:  Line) ->  double  { v_return(l[0]); }
+line_cy:     (l:  Line) ->  double  { v_return(l[1]); }
+line_cw:     (l:  Line) ->  double  { v_return(l[2]); }
+
+{   line_ref = v_reference_type(Line, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q(".cx"), line_ref, "line_cx_ref");
+    v_util_function_dict_set(q(".cy"), line_ref, "line_cy_ref");
+    v_util_function_dict_set(q(".cw"), line_ref, "line_cw_ref");
+    v_util_function_dict_set(q(".cx"), Line,     "line_cx");
+    v_util_function_dict_set(q(".cy"), Line,     "line_cy");
+    v_util_function_dict_set(q(".cw"), Line,     "line_cw");
+}
+
+//---------------------------------------------------------------------
+line_op_infix_shl_right: (s: &v_util_std_string_ptr, l: Line) -> &v_util_std_string_ptr
+{
+    n = 1 + snprintf(0, 0, "(%g, %g, %g)", l.cx, l.cy, l.cw);
+
+    buf = v_alloca(char, n);
+
+    snprintf(buf, n, "(%g, %g, %g)", l.cx, l.cy, l.cw);
+
+    v_std_string_append(s, buf);
+}
+
+{   line_ref = v_reference_type(Line, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q("op_infix_shl.right"), Line,     "line_op_infix_shl_right");
+    v_util_function_dict_set(q("op_infix_shl.right"), line_ref, "line_op_infix_shl_right");
+}
+
+//---------------------------------------------------------------------
+line_op_infix_add: (l: Line, v: Vector) -> Line
+{
+    v_return({ l.cx, l.cy, l.cw - l.cx*v.x - l.cy*v.y });
+}
+
+{   line_ref = v_reference_type(Line, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q("op_infix_add"), Line,     "line_op_infix_add");
+    v_util_function_dict_set(q("op_infix_add"), line_ref, "line_op_infix_add");
+}
+
+//---------------------------------------------------------------------
+line_norm_ref: (l: &Line) -> bool
+{
+    la: &double[3] := {l.cx, l.cy, l.cw};
+
+    d: &double := 0;
+
+    for (i: &int := 0; i < 3; ++i)
+    {
+        if (!is_finite(la[i]))  v_return(false);
+
+        if (di = abs(la[i]), d < di)  d := di;
+    }
+
+    if (d == 0)  v_return(false);
+    if (d == 1)  v_return(true);
+
+    l.cx /= d;
+    l.cy /= d;
+    l.cw /= d;
+
+    v_return(true);
+}
+
+line_norm: (l: Line) -> Line
+{
+    la: &double[3] := {l.cx, l.cy, l.cw};
+
+    d: &double := 0;
+
+    for (i: &int := 0; i < 3; ++i)
+    {
+        if (di = abs(la[i]), d < di)  d := di;
+    }
+
+    if (d == 1)  v_return(l);
+
+    v_return({ l.cx/d, l.cy/d, l.cw/d });
+}
+
+{   line_ref = v_reference_type(Line, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q(".norm()"), line_ref, "line_norm_ref");
+    v_util_function_dict_set(q(".norm()"), Line,     "line_norm");
+}
+
+//---------------------------------------------------------------------
+line_is_affine_ref: (l: &Line) -> bool
+{
+    if (!l.norm())  v_return(false);
+
+    v_return( abs(l.cx) > EPSILON  ||  abs(l.cy) > EPSILON );
+}
+
+line_is_affine: (l: Line) -> bool
+{
+    l = l.norm();
+
+    v_return( abs(l.cx) > EPSILON  ||  abs(l.cy) > EPSILON );
+}
+
+{   line_ref = v_reference_type(Line, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q(".is_affine()"), line_ref, "line_is_affine_ref");
+    v_util_function_dict_set(q(".is_affine()"), Line,     "line_is_affine");
+}
+
+//---------------------------------------------------------------------
+line_op_infix_eq_ref: (a: &Line, b: &Line) -> bool
+{
+    if (!(a.norm()  &&  b.norm()))  v_return(false);
+
+    sa: &double[] := {a.cx, a.cy, a.cw};
+    sb: &double[] := {b.cx, b.cy, b.cw};
+
+    v_return(seq_equal(sa, sb, 3));
+}
+
+line_op_infix_eq: (a: Line, b: Line) -> bool
+{
+    a = a.norm();
+    b = a.norm();
+
+    sa: &double[] := {a.cx, a.cy, a.cw};
+    sb: &double[] := {b.cx, b.cy, b.cw};
+
+    v_return(seq_equal(sa, sb, 3));
+}
+
+line_op_infix_ne_ref: (a: &Line, b: &Line) -> bool
+{
+    v_return(!line_op_infix_eq_ref(a, b));
+}
+
+line_op_infix_ne: (a: Line, b: Line) -> bool
+{
+    v_return(!line_op_infix_eq(a, b));
+}
+
+{   line_ref = v_reference_type(Line, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q("op_infix_eq"), line_ref, "line_op_infix_eq_ref");
+    v_util_function_dict_set(q("op_infix_ne"), line_ref, "line_op_infix_ne_ref");
+    v_util_function_dict_set(q("op_infix_eq"), Line,     "line_op_infix_eq");
+    v_util_function_dict_set(q("op_infix_ne"), Line,     "line_op_infix_ne");
+}
+
+//---------------------------------------------------------------------
+line_infinity: Line = {0, 0, 1};
+line_abscissa: Line = {0, 1, 0};
+line_ordinate: Line = {1, 0, 0};
+
+
+//=====================================================================
+incident: (l: Line, p: Point) -> bool
+{
+    l = l.norm();
+    p = p.norm();
+
+    v_return( abs(l.cx*p.x + l.cy*p.y + l.cw*p.w) < EPSILON );
+}
+
+//---------------------------------------------------------------------
+point_op_infix_and: (a: Point, b: Point) -> Line
+{
+    v_return({a.y*b.w - a.w*b.y, a.w*b.x - a.x*b.w, a.x*b.y - a.y*b.x});
+}
+
+line_op_infix_and: (a: Line, b: Line) -> Point
+{
+    v_return({a.cy*b.cw - a.cw*b.cy, a.cw*b.cx - a.cx*b.cw, a.cx*b.cy - a.cy*b.cx});
+}
+
+{   q = v_quark_from_string;
+
+    v_util_function_dict_set(q("op_infix_and"), Point, "point_op_infix_and");
+    v_util_function_dict_set(q("op_infix_and"), Line,  "line_op_infix_and");
+}
+
+
+
+
+
+
+
+
+
+//=====================================================================
+//{ v_debug_print_module(1); }
+{
+    sstr = v_alloca(v_util_opaque_std_string);
+    v_initialize(sstr);
+    defer v_terminate(sstr);
+
+    v: &Vector := {1, 2};
+
+    sstr << v + 2*v;
+
+    printf("s: %s\n", v_std_string_get(sstr));
+
+
+    v_std_string_set(sstr, "");
+
+    u = point_unit_x - point_unit_y;
+
+    p = point_zero + u/3;
+
+    sstr << p;
+
+    printf("p: %s\n", v_std_string_get(sstr));
+
+
+    v_std_string_set(sstr, "");
+
+    p_inf_x = line_abscissa & line_infinity;
+
+    l = point_unit_y & p_inf_x;
+
+    sstr << l;
+
+    printf("l: %s\n", v_std_string_get(sstr));
+}
+
+
