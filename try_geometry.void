@@ -20,6 +20,11 @@ abs: (double) -> double;
 
 snprintf: (s: *char, l: size_t, f: *const char, ...) -> int;
 
+sin: (double) -> double;
+cos: (double) -> double;
+
+M_PI = 3.14159265358979323846264338327950288419716939937510582;
+
 
 //---------------------------------------------------------------------
 EPSILON = 1e-9;
@@ -870,6 +875,7 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
     q = v_quark_from_string;
 
     v_util_function_dict_set(q("op_postfix_call"), Transform_ref, "Transform.op_postfix_call_intrinsic");
+    v_util_function_dict_set(q("op_postfix_call"), Transform,     "Transform.op_postfix_call_intrinsic");
 
     v_add_intrinsic("Transform.op_postfix_call_intrinsic", Transform_op_postfix_call_intrinsic, 0);
 }
@@ -930,12 +936,378 @@ Line_transform: (l: &Line, t: &Transform) -> Line
     v_util_function_dict_set(q, Line_ref,   "Line_transform");
 }
 
+//---------------------------------------------------------------------
+Transform_op_infix_add_ref: (t: &Transform, v: Vector) -> Transform
+{
+    t = t[0];
 
+    xx = t[0] + v.x*t[6];
+    xy = t[1] + v.x*t[7];
+    xw = t[2] + v.x*t[8];
 
+    yx = t[3] + v.y*t[6];
+    yy = t[4] + v.y*t[7];
+    yw = t[5] + v.y*t[8];
 
+    wx = t[6];
+    wy = t[7];
+    ww = t[8];
 
+    v_return({{ xx, xy, xw,
+                yx, yy, yw,
+                wx, wy, ww }});
+}
 
+Transform_op_infix_add: (t: Transform, v: Vector) -> Transform
+{
+    t = t[0];
 
+    xx = t[0] + v.x*t[6];
+    xy = t[1] + v.x*t[7];
+    xw = t[2] + v.x*t[8];
+
+    yx = t[3] + v.y*t[6];
+    yy = t[4] + v.y*t[7];
+    yw = t[5] + v.y*t[8];
+
+    wx = t[6];
+    wy = t[7];
+    ww = t[8];
+
+    v_return({{ xx, xy, xw,
+                yx, yy, yw,
+                wx, wy, ww }});
+}
+
+{   Transform_ref = v_reference_type(Transform, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q("op_infix_add"), Transform_ref, "Transform_op_infix_add_ref");
+    v_util_function_dict_set(q("op_infix_add"), Transform,     "Transform_op_infix_add");
+}
+
+//---------------------------------------------------------------------
+Transform_op_infix_mul_ref: (a: &Transform, b: &Transform) -> Transform
+{
+    a = a[0];
+    b = b[0];
+
+    xx = a[0]*b[0] + a[1]*b[3] + a[2]*b[6];
+    xy = a[0]*b[1] + a[1]*b[4] + a[2]*b[7];
+    xw = a[0]*b[2] + a[1]*b[5] + a[2]*b[8];
+
+    yx = a[3]*b[0] + a[4]*b[3] + a[5]*b[6];
+    yy = a[3]*b[1] + a[4]*b[4] + a[5]*b[7];
+    yw = a[3]*b[2] + a[4]*b[5] + a[5]*b[8];
+
+    wx = a[6]*b[0] + a[7]*b[3] + a[8]*b[6];
+    wy = a[6]*b[1] + a[7]*b[4] + a[8]*b[7];
+    ww = a[6]*b[2] + a[7]*b[5] + a[8]*b[8];
+
+    v_return({{ xx, xy, xw,
+                yx, yy, yw,
+                wx, wy, ww }});
+}
+
+Transform_op_infix_mul: (a: Transform, b: Transform) -> Transform
+{
+    a = a[0];
+    b = b[0];
+
+    xx = a[0]*b[0] + a[1]*b[3] + a[2]*b[6];
+    xy = a[0]*b[1] + a[1]*b[4] + a[2]*b[7];
+    xw = a[0]*b[2] + a[1]*b[5] + a[2]*b[8];
+
+    yx = a[3]*b[0] + a[4]*b[3] + a[5]*b[6];
+    yy = a[3]*b[1] + a[4]*b[4] + a[5]*b[7];
+    yw = a[3]*b[2] + a[4]*b[5] + a[5]*b[8];
+
+    wx = a[6]*b[0] + a[7]*b[3] + a[8]*b[6];
+    wy = a[6]*b[1] + a[7]*b[4] + a[8]*b[7];
+    ww = a[6]*b[2] + a[7]*b[5] + a[8]*b[8];
+
+    v_return({{ xx, xy, xw,
+                yx, yy, yw,
+                wx, wy, ww }});
+}
+
+Transform_op_infix_mul_right_ref: (k: double, t: &Transform) -> Transform
+{
+    t = t[0];
+
+    xx = k*t[0];
+    xy = k*t[1];
+    xw = k*t[2];
+
+    yx = k*t[3];
+    yy = k*t[4];
+    yw = k*t[5];
+
+    wx =   t[6];
+    wy =   t[7];
+    ww =   t[8];
+
+    v_return({{ xx, xy, xw,
+                yx, yy, yw,
+                wx, wy, ww }});
+}
+
+Transform_op_infix_mul_right: (k: double, t: Transform) -> Transform
+{
+    t = t[0];
+
+    xx = k*t[0];
+    xy = k*t[1];
+    xw = k*t[2];
+
+    yx = k*t[3];
+    yy = k*t[4];
+    yw = k*t[5];
+
+    wx =   t[6];
+    wy =   t[7];
+    ww =   t[8];
+
+    v_return({{ xx, xy, xw,
+                yx, yy, yw,
+                wx, wy, ww }});
+}
+
+{   Transform_ref = v_reference_type(Transform, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q("op_infix_mul"),       Transform_ref, "Transform_op_infix_mul_ref");
+    v_util_function_dict_set(q("op_infix_mul"),       Transform,     "Transform_op_infix_mul");
+    v_util_function_dict_set(q("op_infix_mul.right"), Transform_ref, "Transform_op_infix_mul_right_ref");
+    v_util_function_dict_set(q("op_infix_mul.right"), Transform,     "Transform_op_infix_mul_right");
+}
+
+//---------------------------------------------------------------------
+Transform_op_prefix_tilda_ref: (t: &Transform) -> Transform
+{
+    t = t[0];
+
+    xx = t[4]*t[8] - t[5]*t[7];
+    xy = t[2]*t[7] - t[1]*t[8];
+    xw = t[1]*t[5] - t[2]*t[4];
+
+    yx = t[5]*t[6] - t[3]*t[8];
+    yy = t[0]*t[8] - t[2]*t[6];
+    yw = t[2]*t[3] - t[0]*t[5];
+
+    wx = t[3]*t[7] - t[4]*t[6];
+    wy = t[1]*t[6] - t[0]*t[7];
+    ww = t[0]*t[4] - t[1]*t[3];
+
+    r: &Transform := {{ xx,xy,xw, yx,yy,yw, wx,wy,ww }};
+
+    if (r.det() < 0)
+    {
+        r = r[0];
+
+        for (i: &int := 0; i < 9; ++i)  r[i] := -r[i];
+    }
+
+    v_return(r);
+}
+
+Transform_op_prefix_tilda: (t: Transform) -> Transform
+{
+    t = t[0];
+
+    xx = t[4]*t[8] - t[5]*t[7];
+    xy = t[2]*t[7] - t[1]*t[8];
+    xw = t[1]*t[5] - t[2]*t[4];
+
+    yx = t[5]*t[6] - t[3]*t[8];
+    yy = t[0]*t[8] - t[2]*t[6];
+    yw = t[2]*t[3] - t[0]*t[5];
+
+    wx = t[3]*t[7] - t[4]*t[6];
+    wy = t[1]*t[6] - t[0]*t[7];
+    ww = t[0]*t[4] - t[1]*t[3];
+
+    r: &Transform := {{ xx,xy,xw, yx,yy,yw, wx,wy,ww }};
+
+    if (r.det() < 0)
+    {
+        r = r[0];
+
+        for (i: &int := 0; i < 9; ++i)  r[i] := -r[i];
+    }
+
+    v_return(r);
+}
+
+{   Transform_ref = v_reference_type(Transform, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q("op_prefix_tilda"), Transform_ref, "Transform_op_prefix_tilda_ref");
+    v_util_function_dict_set(q("op_prefix_tilda"), Transform,     "Transform_op_prefix_tilda");
+}
+
+//---------------------------------------------------------------------
+Transform_op_infix_div_ref: (a: &Transform, b: &Transform) -> Transform
+{
+    v_return(a * (~b));
+}
+
+Transform_op_infix_div: (a: Transform, b: Transform) -> Transform
+{
+    v_return(a * (~b));
+}
+
+{   Transform_ref = v_reference_type(Transform, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q("op_infix_div"), Transform_ref, "Transform_op_infix_div_ref");
+    v_util_function_dict_set(q("op_infix_div"), Transform,     "Transform_op_infix_div");
+}
+
+//---------------------------------------------------------------------
+Transform_scaled_ref: (t: &Transform, k: double) -> Transform
+{
+    v_return(k * t);
+}
+
+Transform_scaled: (t: Transform, k: double) -> Transform
+{
+    v_return(k * t);
+}
+
+Transform_shifted_ref: (t: &Transform, v: &Vector) -> Transform
+{
+    v_return(t + v);
+}
+
+Transform_shifted: (t: Transform, v: Vector) -> Transform
+{
+    v_return(t + v);
+}
+
+Transform_rotated_ref: (t: &Transform, d: double) -> Transform
+{
+    a = d/180*M_PI;
+
+    sa = sin(a);
+    ca = cos(a);
+
+    r: Transform = {{  ca, -sa,  0,
+                       sa,  ca,  0,
+                        0,   0,  1  }};
+
+    v_return(r * t);
+}
+
+Transform_rotated: (t: Transform, d: double) -> Transform
+{
+    a = d/180*M_PI;
+
+    sa = sin(a);
+    ca = cos(a);
+
+    r: Transform = {{  ca, -sa,  0,
+                       sa,  ca,  0,
+                        0,   0,  1  }};
+
+    v_return(r * t);
+}
+
+{   Transform_ref = v_reference_type(Transform, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q(".scaled()"),  Transform_ref, "Transform_scaled_ref");
+    v_util_function_dict_set(q(".scaled()"),  Transform,     "Transform_scaled");
+    v_util_function_dict_set(q(".shifted()"), Transform_ref, "Transform_shifted_ref");
+    v_util_function_dict_set(q(".shifted()"), Transform,     "Transform_shifted");
+    v_util_function_dict_set(q(".rotated()"), Transform_ref, "Transform_rotated_ref");
+    v_util_function_dict_set(q(".rotated()"), Transform,     "Transform_rotated");
+}
+
+//---------------------------------------------------------------------
+_map4_util: (o1: Point, o2: Point, o3: Point, o4: Point) -> Transform
+{
+    o1 = o1.norm();
+    o2 = o2.norm();
+    o3 = o3.norm();
+    o4 = o4.norm();
+
+    a1 = det_3({ o4.x, o2.x, o3.x,
+                 o4.y, o2.y, o3.y,
+                 o4.w, o2.w, o3.w });
+
+    a2 = det_3({ o1.x, o4.x, o3.x,
+                 o1.y, o4.y, o3.y,
+                 o1.w, o4.w, o3.w });
+
+    a3 = det_3({ o1.x, o2.x, o4.x,
+                 o1.y, o2.y, o4.y,
+                 o1.w, o2.w, o4.w });
+
+    v_return( {{ o1.x*a1, o2.x*a2, o3.x*a3,
+                 o1.y*a1, o2.y*a2, o3.y*a3,
+                 o1.w*a1, o2.w*a2, o3.w*a3 }} );
+}
+
+Transform_map4: (i1: Point, i2: Point, i3: Point, i4: Point,
+                 o1: Point, o2: Point, o3: Point, o4: Point
+                ) -> Transform
+{
+    t1 = _map4_util(i1, i2, i3, i4);
+    t2 = _map4_util(o1, o2, o3, o4);
+
+    v_return(t2 / t1);
+}
+
+Transform_map3: (i1: Point, i2: Point, i3: Point,
+                 o1: Point, o2: Point, o3: Point
+                ) -> Transform
+{
+    i4 = i3 + (i2 - i1);
+    o4 = o3 + (o2 - o1);
+
+    v_return( Transform_map4(i1, i2, i3, i4,  o1, o2, o3, o4) );
+}
+
+Transform_map2: (i1: Point, i2: Point,
+                 o1: Point, o2: Point
+                ) -> Transform
+{
+    v = i2 - i1;    v: Vector = { -v.y, v.x };
+
+    i3 = i1 + v;
+
+    v = o2 - o1;    v: Vector = { -v.y, v.x };
+
+    o3 = o1 + v;
+
+    v_return( Transform_map3(i1, i2, i3,  o1, o2, o3) );
+}
+
+Transform_map2_mirror: (i1: Point, i2: Point,
+                        o1: Point, o2: Point
+                       ) -> Transform
+{
+    v = i2 - i1;    v: Vector = { -v.y, v.x };
+
+    i3 = i1 + v;
+
+    v = o2 - o1;    v: Vector = { v.y, -v.x };
+
+    o3 = o1 + v;
+
+    v_return( Transform_map3(i1, i2, i3,  o1, o2, o3) );
+}
+
+//---------------------------------------------------------------------
+Transform_identity: Transform = {{ 1, 0, 0,  0, 1, 0,  0, 0, 1 }};
+Transform_flip_x:   Transform = {{-1, 0, 0,  0, 1, 0,  0, 0, 1 }};
+Transform_flip_y:   Transform = {{ 1, 0, 0,  0,-1, 0,  0, 0, 1 }};
 
 
 
@@ -998,6 +1370,23 @@ Line_transform: (l: &Line, t: &Transform) -> Line
     v_std_string_set(sstr, "");     sstr << l;
 
     printf("l: %s\n", v_std_string_get(sstr));
+}
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    sstr = v_alloca(v_util_opaque_std_string);
+    v_initialize(sstr);
+    defer v_terminate(sstr);
+
+    r = Transform_identity.rotated(45);
+
+//  v = r(Vector_unit_x);
+    v = r(Vector_unit_y);
+
+    v_std_string_set(sstr, "");     sstr << v;
+
+    printf("v: %s\n", v_std_string_get(sstr));
 
 }
 
