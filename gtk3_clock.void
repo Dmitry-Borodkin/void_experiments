@@ -38,7 +38,7 @@ system: (cmd: *const char) -> int;
 
 
 //---------------------------------------------------------------------
-my_source: &char[] =
+my_source: &char[] :=
 """
 #include <time.h>
 #include <gtk/gtk.h>

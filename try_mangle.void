@@ -372,7 +372,7 @@ inflateEnd: (*z_stream) -> int;
     strlen: (*char) -> size_t;
 
     strm.next_in  := my_source;
-    strm.avail_in := strlen(my_source);
+    strm.avail_in := (strlen(my_source) : ulong);
 
 
     N = 100;
