@@ -232,7 +232,7 @@ generate_z_stream_fields_table: (vis: voidc_visitor_ptr, *void, args: v_ast_expr
     v_ast_accept_visitor((stmt: v_ast_base_ptr), vis);
 
 
-    sstr = v_alloca(v_util_opaque_std_string);
+    sstr = v_alloca(v_std_string_t);
     v_initialize(sstr);
     defer v_terminate(sstr);
 

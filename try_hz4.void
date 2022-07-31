@@ -108,7 +108,7 @@ voidc_ref_type_intrinsic: (vis: voidc_visitor_ptr, *void, args: v_ast_expr_list_
 
 
 //---------------------------------------------------------------------
-append_string_repr: (str: v_util_std_string_ptr, s: *const char) -> void
+append_string_repr: (str: v_std_string_ptr, s: *const char) -> void
 {
     s: &*const char := s;
 
@@ -142,7 +142,7 @@ append_string_repr: (str: v_util_std_string_ptr, s: *const char) -> void
 
 
 //---------------------------------------------------------------------
-append_type: (str: v_util_std_string_ptr, t: v_type_ptr) -> void
+append_type: (str: v_std_string_ptr, t: v_type_ptr) -> void
 {
     flag: &bool := false;
 
@@ -309,7 +309,7 @@ static_type_to_string_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
                                   t0: v_type_ptr, v0: LLVMValueRef
                                   ) -> void
 {
-    sstr = v_alloca(v_util_opaque_std_string);
+    sstr = v_alloca(v_std_string_t);
     v_initialize(sstr);
     defer v_terminate(sstr);
 

@@ -103,7 +103,7 @@ Vector_y:     (v:  Vector) ->  double   { v_return(v[1]); }
 }
 
 //---------------------------------------------------------------------
-Vector_op_infix_shl_right: (s: &v_util_std_string_ptr, v: Vector) -> &v_util_std_string_ptr
+Vector_op_infix_shl_right: (s: &v_std_string_ptr, v: Vector) -> &v_std_string_ptr
 {
     n = 1 + snprintf(0, 0, "(%g, %g)", v.x, v.y);
 
@@ -250,7 +250,7 @@ Point_w:     (p:  Point) ->  double   { v_return(p[2]); }
 }
 
 //---------------------------------------------------------------------
-Point_op_infix_shl_right: (s: &v_util_std_string_ptr, p: Point) -> &v_util_std_string_ptr
+Point_op_infix_shl_right: (s: &v_std_string_ptr, p: Point) -> &v_std_string_ptr
 {
     n = 1 + snprintf(0, 0, "(%g, %g, %g)", p.x, p.y, p.w);
 
@@ -435,7 +435,7 @@ Line_cw:     (l:  Line) ->  double  { v_return(l[2]); }
 }
 
 //---------------------------------------------------------------------
-Line_op_infix_shl_right: (s: &v_util_std_string_ptr, l: Line) -> &v_util_std_string_ptr
+Line_op_infix_shl_right: (s: &v_std_string_ptr, l: Line) -> &v_std_string_ptr
 {
     n = 1 + snprintf(0, 0, "(%g, %g, %g)", l.cx, l.cy, l.cw);
 
@@ -620,7 +620,7 @@ Line_op_infix_and: (a: Line, b: Line) -> Point
 Transform = v_struct("Transform2D", { double[9] });
 
 //---------------------------------------------------------------------
-Transform_op_infix_shl_right: (s: &v_util_std_string_ptr, t: Transform) -> &v_util_std_string_ptr
+Transform_op_infix_shl_right: (s: &v_std_string_ptr, t: Transform) -> &v_std_string_ptr
 {
     t = t[0];
 
@@ -1316,7 +1316,7 @@ Transform_flip_y:   Transform = {{ 1, 0, 0,  0,-1, 0,  0, 0, 1 }};
 //=====================================================================
 //{ v_debug_print_module(1); }
 {
-    sstr = v_alloca(v_util_opaque_std_string);
+    sstr = v_alloca(v_std_string_t);
     v_initialize(sstr);
     defer v_terminate(sstr);
 
@@ -1375,7 +1375,7 @@ Transform_flip_y:   Transform = {{ 1, 0, 0,  0,-1, 0,  0, 0, 1 }};
 //---------------------------------------------------------------------
 //{ v_debug_print_module(1); }
 {
-    sstr = v_alloca(v_util_opaque_std_string);
+    sstr = v_alloca(v_std_string_t);
     v_initialize(sstr);
     defer v_terminate(sstr);
 
