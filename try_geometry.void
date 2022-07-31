@@ -802,7 +802,7 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
                                       t0: v_type_ptr, v0: LLVMValueRef
                                      ) -> void
 {
-    ast = v_alloca(v_ast_opaque_expr_sptr);
+    ast = v_alloca(v_ast_expr_t);
     v_initialize(ast);
     defer v_terminate(ast);
 

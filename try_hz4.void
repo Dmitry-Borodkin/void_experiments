@@ -40,7 +40,7 @@ qwe: &*((*const char, ...) -> int) := printf;
 //---------------------------------------------------------------------
 voidc_ptr_type_intrinsic: (vis: voidc_visitor_ptr, *void, args: v_ast_expr_list_ptr) -> void
 {
-    ast = v_alloca(v_ast_opaque_expr_sptr, 2);
+    ast = v_alloca(v_ast_expr_t, 2);
     v_initialize(ast, 2);
     defer v_terminate(ast, 2);
 
@@ -73,7 +73,7 @@ voidc_ptr_type_intrinsic: (vis: voidc_visitor_ptr, *void, args: v_ast_expr_list_
 //---------------------------------------------------------------------
 voidc_ref_type_intrinsic: (vis: voidc_visitor_ptr, *void, args: v_ast_expr_list_ptr) -> void
 {
-    ast = v_alloca(v_ast_opaque_expr_sptr, 2);
+    ast = v_alloca(v_ast_expr_t, 2);
     v_initialize(ast, 2);
     defer v_terminate(ast, 2);
 
@@ -315,7 +315,7 @@ static_type_to_string_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 
     append_type(sstr, (v0: v_type_ptr));
 
-    etmp = v_alloca(v_ast_opaque_expr_sptr);
+    etmp = v_alloca(v_ast_expr_t);
     v_initialize(etmp);
     defer v_terminate(etmp);
 

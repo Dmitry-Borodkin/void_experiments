@@ -163,7 +163,7 @@ z_stream_field_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 //---------------------------------------------------------------------
 generate_z_stream_fields_table: (vis: voidc_visitor_ptr, *void, args: v_ast_expr_list_ptr) -> void
 {
-    ast = v_alloca(v_ast_opaque_base_sptr);
+    ast = v_alloca(v_ast_base_t);
     v_initialize(ast);
     defer v_terminate(ast);
 
@@ -183,15 +183,15 @@ generate_z_stream_fields_table: (vis: voidc_visitor_ptr, *void, args: v_ast_expr
     v_add_symbol("z_stream_data_table", 0, table);        //- Sic!
 
 
-    elst = v_alloca(v_ast_opaque_expr_list_sptr, 2);
+    elst = v_alloca(v_ast_expr_list_t, 2);
     v_initialize(elst, 2);
     defer v_terminate(elst, 2);
 
-    expr = v_alloca(v_ast_opaque_expr_sptr);
+    expr = v_alloca(v_ast_expr_t);
     v_initialize(expr);
     defer v_terminate(expr);
 
-    stmt = v_alloca(v_ast_opaque_stmt_sptr);
+    stmt = v_alloca(v_ast_stmt_t);
     v_initialize(stmt);
     defer v_terminate(stmt);
 
