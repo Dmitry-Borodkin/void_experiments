@@ -163,15 +163,11 @@ z_stream_field_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 //---------------------------------------------------------------------
 generate_z_stream_fields_table: (vis: voidc_visitor_ptr, *void, args: v_ast_expr_list_ptr) -> void
 {
-    ast = v_alloca(v_ast_base_t);
-    v_initialize(ast);
-    defer v_terminate(ast);
+    ast = v_list_get_item(args, 0);
 
-    v_copy((ast: v_ast_expr_ptr), v_list_get_item(args, 0));
+    ast = v_ast_expr_call_get_arg_list(ast);
 
-    v_ast_expr_call_get_arg_list((ast: v_ast_expr_ptr), (ast: v_ast_expr_list_ptr));
-
-    v_copy((ast: v_ast_expr_ptr), v_list_get_item((ast: v_ast_expr_list_ptr), 1));
+    ast = v_list_get_item(ast, 1);
 
     ast_list = (ast: v_ast_generic_list_ptr);
 

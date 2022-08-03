@@ -22,14 +22,10 @@
 }
 
 
-{   surface_t = v_struct_type_named("struct.cairo_surface_t");
+//---------------------------------------------------------------------
+cairo_surface_t = v_struct("struct.cairo_surface_t");
 
-    v_add_type("cairo_surface_t", surface_t);
-
-    cairo_t = v_struct_type_named("struct.cairo_t");
-
-    v_add_type("cairo_t", cairo_t);
-}
+cairo_t = v_struct("struct.cairo_t");
 
 
 //---------------------------------------------------------------------
