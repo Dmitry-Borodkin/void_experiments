@@ -802,17 +802,13 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
                                       t0: v_type_ptr, v0: LLVMValueRef
                                      ) -> void
 {
-    ast = v_alloca(v_ast_expr_t);
-    v_initialize(ast);
-    defer v_terminate(ast);
-
-    v_list_get_items(args, 0, ast);
+    arg = v_list_get_item(args, 0);
 
     tt = v_get_result_type();
 
     v_set_result_type(INVIOLABLE_TAG);
 
-    v_ast_accept_visitor((ast: v_ast_base_ptr), vis);
+    v_ast_accept_visitor((arg: v_ast_base_ptr), vis);
 
     t1 = v_get_result_type();
     v1 = v_get_result_value();
@@ -829,7 +825,7 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
     //- assert(ok);
 
     intrinsic_p2_t = (vis: voidc_visitor_ptr, aux: *void,
-                      ast: v_ast_expr_ptr,
+                      args: v_ast_expr_list_ptr,
                       t0: v_type_ptr, v0: LLVMValueRef,
                       t1: v_type_ptr, v1: LLVMValueRef
                      ) -> void;
@@ -838,7 +834,7 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
     {
         v_set_result_type(tt);
 
-        fun(vis, void_aux, ast, t1, v1, t0, v0);        //- Sic!!!
+        fun(vis, void_aux, args, t1, v1, t0, v0);       //- Sic!!!
     }
     else
     {

@@ -132,7 +132,7 @@ z_data_t = v_struct("z_data_t", {size_t, v_type_ptr});
 
 //---------------------------------------------------------------------
 z_stream_field_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
-                           ast: v_ast_expr_ptr,
+                           args: v_ast_expr_list_ptr,
                            t0: v_type_ptr, v0: LLVMValueRef
                            ) -> void
 {
@@ -167,11 +167,11 @@ generate_z_stream_fields_table: (vis: voidc_visitor_ptr, *void, args: v_ast_expr
     v_initialize(ast);
     defer v_terminate(ast);
 
-    v_list_get_items(args, 0, (ast: v_ast_expr_ptr));
+    v_copy((ast: v_ast_expr_ptr), v_list_get_item(args, 0));
 
     v_ast_expr_call_get_arg_list((ast: v_ast_expr_ptr), (ast: v_ast_expr_list_ptr));
 
-    v_list_get_items((ast: v_ast_expr_list_ptr), 1, (ast: v_ast_expr_ptr));
+    v_copy((ast: v_ast_expr_ptr), v_list_get_item((ast: v_ast_expr_list_ptr), 1));
 
     ast_list = (ast: v_ast_generic_list_ptr);
 
@@ -240,17 +240,17 @@ generate_z_stream_fields_table: (vis: voidc_visitor_ptr, *void, args: v_ast_expr
 
     for (i: &int := 0; i < count; ++i)
     {
-        v_list_get_items(ast_list, i, (elst: v_ast_base_ptr));
+        ltmp = (v_list_get_item(ast_list, i) : v_ast_expr_list_ptr);
 
-        v_list_get_items(elst, 0, expr);
+        etmp = v_list_get_item(ltmp, 0);
 
-        name = v_ast_expr_identifier_get_name(expr);
+        name = v_ast_expr_identifier_get_name(etmp);
 
-        v_list_get_items(elst, 1, expr);
+        etmp = v_list_get_item(ltmp, 1);
 
         v_set_result_type(INVIOLABLE_TAG);
 
-        v_ast_accept_visitor((expr: v_ast_base_ptr), vis);
+        v_ast_accept_visitor((etmp: v_ast_base_ptr), vis);
 
         type = (v_get_result_value() : v_type_ptr);
 
