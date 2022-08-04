@@ -1,0 +1,3193 @@
+{ voidc_import("llvm-c/prelude.void"); }
+
+
+//- Values -------------------------------------------------
+{
+    _int = v_find_type("int");
+    llvm_int = v_type_get_llvm_type(_int);
+
+    val = LLVMConstInt(llvm_int, 0, 0);
+    v_export_constant("CAIRO_STATUS_SUCCESS", _int, val);
+
+    val = LLVMConstInt(llvm_int, 1, 0);
+    v_export_constant("CAIRO_STATUS_NO_MEMORY", _int, val);
+
+    val = LLVMConstInt(llvm_int, 2, 0);
+    v_export_constant("CAIRO_STATUS_INVALID_RESTORE", _int, val);
+
+    val = LLVMConstInt(llvm_int, 3, 0);
+    v_export_constant("CAIRO_STATUS_INVALID_POP_GROUP", _int, val);
+
+    val = LLVMConstInt(llvm_int, 4, 0);
+    v_export_constant("CAIRO_STATUS_NO_CURRENT_POINT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 5, 0);
+    v_export_constant("CAIRO_STATUS_INVALID_MATRIX", _int, val);
+
+    val = LLVMConstInt(llvm_int, 6, 0);
+    v_export_constant("CAIRO_STATUS_INVALID_STATUS", _int, val);
+
+    val = LLVMConstInt(llvm_int, 7, 0);
+    v_export_constant("CAIRO_STATUS_NULL_POINTER", _int, val);
+
+    val = LLVMConstInt(llvm_int, 8, 0);
+    v_export_constant("CAIRO_STATUS_INVALID_STRING", _int, val);
+
+    val = LLVMConstInt(llvm_int, 9, 0);
+    v_export_constant("CAIRO_STATUS_INVALID_PATH_DATA", _int, val);
+
+    val = LLVMConstInt(llvm_int, 10, 0);
+    v_export_constant("CAIRO_STATUS_READ_ERROR", _int, val);
+
+    val = LLVMConstInt(llvm_int, 11, 0);
+    v_export_constant("CAIRO_STATUS_WRITE_ERROR", _int, val);
+
+    val = LLVMConstInt(llvm_int, 12, 0);
+    v_export_constant("CAIRO_STATUS_SURFACE_FINISHED", _int, val);
+
+    val = LLVMConstInt(llvm_int, 13, 0);
+    v_export_constant("CAIRO_STATUS_SURFACE_TYPE_MISMATCH", _int, val);
+
+    val = LLVMConstInt(llvm_int, 14, 0);
+    v_export_constant("CAIRO_STATUS_PATTERN_TYPE_MISMATCH", _int, val);
+
+    val = LLVMConstInt(llvm_int, 15, 0);
+    v_export_constant("CAIRO_STATUS_INVALID_CONTENT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 16, 0);
+    v_export_constant("CAIRO_STATUS_INVALID_FORMAT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 17, 0);
+    v_export_constant("CAIRO_STATUS_INVALID_VISUAL", _int, val);
+
+    val = LLVMConstInt(llvm_int, 18, 0);
+    v_export_constant("CAIRO_STATUS_FILE_NOT_FOUND", _int, val);
+
+    val = LLVMConstInt(llvm_int, 19, 0);
+    v_export_constant("CAIRO_STATUS_INVALID_DASH", _int, val);
+
+    val = LLVMConstInt(llvm_int, 20, 0);
+    v_export_constant("CAIRO_STATUS_INVALID_DSC_COMMENT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 21, 0);
+    v_export_constant("CAIRO_STATUS_INVALID_INDEX", _int, val);
+
+    val = LLVMConstInt(llvm_int, 22, 0);
+    v_export_constant("CAIRO_STATUS_CLIP_NOT_REPRESENTABLE", _int, val);
+
+    val = LLVMConstInt(llvm_int, 23, 0);
+    v_export_constant("CAIRO_STATUS_TEMP_FILE_ERROR", _int, val);
+
+    val = LLVMConstInt(llvm_int, 24, 0);
+    v_export_constant("CAIRO_STATUS_INVALID_STRIDE", _int, val);
+
+    val = LLVMConstInt(llvm_int, 25, 0);
+    v_export_constant("CAIRO_STATUS_FONT_TYPE_MISMATCH", _int, val);
+
+    val = LLVMConstInt(llvm_int, 26, 0);
+    v_export_constant("CAIRO_STATUS_USER_FONT_IMMUTABLE", _int, val);
+
+    val = LLVMConstInt(llvm_int, 27, 0);
+    v_export_constant("CAIRO_STATUS_USER_FONT_ERROR", _int, val);
+
+    val = LLVMConstInt(llvm_int, 28, 0);
+    v_export_constant("CAIRO_STATUS_NEGATIVE_COUNT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 29, 0);
+    v_export_constant("CAIRO_STATUS_INVALID_CLUSTERS", _int, val);
+
+    val = LLVMConstInt(llvm_int, 30, 0);
+    v_export_constant("CAIRO_STATUS_INVALID_SLANT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 31, 0);
+    v_export_constant("CAIRO_STATUS_INVALID_WEIGHT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 32, 0);
+    v_export_constant("CAIRO_STATUS_INVALID_SIZE", _int, val);
+
+    val = LLVMConstInt(llvm_int, 33, 0);
+    v_export_constant("CAIRO_STATUS_USER_FONT_NOT_IMPLEMENTED", _int, val);
+
+    val = LLVMConstInt(llvm_int, 34, 0);
+    v_export_constant("CAIRO_STATUS_DEVICE_TYPE_MISMATCH", _int, val);
+
+    val = LLVMConstInt(llvm_int, 35, 0);
+    v_export_constant("CAIRO_STATUS_DEVICE_ERROR", _int, val);
+
+    val = LLVMConstInt(llvm_int, 36, 0);
+    v_export_constant("CAIRO_STATUS_INVALID_MESH_CONSTRUCTION", _int, val);
+
+    val = LLVMConstInt(llvm_int, 37, 0);
+    v_export_constant("CAIRO_STATUS_DEVICE_FINISHED", _int, val);
+
+    val = LLVMConstInt(llvm_int, 38, 0);
+    v_export_constant("CAIRO_STATUS_JBIG2_GLOBAL_MISSING", _int, val);
+
+    val = LLVMConstInt(llvm_int, 39, 0);
+    v_export_constant("CAIRO_STATUS_PNG_ERROR", _int, val);
+
+    val = LLVMConstInt(llvm_int, 40, 0);
+    v_export_constant("CAIRO_STATUS_FREETYPE_ERROR", _int, val);
+
+    val = LLVMConstInt(llvm_int, 41, 0);
+    v_export_constant("CAIRO_STATUS_WIN32_GDI_ERROR", _int, val);
+
+    val = LLVMConstInt(llvm_int, 42, 0);
+    v_export_constant("CAIRO_STATUS_TAG_ERROR", _int, val);
+
+    val = LLVMConstInt(llvm_int, 43, 0);
+    v_export_constant("CAIRO_STATUS_LAST_STATUS", _int, val);
+
+    val = LLVMConstInt(llvm_int, 4096, 0);
+    v_export_constant("CAIRO_CONTENT_COLOR", _int, val);
+
+    val = LLVMConstInt(llvm_int, 8192, 0);
+    v_export_constant("CAIRO_CONTENT_ALPHA", _int, val);
+
+    val = LLVMConstInt(llvm_int, 12288, 0);
+    v_export_constant("CAIRO_CONTENT_COLOR_ALPHA", _int, val);
+
+    val = LLVMConstInt(llvm_int, -1, 0);
+    v_export_constant("CAIRO_FORMAT_INVALID", _int, val);
+
+    val = LLVMConstInt(llvm_int, 0, 0);
+    v_export_constant("CAIRO_FORMAT_ARGB32", _int, val);
+
+    val = LLVMConstInt(llvm_int, 1, 0);
+    v_export_constant("CAIRO_FORMAT_RGB24", _int, val);
+
+    val = LLVMConstInt(llvm_int, 2, 0);
+    v_export_constant("CAIRO_FORMAT_A8", _int, val);
+
+    val = LLVMConstInt(llvm_int, 3, 0);
+    v_export_constant("CAIRO_FORMAT_A1", _int, val);
+
+    val = LLVMConstInt(llvm_int, 4, 0);
+    v_export_constant("CAIRO_FORMAT_RGB16_565", _int, val);
+
+    val = LLVMConstInt(llvm_int, 5, 0);
+    v_export_constant("CAIRO_FORMAT_RGB30", _int, val);
+
+    val = LLVMConstInt(llvm_int, 0, 0);
+    v_export_constant("CAIRO_OPERATOR_CLEAR", _int, val);
+
+    val = LLVMConstInt(llvm_int, 1, 0);
+    v_export_constant("CAIRO_OPERATOR_SOURCE", _int, val);
+
+    val = LLVMConstInt(llvm_int, 2, 0);
+    v_export_constant("CAIRO_OPERATOR_OVER", _int, val);
+
+    val = LLVMConstInt(llvm_int, 3, 0);
+    v_export_constant("CAIRO_OPERATOR_IN", _int, val);
+
+    val = LLVMConstInt(llvm_int, 4, 0);
+    v_export_constant("CAIRO_OPERATOR_OUT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 5, 0);
+    v_export_constant("CAIRO_OPERATOR_ATOP", _int, val);
+
+    val = LLVMConstInt(llvm_int, 6, 0);
+    v_export_constant("CAIRO_OPERATOR_DEST", _int, val);
+
+    val = LLVMConstInt(llvm_int, 7, 0);
+    v_export_constant("CAIRO_OPERATOR_DEST_OVER", _int, val);
+
+    val = LLVMConstInt(llvm_int, 8, 0);
+    v_export_constant("CAIRO_OPERATOR_DEST_IN", _int, val);
+
+    val = LLVMConstInt(llvm_int, 9, 0);
+    v_export_constant("CAIRO_OPERATOR_DEST_OUT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 10, 0);
+    v_export_constant("CAIRO_OPERATOR_DEST_ATOP", _int, val);
+
+    val = LLVMConstInt(llvm_int, 11, 0);
+    v_export_constant("CAIRO_OPERATOR_XOR", _int, val);
+
+    val = LLVMConstInt(llvm_int, 12, 0);
+    v_export_constant("CAIRO_OPERATOR_ADD", _int, val);
+
+    val = LLVMConstInt(llvm_int, 13, 0);
+    v_export_constant("CAIRO_OPERATOR_SATURATE", _int, val);
+
+    val = LLVMConstInt(llvm_int, 14, 0);
+    v_export_constant("CAIRO_OPERATOR_MULTIPLY", _int, val);
+
+    val = LLVMConstInt(llvm_int, 15, 0);
+    v_export_constant("CAIRO_OPERATOR_SCREEN", _int, val);
+
+    val = LLVMConstInt(llvm_int, 16, 0);
+    v_export_constant("CAIRO_OPERATOR_OVERLAY", _int, val);
+
+    val = LLVMConstInt(llvm_int, 17, 0);
+    v_export_constant("CAIRO_OPERATOR_DARKEN", _int, val);
+
+    val = LLVMConstInt(llvm_int, 18, 0);
+    v_export_constant("CAIRO_OPERATOR_LIGHTEN", _int, val);
+
+    val = LLVMConstInt(llvm_int, 19, 0);
+    v_export_constant("CAIRO_OPERATOR_COLOR_DODGE", _int, val);
+
+    val = LLVMConstInt(llvm_int, 20, 0);
+    v_export_constant("CAIRO_OPERATOR_COLOR_BURN", _int, val);
+
+    val = LLVMConstInt(llvm_int, 21, 0);
+    v_export_constant("CAIRO_OPERATOR_HARD_LIGHT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 22, 0);
+    v_export_constant("CAIRO_OPERATOR_SOFT_LIGHT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 23, 0);
+    v_export_constant("CAIRO_OPERATOR_DIFFERENCE", _int, val);
+
+    val = LLVMConstInt(llvm_int, 24, 0);
+    v_export_constant("CAIRO_OPERATOR_EXCLUSION", _int, val);
+
+    val = LLVMConstInt(llvm_int, 25, 0);
+    v_export_constant("CAIRO_OPERATOR_HSL_HUE", _int, val);
+
+    val = LLVMConstInt(llvm_int, 26, 0);
+    v_export_constant("CAIRO_OPERATOR_HSL_SATURATION", _int, val);
+
+    val = LLVMConstInt(llvm_int, 27, 0);
+    v_export_constant("CAIRO_OPERATOR_HSL_COLOR", _int, val);
+
+    val = LLVMConstInt(llvm_int, 28, 0);
+    v_export_constant("CAIRO_OPERATOR_HSL_LUMINOSITY", _int, val);
+
+    val = LLVMConstInt(llvm_int, 0, 0);
+    v_export_constant("CAIRO_ANTIALIAS_DEFAULT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 1, 0);
+    v_export_constant("CAIRO_ANTIALIAS_NONE", _int, val);
+
+    val = LLVMConstInt(llvm_int, 2, 0);
+    v_export_constant("CAIRO_ANTIALIAS_GRAY", _int, val);
+
+    val = LLVMConstInt(llvm_int, 3, 0);
+    v_export_constant("CAIRO_ANTIALIAS_SUBPIXEL", _int, val);
+
+    val = LLVMConstInt(llvm_int, 4, 0);
+    v_export_constant("CAIRO_ANTIALIAS_FAST", _int, val);
+
+    val = LLVMConstInt(llvm_int, 5, 0);
+    v_export_constant("CAIRO_ANTIALIAS_GOOD", _int, val);
+
+    val = LLVMConstInt(llvm_int, 6, 0);
+    v_export_constant("CAIRO_ANTIALIAS_BEST", _int, val);
+
+    val = LLVMConstInt(llvm_int, 0, 0);
+    v_export_constant("CAIRO_FILL_RULE_WINDING", _int, val);
+
+    val = LLVMConstInt(llvm_int, 1, 0);
+    v_export_constant("CAIRO_FILL_RULE_EVEN_ODD", _int, val);
+
+    val = LLVMConstInt(llvm_int, 0, 0);
+    v_export_constant("CAIRO_LINE_CAP_BUTT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 1, 0);
+    v_export_constant("CAIRO_LINE_CAP_ROUND", _int, val);
+
+    val = LLVMConstInt(llvm_int, 2, 0);
+    v_export_constant("CAIRO_LINE_CAP_SQUARE", _int, val);
+
+    val = LLVMConstInt(llvm_int, 0, 0);
+    v_export_constant("CAIRO_LINE_JOIN_MITER", _int, val);
+
+    val = LLVMConstInt(llvm_int, 1, 0);
+    v_export_constant("CAIRO_LINE_JOIN_ROUND", _int, val);
+
+    val = LLVMConstInt(llvm_int, 2, 0);
+    v_export_constant("CAIRO_LINE_JOIN_BEVEL", _int, val);
+
+    val = LLVMConstInt(llvm_int, 1, 0);
+    v_export_constant("CAIRO_TEXT_CLUSTER_FLAG_BACKWARD", _int, val);
+
+    val = LLVMConstInt(llvm_int, 0, 0);
+    v_export_constant("CAIRO_FONT_SLANT_NORMAL", _int, val);
+
+    val = LLVMConstInt(llvm_int, 1, 0);
+    v_export_constant("CAIRO_FONT_SLANT_ITALIC", _int, val);
+
+    val = LLVMConstInt(llvm_int, 2, 0);
+    v_export_constant("CAIRO_FONT_SLANT_OBLIQUE", _int, val);
+
+    val = LLVMConstInt(llvm_int, 0, 0);
+    v_export_constant("CAIRO_FONT_WEIGHT_NORMAL", _int, val);
+
+    val = LLVMConstInt(llvm_int, 1, 0);
+    v_export_constant("CAIRO_FONT_WEIGHT_BOLD", _int, val);
+
+    val = LLVMConstInt(llvm_int, 0, 0);
+    v_export_constant("CAIRO_SUBPIXEL_ORDER_DEFAULT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 1, 0);
+    v_export_constant("CAIRO_SUBPIXEL_ORDER_RGB", _int, val);
+
+    val = LLVMConstInt(llvm_int, 2, 0);
+    v_export_constant("CAIRO_SUBPIXEL_ORDER_BGR", _int, val);
+
+    val = LLVMConstInt(llvm_int, 3, 0);
+    v_export_constant("CAIRO_SUBPIXEL_ORDER_VRGB", _int, val);
+
+    val = LLVMConstInt(llvm_int, 4, 0);
+    v_export_constant("CAIRO_SUBPIXEL_ORDER_VBGR", _int, val);
+
+    val = LLVMConstInt(llvm_int, 0, 0);
+    v_export_constant("CAIRO_HINT_STYLE_DEFAULT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 1, 0);
+    v_export_constant("CAIRO_HINT_STYLE_NONE", _int, val);
+
+    val = LLVMConstInt(llvm_int, 2, 0);
+    v_export_constant("CAIRO_HINT_STYLE_SLIGHT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 3, 0);
+    v_export_constant("CAIRO_HINT_STYLE_MEDIUM", _int, val);
+
+    val = LLVMConstInt(llvm_int, 4, 0);
+    v_export_constant("CAIRO_HINT_STYLE_FULL", _int, val);
+
+    val = LLVMConstInt(llvm_int, 0, 0);
+    v_export_constant("CAIRO_HINT_METRICS_DEFAULT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 1, 0);
+    v_export_constant("CAIRO_HINT_METRICS_OFF", _int, val);
+
+    val = LLVMConstInt(llvm_int, 2, 0);
+    v_export_constant("CAIRO_HINT_METRICS_ON", _int, val);
+
+    val = LLVMConstInt(llvm_int, 0, 0);
+    v_export_constant("CAIRO_FONT_TYPE_TOY", _int, val);
+
+    val = LLVMConstInt(llvm_int, 1, 0);
+    v_export_constant("CAIRO_FONT_TYPE_FT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 2, 0);
+    v_export_constant("CAIRO_FONT_TYPE_WIN32", _int, val);
+
+    val = LLVMConstInt(llvm_int, 3, 0);
+    v_export_constant("CAIRO_FONT_TYPE_QUARTZ", _int, val);
+
+    val = LLVMConstInt(llvm_int, 4, 0);
+    v_export_constant("CAIRO_FONT_TYPE_USER", _int, val);
+
+    val = LLVMConstInt(llvm_int, 0, 0);
+    v_export_constant("CAIRO_PATH_MOVE_TO", _int, val);
+
+    val = LLVMConstInt(llvm_int, 1, 0);
+    v_export_constant("CAIRO_PATH_LINE_TO", _int, val);
+
+    val = LLVMConstInt(llvm_int, 2, 0);
+    v_export_constant("CAIRO_PATH_CURVE_TO", _int, val);
+
+    val = LLVMConstInt(llvm_int, 3, 0);
+    v_export_constant("CAIRO_PATH_CLOSE_PATH", _int, val);
+
+    val = LLVMConstInt(llvm_int, 0, 0);
+    v_export_constant("CAIRO_DEVICE_TYPE_DRM", _int, val);
+
+    val = LLVMConstInt(llvm_int, 1, 0);
+    v_export_constant("CAIRO_DEVICE_TYPE_GL", _int, val);
+
+    val = LLVMConstInt(llvm_int, 2, 0);
+    v_export_constant("CAIRO_DEVICE_TYPE_SCRIPT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 3, 0);
+    v_export_constant("CAIRO_DEVICE_TYPE_XCB", _int, val);
+
+    val = LLVMConstInt(llvm_int, 4, 0);
+    v_export_constant("CAIRO_DEVICE_TYPE_XLIB", _int, val);
+
+    val = LLVMConstInt(llvm_int, 5, 0);
+    v_export_constant("CAIRO_DEVICE_TYPE_XML", _int, val);
+
+    val = LLVMConstInt(llvm_int, 6, 0);
+    v_export_constant("CAIRO_DEVICE_TYPE_COGL", _int, val);
+
+    val = LLVMConstInt(llvm_int, 7, 0);
+    v_export_constant("CAIRO_DEVICE_TYPE_WIN32", _int, val);
+
+    val = LLVMConstInt(llvm_int, -1, 0);
+    v_export_constant("CAIRO_DEVICE_TYPE_INVALID", _int, val);
+
+    val = LLVMConstInt(llvm_int, 0, 0);
+    v_export_constant("CAIRO_SURFACE_OBSERVER_NORMAL", _int, val);
+
+    val = LLVMConstInt(llvm_int, 1, 0);
+    v_export_constant("CAIRO_SURFACE_OBSERVER_RECORD_OPERATIONS", _int, val);
+
+    val = LLVMConstInt(llvm_int, 0, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_IMAGE", _int, val);
+
+    val = LLVMConstInt(llvm_int, 1, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_PDF", _int, val);
+
+    val = LLVMConstInt(llvm_int, 2, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_PS", _int, val);
+
+    val = LLVMConstInt(llvm_int, 3, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_XLIB", _int, val);
+
+    val = LLVMConstInt(llvm_int, 4, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_XCB", _int, val);
+
+    val = LLVMConstInt(llvm_int, 5, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_GLITZ", _int, val);
+
+    val = LLVMConstInt(llvm_int, 6, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_QUARTZ", _int, val);
+
+    val = LLVMConstInt(llvm_int, 7, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_WIN32", _int, val);
+
+    val = LLVMConstInt(llvm_int, 8, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_BEOS", _int, val);
+
+    val = LLVMConstInt(llvm_int, 9, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_DIRECTFB", _int, val);
+
+    val = LLVMConstInt(llvm_int, 10, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_SVG", _int, val);
+
+    val = LLVMConstInt(llvm_int, 11, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_OS2", _int, val);
+
+    val = LLVMConstInt(llvm_int, 12, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_WIN32_PRINTING", _int, val);
+
+    val = LLVMConstInt(llvm_int, 13, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_QUARTZ_IMAGE", _int, val);
+
+    val = LLVMConstInt(llvm_int, 14, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_SCRIPT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 15, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_QT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 16, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_RECORDING", _int, val);
+
+    val = LLVMConstInt(llvm_int, 17, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_VG", _int, val);
+
+    val = LLVMConstInt(llvm_int, 18, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_GL", _int, val);
+
+    val = LLVMConstInt(llvm_int, 19, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_DRM", _int, val);
+
+    val = LLVMConstInt(llvm_int, 20, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_TEE", _int, val);
+
+    val = LLVMConstInt(llvm_int, 21, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_XML", _int, val);
+
+    val = LLVMConstInt(llvm_int, 22, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_SKIA", _int, val);
+
+    val = LLVMConstInt(llvm_int, 23, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_SUBSURFACE", _int, val);
+
+    val = LLVMConstInt(llvm_int, 24, 0);
+    v_export_constant("CAIRO_SURFACE_TYPE_COGL", _int, val);
+
+    val = LLVMConstInt(llvm_int, 0, 0);
+    v_export_constant("CAIRO_PATTERN_TYPE_SOLID", _int, val);
+
+    val = LLVMConstInt(llvm_int, 1, 0);
+    v_export_constant("CAIRO_PATTERN_TYPE_SURFACE", _int, val);
+
+    val = LLVMConstInt(llvm_int, 2, 0);
+    v_export_constant("CAIRO_PATTERN_TYPE_LINEAR", _int, val);
+
+    val = LLVMConstInt(llvm_int, 3, 0);
+    v_export_constant("CAIRO_PATTERN_TYPE_RADIAL", _int, val);
+
+    val = LLVMConstInt(llvm_int, 4, 0);
+    v_export_constant("CAIRO_PATTERN_TYPE_MESH", _int, val);
+
+    val = LLVMConstInt(llvm_int, 5, 0);
+    v_export_constant("CAIRO_PATTERN_TYPE_RASTER_SOURCE", _int, val);
+
+    val = LLVMConstInt(llvm_int, 0, 0);
+    v_export_constant("CAIRO_EXTEND_NONE", _int, val);
+
+    val = LLVMConstInt(llvm_int, 1, 0);
+    v_export_constant("CAIRO_EXTEND_REPEAT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 2, 0);
+    v_export_constant("CAIRO_EXTEND_REFLECT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 3, 0);
+    v_export_constant("CAIRO_EXTEND_PAD", _int, val);
+
+    val = LLVMConstInt(llvm_int, 0, 0);
+    v_export_constant("CAIRO_FILTER_FAST", _int, val);
+
+    val = LLVMConstInt(llvm_int, 1, 0);
+    v_export_constant("CAIRO_FILTER_GOOD", _int, val);
+
+    val = LLVMConstInt(llvm_int, 2, 0);
+    v_export_constant("CAIRO_FILTER_BEST", _int, val);
+
+    val = LLVMConstInt(llvm_int, 3, 0);
+    v_export_constant("CAIRO_FILTER_NEAREST", _int, val);
+
+    val = LLVMConstInt(llvm_int, 4, 0);
+    v_export_constant("CAIRO_FILTER_BILINEAR", _int, val);
+
+    val = LLVMConstInt(llvm_int, 5, 0);
+    v_export_constant("CAIRO_FILTER_GAUSSIAN", _int, val);
+
+    val = LLVMConstInt(llvm_int, 0, 0);
+    v_export_constant("CAIRO_REGION_OVERLAP_IN", _int, val);
+
+    val = LLVMConstInt(llvm_int, 1, 0);
+    v_export_constant("CAIRO_REGION_OVERLAP_OUT", _int, val);
+
+    val = LLVMConstInt(llvm_int, 2, 0);
+    v_export_constant("CAIRO_REGION_OVERLAP_PART", _int, val);
+
+}
+
+//- Known types --------------------------------------------
+{
+    v = v_f64_type();
+    v_add_type("double", v);
+
+    _char = v_find_type("char");
+    w = v_type_integer_get_width(_char);
+    v = v_uint_type(w);
+    v_add_type("unsigned_char", v);
+
+    _int = v_find_type("int");
+    w = v_type_integer_get_width(_int);
+    v = v_uint_type(w);
+    v_add_type("unsigned_int", v);
+
+    _long = v_find_type("long");
+    w = v_type_integer_get_width(_long);
+    v = v_uint_type(w);
+    v_add_type("unsigned_long", v);
+
+    _long_long = v_find_type("long_long");
+    w = v_type_integer_get_width(_long_long);
+    v = v_uint_type(w);
+    v_add_type("unsigned_long_long", v);
+}
+
+//- Types --------------------------------------------------
+{
+    v0_int = v_find_type("int");
+    v_export_type("cairo_bool_t", v0_int);
+
+    v1 = v_struct_type_named("struct._cairo");
+    v_export_type("cairo_t", v1);
+
+    v2 = v_struct_type_named("struct._cairo_surface");
+    v_export_type("cairo_surface_t", v2);
+
+    v3 = v_struct_type_named("struct._cairo_device");
+    v_export_type("cairo_device_t", v3);
+
+    v4 = v_struct_type_named("struct._cairo_matrix");
+    v_export_type("cairo_matrix_t", v4);
+
+    v5 = v_struct_type_named("struct._cairo_pattern");
+    v_export_type("cairo_pattern_t", v5);
+
+    arg0 = v_alloca(v_type_ptr, 10);
+    arg1 = v_getelementptr(arg0, 1);
+    arg2 = v_getelementptr(arg0, 2);
+    arg3 = v_getelementptr(arg0, 3);
+    arg4 = v_getelementptr(arg0, 4);
+    arg5 = v_getelementptr(arg0, 5);
+    arg6 = v_getelementptr(arg0, 6);
+    arg7 = v_getelementptr(arg0, 7);
+    arg8 = v_getelementptr(arg0, 8);
+    arg9 = v_getelementptr(arg0, 9);
+
+    v6_void = v_find_type("void");
+    v7 = v_function_type(v6_void, arg0, 0, false);
+    v8 = v_pointer_type(v7, 0);
+    v_export_type("cairo_destroy_func_t", v8);
+
+    v9 = v_struct_type_named("struct._cairo_user_data_key");
+    v_export_type("cairo_user_data_key_t", v9);
+
+    v_export_type("cairo_status_t", v0_int);
+
+    v_export_type("cairo_content_t", v0_int);
+
+    v_export_type("cairo_format_t", v0_int);
+
+    v10 = v_pointer_type(v6_void, 0);
+    v_store(v10, arg0);
+    v11_unsigned_char = v_find_type("unsigned_char");
+    v12 = v_pointer_type(v11_unsigned_char, 0);
+    v_store(v12, arg1);
+    v13_unsigned_int = v_find_type("unsigned_int");
+    v_store(v13_unsigned_int, arg2);
+    v14 = v_function_type(v0_int, arg0, 3, false);
+    v15 = v_pointer_type(v14, 0);
+    v_export_type("cairo_write_func_t", v15);
+
+    v16 = v_pointer_type(v6_void, 0);
+    v_store(v16, arg0);
+    v17 = v_pointer_type(v11_unsigned_char, 0);
+    v_store(v17, arg1);
+    v_store(v13_unsigned_int, arg2);
+    v18 = v_function_type(v0_int, arg0, 3, false);
+    v19 = v_pointer_type(v18, 0);
+    v_export_type("cairo_read_func_t", v19);
+
+    v20 = v_struct_type_named("struct._cairo_rectangle_int");
+    v_export_type("cairo_rectangle_int_t", v20);
+
+    v_export_type("cairo_operator_t", v0_int);
+
+    v_export_type("cairo_antialias_t", v0_int);
+
+    v_export_type("cairo_fill_rule_t", v0_int);
+
+    v_export_type("cairo_line_cap_t", v0_int);
+
+    v_export_type("cairo_line_join_t", v0_int);
+
+    v21 = v_struct_type_named("struct._cairo_rectangle");
+    v_export_type("cairo_rectangle_t", v21);
+
+    v22 = v_struct_type_named("struct._cairo_rectangle_list");
+    v_export_type("cairo_rectangle_list_t", v22);
+
+    v23 = v_struct_type_named("struct._cairo_scaled_font");
+    v_export_type("cairo_scaled_font_t", v23);
+
+    v24 = v_struct_type_named("struct._cairo_font_face");
+    v_export_type("cairo_font_face_t", v24);
+
+    v25 = v_struct_type_named("struct.anon_struct0");
+    v_export_type("cairo_glyph_t", v25);
+
+    v26 = v_struct_type_named("struct.anon_struct1");
+    v_export_type("cairo_text_cluster_t", v26);
+
+    v_export_type("cairo_text_cluster_flags_t", v0_int);
+
+    v27 = v_struct_type_named("struct.anon_struct2");
+    v_export_type("cairo_text_extents_t", v27);
+
+    v28 = v_struct_type_named("struct.anon_struct3");
+    v_export_type("cairo_font_extents_t", v28);
+
+    v_export_type("cairo_font_slant_t", v0_int);
+
+    v_export_type("cairo_font_weight_t", v0_int);
+
+    v_export_type("cairo_subpixel_order_t", v0_int);
+
+    v_export_type("cairo_hint_style_t", v0_int);
+
+    v_export_type("cairo_hint_metrics_t", v0_int);
+
+    v29 = v_struct_type_named("struct._cairo_font_options");
+    v_export_type("cairo_font_options_t", v29);
+
+    v_export_type("cairo_font_type_t", v0_int);
+
+    v30 = v_pointer_type(v23, 0);
+    v_store(v30, arg0);
+    v31 = v_pointer_type(v1, 0);
+    v_store(v31, arg1);
+    v32 = v_pointer_type(v28, 0);
+    v_store(v32, arg2);
+    v33 = v_function_type(v0_int, arg0, 3, false);
+    v34 = v_pointer_type(v33, 0);
+    v_export_type("cairo_user_scaled_font_init_func_t", v34);
+
+    v35 = v_pointer_type(v23, 0);
+    v_store(v35, arg0);
+    v36_unsigned_long = v_find_type("unsigned_long");
+    v_store(v36_unsigned_long, arg1);
+    v37 = v_pointer_type(v1, 0);
+    v_store(v37, arg2);
+    v38 = v_pointer_type(v27, 0);
+    v_store(v38, arg3);
+    v39 = v_function_type(v0_int, arg0, 4, false);
+    v40 = v_pointer_type(v39, 0);
+    v_export_type("cairo_user_scaled_font_render_glyph_func_t", v40);
+
+    v41 = v_pointer_type(v23, 0);
+    v_store(v41, arg0);
+    v42_char = v_find_type("char");
+    v43 = v_pointer_type(v42_char, 0);
+    v_store(v43, arg1);
+    v_store(v0_int, arg2);
+    v44 = v_pointer_type(v25, 0);
+    v45 = v_pointer_type(v44, 0);
+    v_store(v45, arg3);
+    v46 = v_pointer_type(v0_int, 0);
+    v_store(v46, arg4);
+    v47 = v_pointer_type(v26, 0);
+    v48 = v_pointer_type(v47, 0);
+    v_store(v48, arg5);
+    v49 = v_pointer_type(v0_int, 0);
+    v_store(v49, arg6);
+    v50 = v_pointer_type(v0_int, 0);
+    v_store(v50, arg7);
+    v51 = v_function_type(v0_int, arg0, 8, false);
+    v52 = v_pointer_type(v51, 0);
+    v_export_type("cairo_user_scaled_font_text_to_glyphs_func_t", v52);
+
+    v53 = v_pointer_type(v23, 0);
+    v_store(v53, arg0);
+    v_store(v36_unsigned_long, arg1);
+    v54 = v_pointer_type(v36_unsigned_long, 0);
+    v_store(v54, arg2);
+    v55 = v_function_type(v0_int, arg0, 3, false);
+    v56 = v_pointer_type(v55, 0);
+    v_export_type("cairo_user_scaled_font_unicode_to_glyph_func_t", v56);
+
+    v_export_type("cairo_path_data_type_t", v0_int);
+
+    v57 = v_struct_type_named("union._cairo_path_data_t");
+    v_export_type("cairo_path_data_t", v57);
+
+    v58 = v_struct_type_named("struct.cairo_path");
+    v_export_type("cairo_path_t", v58);
+
+    v_export_type("cairo_device_type_t", v0_int);
+
+    v_export_type("cairo_surface_observer_mode_t", v0_int);
+
+    v59 = v_pointer_type(v2, 0);
+    v_store(v59, arg0);
+    v60 = v_pointer_type(v2, 0);
+    v_store(v60, arg1);
+    v61 = v_pointer_type(v6_void, 0);
+    v_store(v61, arg2);
+    v62 = v_function_type(v6_void, arg0, 3, false);
+    v63 = v_pointer_type(v62, 0);
+    v_export_type("cairo_surface_observer_callback_t", v63);
+
+    v_export_type("cairo_surface_type_t", v0_int);
+
+    v64 = v_pointer_type(v2, 0);
+    v65 = v_pointer_type(v5, 0);
+    v_store(v65, arg0);
+    v66 = v_pointer_type(v6_void, 0);
+    v_store(v66, arg1);
+    v67 = v_pointer_type(v2, 0);
+    v_store(v67, arg2);
+    v68 = v_pointer_type(v20, 0);
+    v_store(v68, arg3);
+    v69 = v_function_type(v64, arg0, 4, false);
+    v70 = v_pointer_type(v69, 0);
+    v_export_type("cairo_raster_source_acquire_func_t", v70);
+
+    v71 = v_pointer_type(v5, 0);
+    v_store(v71, arg0);
+    v72 = v_pointer_type(v6_void, 0);
+    v_store(v72, arg1);
+    v73 = v_pointer_type(v2, 0);
+    v_store(v73, arg2);
+    v74 = v_function_type(v6_void, arg0, 3, false);
+    v75 = v_pointer_type(v74, 0);
+    v_export_type("cairo_raster_source_release_func_t", v75);
+
+    v76 = v_pointer_type(v5, 0);
+    v_store(v76, arg0);
+    v77 = v_pointer_type(v6_void, 0);
+    v_store(v77, arg1);
+    v78 = v_function_type(v0_int, arg0, 2, false);
+    v79 = v_pointer_type(v78, 0);
+    v_export_type("cairo_raster_source_snapshot_func_t", v79);
+
+    v80 = v_pointer_type(v5, 0);
+    v_store(v80, arg0);
+    v81 = v_pointer_type(v6_void, 0);
+    v_store(v81, arg1);
+    v82 = v_pointer_type(v5, 0);
+    v_store(v82, arg2);
+    v83 = v_function_type(v0_int, arg0, 3, false);
+    v84 = v_pointer_type(v83, 0);
+    v_export_type("cairo_raster_source_copy_func_t", v84);
+
+    v85 = v_pointer_type(v5, 0);
+    v_store(v85, arg0);
+    v86 = v_pointer_type(v6_void, 0);
+    v_store(v86, arg1);
+    v87 = v_function_type(v6_void, arg0, 2, false);
+    v88 = v_pointer_type(v87, 0);
+    v_export_type("cairo_raster_source_finish_func_t", v88);
+
+    v_export_type("cairo_pattern_type_t", v0_int);
+
+    v_export_type("cairo_extend_t", v0_int);
+
+    v_export_type("cairo_filter_t", v0_int);
+
+    v89 = v_struct_type_named("struct._cairo_region");
+    v_export_type("cairo_region_t", v89);
+
+    v_export_type("cairo_region_overlap_t", v0_int);
+
+}
+
+//- Functions ----------------------------------------------
+{
+    arg0 = v_alloca(v_type_ptr, 10);
+    arg1 = v_getelementptr(arg0, 1);
+    arg2 = v_getelementptr(arg0, 2);
+    arg3 = v_getelementptr(arg0, 3);
+    arg4 = v_getelementptr(arg0, 4);
+    arg5 = v_getelementptr(arg0, 5);
+    arg6 = v_getelementptr(arg0, 6);
+    arg7 = v_getelementptr(arg0, 7);
+    arg8 = v_getelementptr(arg0, 8);
+    arg9 = v_getelementptr(arg0, 9);
+
+    v0_int = v_find_type("int");
+    v1 = v_function_type(v0_int, arg0, 0, false);
+    v_export_symbol_type("cairo_version", v1);
+
+    v2_char = v_find_type("char");
+    v3 = v_pointer_type(v2_char, 0);
+    v4 = v_function_type(v3, arg0, 0, false);
+    v_export_symbol_type("cairo_version_string", v4);
+
+    v5_cairo_t = v_find_type("cairo_t");
+    v6 = v_pointer_type(v5_cairo_t, 0);
+    v7_cairo_surface_t = v_find_type("cairo_surface_t");
+    v8 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v8, arg0);
+    v9 = v_function_type(v6, arg0, 1, false);
+    v_export_symbol_type("cairo_create", v9);
+
+    v10 = v_pointer_type(v5_cairo_t, 0);
+    v11 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v11, arg0);
+    v12 = v_function_type(v10, arg0, 1, false);
+    v_export_symbol_type("cairo_reference", v12);
+
+    v13 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v13, arg0);
+    v14_void = v_find_type("void");
+    v15 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_destroy", v15);
+
+    v16 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v16, arg0);
+    v17_unsigned_int = v_find_type("unsigned_int");
+    v18 = v_function_type(v17_unsigned_int, arg0, 1, false);
+    v_export_symbol_type("cairo_get_reference_count", v18);
+
+    v19 = v_pointer_type(v14_void, 0);
+    v20 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v20, arg0);
+    v21_cairo_user_data_key_t = v_find_type("cairo_user_data_key_t");
+    v22 = v_pointer_type(v21_cairo_user_data_key_t, 0);
+    v_store(v22, arg1);
+    v23 = v_function_type(v19, arg0, 2, false);
+    v_export_symbol_type("cairo_get_user_data", v23);
+
+    v24 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v24, arg0);
+    v25 = v_pointer_type(v21_cairo_user_data_key_t, 0);
+    v_store(v25, arg1);
+    v26 = v_pointer_type(v14_void, 0);
+    v_store(v26, arg2);
+    v27_cairo_destroy_func_t = v_find_type("cairo_destroy_func_t");
+    v_store(v27_cairo_destroy_func_t, arg3);
+    v28_cairo_status_t = v_find_type("cairo_status_t");
+    v29 = v_function_type(v28_cairo_status_t, arg0, 4, false);
+    v_export_symbol_type("cairo_set_user_data", v29);
+
+    v30 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v30, arg0);
+    v31 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_save", v31);
+
+    v32 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v32, arg0);
+    v33 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_restore", v33);
+
+    v34 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v34, arg0);
+    v35 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_push_group", v35);
+
+    v36 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v36, arg0);
+    v37_cairo_content_t = v_find_type("cairo_content_t");
+    v_store(v37_cairo_content_t, arg1);
+    v38 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_push_group_with_content", v38);
+
+    v39_cairo_pattern_t = v_find_type("cairo_pattern_t");
+    v40 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v41 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v41, arg0);
+    v42 = v_function_type(v40, arg0, 1, false);
+    v_export_symbol_type("cairo_pop_group", v42);
+
+    v43 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v43, arg0);
+    v44 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_pop_group_to_source", v44);
+
+    v45 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v45, arg0);
+    v46_cairo_operator_t = v_find_type("cairo_operator_t");
+    v_store(v46_cairo_operator_t, arg1);
+    v47 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_set_operator", v47);
+
+    v48 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v48, arg0);
+    v49 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v49, arg1);
+    v50 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_set_source", v50);
+
+    v51 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v51, arg0);
+    v52_double = v_find_type("double");
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v_store(v52_double, arg3);
+    v53 = v_function_type(v14_void, arg0, 4, false);
+    v_export_symbol_type("cairo_set_source_rgb", v53);
+
+    v54 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v54, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v_store(v52_double, arg3);
+    v_store(v52_double, arg4);
+    v55 = v_function_type(v14_void, arg0, 5, false);
+    v_export_symbol_type("cairo_set_source_rgba", v55);
+
+    v56 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v56, arg0);
+    v57 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v57, arg1);
+    v_store(v52_double, arg2);
+    v_store(v52_double, arg3);
+    v58 = v_function_type(v14_void, arg0, 4, false);
+    v_export_symbol_type("cairo_set_source_surface", v58);
+
+    v59 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v59, arg0);
+    v_store(v52_double, arg1);
+    v60 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_set_tolerance", v60);
+
+    v61 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v61, arg0);
+    v62_cairo_antialias_t = v_find_type("cairo_antialias_t");
+    v_store(v62_cairo_antialias_t, arg1);
+    v63 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_set_antialias", v63);
+
+    v64 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v64, arg0);
+    v65_cairo_fill_rule_t = v_find_type("cairo_fill_rule_t");
+    v_store(v65_cairo_fill_rule_t, arg1);
+    v66 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_set_fill_rule", v66);
+
+    v67 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v67, arg0);
+    v_store(v52_double, arg1);
+    v68 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_set_line_width", v68);
+
+    v69 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v69, arg0);
+    v70_cairo_line_cap_t = v_find_type("cairo_line_cap_t");
+    v_store(v70_cairo_line_cap_t, arg1);
+    v71 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_set_line_cap", v71);
+
+    v72 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v72, arg0);
+    v73_cairo_line_join_t = v_find_type("cairo_line_join_t");
+    v_store(v73_cairo_line_join_t, arg1);
+    v74 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_set_line_join", v74);
+
+    v75 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v75, arg0);
+    v76 = v_pointer_type(v52_double, 0);
+    v_store(v76, arg1);
+    v_store(v0_int, arg2);
+    v_store(v52_double, arg3);
+    v77 = v_function_type(v14_void, arg0, 4, false);
+    v_export_symbol_type("cairo_set_dash", v77);
+
+    v78 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v78, arg0);
+    v_store(v52_double, arg1);
+    v79 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_set_miter_limit", v79);
+
+    v80 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v80, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v81 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_translate", v81);
+
+    v82 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v82, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v83 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_scale", v83);
+
+    v84 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v84, arg0);
+    v_store(v52_double, arg1);
+    v85 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_rotate", v85);
+
+    v86 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v86, arg0);
+    v87_cairo_matrix_t = v_find_type("cairo_matrix_t");
+    v88 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v88, arg1);
+    v89 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_transform", v89);
+
+    v90 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v90, arg0);
+    v91 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v91, arg1);
+    v92 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_set_matrix", v92);
+
+    v93 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v93, arg0);
+    v94 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_identity_matrix", v94);
+
+    v95 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v95, arg0);
+    v96 = v_pointer_type(v52_double, 0);
+    v_store(v96, arg1);
+    v97 = v_pointer_type(v52_double, 0);
+    v_store(v97, arg2);
+    v98 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_user_to_device", v98);
+
+    v99 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v99, arg0);
+    v100 = v_pointer_type(v52_double, 0);
+    v_store(v100, arg1);
+    v101 = v_pointer_type(v52_double, 0);
+    v_store(v101, arg2);
+    v102 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_user_to_device_distance", v102);
+
+    v103 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v103, arg0);
+    v104 = v_pointer_type(v52_double, 0);
+    v_store(v104, arg1);
+    v105 = v_pointer_type(v52_double, 0);
+    v_store(v105, arg2);
+    v106 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_device_to_user", v106);
+
+    v107 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v107, arg0);
+    v108 = v_pointer_type(v52_double, 0);
+    v_store(v108, arg1);
+    v109 = v_pointer_type(v52_double, 0);
+    v_store(v109, arg2);
+    v110 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_device_to_user_distance", v110);
+
+    v111 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v111, arg0);
+    v112 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_new_path", v112);
+
+    v113 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v113, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v114 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_move_to", v114);
+
+    v115 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v115, arg0);
+    v116 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_new_sub_path", v116);
+
+    v117 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v117, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v118 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_line_to", v118);
+
+    v119 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v119, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v_store(v52_double, arg3);
+    v_store(v52_double, arg4);
+    v_store(v52_double, arg5);
+    v_store(v52_double, arg6);
+    v120 = v_function_type(v14_void, arg0, 7, false);
+    v_export_symbol_type("cairo_curve_to", v120);
+
+    v121 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v121, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v_store(v52_double, arg3);
+    v_store(v52_double, arg4);
+    v_store(v52_double, arg5);
+    v122 = v_function_type(v14_void, arg0, 6, false);
+    v_export_symbol_type("cairo_arc", v122);
+
+    v123 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v123, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v_store(v52_double, arg3);
+    v_store(v52_double, arg4);
+    v_store(v52_double, arg5);
+    v124 = v_function_type(v14_void, arg0, 6, false);
+    v_export_symbol_type("cairo_arc_negative", v124);
+
+    v125 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v125, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v126 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_rel_move_to", v126);
+
+    v127 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v127, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v128 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_rel_line_to", v128);
+
+    v129 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v129, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v_store(v52_double, arg3);
+    v_store(v52_double, arg4);
+    v_store(v52_double, arg5);
+    v_store(v52_double, arg6);
+    v130 = v_function_type(v14_void, arg0, 7, false);
+    v_export_symbol_type("cairo_rel_curve_to", v130);
+
+    v131 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v131, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v_store(v52_double, arg3);
+    v_store(v52_double, arg4);
+    v132 = v_function_type(v14_void, arg0, 5, false);
+    v_export_symbol_type("cairo_rectangle", v132);
+
+    v133 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v133, arg0);
+    v134 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_close_path", v134);
+
+    v135 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v135, arg0);
+    v136 = v_pointer_type(v52_double, 0);
+    v_store(v136, arg1);
+    v137 = v_pointer_type(v52_double, 0);
+    v_store(v137, arg2);
+    v138 = v_pointer_type(v52_double, 0);
+    v_store(v138, arg3);
+    v139 = v_pointer_type(v52_double, 0);
+    v_store(v139, arg4);
+    v140 = v_function_type(v14_void, arg0, 5, false);
+    v_export_symbol_type("cairo_path_extents", v140);
+
+    v141 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v141, arg0);
+    v142 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_paint", v142);
+
+    v143 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v143, arg0);
+    v_store(v52_double, arg1);
+    v144 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_paint_with_alpha", v144);
+
+    v145 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v145, arg0);
+    v146 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v146, arg1);
+    v147 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_mask", v147);
+
+    v148 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v148, arg0);
+    v149 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v149, arg1);
+    v_store(v52_double, arg2);
+    v_store(v52_double, arg3);
+    v150 = v_function_type(v14_void, arg0, 4, false);
+    v_export_symbol_type("cairo_mask_surface", v150);
+
+    v151 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v151, arg0);
+    v152 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_stroke", v152);
+
+    v153 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v153, arg0);
+    v154 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_stroke_preserve", v154);
+
+    v155 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v155, arg0);
+    v156 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_fill", v156);
+
+    v157 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v157, arg0);
+    v158 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_fill_preserve", v158);
+
+    v159 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v159, arg0);
+    v160 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_copy_page", v160);
+
+    v161 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v161, arg0);
+    v162 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_show_page", v162);
+
+    v163 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v163, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v164_cairo_bool_t = v_find_type("cairo_bool_t");
+    v165 = v_function_type(v164_cairo_bool_t, arg0, 3, false);
+    v_export_symbol_type("cairo_in_stroke", v165);
+
+    v166 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v166, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v167 = v_function_type(v164_cairo_bool_t, arg0, 3, false);
+    v_export_symbol_type("cairo_in_fill", v167);
+
+    v168 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v168, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v169 = v_function_type(v164_cairo_bool_t, arg0, 3, false);
+    v_export_symbol_type("cairo_in_clip", v169);
+
+    v170 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v170, arg0);
+    v171 = v_pointer_type(v52_double, 0);
+    v_store(v171, arg1);
+    v172 = v_pointer_type(v52_double, 0);
+    v_store(v172, arg2);
+    v173 = v_pointer_type(v52_double, 0);
+    v_store(v173, arg3);
+    v174 = v_pointer_type(v52_double, 0);
+    v_store(v174, arg4);
+    v175 = v_function_type(v14_void, arg0, 5, false);
+    v_export_symbol_type("cairo_stroke_extents", v175);
+
+    v176 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v176, arg0);
+    v177 = v_pointer_type(v52_double, 0);
+    v_store(v177, arg1);
+    v178 = v_pointer_type(v52_double, 0);
+    v_store(v178, arg2);
+    v179 = v_pointer_type(v52_double, 0);
+    v_store(v179, arg3);
+    v180 = v_pointer_type(v52_double, 0);
+    v_store(v180, arg4);
+    v181 = v_function_type(v14_void, arg0, 5, false);
+    v_export_symbol_type("cairo_fill_extents", v181);
+
+    v182 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v182, arg0);
+    v183 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_reset_clip", v183);
+
+    v184 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v184, arg0);
+    v185 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_clip", v185);
+
+    v186 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v186, arg0);
+    v187 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_clip_preserve", v187);
+
+    v188 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v188, arg0);
+    v189 = v_pointer_type(v52_double, 0);
+    v_store(v189, arg1);
+    v190 = v_pointer_type(v52_double, 0);
+    v_store(v190, arg2);
+    v191 = v_pointer_type(v52_double, 0);
+    v_store(v191, arg3);
+    v192 = v_pointer_type(v52_double, 0);
+    v_store(v192, arg4);
+    v193 = v_function_type(v14_void, arg0, 5, false);
+    v_export_symbol_type("cairo_clip_extents", v193);
+
+    v194_cairo_rectangle_list_t = v_find_type("cairo_rectangle_list_t");
+    v195 = v_pointer_type(v194_cairo_rectangle_list_t, 0);
+    v196 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v196, arg0);
+    v197 = v_function_type(v195, arg0, 1, false);
+    v_export_symbol_type("cairo_copy_clip_rectangle_list", v197);
+
+    v198 = v_pointer_type(v194_cairo_rectangle_list_t, 0);
+    v_store(v198, arg0);
+    v199 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_rectangle_list_destroy", v199);
+
+    v200 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v200, arg0);
+    v201 = v_pointer_type(v2_char, 0);
+    v_store(v201, arg1);
+    v202 = v_pointer_type(v2_char, 0);
+    v_store(v202, arg2);
+    v203 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_tag_begin", v203);
+
+    v204 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v204, arg0);
+    v205 = v_pointer_type(v2_char, 0);
+    v_store(v205, arg1);
+    v206 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_tag_end", v206);
+
+    v207_cairo_glyph_t = v_find_type("cairo_glyph_t");
+    v208 = v_pointer_type(v207_cairo_glyph_t, 0);
+    v_store(v0_int, arg0);
+    v209 = v_function_type(v208, arg0, 1, false);
+    v_export_symbol_type("cairo_glyph_allocate", v209);
+
+    v210 = v_pointer_type(v207_cairo_glyph_t, 0);
+    v_store(v210, arg0);
+    v211 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_glyph_free", v211);
+
+    v212_cairo_text_cluster_t = v_find_type("cairo_text_cluster_t");
+    v213 = v_pointer_type(v212_cairo_text_cluster_t, 0);
+    v_store(v0_int, arg0);
+    v214 = v_function_type(v213, arg0, 1, false);
+    v_export_symbol_type("cairo_text_cluster_allocate", v214);
+
+    v215 = v_pointer_type(v212_cairo_text_cluster_t, 0);
+    v_store(v215, arg0);
+    v216 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_text_cluster_free", v216);
+
+    v217_cairo_font_options_t = v_find_type("cairo_font_options_t");
+    v218 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v219 = v_function_type(v218, arg0, 0, false);
+    v_export_symbol_type("cairo_font_options_create", v219);
+
+    v220 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v221 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v221, arg0);
+    v222 = v_function_type(v220, arg0, 1, false);
+    v_export_symbol_type("cairo_font_options_copy", v222);
+
+    v223 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v223, arg0);
+    v224 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_font_options_destroy", v224);
+
+    v225 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v225, arg0);
+    v226 = v_function_type(v28_cairo_status_t, arg0, 1, false);
+    v_export_symbol_type("cairo_font_options_status", v226);
+
+    v227 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v227, arg0);
+    v228 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v228, arg1);
+    v229 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_font_options_merge", v229);
+
+    v230 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v230, arg0);
+    v231 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v231, arg1);
+    v232 = v_function_type(v164_cairo_bool_t, arg0, 2, false);
+    v_export_symbol_type("cairo_font_options_equal", v232);
+
+    v233 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v233, arg0);
+    v234_unsigned_long = v_find_type("unsigned_long");
+    v235 = v_function_type(v234_unsigned_long, arg0, 1, false);
+    v_export_symbol_type("cairo_font_options_hash", v235);
+
+    v236 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v236, arg0);
+    v_store(v62_cairo_antialias_t, arg1);
+    v237 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_font_options_set_antialias", v237);
+
+    v238 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v238, arg0);
+    v239 = v_function_type(v62_cairo_antialias_t, arg0, 1, false);
+    v_export_symbol_type("cairo_font_options_get_antialias", v239);
+
+    v240 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v240, arg0);
+    v241_cairo_subpixel_order_t = v_find_type("cairo_subpixel_order_t");
+    v_store(v241_cairo_subpixel_order_t, arg1);
+    v242 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_font_options_set_subpixel_order", v242);
+
+    v243 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v243, arg0);
+    v244 = v_function_type(v241_cairo_subpixel_order_t, arg0, 1, false);
+    v_export_symbol_type("cairo_font_options_get_subpixel_order", v244);
+
+    v245 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v245, arg0);
+    v246_cairo_hint_style_t = v_find_type("cairo_hint_style_t");
+    v_store(v246_cairo_hint_style_t, arg1);
+    v247 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_font_options_set_hint_style", v247);
+
+    v248 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v248, arg0);
+    v249 = v_function_type(v246_cairo_hint_style_t, arg0, 1, false);
+    v_export_symbol_type("cairo_font_options_get_hint_style", v249);
+
+    v250 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v250, arg0);
+    v251_cairo_hint_metrics_t = v_find_type("cairo_hint_metrics_t");
+    v_store(v251_cairo_hint_metrics_t, arg1);
+    v252 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_font_options_set_hint_metrics", v252);
+
+    v253 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v253, arg0);
+    v254 = v_function_type(v251_cairo_hint_metrics_t, arg0, 1, false);
+    v_export_symbol_type("cairo_font_options_get_hint_metrics", v254);
+
+    v255 = v_pointer_type(v2_char, 0);
+    v256 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v256, arg0);
+    v257 = v_function_type(v255, arg0, 1, false);
+    v_export_symbol_type("cairo_font_options_get_variations", v257);
+
+    v258 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v258, arg0);
+    v259 = v_pointer_type(v2_char, 0);
+    v_store(v259, arg1);
+    v260 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_font_options_set_variations", v260);
+
+    v261 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v261, arg0);
+    v262 = v_pointer_type(v2_char, 0);
+    v_store(v262, arg1);
+    v263_cairo_font_slant_t = v_find_type("cairo_font_slant_t");
+    v_store(v263_cairo_font_slant_t, arg2);
+    v264_cairo_font_weight_t = v_find_type("cairo_font_weight_t");
+    v_store(v264_cairo_font_weight_t, arg3);
+    v265 = v_function_type(v14_void, arg0, 4, false);
+    v_export_symbol_type("cairo_select_font_face", v265);
+
+    v266 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v266, arg0);
+    v_store(v52_double, arg1);
+    v267 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_set_font_size", v267);
+
+    v268 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v268, arg0);
+    v269 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v269, arg1);
+    v270 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_set_font_matrix", v270);
+
+    v271 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v271, arg0);
+    v272 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v272, arg1);
+    v273 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_get_font_matrix", v273);
+
+    v274 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v274, arg0);
+    v275 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v275, arg1);
+    v276 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_set_font_options", v276);
+
+    v277 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v277, arg0);
+    v278 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v278, arg1);
+    v279 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_get_font_options", v279);
+
+    v280 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v280, arg0);
+    v281_cairo_font_face_t = v_find_type("cairo_font_face_t");
+    v282 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v_store(v282, arg1);
+    v283 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_set_font_face", v283);
+
+    v284 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v285 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v285, arg0);
+    v286 = v_function_type(v284, arg0, 1, false);
+    v_export_symbol_type("cairo_get_font_face", v286);
+
+    v287 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v287, arg0);
+    v288_cairo_scaled_font_t = v_find_type("cairo_scaled_font_t");
+    v289 = v_pointer_type(v288_cairo_scaled_font_t, 0);
+    v_store(v289, arg1);
+    v290 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_set_scaled_font", v290);
+
+    v291 = v_pointer_type(v288_cairo_scaled_font_t, 0);
+    v292 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v292, arg0);
+    v293 = v_function_type(v291, arg0, 1, false);
+    v_export_symbol_type("cairo_get_scaled_font", v293);
+
+    v294 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v294, arg0);
+    v295 = v_pointer_type(v2_char, 0);
+    v_store(v295, arg1);
+    v296 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_show_text", v296);
+
+    v297 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v297, arg0);
+    v298 = v_pointer_type(v207_cairo_glyph_t, 0);
+    v_store(v298, arg1);
+    v_store(v0_int, arg2);
+    v299 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_show_glyphs", v299);
+
+    v300 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v300, arg0);
+    v301 = v_pointer_type(v2_char, 0);
+    v_store(v301, arg1);
+    v_store(v0_int, arg2);
+    v302 = v_pointer_type(v207_cairo_glyph_t, 0);
+    v_store(v302, arg3);
+    v_store(v0_int, arg4);
+    v303 = v_pointer_type(v212_cairo_text_cluster_t, 0);
+    v_store(v303, arg5);
+    v_store(v0_int, arg6);
+    v304_cairo_text_cluster_flags_t = v_find_type("cairo_text_cluster_flags_t");
+    v_store(v304_cairo_text_cluster_flags_t, arg7);
+    v305 = v_function_type(v14_void, arg0, 8, false);
+    v_export_symbol_type("cairo_show_text_glyphs", v305);
+
+    v306 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v306, arg0);
+    v307 = v_pointer_type(v2_char, 0);
+    v_store(v307, arg1);
+    v308 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_text_path", v308);
+
+    v309 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v309, arg0);
+    v310 = v_pointer_type(v207_cairo_glyph_t, 0);
+    v_store(v310, arg1);
+    v_store(v0_int, arg2);
+    v311 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_glyph_path", v311);
+
+    v312 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v312, arg0);
+    v313 = v_pointer_type(v2_char, 0);
+    v_store(v313, arg1);
+    v314_cairo_text_extents_t = v_find_type("cairo_text_extents_t");
+    v315 = v_pointer_type(v314_cairo_text_extents_t, 0);
+    v_store(v315, arg2);
+    v316 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_text_extents", v316);
+
+    v317 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v317, arg0);
+    v318 = v_pointer_type(v207_cairo_glyph_t, 0);
+    v_store(v318, arg1);
+    v_store(v0_int, arg2);
+    v319 = v_pointer_type(v314_cairo_text_extents_t, 0);
+    v_store(v319, arg3);
+    v320 = v_function_type(v14_void, arg0, 4, false);
+    v_export_symbol_type("cairo_glyph_extents", v320);
+
+    v321 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v321, arg0);
+    v322_cairo_font_extents_t = v_find_type("cairo_font_extents_t");
+    v323 = v_pointer_type(v322_cairo_font_extents_t, 0);
+    v_store(v323, arg1);
+    v324 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_font_extents", v324);
+
+    v325 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v326 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v_store(v326, arg0);
+    v327 = v_function_type(v325, arg0, 1, false);
+    v_export_symbol_type("cairo_font_face_reference", v327);
+
+    v328 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v_store(v328, arg0);
+    v329 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_font_face_destroy", v329);
+
+    v330 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v_store(v330, arg0);
+    v331 = v_function_type(v17_unsigned_int, arg0, 1, false);
+    v_export_symbol_type("cairo_font_face_get_reference_count", v331);
+
+    v332 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v_store(v332, arg0);
+    v333 = v_function_type(v28_cairo_status_t, arg0, 1, false);
+    v_export_symbol_type("cairo_font_face_status", v333);
+
+    v334 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v_store(v334, arg0);
+    v335_cairo_font_type_t = v_find_type("cairo_font_type_t");
+    v336 = v_function_type(v335_cairo_font_type_t, arg0, 1, false);
+    v_export_symbol_type("cairo_font_face_get_type", v336);
+
+    v337 = v_pointer_type(v14_void, 0);
+    v338 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v_store(v338, arg0);
+    v339 = v_pointer_type(v21_cairo_user_data_key_t, 0);
+    v_store(v339, arg1);
+    v340 = v_function_type(v337, arg0, 2, false);
+    v_export_symbol_type("cairo_font_face_get_user_data", v340);
+
+    v341 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v_store(v341, arg0);
+    v342 = v_pointer_type(v21_cairo_user_data_key_t, 0);
+    v_store(v342, arg1);
+    v343 = v_pointer_type(v14_void, 0);
+    v_store(v343, arg2);
+    v_store(v27_cairo_destroy_func_t, arg3);
+    v344 = v_function_type(v28_cairo_status_t, arg0, 4, false);
+    v_export_symbol_type("cairo_font_face_set_user_data", v344);
+
+    v345 = v_pointer_type(v288_cairo_scaled_font_t, 0);
+    v346 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v_store(v346, arg0);
+    v347 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v347, arg1);
+    v348 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v348, arg2);
+    v349 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v349, arg3);
+    v350 = v_function_type(v345, arg0, 4, false);
+    v_export_symbol_type("cairo_scaled_font_create", v350);
+
+    v351 = v_pointer_type(v288_cairo_scaled_font_t, 0);
+    v352 = v_pointer_type(v288_cairo_scaled_font_t, 0);
+    v_store(v352, arg0);
+    v353 = v_function_type(v351, arg0, 1, false);
+    v_export_symbol_type("cairo_scaled_font_reference", v353);
+
+    v354 = v_pointer_type(v288_cairo_scaled_font_t, 0);
+    v_store(v354, arg0);
+    v355 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_scaled_font_destroy", v355);
+
+    v356 = v_pointer_type(v288_cairo_scaled_font_t, 0);
+    v_store(v356, arg0);
+    v357 = v_function_type(v17_unsigned_int, arg0, 1, false);
+    v_export_symbol_type("cairo_scaled_font_get_reference_count", v357);
+
+    v358 = v_pointer_type(v288_cairo_scaled_font_t, 0);
+    v_store(v358, arg0);
+    v359 = v_function_type(v28_cairo_status_t, arg0, 1, false);
+    v_export_symbol_type("cairo_scaled_font_status", v359);
+
+    v360 = v_pointer_type(v288_cairo_scaled_font_t, 0);
+    v_store(v360, arg0);
+    v361 = v_function_type(v335_cairo_font_type_t, arg0, 1, false);
+    v_export_symbol_type("cairo_scaled_font_get_type", v361);
+
+    v362 = v_pointer_type(v14_void, 0);
+    v363 = v_pointer_type(v288_cairo_scaled_font_t, 0);
+    v_store(v363, arg0);
+    v364 = v_pointer_type(v21_cairo_user_data_key_t, 0);
+    v_store(v364, arg1);
+    v365 = v_function_type(v362, arg0, 2, false);
+    v_export_symbol_type("cairo_scaled_font_get_user_data", v365);
+
+    v366 = v_pointer_type(v288_cairo_scaled_font_t, 0);
+    v_store(v366, arg0);
+    v367 = v_pointer_type(v21_cairo_user_data_key_t, 0);
+    v_store(v367, arg1);
+    v368 = v_pointer_type(v14_void, 0);
+    v_store(v368, arg2);
+    v_store(v27_cairo_destroy_func_t, arg3);
+    v369 = v_function_type(v28_cairo_status_t, arg0, 4, false);
+    v_export_symbol_type("cairo_scaled_font_set_user_data", v369);
+
+    v370 = v_pointer_type(v288_cairo_scaled_font_t, 0);
+    v_store(v370, arg0);
+    v371 = v_pointer_type(v322_cairo_font_extents_t, 0);
+    v_store(v371, arg1);
+    v372 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_scaled_font_extents", v372);
+
+    v373 = v_pointer_type(v288_cairo_scaled_font_t, 0);
+    v_store(v373, arg0);
+    v374 = v_pointer_type(v2_char, 0);
+    v_store(v374, arg1);
+    v375 = v_pointer_type(v314_cairo_text_extents_t, 0);
+    v_store(v375, arg2);
+    v376 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_scaled_font_text_extents", v376);
+
+    v377 = v_pointer_type(v288_cairo_scaled_font_t, 0);
+    v_store(v377, arg0);
+    v378 = v_pointer_type(v207_cairo_glyph_t, 0);
+    v_store(v378, arg1);
+    v_store(v0_int, arg2);
+    v379 = v_pointer_type(v314_cairo_text_extents_t, 0);
+    v_store(v379, arg3);
+    v380 = v_function_type(v14_void, arg0, 4, false);
+    v_export_symbol_type("cairo_scaled_font_glyph_extents", v380);
+
+    v381 = v_pointer_type(v288_cairo_scaled_font_t, 0);
+    v_store(v381, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v382 = v_pointer_type(v2_char, 0);
+    v_store(v382, arg3);
+    v_store(v0_int, arg4);
+    v383 = v_pointer_type(v207_cairo_glyph_t, 0);
+    v384 = v_pointer_type(v383, 0);
+    v_store(v384, arg5);
+    v385 = v_pointer_type(v0_int, 0);
+    v_store(v385, arg6);
+    v386 = v_pointer_type(v212_cairo_text_cluster_t, 0);
+    v387 = v_pointer_type(v386, 0);
+    v_store(v387, arg7);
+    v388 = v_pointer_type(v0_int, 0);
+    v_store(v388, arg8);
+    v389 = v_pointer_type(v304_cairo_text_cluster_flags_t, 0);
+    v_store(v389, arg9);
+    v390 = v_function_type(v28_cairo_status_t, arg0, 10, false);
+    v_export_symbol_type("cairo_scaled_font_text_to_glyphs", v390);
+
+    v391 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v392 = v_pointer_type(v288_cairo_scaled_font_t, 0);
+    v_store(v392, arg0);
+    v393 = v_function_type(v391, arg0, 1, false);
+    v_export_symbol_type("cairo_scaled_font_get_font_face", v393);
+
+    v394 = v_pointer_type(v288_cairo_scaled_font_t, 0);
+    v_store(v394, arg0);
+    v395 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v395, arg1);
+    v396 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_scaled_font_get_font_matrix", v396);
+
+    v397 = v_pointer_type(v288_cairo_scaled_font_t, 0);
+    v_store(v397, arg0);
+    v398 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v398, arg1);
+    v399 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_scaled_font_get_ctm", v399);
+
+    v400 = v_pointer_type(v288_cairo_scaled_font_t, 0);
+    v_store(v400, arg0);
+    v401 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v401, arg1);
+    v402 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_scaled_font_get_scale_matrix", v402);
+
+    v403 = v_pointer_type(v288_cairo_scaled_font_t, 0);
+    v_store(v403, arg0);
+    v404 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v404, arg1);
+    v405 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_scaled_font_get_font_options", v405);
+
+    v406 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v407 = v_pointer_type(v2_char, 0);
+    v_store(v407, arg0);
+    v_store(v263_cairo_font_slant_t, arg1);
+    v_store(v264_cairo_font_weight_t, arg2);
+    v408 = v_function_type(v406, arg0, 3, false);
+    v_export_symbol_type("cairo_toy_font_face_create", v408);
+
+    v409 = v_pointer_type(v2_char, 0);
+    v410 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v_store(v410, arg0);
+    v411 = v_function_type(v409, arg0, 1, false);
+    v_export_symbol_type("cairo_toy_font_face_get_family", v411);
+
+    v412 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v_store(v412, arg0);
+    v413 = v_function_type(v263_cairo_font_slant_t, arg0, 1, false);
+    v_export_symbol_type("cairo_toy_font_face_get_slant", v413);
+
+    v414 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v_store(v414, arg0);
+    v415 = v_function_type(v264_cairo_font_weight_t, arg0, 1, false);
+    v_export_symbol_type("cairo_toy_font_face_get_weight", v415);
+
+    v416 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v417 = v_function_type(v416, arg0, 0, false);
+    v_export_symbol_type("cairo_user_font_face_create", v417);
+
+    v418 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v_store(v418, arg0);
+    v419_cairo_user_scaled_font_init_func_t = v_find_type("cairo_user_scaled_font_init_func_t");
+    v_store(v419_cairo_user_scaled_font_init_func_t, arg1);
+    v420 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_user_font_face_set_init_func", v420);
+
+    v421 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v_store(v421, arg0);
+    v422_cairo_user_scaled_font_render_glyph_func_t = v_find_type("cairo_user_scaled_font_render_glyph_func_t");
+    v_store(v422_cairo_user_scaled_font_render_glyph_func_t, arg1);
+    v423 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_user_font_face_set_render_glyph_func", v423);
+
+    v424 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v_store(v424, arg0);
+    v425_cairo_user_scaled_font_text_to_glyphs_func_t = v_find_type("cairo_user_scaled_font_text_to_glyphs_func_t");
+    v_store(v425_cairo_user_scaled_font_text_to_glyphs_func_t, arg1);
+    v426 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_user_font_face_set_text_to_glyphs_func", v426);
+
+    v427 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v_store(v427, arg0);
+    v428_cairo_user_scaled_font_unicode_to_glyph_func_t = v_find_type("cairo_user_scaled_font_unicode_to_glyph_func_t");
+    v_store(v428_cairo_user_scaled_font_unicode_to_glyph_func_t, arg1);
+    v429 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_user_font_face_set_unicode_to_glyph_func", v429);
+
+    v430 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v_store(v430, arg0);
+    v431 = v_function_type(v419_cairo_user_scaled_font_init_func_t, arg0, 1, false);
+    v_export_symbol_type("cairo_user_font_face_get_init_func", v431);
+
+    v432 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v_store(v432, arg0);
+    v433 = v_function_type(v422_cairo_user_scaled_font_render_glyph_func_t, arg0, 1, false);
+    v_export_symbol_type("cairo_user_font_face_get_render_glyph_func", v433);
+
+    v434 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v_store(v434, arg0);
+    v435 = v_function_type(v425_cairo_user_scaled_font_text_to_glyphs_func_t, arg0, 1, false);
+    v_export_symbol_type("cairo_user_font_face_get_text_to_glyphs_func", v435);
+
+    v436 = v_pointer_type(v281_cairo_font_face_t, 0);
+    v_store(v436, arg0);
+    v437 = v_function_type(v428_cairo_user_scaled_font_unicode_to_glyph_func_t, arg0, 1, false);
+    v_export_symbol_type("cairo_user_font_face_get_unicode_to_glyph_func", v437);
+
+    v438 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v438, arg0);
+    v439 = v_function_type(v46_cairo_operator_t, arg0, 1, false);
+    v_export_symbol_type("cairo_get_operator", v439);
+
+    v440 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v441 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v441, arg0);
+    v442 = v_function_type(v440, arg0, 1, false);
+    v_export_symbol_type("cairo_get_source", v442);
+
+    v443 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v443, arg0);
+    v444 = v_function_type(v52_double, arg0, 1, false);
+    v_export_symbol_type("cairo_get_tolerance", v444);
+
+    v445 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v445, arg0);
+    v446 = v_function_type(v62_cairo_antialias_t, arg0, 1, false);
+    v_export_symbol_type("cairo_get_antialias", v446);
+
+    v447 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v447, arg0);
+    v448 = v_function_type(v164_cairo_bool_t, arg0, 1, false);
+    v_export_symbol_type("cairo_has_current_point", v448);
+
+    v449 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v449, arg0);
+    v450 = v_pointer_type(v52_double, 0);
+    v_store(v450, arg1);
+    v451 = v_pointer_type(v52_double, 0);
+    v_store(v451, arg2);
+    v452 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_get_current_point", v452);
+
+    v453 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v453, arg0);
+    v454 = v_function_type(v65_cairo_fill_rule_t, arg0, 1, false);
+    v_export_symbol_type("cairo_get_fill_rule", v454);
+
+    v455 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v455, arg0);
+    v456 = v_function_type(v52_double, arg0, 1, false);
+    v_export_symbol_type("cairo_get_line_width", v456);
+
+    v457 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v457, arg0);
+    v458 = v_function_type(v70_cairo_line_cap_t, arg0, 1, false);
+    v_export_symbol_type("cairo_get_line_cap", v458);
+
+    v459 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v459, arg0);
+    v460 = v_function_type(v73_cairo_line_join_t, arg0, 1, false);
+    v_export_symbol_type("cairo_get_line_join", v460);
+
+    v461 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v461, arg0);
+    v462 = v_function_type(v52_double, arg0, 1, false);
+    v_export_symbol_type("cairo_get_miter_limit", v462);
+
+    v463 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v463, arg0);
+    v464 = v_function_type(v0_int, arg0, 1, false);
+    v_export_symbol_type("cairo_get_dash_count", v464);
+
+    v465 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v465, arg0);
+    v466 = v_pointer_type(v52_double, 0);
+    v_store(v466, arg1);
+    v467 = v_pointer_type(v52_double, 0);
+    v_store(v467, arg2);
+    v468 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_get_dash", v468);
+
+    v469 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v469, arg0);
+    v470 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v470, arg1);
+    v471 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_get_matrix", v471);
+
+    v472 = v_pointer_type(v7_cairo_surface_t, 0);
+    v473 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v473, arg0);
+    v474 = v_function_type(v472, arg0, 1, false);
+    v_export_symbol_type("cairo_get_target", v474);
+
+    v475 = v_pointer_type(v7_cairo_surface_t, 0);
+    v476 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v476, arg0);
+    v477 = v_function_type(v475, arg0, 1, false);
+    v_export_symbol_type("cairo_get_group_target", v477);
+
+    v478_cairo_path_t = v_find_type("cairo_path_t");
+    v479 = v_pointer_type(v478_cairo_path_t, 0);
+    v480 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v480, arg0);
+    v481 = v_function_type(v479, arg0, 1, false);
+    v_export_symbol_type("cairo_copy_path", v481);
+
+    v482 = v_pointer_type(v478_cairo_path_t, 0);
+    v483 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v483, arg0);
+    v484 = v_function_type(v482, arg0, 1, false);
+    v_export_symbol_type("cairo_copy_path_flat", v484);
+
+    v485 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v485, arg0);
+    v486 = v_pointer_type(v478_cairo_path_t, 0);
+    v_store(v486, arg1);
+    v487 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_append_path", v487);
+
+    v488 = v_pointer_type(v478_cairo_path_t, 0);
+    v_store(v488, arg0);
+    v489 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_path_destroy", v489);
+
+    v490 = v_pointer_type(v5_cairo_t, 0);
+    v_store(v490, arg0);
+    v491 = v_function_type(v28_cairo_status_t, arg0, 1, false);
+    v_export_symbol_type("cairo_status", v491);
+
+    v492 = v_pointer_type(v2_char, 0);
+    v_store(v28_cairo_status_t, arg0);
+    v493 = v_function_type(v492, arg0, 1, false);
+    v_export_symbol_type("cairo_status_to_string", v493);
+
+    v494_cairo_device_t = v_find_type("cairo_device_t");
+    v495 = v_pointer_type(v494_cairo_device_t, 0);
+    v496 = v_pointer_type(v494_cairo_device_t, 0);
+    v_store(v496, arg0);
+    v497 = v_function_type(v495, arg0, 1, false);
+    v_export_symbol_type("cairo_device_reference", v497);
+
+    v498 = v_pointer_type(v494_cairo_device_t, 0);
+    v_store(v498, arg0);
+    v499_cairo_device_type_t = v_find_type("cairo_device_type_t");
+    v500 = v_function_type(v499_cairo_device_type_t, arg0, 1, false);
+    v_export_symbol_type("cairo_device_get_type", v500);
+
+    v501 = v_pointer_type(v494_cairo_device_t, 0);
+    v_store(v501, arg0);
+    v502 = v_function_type(v28_cairo_status_t, arg0, 1, false);
+    v_export_symbol_type("cairo_device_status", v502);
+
+    v503 = v_pointer_type(v494_cairo_device_t, 0);
+    v_store(v503, arg0);
+    v504 = v_function_type(v28_cairo_status_t, arg0, 1, false);
+    v_export_symbol_type("cairo_device_acquire", v504);
+
+    v505 = v_pointer_type(v494_cairo_device_t, 0);
+    v_store(v505, arg0);
+    v506 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_device_release", v506);
+
+    v507 = v_pointer_type(v494_cairo_device_t, 0);
+    v_store(v507, arg0);
+    v508 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_device_flush", v508);
+
+    v509 = v_pointer_type(v494_cairo_device_t, 0);
+    v_store(v509, arg0);
+    v510 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_device_finish", v510);
+
+    v511 = v_pointer_type(v494_cairo_device_t, 0);
+    v_store(v511, arg0);
+    v512 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_device_destroy", v512);
+
+    v513 = v_pointer_type(v494_cairo_device_t, 0);
+    v_store(v513, arg0);
+    v514 = v_function_type(v17_unsigned_int, arg0, 1, false);
+    v_export_symbol_type("cairo_device_get_reference_count", v514);
+
+    v515 = v_pointer_type(v14_void, 0);
+    v516 = v_pointer_type(v494_cairo_device_t, 0);
+    v_store(v516, arg0);
+    v517 = v_pointer_type(v21_cairo_user_data_key_t, 0);
+    v_store(v517, arg1);
+    v518 = v_function_type(v515, arg0, 2, false);
+    v_export_symbol_type("cairo_device_get_user_data", v518);
+
+    v519 = v_pointer_type(v494_cairo_device_t, 0);
+    v_store(v519, arg0);
+    v520 = v_pointer_type(v21_cairo_user_data_key_t, 0);
+    v_store(v520, arg1);
+    v521 = v_pointer_type(v14_void, 0);
+    v_store(v521, arg2);
+    v_store(v27_cairo_destroy_func_t, arg3);
+    v522 = v_function_type(v28_cairo_status_t, arg0, 4, false);
+    v_export_symbol_type("cairo_device_set_user_data", v522);
+
+    v523 = v_pointer_type(v7_cairo_surface_t, 0);
+    v524 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v524, arg0);
+    v_store(v37_cairo_content_t, arg1);
+    v_store(v0_int, arg2);
+    v_store(v0_int, arg3);
+    v525 = v_function_type(v523, arg0, 4, false);
+    v_export_symbol_type("cairo_surface_create_similar", v525);
+
+    v526 = v_pointer_type(v7_cairo_surface_t, 0);
+    v527 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v527, arg0);
+    v528_cairo_format_t = v_find_type("cairo_format_t");
+    v_store(v528_cairo_format_t, arg1);
+    v_store(v0_int, arg2);
+    v_store(v0_int, arg3);
+    v529 = v_function_type(v526, arg0, 4, false);
+    v_export_symbol_type("cairo_surface_create_similar_image", v529);
+
+    v530 = v_pointer_type(v7_cairo_surface_t, 0);
+    v531 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v531, arg0);
+    v532_cairo_rectangle_int_t = v_find_type("cairo_rectangle_int_t");
+    v533 = v_pointer_type(v532_cairo_rectangle_int_t, 0);
+    v_store(v533, arg1);
+    v534 = v_function_type(v530, arg0, 2, false);
+    v_export_symbol_type("cairo_surface_map_to_image", v534);
+
+    v535 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v535, arg0);
+    v536 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v536, arg1);
+    v537 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_surface_unmap_image", v537);
+
+    v538 = v_pointer_type(v7_cairo_surface_t, 0);
+    v539 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v539, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v_store(v52_double, arg3);
+    v_store(v52_double, arg4);
+    v540 = v_function_type(v538, arg0, 5, false);
+    v_export_symbol_type("cairo_surface_create_for_rectangle", v540);
+
+    v541 = v_pointer_type(v7_cairo_surface_t, 0);
+    v542 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v542, arg0);
+    v543_cairo_surface_observer_mode_t = v_find_type("cairo_surface_observer_mode_t");
+    v_store(v543_cairo_surface_observer_mode_t, arg1);
+    v544 = v_function_type(v541, arg0, 2, false);
+    v_export_symbol_type("cairo_surface_create_observer", v544);
+
+    v545 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v545, arg0);
+    v546_cairo_surface_observer_callback_t = v_find_type("cairo_surface_observer_callback_t");
+    v_store(v546_cairo_surface_observer_callback_t, arg1);
+    v547 = v_pointer_type(v14_void, 0);
+    v_store(v547, arg2);
+    v548 = v_function_type(v28_cairo_status_t, arg0, 3, false);
+    v_export_symbol_type("cairo_surface_observer_add_paint_callback", v548);
+
+    v549 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v549, arg0);
+    v_store(v546_cairo_surface_observer_callback_t, arg1);
+    v550 = v_pointer_type(v14_void, 0);
+    v_store(v550, arg2);
+    v551 = v_function_type(v28_cairo_status_t, arg0, 3, false);
+    v_export_symbol_type("cairo_surface_observer_add_mask_callback", v551);
+
+    v552 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v552, arg0);
+    v_store(v546_cairo_surface_observer_callback_t, arg1);
+    v553 = v_pointer_type(v14_void, 0);
+    v_store(v553, arg2);
+    v554 = v_function_type(v28_cairo_status_t, arg0, 3, false);
+    v_export_symbol_type("cairo_surface_observer_add_fill_callback", v554);
+
+    v555 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v555, arg0);
+    v_store(v546_cairo_surface_observer_callback_t, arg1);
+    v556 = v_pointer_type(v14_void, 0);
+    v_store(v556, arg2);
+    v557 = v_function_type(v28_cairo_status_t, arg0, 3, false);
+    v_export_symbol_type("cairo_surface_observer_add_stroke_callback", v557);
+
+    v558 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v558, arg0);
+    v_store(v546_cairo_surface_observer_callback_t, arg1);
+    v559 = v_pointer_type(v14_void, 0);
+    v_store(v559, arg2);
+    v560 = v_function_type(v28_cairo_status_t, arg0, 3, false);
+    v_export_symbol_type("cairo_surface_observer_add_glyphs_callback", v560);
+
+    v561 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v561, arg0);
+    v_store(v546_cairo_surface_observer_callback_t, arg1);
+    v562 = v_pointer_type(v14_void, 0);
+    v_store(v562, arg2);
+    v563 = v_function_type(v28_cairo_status_t, arg0, 3, false);
+    v_export_symbol_type("cairo_surface_observer_add_flush_callback", v563);
+
+    v564 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v564, arg0);
+    v_store(v546_cairo_surface_observer_callback_t, arg1);
+    v565 = v_pointer_type(v14_void, 0);
+    v_store(v565, arg2);
+    v566 = v_function_type(v28_cairo_status_t, arg0, 3, false);
+    v_export_symbol_type("cairo_surface_observer_add_finish_callback", v566);
+
+    v567 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v567, arg0);
+    v568_cairo_write_func_t = v_find_type("cairo_write_func_t");
+    v_store(v568_cairo_write_func_t, arg1);
+    v569 = v_pointer_type(v14_void, 0);
+    v_store(v569, arg2);
+    v570 = v_function_type(v28_cairo_status_t, arg0, 3, false);
+    v_export_symbol_type("cairo_surface_observer_print", v570);
+
+    v571 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v571, arg0);
+    v572 = v_function_type(v52_double, arg0, 1, false);
+    v_export_symbol_type("cairo_surface_observer_elapsed", v572);
+
+    v573 = v_pointer_type(v494_cairo_device_t, 0);
+    v_store(v573, arg0);
+    v_store(v568_cairo_write_func_t, arg1);
+    v574 = v_pointer_type(v14_void, 0);
+    v_store(v574, arg2);
+    v575 = v_function_type(v28_cairo_status_t, arg0, 3, false);
+    v_export_symbol_type("cairo_device_observer_print", v575);
+
+    v576 = v_pointer_type(v494_cairo_device_t, 0);
+    v_store(v576, arg0);
+    v577 = v_function_type(v52_double, arg0, 1, false);
+    v_export_symbol_type("cairo_device_observer_elapsed", v577);
+
+    v578 = v_pointer_type(v494_cairo_device_t, 0);
+    v_store(v578, arg0);
+    v579 = v_function_type(v52_double, arg0, 1, false);
+    v_export_symbol_type("cairo_device_observer_paint_elapsed", v579);
+
+    v580 = v_pointer_type(v494_cairo_device_t, 0);
+    v_store(v580, arg0);
+    v581 = v_function_type(v52_double, arg0, 1, false);
+    v_export_symbol_type("cairo_device_observer_mask_elapsed", v581);
+
+    v582 = v_pointer_type(v494_cairo_device_t, 0);
+    v_store(v582, arg0);
+    v583 = v_function_type(v52_double, arg0, 1, false);
+    v_export_symbol_type("cairo_device_observer_fill_elapsed", v583);
+
+    v584 = v_pointer_type(v494_cairo_device_t, 0);
+    v_store(v584, arg0);
+    v585 = v_function_type(v52_double, arg0, 1, false);
+    v_export_symbol_type("cairo_device_observer_stroke_elapsed", v585);
+
+    v586 = v_pointer_type(v494_cairo_device_t, 0);
+    v_store(v586, arg0);
+    v587 = v_function_type(v52_double, arg0, 1, false);
+    v_export_symbol_type("cairo_device_observer_glyphs_elapsed", v587);
+
+    v588 = v_pointer_type(v7_cairo_surface_t, 0);
+    v589 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v589, arg0);
+    v590 = v_function_type(v588, arg0, 1, false);
+    v_export_symbol_type("cairo_surface_reference", v590);
+
+    v591 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v591, arg0);
+    v592 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_surface_finish", v592);
+
+    v593 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v593, arg0);
+    v594 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_surface_destroy", v594);
+
+    v595 = v_pointer_type(v494_cairo_device_t, 0);
+    v596 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v596, arg0);
+    v597 = v_function_type(v595, arg0, 1, false);
+    v_export_symbol_type("cairo_surface_get_device", v597);
+
+    v598 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v598, arg0);
+    v599 = v_function_type(v17_unsigned_int, arg0, 1, false);
+    v_export_symbol_type("cairo_surface_get_reference_count", v599);
+
+    v600 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v600, arg0);
+    v601 = v_function_type(v28_cairo_status_t, arg0, 1, false);
+    v_export_symbol_type("cairo_surface_status", v601);
+
+    v602 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v602, arg0);
+    v603_cairo_surface_type_t = v_find_type("cairo_surface_type_t");
+    v604 = v_function_type(v603_cairo_surface_type_t, arg0, 1, false);
+    v_export_symbol_type("cairo_surface_get_type", v604);
+
+    v605 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v605, arg0);
+    v606 = v_function_type(v37_cairo_content_t, arg0, 1, false);
+    v_export_symbol_type("cairo_surface_get_content", v606);
+
+    v607 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v607, arg0);
+    v608 = v_pointer_type(v2_char, 0);
+    v_store(v608, arg1);
+    v609 = v_function_type(v28_cairo_status_t, arg0, 2, false);
+    v_export_symbol_type("cairo_surface_write_to_png", v609);
+
+    v610 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v610, arg0);
+    v_store(v568_cairo_write_func_t, arg1);
+    v611 = v_pointer_type(v14_void, 0);
+    v_store(v611, arg2);
+    v612 = v_function_type(v28_cairo_status_t, arg0, 3, false);
+    v_export_symbol_type("cairo_surface_write_to_png_stream", v612);
+
+    v613 = v_pointer_type(v14_void, 0);
+    v614 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v614, arg0);
+    v615 = v_pointer_type(v21_cairo_user_data_key_t, 0);
+    v_store(v615, arg1);
+    v616 = v_function_type(v613, arg0, 2, false);
+    v_export_symbol_type("cairo_surface_get_user_data", v616);
+
+    v617 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v617, arg0);
+    v618 = v_pointer_type(v21_cairo_user_data_key_t, 0);
+    v_store(v618, arg1);
+    v619 = v_pointer_type(v14_void, 0);
+    v_store(v619, arg2);
+    v_store(v27_cairo_destroy_func_t, arg3);
+    v620 = v_function_type(v28_cairo_status_t, arg0, 4, false);
+    v_export_symbol_type("cairo_surface_set_user_data", v620);
+
+    v621 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v621, arg0);
+    v622 = v_pointer_type(v2_char, 0);
+    v_store(v622, arg1);
+    v623_unsigned_char = v_find_type("unsigned_char");
+    v624 = v_pointer_type(v623_unsigned_char, 0);
+    v625 = v_pointer_type(v624, 0);
+    v_store(v625, arg2);
+    v626 = v_pointer_type(v234_unsigned_long, 0);
+    v_store(v626, arg3);
+    v627 = v_function_type(v14_void, arg0, 4, false);
+    v_export_symbol_type("cairo_surface_get_mime_data", v627);
+
+    v628 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v628, arg0);
+    v629 = v_pointer_type(v2_char, 0);
+    v_store(v629, arg1);
+    v630 = v_pointer_type(v623_unsigned_char, 0);
+    v_store(v630, arg2);
+    v_store(v234_unsigned_long, arg3);
+    v_store(v27_cairo_destroy_func_t, arg4);
+    v631 = v_pointer_type(v14_void, 0);
+    v_store(v631, arg5);
+    v632 = v_function_type(v28_cairo_status_t, arg0, 6, false);
+    v_export_symbol_type("cairo_surface_set_mime_data", v632);
+
+    v633 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v633, arg0);
+    v634 = v_pointer_type(v2_char, 0);
+    v_store(v634, arg1);
+    v635 = v_function_type(v164_cairo_bool_t, arg0, 2, false);
+    v_export_symbol_type("cairo_surface_supports_mime_type", v635);
+
+    v636 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v636, arg0);
+    v637 = v_pointer_type(v217_cairo_font_options_t, 0);
+    v_store(v637, arg1);
+    v638 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_surface_get_font_options", v638);
+
+    v639 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v639, arg0);
+    v640 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_surface_flush", v640);
+
+    v641 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v641, arg0);
+    v642 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_surface_mark_dirty", v642);
+
+    v643 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v643, arg0);
+    v_store(v0_int, arg1);
+    v_store(v0_int, arg2);
+    v_store(v0_int, arg3);
+    v_store(v0_int, arg4);
+    v644 = v_function_type(v14_void, arg0, 5, false);
+    v_export_symbol_type("cairo_surface_mark_dirty_rectangle", v644);
+
+    v645 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v645, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v646 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_surface_set_device_scale", v646);
+
+    v647 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v647, arg0);
+    v648 = v_pointer_type(v52_double, 0);
+    v_store(v648, arg1);
+    v649 = v_pointer_type(v52_double, 0);
+    v_store(v649, arg2);
+    v650 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_surface_get_device_scale", v650);
+
+    v651 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v651, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v652 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_surface_set_device_offset", v652);
+
+    v653 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v653, arg0);
+    v654 = v_pointer_type(v52_double, 0);
+    v_store(v654, arg1);
+    v655 = v_pointer_type(v52_double, 0);
+    v_store(v655, arg2);
+    v656 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_surface_get_device_offset", v656);
+
+    v657 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v657, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v658 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_surface_set_fallback_resolution", v658);
+
+    v659 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v659, arg0);
+    v660 = v_pointer_type(v52_double, 0);
+    v_store(v660, arg1);
+    v661 = v_pointer_type(v52_double, 0);
+    v_store(v661, arg2);
+    v662 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_surface_get_fallback_resolution", v662);
+
+    v663 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v663, arg0);
+    v664 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_surface_copy_page", v664);
+
+    v665 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v665, arg0);
+    v666 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_surface_show_page", v666);
+
+    v667 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v667, arg0);
+    v668 = v_function_type(v164_cairo_bool_t, arg0, 1, false);
+    v_export_symbol_type("cairo_surface_has_show_text_glyphs", v668);
+
+    v669 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v528_cairo_format_t, arg0);
+    v_store(v0_int, arg1);
+    v_store(v0_int, arg2);
+    v670 = v_function_type(v669, arg0, 3, false);
+    v_export_symbol_type("cairo_image_surface_create", v670);
+
+    v_store(v528_cairo_format_t, arg0);
+    v_store(v0_int, arg1);
+    v671 = v_function_type(v0_int, arg0, 2, false);
+    v_export_symbol_type("cairo_format_stride_for_width", v671);
+
+    v672 = v_pointer_type(v7_cairo_surface_t, 0);
+    v673 = v_pointer_type(v623_unsigned_char, 0);
+    v_store(v673, arg0);
+    v_store(v528_cairo_format_t, arg1);
+    v_store(v0_int, arg2);
+    v_store(v0_int, arg3);
+    v_store(v0_int, arg4);
+    v674 = v_function_type(v672, arg0, 5, false);
+    v_export_symbol_type("cairo_image_surface_create_for_data", v674);
+
+    v675 = v_pointer_type(v623_unsigned_char, 0);
+    v676 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v676, arg0);
+    v677 = v_function_type(v675, arg0, 1, false);
+    v_export_symbol_type("cairo_image_surface_get_data", v677);
+
+    v678 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v678, arg0);
+    v679 = v_function_type(v528_cairo_format_t, arg0, 1, false);
+    v_export_symbol_type("cairo_image_surface_get_format", v679);
+
+    v680 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v680, arg0);
+    v681 = v_function_type(v0_int, arg0, 1, false);
+    v_export_symbol_type("cairo_image_surface_get_width", v681);
+
+    v682 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v682, arg0);
+    v683 = v_function_type(v0_int, arg0, 1, false);
+    v_export_symbol_type("cairo_image_surface_get_height", v683);
+
+    v684 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v684, arg0);
+    v685 = v_function_type(v0_int, arg0, 1, false);
+    v_export_symbol_type("cairo_image_surface_get_stride", v685);
+
+    v686 = v_pointer_type(v7_cairo_surface_t, 0);
+    v687 = v_pointer_type(v2_char, 0);
+    v_store(v687, arg0);
+    v688 = v_function_type(v686, arg0, 1, false);
+    v_export_symbol_type("cairo_image_surface_create_from_png", v688);
+
+    v689 = v_pointer_type(v7_cairo_surface_t, 0);
+    v690_cairo_read_func_t = v_find_type("cairo_read_func_t");
+    v_store(v690_cairo_read_func_t, arg0);
+    v691 = v_pointer_type(v14_void, 0);
+    v_store(v691, arg1);
+    v692 = v_function_type(v689, arg0, 2, false);
+    v_export_symbol_type("cairo_image_surface_create_from_png_stream", v692);
+
+    v693 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v37_cairo_content_t, arg0);
+    v694_cairo_rectangle_t = v_find_type("cairo_rectangle_t");
+    v695 = v_pointer_type(v694_cairo_rectangle_t, 0);
+    v_store(v695, arg1);
+    v696 = v_function_type(v693, arg0, 2, false);
+    v_export_symbol_type("cairo_recording_surface_create", v696);
+
+    v697 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v697, arg0);
+    v698 = v_pointer_type(v52_double, 0);
+    v_store(v698, arg1);
+    v699 = v_pointer_type(v52_double, 0);
+    v_store(v699, arg2);
+    v700 = v_pointer_type(v52_double, 0);
+    v_store(v700, arg3);
+    v701 = v_pointer_type(v52_double, 0);
+    v_store(v701, arg4);
+    v702 = v_function_type(v14_void, arg0, 5, false);
+    v_export_symbol_type("cairo_recording_surface_ink_extents", v702);
+
+    v703 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v703, arg0);
+    v704 = v_pointer_type(v694_cairo_rectangle_t, 0);
+    v_store(v704, arg1);
+    v705 = v_function_type(v164_cairo_bool_t, arg0, 2, false);
+    v_export_symbol_type("cairo_recording_surface_get_extents", v705);
+
+    v706 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v707 = v_pointer_type(v14_void, 0);
+    v_store(v707, arg0);
+    v_store(v37_cairo_content_t, arg1);
+    v_store(v0_int, arg2);
+    v_store(v0_int, arg3);
+    v708 = v_function_type(v706, arg0, 4, false);
+    v_export_symbol_type("cairo_pattern_create_raster_source", v708);
+
+    v709 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v709, arg0);
+    v710 = v_pointer_type(v14_void, 0);
+    v_store(v710, arg1);
+    v711 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_raster_source_pattern_set_callback_data", v711);
+
+    v712 = v_pointer_type(v14_void, 0);
+    v713 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v713, arg0);
+    v714 = v_function_type(v712, arg0, 1, false);
+    v_export_symbol_type("cairo_raster_source_pattern_get_callback_data", v714);
+
+    v715 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v715, arg0);
+    v716_cairo_raster_source_acquire_func_t = v_find_type("cairo_raster_source_acquire_func_t");
+    v_store(v716_cairo_raster_source_acquire_func_t, arg1);
+    v717_cairo_raster_source_release_func_t = v_find_type("cairo_raster_source_release_func_t");
+    v_store(v717_cairo_raster_source_release_func_t, arg2);
+    v718 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_raster_source_pattern_set_acquire", v718);
+
+    v719 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v719, arg0);
+    v720 = v_pointer_type(v716_cairo_raster_source_acquire_func_t, 0);
+    v_store(v720, arg1);
+    v721 = v_pointer_type(v717_cairo_raster_source_release_func_t, 0);
+    v_store(v721, arg2);
+    v722 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_raster_source_pattern_get_acquire", v722);
+
+    v723 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v723, arg0);
+    v724_cairo_raster_source_snapshot_func_t = v_find_type("cairo_raster_source_snapshot_func_t");
+    v_store(v724_cairo_raster_source_snapshot_func_t, arg1);
+    v725 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_raster_source_pattern_set_snapshot", v725);
+
+    v726 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v726, arg0);
+    v727 = v_function_type(v724_cairo_raster_source_snapshot_func_t, arg0, 1, false);
+    v_export_symbol_type("cairo_raster_source_pattern_get_snapshot", v727);
+
+    v728 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v728, arg0);
+    v729_cairo_raster_source_copy_func_t = v_find_type("cairo_raster_source_copy_func_t");
+    v_store(v729_cairo_raster_source_copy_func_t, arg1);
+    v730 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_raster_source_pattern_set_copy", v730);
+
+    v731 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v731, arg0);
+    v732 = v_function_type(v729_cairo_raster_source_copy_func_t, arg0, 1, false);
+    v_export_symbol_type("cairo_raster_source_pattern_get_copy", v732);
+
+    v733 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v733, arg0);
+    v734_cairo_raster_source_finish_func_t = v_find_type("cairo_raster_source_finish_func_t");
+    v_store(v734_cairo_raster_source_finish_func_t, arg1);
+    v735 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_raster_source_pattern_set_finish", v735);
+
+    v736 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v736, arg0);
+    v737 = v_function_type(v734_cairo_raster_source_finish_func_t, arg0, 1, false);
+    v_export_symbol_type("cairo_raster_source_pattern_get_finish", v737);
+
+    v738 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v52_double, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v739 = v_function_type(v738, arg0, 3, false);
+    v_export_symbol_type("cairo_pattern_create_rgb", v739);
+
+    v740 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v52_double, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v_store(v52_double, arg3);
+    v741 = v_function_type(v740, arg0, 4, false);
+    v_export_symbol_type("cairo_pattern_create_rgba", v741);
+
+    v742 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v743 = v_pointer_type(v7_cairo_surface_t, 0);
+    v_store(v743, arg0);
+    v744 = v_function_type(v742, arg0, 1, false);
+    v_export_symbol_type("cairo_pattern_create_for_surface", v744);
+
+    v745 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v52_double, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v_store(v52_double, arg3);
+    v746 = v_function_type(v745, arg0, 4, false);
+    v_export_symbol_type("cairo_pattern_create_linear", v746);
+
+    v747 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v52_double, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v_store(v52_double, arg3);
+    v_store(v52_double, arg4);
+    v_store(v52_double, arg5);
+    v748 = v_function_type(v747, arg0, 6, false);
+    v_export_symbol_type("cairo_pattern_create_radial", v748);
+
+    v749 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v750 = v_function_type(v749, arg0, 0, false);
+    v_export_symbol_type("cairo_pattern_create_mesh", v750);
+
+    v751 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v752 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v752, arg0);
+    v753 = v_function_type(v751, arg0, 1, false);
+    v_export_symbol_type("cairo_pattern_reference", v753);
+
+    v754 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v754, arg0);
+    v755 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_pattern_destroy", v755);
+
+    v756 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v756, arg0);
+    v757 = v_function_type(v17_unsigned_int, arg0, 1, false);
+    v_export_symbol_type("cairo_pattern_get_reference_count", v757);
+
+    v758 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v758, arg0);
+    v759 = v_function_type(v28_cairo_status_t, arg0, 1, false);
+    v_export_symbol_type("cairo_pattern_status", v759);
+
+    v760 = v_pointer_type(v14_void, 0);
+    v761 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v761, arg0);
+    v762 = v_pointer_type(v21_cairo_user_data_key_t, 0);
+    v_store(v762, arg1);
+    v763 = v_function_type(v760, arg0, 2, false);
+    v_export_symbol_type("cairo_pattern_get_user_data", v763);
+
+    v764 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v764, arg0);
+    v765 = v_pointer_type(v21_cairo_user_data_key_t, 0);
+    v_store(v765, arg1);
+    v766 = v_pointer_type(v14_void, 0);
+    v_store(v766, arg2);
+    v_store(v27_cairo_destroy_func_t, arg3);
+    v767 = v_function_type(v28_cairo_status_t, arg0, 4, false);
+    v_export_symbol_type("cairo_pattern_set_user_data", v767);
+
+    v768 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v768, arg0);
+    v769_cairo_pattern_type_t = v_find_type("cairo_pattern_type_t");
+    v770 = v_function_type(v769_cairo_pattern_type_t, arg0, 1, false);
+    v_export_symbol_type("cairo_pattern_get_type", v770);
+
+    v771 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v771, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v_store(v52_double, arg3);
+    v_store(v52_double, arg4);
+    v772 = v_function_type(v14_void, arg0, 5, false);
+    v_export_symbol_type("cairo_pattern_add_color_stop_rgb", v772);
+
+    v773 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v773, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v_store(v52_double, arg3);
+    v_store(v52_double, arg4);
+    v_store(v52_double, arg5);
+    v774 = v_function_type(v14_void, arg0, 6, false);
+    v_export_symbol_type("cairo_pattern_add_color_stop_rgba", v774);
+
+    v775 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v775, arg0);
+    v776 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_mesh_pattern_begin_patch", v776);
+
+    v777 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v777, arg0);
+    v778 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_mesh_pattern_end_patch", v778);
+
+    v779 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v779, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v_store(v52_double, arg3);
+    v_store(v52_double, arg4);
+    v_store(v52_double, arg5);
+    v_store(v52_double, arg6);
+    v780 = v_function_type(v14_void, arg0, 7, false);
+    v_export_symbol_type("cairo_mesh_pattern_curve_to", v780);
+
+    v781 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v781, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v782 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_mesh_pattern_line_to", v782);
+
+    v783 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v783, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v784 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_mesh_pattern_move_to", v784);
+
+    v785 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v785, arg0);
+    v_store(v17_unsigned_int, arg1);
+    v_store(v52_double, arg2);
+    v_store(v52_double, arg3);
+    v786 = v_function_type(v14_void, arg0, 4, false);
+    v_export_symbol_type("cairo_mesh_pattern_set_control_point", v786);
+
+    v787 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v787, arg0);
+    v_store(v17_unsigned_int, arg1);
+    v_store(v52_double, arg2);
+    v_store(v52_double, arg3);
+    v_store(v52_double, arg4);
+    v788 = v_function_type(v14_void, arg0, 5, false);
+    v_export_symbol_type("cairo_mesh_pattern_set_corner_color_rgb", v788);
+
+    v789 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v789, arg0);
+    v_store(v17_unsigned_int, arg1);
+    v_store(v52_double, arg2);
+    v_store(v52_double, arg3);
+    v_store(v52_double, arg4);
+    v_store(v52_double, arg5);
+    v790 = v_function_type(v14_void, arg0, 6, false);
+    v_export_symbol_type("cairo_mesh_pattern_set_corner_color_rgba", v790);
+
+    v791 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v791, arg0);
+    v792 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v792, arg1);
+    v793 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_pattern_set_matrix", v793);
+
+    v794 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v794, arg0);
+    v795 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v795, arg1);
+    v796 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_pattern_get_matrix", v796);
+
+    v797 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v797, arg0);
+    v798_cairo_extend_t = v_find_type("cairo_extend_t");
+    v_store(v798_cairo_extend_t, arg1);
+    v799 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_pattern_set_extend", v799);
+
+    v800 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v800, arg0);
+    v801 = v_function_type(v798_cairo_extend_t, arg0, 1, false);
+    v_export_symbol_type("cairo_pattern_get_extend", v801);
+
+    v802 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v802, arg0);
+    v803_cairo_filter_t = v_find_type("cairo_filter_t");
+    v_store(v803_cairo_filter_t, arg1);
+    v804 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_pattern_set_filter", v804);
+
+    v805 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v805, arg0);
+    v806 = v_function_type(v803_cairo_filter_t, arg0, 1, false);
+    v_export_symbol_type("cairo_pattern_get_filter", v806);
+
+    v807 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v807, arg0);
+    v808 = v_pointer_type(v52_double, 0);
+    v_store(v808, arg1);
+    v809 = v_pointer_type(v52_double, 0);
+    v_store(v809, arg2);
+    v810 = v_pointer_type(v52_double, 0);
+    v_store(v810, arg3);
+    v811 = v_pointer_type(v52_double, 0);
+    v_store(v811, arg4);
+    v812 = v_function_type(v28_cairo_status_t, arg0, 5, false);
+    v_export_symbol_type("cairo_pattern_get_rgba", v812);
+
+    v813 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v813, arg0);
+    v814 = v_pointer_type(v7_cairo_surface_t, 0);
+    v815 = v_pointer_type(v814, 0);
+    v_store(v815, arg1);
+    v816 = v_function_type(v28_cairo_status_t, arg0, 2, false);
+    v_export_symbol_type("cairo_pattern_get_surface", v816);
+
+    v817 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v817, arg0);
+    v_store(v0_int, arg1);
+    v818 = v_pointer_type(v52_double, 0);
+    v_store(v818, arg2);
+    v819 = v_pointer_type(v52_double, 0);
+    v_store(v819, arg3);
+    v820 = v_pointer_type(v52_double, 0);
+    v_store(v820, arg4);
+    v821 = v_pointer_type(v52_double, 0);
+    v_store(v821, arg5);
+    v822 = v_pointer_type(v52_double, 0);
+    v_store(v822, arg6);
+    v823 = v_function_type(v28_cairo_status_t, arg0, 7, false);
+    v_export_symbol_type("cairo_pattern_get_color_stop_rgba", v823);
+
+    v824 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v824, arg0);
+    v825 = v_pointer_type(v0_int, 0);
+    v_store(v825, arg1);
+    v826 = v_function_type(v28_cairo_status_t, arg0, 2, false);
+    v_export_symbol_type("cairo_pattern_get_color_stop_count", v826);
+
+    v827 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v827, arg0);
+    v828 = v_pointer_type(v52_double, 0);
+    v_store(v828, arg1);
+    v829 = v_pointer_type(v52_double, 0);
+    v_store(v829, arg2);
+    v830 = v_pointer_type(v52_double, 0);
+    v_store(v830, arg3);
+    v831 = v_pointer_type(v52_double, 0);
+    v_store(v831, arg4);
+    v832 = v_function_type(v28_cairo_status_t, arg0, 5, false);
+    v_export_symbol_type("cairo_pattern_get_linear_points", v832);
+
+    v833 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v833, arg0);
+    v834 = v_pointer_type(v52_double, 0);
+    v_store(v834, arg1);
+    v835 = v_pointer_type(v52_double, 0);
+    v_store(v835, arg2);
+    v836 = v_pointer_type(v52_double, 0);
+    v_store(v836, arg3);
+    v837 = v_pointer_type(v52_double, 0);
+    v_store(v837, arg4);
+    v838 = v_pointer_type(v52_double, 0);
+    v_store(v838, arg5);
+    v839 = v_pointer_type(v52_double, 0);
+    v_store(v839, arg6);
+    v840 = v_function_type(v28_cairo_status_t, arg0, 7, false);
+    v_export_symbol_type("cairo_pattern_get_radial_circles", v840);
+
+    v841 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v841, arg0);
+    v842 = v_pointer_type(v17_unsigned_int, 0);
+    v_store(v842, arg1);
+    v843 = v_function_type(v28_cairo_status_t, arg0, 2, false);
+    v_export_symbol_type("cairo_mesh_pattern_get_patch_count", v843);
+
+    v844 = v_pointer_type(v478_cairo_path_t, 0);
+    v845 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v845, arg0);
+    v_store(v17_unsigned_int, arg1);
+    v846 = v_function_type(v844, arg0, 2, false);
+    v_export_symbol_type("cairo_mesh_pattern_get_path", v846);
+
+    v847 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v847, arg0);
+    v_store(v17_unsigned_int, arg1);
+    v_store(v17_unsigned_int, arg2);
+    v848 = v_pointer_type(v52_double, 0);
+    v_store(v848, arg3);
+    v849 = v_pointer_type(v52_double, 0);
+    v_store(v849, arg4);
+    v850 = v_pointer_type(v52_double, 0);
+    v_store(v850, arg5);
+    v851 = v_pointer_type(v52_double, 0);
+    v_store(v851, arg6);
+    v852 = v_function_type(v28_cairo_status_t, arg0, 7, false);
+    v_export_symbol_type("cairo_mesh_pattern_get_corner_color_rgba", v852);
+
+    v853 = v_pointer_type(v39_cairo_pattern_t, 0);
+    v_store(v853, arg0);
+    v_store(v17_unsigned_int, arg1);
+    v_store(v17_unsigned_int, arg2);
+    v854 = v_pointer_type(v52_double, 0);
+    v_store(v854, arg3);
+    v855 = v_pointer_type(v52_double, 0);
+    v_store(v855, arg4);
+    v856 = v_function_type(v28_cairo_status_t, arg0, 5, false);
+    v_export_symbol_type("cairo_mesh_pattern_get_control_point", v856);
+
+    v857 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v857, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v_store(v52_double, arg3);
+    v_store(v52_double, arg4);
+    v_store(v52_double, arg5);
+    v_store(v52_double, arg6);
+    v858 = v_function_type(v14_void, arg0, 7, false);
+    v_export_symbol_type("cairo_matrix_init", v858);
+
+    v859 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v859, arg0);
+    v860 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_matrix_init_identity", v860);
+
+    v861 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v861, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v862 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_matrix_init_translate", v862);
+
+    v863 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v863, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v864 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_matrix_init_scale", v864);
+
+    v865 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v865, arg0);
+    v_store(v52_double, arg1);
+    v866 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_matrix_init_rotate", v866);
+
+    v867 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v867, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v868 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_matrix_translate", v868);
+
+    v869 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v869, arg0);
+    v_store(v52_double, arg1);
+    v_store(v52_double, arg2);
+    v870 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_matrix_scale", v870);
+
+    v871 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v871, arg0);
+    v_store(v52_double, arg1);
+    v872 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_matrix_rotate", v872);
+
+    v873 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v873, arg0);
+    v874 = v_function_type(v28_cairo_status_t, arg0, 1, false);
+    v_export_symbol_type("cairo_matrix_invert", v874);
+
+    v875 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v875, arg0);
+    v876 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v876, arg1);
+    v877 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v877, arg2);
+    v878 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_matrix_multiply", v878);
+
+    v879 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v879, arg0);
+    v880 = v_pointer_type(v52_double, 0);
+    v_store(v880, arg1);
+    v881 = v_pointer_type(v52_double, 0);
+    v_store(v881, arg2);
+    v882 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_matrix_transform_distance", v882);
+
+    v883 = v_pointer_type(v87_cairo_matrix_t, 0);
+    v_store(v883, arg0);
+    v884 = v_pointer_type(v52_double, 0);
+    v_store(v884, arg1);
+    v885 = v_pointer_type(v52_double, 0);
+    v_store(v885, arg2);
+    v886 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_matrix_transform_point", v886);
+
+    v887_cairo_region_t = v_find_type("cairo_region_t");
+    v888 = v_pointer_type(v887_cairo_region_t, 0);
+    v889 = v_function_type(v888, arg0, 0, false);
+    v_export_symbol_type("cairo_region_create", v889);
+
+    v890 = v_pointer_type(v887_cairo_region_t, 0);
+    v891 = v_pointer_type(v532_cairo_rectangle_int_t, 0);
+    v_store(v891, arg0);
+    v892 = v_function_type(v890, arg0, 1, false);
+    v_export_symbol_type("cairo_region_create_rectangle", v892);
+
+    v893 = v_pointer_type(v887_cairo_region_t, 0);
+    v894 = v_pointer_type(v532_cairo_rectangle_int_t, 0);
+    v_store(v894, arg0);
+    v_store(v0_int, arg1);
+    v895 = v_function_type(v893, arg0, 2, false);
+    v_export_symbol_type("cairo_region_create_rectangles", v895);
+
+    v896 = v_pointer_type(v887_cairo_region_t, 0);
+    v897 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v897, arg0);
+    v898 = v_function_type(v896, arg0, 1, false);
+    v_export_symbol_type("cairo_region_copy", v898);
+
+    v899 = v_pointer_type(v887_cairo_region_t, 0);
+    v900 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v900, arg0);
+    v901 = v_function_type(v899, arg0, 1, false);
+    v_export_symbol_type("cairo_region_reference", v901);
+
+    v902 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v902, arg0);
+    v903 = v_function_type(v14_void, arg0, 1, false);
+    v_export_symbol_type("cairo_region_destroy", v903);
+
+    v904 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v904, arg0);
+    v905 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v905, arg1);
+    v906 = v_function_type(v164_cairo_bool_t, arg0, 2, false);
+    v_export_symbol_type("cairo_region_equal", v906);
+
+    v907 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v907, arg0);
+    v908 = v_function_type(v28_cairo_status_t, arg0, 1, false);
+    v_export_symbol_type("cairo_region_status", v908);
+
+    v909 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v909, arg0);
+    v910 = v_pointer_type(v532_cairo_rectangle_int_t, 0);
+    v_store(v910, arg1);
+    v911 = v_function_type(v14_void, arg0, 2, false);
+    v_export_symbol_type("cairo_region_get_extents", v911);
+
+    v912 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v912, arg0);
+    v913 = v_function_type(v0_int, arg0, 1, false);
+    v_export_symbol_type("cairo_region_num_rectangles", v913);
+
+    v914 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v914, arg0);
+    v_store(v0_int, arg1);
+    v915 = v_pointer_type(v532_cairo_rectangle_int_t, 0);
+    v_store(v915, arg2);
+    v916 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_region_get_rectangle", v916);
+
+    v917 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v917, arg0);
+    v918 = v_function_type(v164_cairo_bool_t, arg0, 1, false);
+    v_export_symbol_type("cairo_region_is_empty", v918);
+
+    v919 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v919, arg0);
+    v920 = v_pointer_type(v532_cairo_rectangle_int_t, 0);
+    v_store(v920, arg1);
+    v921_cairo_region_overlap_t = v_find_type("cairo_region_overlap_t");
+    v922 = v_function_type(v921_cairo_region_overlap_t, arg0, 2, false);
+    v_export_symbol_type("cairo_region_contains_rectangle", v922);
+
+    v923 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v923, arg0);
+    v_store(v0_int, arg1);
+    v_store(v0_int, arg2);
+    v924 = v_function_type(v164_cairo_bool_t, arg0, 3, false);
+    v_export_symbol_type("cairo_region_contains_point", v924);
+
+    v925 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v925, arg0);
+    v_store(v0_int, arg1);
+    v_store(v0_int, arg2);
+    v926 = v_function_type(v14_void, arg0, 3, false);
+    v_export_symbol_type("cairo_region_translate", v926);
+
+    v927 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v927, arg0);
+    v928 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v928, arg1);
+    v929 = v_function_type(v28_cairo_status_t, arg0, 2, false);
+    v_export_symbol_type("cairo_region_subtract", v929);
+
+    v930 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v930, arg0);
+    v931 = v_pointer_type(v532_cairo_rectangle_int_t, 0);
+    v_store(v931, arg1);
+    v932 = v_function_type(v28_cairo_status_t, arg0, 2, false);
+    v_export_symbol_type("cairo_region_subtract_rectangle", v932);
+
+    v933 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v933, arg0);
+    v934 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v934, arg1);
+    v935 = v_function_type(v28_cairo_status_t, arg0, 2, false);
+    v_export_symbol_type("cairo_region_intersect", v935);
+
+    v936 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v936, arg0);
+    v937 = v_pointer_type(v532_cairo_rectangle_int_t, 0);
+    v_store(v937, arg1);
+    v938 = v_function_type(v28_cairo_status_t, arg0, 2, false);
+    v_export_symbol_type("cairo_region_intersect_rectangle", v938);
+
+    v939 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v939, arg0);
+    v940 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v940, arg1);
+    v941 = v_function_type(v28_cairo_status_t, arg0, 2, false);
+    v_export_symbol_type("cairo_region_union", v941);
+
+    v942 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v942, arg0);
+    v943 = v_pointer_type(v532_cairo_rectangle_int_t, 0);
+    v_store(v943, arg1);
+    v944 = v_function_type(v28_cairo_status_t, arg0, 2, false);
+    v_export_symbol_type("cairo_region_union_rectangle", v944);
+
+    v945 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v945, arg0);
+    v946 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v946, arg1);
+    v947 = v_function_type(v28_cairo_status_t, arg0, 2, false);
+    v_export_symbol_type("cairo_region_xor", v947);
+
+    v948 = v_pointer_type(v887_cairo_region_t, 0);
+    v_store(v948, arg0);
+    v949 = v_pointer_type(v532_cairo_rectangle_int_t, 0);
+    v_store(v949, arg1);
+    v950 = v_function_type(v28_cairo_status_t, arg0, 2, false);
+    v_export_symbol_type("cairo_region_xor_rectangle", v950);
+
+    v951 = v_function_type(v14_void, arg0, 0, false);
+    v_export_symbol_type("cairo_debug_reset_static_data", v951);
+
+}
+

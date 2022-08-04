@@ -61,7 +61,7 @@ voidc_ptr_type_intrinsic: (vis: voidc_visitor_ptr, *void, args: v_ast_expr_list_
 
     typ = v_pointer_type(et, as);
 
-    v_set_result_type(voidc_static_type);
+    v_set_result_type(v_static_type_t);
     v_set_result_value((typ: LLVMValueRef));
 }
 
@@ -91,7 +91,7 @@ voidc_ref_type_intrinsic: (vis: voidc_visitor_ptr, *void, args: v_ast_expr_list_
 
     typ = v_reference_type(et, as);
 
-    v_set_result_type(voidc_static_type);
+    v_set_result_type(v_static_type_t);
     v_set_result_value((typ: LLVMValueRef));
 }
 
@@ -319,7 +319,7 @@ static_type_to_string_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 }
 
 {
-    v_util_function_dict_set(v_quark_from_string(".str"),  voidc_static_type, "v.static_type_to_string");
+    v_util_function_dict_set(v_quark_from_string(".str"),  v_static_type_t, "v.static_type_to_string");
 
     v_add_intrinsic("v.static_type_to_string",  static_type_to_string_intrinsic,  0);
 }
