@@ -100,9 +100,14 @@ buffer: &*char := 0;
 
         fprintf(p, "clang -x c++ -O3 -c -fPIC");
 
-        fprintf(p, " -I/home/bdn/work/Void/voidc/level-00");
-
         fprintf(p, " $(llvm-config --cxxflags) -std=c++17");
+
+        fprintf(p, " -I../voidc/level-00");
+
+        if (v_find_constant("_WIN32", 0, 0))
+        {
+            fprintf(p, " -IC:/Tools/include -frtti -fcxx-exceptions");
+        }
 
         fprintf(p, " -o %s", buffer);
 
