@@ -1,6 +1,10 @@
                          ****  ?  ****                         │*
                                                                │
                                                                │
+try_introspect.void                                            │try_introspect.void
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
 try_geometry.void                                              │try_geometry.void
                                                                │
 try_mangle.void                                                │try_mangle.void

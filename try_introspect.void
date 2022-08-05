@@ -1,0 +1,166 @@
+{   v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+
+    v_import("llvm-c/Core.void");
+//  v_import("llvm-c/Support.void");
+}
+
+{   v_import("printf.void");
+}
+
+{   v_enable_level_01();
+    v_enable_level_02();
+}
+
+
+//---------------------------------------------------------------------
+FILE = v_struct("FILE");
+
+v_popen: (command: *const char, prop: *const char) -> *FILE;
+
+v_pclose: (*FILE) -> int;
+
+fprintf: (stream: *FILE, format: *const char, ...) -> int;
+
+fscanf: (stream: *FILE, format: *const char, ...) -> int;
+
+fputs: (buf: *char, stream: *FILE) -> int;
+
+sprintf: (str: *char, format: *const char, ...) -> int;
+
+system: (cmd: *const char) -> int;
+
+
+//---------------------------------------------------------------------
+my_source: &char[] :=
+"""
+#include "vpeg_grammar.h"
+
+extern "C"
+{
+
+
+size_t
+parsers_count(const vpeg::grammar_t *grm)
+{
+    return (*grm)->parsers.size();
+}
+
+
+typedef void (*item_ft)(void *aux, const char *name);
+
+void
+parsers_iter(const vpeg::grammar_t *grm, item_ft fun, void *aux)
+{
+    for (auto &it: (*grm)->parsers)
+    {
+        auto quark = it.first;
+
+        auto name = v_quark_to_string(quark);
+
+        if (fun)  fun(aux, name);
+    }
+}
+
+
+}
+
+""";
+
+
+//---------------------------------------------------------------------
+buffer: &*char := 0;
+
+{   buflen = 1024;
+
+    buffer := v_malloc(char, buflen);
+
+    {   p = v_popen("mktemp", "r");
+        defer v_pclose(p);
+
+        fscanf(p, "%500s", buffer);
+    }
+
+    if (v_find_constant("_WIN32", 0, 0))
+    {
+        cmd = buffer + 512;
+
+        sprintf(cmd, "cygpath -m %s", buffer);
+
+        p = v_popen(cmd, "r");
+        defer v_pclose(p);
+
+        fscanf(p, "%1000s", buffer);
+    }
+
+    //-----------------------------------------------------------------
+    {   p = v_popen("bash", "w");
+        defer v_pclose(p);
+
+        fprintf(p, "clang -x c++ -O3 -c -fPIC");
+
+        fprintf(p, " -I/home/bdn/work/Void/voidc/level-00");
+
+        fprintf(p, " $(llvm-config --cxxflags) -std=c++17");
+
+        fprintf(p, " -o %s", buffer);
+
+        fprintf(p, " - <<HEREDOC\n%s\nHEREDOC\n", my_source);
+    }
+
+    //-----------------------------------------------------------------
+    mb: &LLVMMemoryBufferRef := 0;
+    defer LLVMDisposeMemoryBuffer(mb);
+
+    LLVMCreateMemoryBufferWithContentsOfFile(buffer, &mb, 0);
+
+    voidc_add_local_object_file_to_jit(mb);
+}
+
+
+//---------------------------------------------------------------------
+parsers_count: (*v_peg_grammar_t) -> size_t;
+
+item_ft = *((*void, *const char) -> void);
+
+parsers_iter: (*v_peg_grammar_t, item_ft) -> void;
+
+
+//---------------------------------------------------------------------
+item_fun: (aux: *void, name: *const char) -> void
+{
+    printf("%s\n", name);
+}
+
+
+//---------------------------------------------------------------------
+{   gr = v_alloca(v_peg_grammar_t);
+    v_initialize(gr);
+    defer v_terminate(gr);
+
+    v_peg_get_grammar(gr);
+
+    sz = parsers_count(gr);
+
+    printf("sz: %d\n\n", (sz: int));
+
+    parsers_iter(gr, item_fun);
+}
+
+
+
+
+
+
+//---------------------------------------------------------------------
+{
+    p = v_popen("bash", "w");
+    defer v_pclose(p);
+
+    fprintf(p, "rm %s\n", buffer);
+
+    v_free(buffer);
+}
+
+
