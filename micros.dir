@@ -1,8 +1,11 @@
                          ****  ?  ****                         │*
                                                                │
                                                                │
-try_introspect.void                                            │try_introspect.void
+try_compression.void                                           │try_compression.void
                                                                │
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_introspect.void                                            │try_introspect.void
                                                                │
 ───────────────────────────────────────────────────────────────│
 try_geometry.void                                              │try_geometry.void

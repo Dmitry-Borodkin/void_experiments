@@ -136,7 +136,7 @@ nod: (N: int, M: int) -> int
 //---------------------------------------------------------------------
 random_star: (cr: *cairo_t, w: int, h: int) -> void
 {
-    r = (rand(): double) / RAND_MAX;
+    r = my_rand();
 
     kr = 50;
 

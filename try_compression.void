@@ -1,0 +1,155 @@
+{   v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+
+    v_import("llvm-c/Core.void");
+}
+
+{   v_import("printf.void");
+}
+
+{   v_enable_level_01();
+    v_enable_level_02();
+}
+
+
+//---------------------------------------------------------------------
+myz_ctx_t = v_struct("myz_ctx_t",
+{
+    *const uint(8),     //- 0 - "next_in"
+    size_t,             //- 1 - "avail_in"
+
+    *uint(8),           //- 2 - "next_out"
+    size_t,             //- 3 - "avail_out"
+
+    //-------------------------------------------------------------
+    uint(8),            //- 4 - Input bits remain (out of 8)
+    uint(8),            //- 5 - Input bits buffer
+
+    uint(8),            //- 6 - Output bits remain (out of 8)
+    uint(8)             //- 7 - Output bits buffer
+
+    //- ...
+
+});
+
+//---------------------------------------------------------------------
+mzc_next_in         = 0;
+mzc_avail_in        = 1;
+mzc_next_out        = 2;
+mzc_avail_out       = 3;
+mzc_bits_remain_in  = 4;
+mzc_bits_buffer_in  = 5;
+mzc_bits_remain_out = 6;
+mzc_bits_buffer_out = 7;
+
+
+//---------------------------------------------------------------------
+//- Get one bit
+//---------------------------------------------------------------------
+myz_get_bit: (ctx: &myz_ctx_t) -> bool
+{
+    if (ctx[mzc_bits_remain_in] == 0)
+    {
+        ctx[mzc_bits_buffer_in] := *ctx[mzc_next_in]++;
+        ctx[mzc_bits_remain_in] := 8;
+
+        ctx[mzc_avail_in]--;
+    }
+
+    b = ctx[mzc_bits_buffer_in];
+
+    r = b & 1;
+
+    b >>= 1;
+
+    ctx[mzc_bits_remain_in] -= 1;
+
+    v_return((r: bool));
+}
+
+
+//---------------------------------------------------------------------
+//- Put one bit
+//---------------------------------------------------------------------
+myz_put_bit: (ctx: &myz_ctx_t, bit: bool) -> void
+{
+    //- assert(ctx[mzc_bits_remain_out] < 8);
+
+    b = ctx[mzc_bits_buffer_out];
+    n = ctx[mzc_bits_remain_out];
+
+    b |= bit << n;
+
+    n += 1;
+
+    if (n == 8)
+    {
+        *ctx[mzc_next_out]++ := b;
+
+        ctx[mzc_avail_out]--;
+
+        b := 0;
+        n := 0;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------
+{
+    buf: &char[32] := v_undef();
+
+    ctx: &myz_ctx_t := 0;
+
+    msg: &char[] := "Hello world!";
+
+    ctx[mzc_next_in]  := msg;
+    ctx[mzc_avail_in] := 13;
+
+    ctx[mzc_next_out]  := buf;
+    ctx[mzc_avail_out] := 32;
+
+    for (i: &int := 0; ctx[mzc_avail_in] || i%8; ++i)
+    {
+        c = *ctx[mzc_next_in];
+
+        if (i%8 == 0)  printf("\'%c\': %02X: ", c, c);
+
+        b = myz_get_bit(ctx);
+
+        myz_put_bit(ctx, b);
+
+        printf("%d", (b: int));
+
+        if (i%8 == 7)  printf("\n");
+    }
+
+    printf("\n%s\n", buf);
+}
+
+
