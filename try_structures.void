@@ -1,0 +1,254 @@
+{   v_import("level-00");
+    v_import("level-01");
+
+    v_import("llvm-c/Core.void");
+
+    v_import("level-02/literals.void");
+    v_import("level-02/loops_etc.void");
+    v_import("level-02/aggregates.void");
+    v_import("level-02/overloading.void");
+    v_import("level-02/projections.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_level_01();
+
+    voidc_enable_literals();
+    voidc_enable_loops_etc();
+    voidc_enable_aggregates();
+    voidc_enable_overloading();
+    voidc_enable_projections();
+}
+
+
+//---------------------------------------------------------------------
+ast_expr_struct_t = v_struct("struct.ast_expr_struct_t",
+{
+    v_ast_expr_t,           //- 0 - Name (identifier or string or empty)
+    v_ast_stmt_list_t,      //- 1 - Fields list (or empty)
+    bool,                   //- 2 - Is packed
+    bool,                   //- 3 - Is export
+});
+
+//---------------------------------------------------------------------
+{
+    size_v = LLVMSizeOf(v_type_get_llvm_type(ast_expr_struct_t));
+
+    v_add_constant("ast_expr_struct_t_size", size_t, size_v);
+
+    quark_name = "v_ast_expr_struct_visitor_method_tag";
+
+    quark_p = v_quark_ptr_from_string(quark_name);
+
+    v_export_symbol(quark_name, v_reference_type(v_quark_t, 0), quark_p);
+
+    v_add_alias("quark", quark_name);
+}
+
+//---------------------------------------------------------------------
+ast_expr_struct_init: (void_obj: *void) -> void
+{
+    obj = *(void_obj: *ast_expr_struct_t);
+
+    v_initialize(&obj[0]);
+    v_initialize(&obj[1]);
+}
+
+//---------------------------------------------------------------------
+ast_expr_struct_term: (void_obj: *void) -> void
+{
+    obj = *(void_obj: *ast_expr_struct_t);
+
+    v_terminate(&obj[0]);
+    v_terminate(&obj[1]);
+}
+
+//---------------------------------------------------------------------
+ast_expr_struct_accept: (void_obj: *void, vis: *voidc_visitor_t) -> void
+{
+    obj = *(void_obj: *ast_expr_struct_t);
+
+    name   = &obj[0];
+    body   = &obj[1];
+    packed =  obj[2];
+    export =  obj[3];
+
+    aux: &*void := v_undef();
+
+    void_method = voidc_visitor_get_void_method(vis, quark, &aux);
+
+    method = (void_method: *((*voidc_visitor_t, *void, *v_ast_expr_t, *v_ast_stmt_list_t, bool, bool) -> void));
+
+    method(vis, aux, name, body, packed, export);
+}
+
+//---------------------------------------------------------------------
+ast_expr_struct_vtable: &v_ast_generic_vtable :=
+{
+    ast_expr_struct_init,
+    ast_expr_struct_term,
+    ast_expr_struct_accept,
+};
+
+//---------------------------------------------------------------------
+ast_make_expr_struct: (ret: *v_ast_expr_t,
+                       name: *v_ast_expr_t,
+                       body: *v_ast_stmt_list_t,
+                       packed: bool,
+                       export: bool
+                      ) -> void
+{
+    etmp = v_alloca(v_ast_expr_t);
+    v_initialize(etmp);
+    defer v_terminate(etmp);
+
+    v_ast_make_expr_generic(etmp, &ast_expr_struct_vtable, ast_expr_struct_t_size);
+
+    void_obj = v_ast_generic_get_object((etmp: v_ast_base_ptr));
+
+    obj = *(void_obj: *ast_expr_struct_t);
+
+    if (name)  v_copy(&obj[0], name);
+    if (body)  v_copy(&obj[1], body);
+
+    obj[2] := packed;
+    obj[3] := export;
+
+    v_copy(ret, etmp);
+}
+
+
+//---------------------------------------------------------------------
+mk_expr_struct_grammar_action: (ret: v_std_any_ptr, any: v_std_any_ptr, size_t) -> void
+{
+    packed = v_std_any_get_value(intptr_t, any+0);
+    name   = v_std_any_get_pointer(v_ast_expr_t, any+1);
+    body   = v_std_any_get_pointer(v_ast_stmt_list_t, any+2);
+
+    expr = v_alloca(v_ast_expr_t);
+    v_initialize(expr);
+    defer v_terminate(expr);
+
+    ast_make_expr_struct(expr, name, body, (packed: bool), false);
+
+    v_std_any_set_pointer(ret, expr);
+}
+
+
+//---------------------------------------------------------------------
+mk_unit_struct_defn_grammar_action: (ret: v_std_any_ptr, any: v_std_any_ptr, size_t) -> void
+{
+}
+
+//---------------------------------------------------------------------
+mk_stmt_struct_defn_grammar_action: (ret: v_std_any_ptr, any: v_std_any_ptr, size_t) -> void
+{
+}
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------
+{
+    gr0 = v_alloca(v_peg_grammar_t);
+    v_initialize(gr0);
+    defer v_terminate(gr0);
+
+    v_peg_get_grammar(gr0);
+
+    grammar gr0
+    {
+    actions:
+        mk_expr_struct = mk_expr_struct_grammar_action;
+
+        mk_unit_struct_defn = mk_unit_struct_defn_grammar_action;
+        mk_stmt_struct_defn = mk_stmt_struct_defn_grammar_action;
+
+    parsers:
+        expr_struct = p:struct_packed _"struct"_ n:struct_name? _ b:struct_body?    { mk_expr_struct(p, n, b) }
+                    ;
+
+        struct_packed = p:"packed" !ident_cont  { 1 }
+                      /                         { 0 }
+                      ;
+
+        struct_name = i:identifier  { mk_expr_identifier(i) }
+                    / s:string      { mk_expr_string(s) }
+                    ;
+
+        struct_body = '{'_ f:fields_list _'}'       { f }
+                    ;
+
+        fields_list = fields_list_lr
+                    /                                       { mk_stmt_list(0, 0) }      //- Sic!!!
+                    ;
+
+        fields_list_lr = l:fields_list_lr _ e:field_decl    { mk_stmt_list(l, e) }      //- Sic!!!
+                       / e:field_decl                       { mk_stmt_list(0, e) }      //- Sic!!!
+                       ;
+
+        fields_list_lr is left-recursive;
+
+        field_decl = i:identifier _':'_ t:expr _';'         { mk_stmt(i, t) }           //- Sic!!!
+                   ;
+
+
+        expr += expr_struct;
+
+
+        unit_struct_defn = q:qualif_flag _ e:expr_struct _';'   { mk_unit_struct_defn(q, e) }
+                         ;
+
+        unit_defn += unit_struct_defn;
+
+
+        stmt_struct_defn = e:expr_struct _';'       { mk_stmt_struct_defn(e) }
+                         ;
+
+        stmt_defn += stmt_struct_defn;
+    }
+
+    v_peg_set_grammar(gr0);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------
+{ v_debug_print_module(1); }
+{
+    v_struct("Йцукен", { int, long, char});
+
+    v: &v_struct("Йцукен") := { 1, 2, 'a' };
+
+
+
+
+
+
+
+
+}
+
+
+
