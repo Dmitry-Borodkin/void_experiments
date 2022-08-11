@@ -37,13 +37,13 @@ ast_expr_struct_t = v_struct("struct.ast_expr_struct_t",
 
     v_add_constant("ast_expr_struct_t_size", size_t, size_v);
 
-    quark_name = "v_ast_expr_struct_visitor_method_tag";
 
-    quark_p = v_quark_ptr_from_string(quark_name);
+    quark_ref = v_reference_type(v_quark_t, 0);
 
-    v_export_symbol(quark_name, v_reference_type(v_quark_t, 0), quark_p);
+    q = v_quark_ptr_from_string;
 
-    v_add_alias("quark", quark_name);
+    v_add_symbol("expr_struct_q",       quark_ref, q("v_ast_expr_struct_visitor_method_tag"));
+    v_add_symbol("unit_struct_defn_q",  quark_ref, q("unit_struct_defn"));
 }
 
 //---------------------------------------------------------------------
@@ -76,7 +76,7 @@ ast_expr_struct_accept: (void_obj: *void, vis: *voidc_visitor_t) -> void
 
     aux: &*void := v_undef();
 
-    void_method = voidc_visitor_get_void_method(vis, quark, &aux);
+    void_method = voidc_visitor_get_void_method(vis, expr_struct_q, &aux);
 
     method = (void_method: *((*voidc_visitor_t, *void, *v_ast_expr_t, *v_ast_stmt_list_t, bool, bool) -> void));
 
@@ -130,7 +130,7 @@ mk_expr_struct_grammar_action: (ret: v_std_any_ptr, any: v_std_any_ptr, size_t) 
     v_initialize(expr);
     defer v_terminate(expr);
 
-    ast_make_expr_struct(expr, name, body, (packed: bool), false);
+    ast_make_expr_struct(expr, name, body, (packed: bool), false);      //- NOT export!
 
     v_std_any_set_pointer(ret, expr);
 }
@@ -139,22 +139,309 @@ mk_expr_struct_grammar_action: (ret: v_std_any_ptr, any: v_std_any_ptr, size_t) 
 //---------------------------------------------------------------------
 mk_unit_struct_defn_grammar_action: (ret: v_std_any_ptr, any: v_std_any_ptr, size_t) -> void
 {
+    qualif = v_std_any_get_value(intptr_t, any+0);
+    expr   = v_std_any_get_pointer(v_ast_expr_t, any+1);
+
+    qf_export  = 1;         //- Sic!
+    qf_private = 2;         //- Sic!
+
+    export = (v_get_export_flag()  ||  qualif == qf_export)  &&  (qualif != qf_private);
+
+    if (export)
+    {
+        void_obj = v_ast_generic_get_object((expr: v_ast_base_ptr));
+
+        obj = *(void_obj: *ast_expr_struct_t);
+
+        obj[3] := true;
+    }
+
+    lst = v_alloca(v_ast_generic_list_t);
+    v_initialize(lst);
+    defer v_terminate(lst);
+
+    v_make_list(lst, unit_struct_defn_q, (expr: v_ast_base_ptr), 1);
+
+    v_std_any_set_pointer(ret, lst);
 }
+
 
 //---------------------------------------------------------------------
-mk_stmt_struct_defn_grammar_action: (ret: v_std_any_ptr, any: v_std_any_ptr, size_t) -> void
+voidc_internal_index_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
+                                 args: v_ast_expr_list_ptr,
+                                 t0: v_type_ptr, v0: LLVMValueRef
+                                ) -> void
 {
+    idx = (aux: int);
+
+    expr = v_alloca(v_ast_expr_t);
+    v_initialize(expr);
+    defer v_terminate(expr);
+
+    v_ast_make_expr_integer(expr, idx);
+
+    voidc_internal_op_postfix_index_helper(vis, expr, t0, v0);
 }
 
 
+//---------------------------------------------------------------------
+compile_expr_struct: (vis: *voidc_visitor_t, aux: *void,
+                      name:   *v_ast_expr_t,
+                      body:   *v_ast_stmt_list_t,
+                      packed: bool,
+                      export: bool
+                      ) -> void
+{
+    type_name: &*const char := 0;
+
+    type: &v_type_ptr := 0;
+
+    if (!v_empty(name))
+    {
+        struct_name: &*const char := v_undef();
+
+        tag = v_ast_base_get_visitor_method_tag((name: v_ast_base_ptr));
+
+        if (tag == v_ast_expr_identifier_visitor_method_tag)
+        {
+            nm = v_ast_expr_identifier_get_name(name);
+
+            type_name   := nm;
+            struct_name := nm;
+        }
+        else        //- Sic!
+        {
+            struct_name := v_ast_expr_string_get_string(name);
+        }
+
+        sstr = v_alloca(v_std_string_t);
+        v_initialize(sstr);
+        defer v_terminate(sstr);
+
+        v_std_string_set(sstr, "struct.");
+
+        v_std_string_append(sstr+0, struct_name);
+
+        type := v_struct_type_named(v_std_string_get(sstr));
+    }
+
+    if (type_name)
+    {
+        if (export)  v_export_type(type_name, type);
+        else         v_add_type(type_name, type);
+    }
+
+    if (!v_empty(body))
+    {
+        tref = v_reference_type(type, 0);
+
+        N = v_list_get_size(body);
+
+        {   types = v_malloc(v_type_ptr, N);
+            defer v_free(types);
+
+            for (i: &int := 0; i < N; ++i)
+            {
+                stmp = v_list_get_item(body, i);
+
+                etmp = v_ast_stmt_get_expr(stmp);
+
+                v_set_result_type(INVIOLABLE_TAG);
+
+                v_ast_accept_visitor((etmp : v_ast_base_ptr), vis);
+
+                types[i] := (v_get_result_value() : v_type_ptr);
+            }
+
+            if (type) v_type_struct_set_body(type, types, N, packed);
+            else      type := v_struct_type(types, N, packed);
+        }
+
+        sstr = v_alloca(v_std_string_t, 2);
+        v_initialize(sstr, 2);
+        defer v_terminate(sstr, 2);
+
+        for (i: &int := 0; i < N; ++i)
+        {
+            stmp = v_list_get_item(body, i);
+
+            field = v_ast_stmt_get_name(stmp);
+
+            v_std_string_set(sstr+0, ".");
+
+            v_std_string_append(sstr+0, field);
+
+            quark = v_quark_from_string(v_std_string_get(sstr+0));
+
+            v_std_string_set(sstr+1, "voidc.internal.index.");
+
+            v_std_string_append_number(sstr+1, i);
+
+            intrinsic = v_std_string_get(sstr+1);
+
+            v_util_function_dict_set(quark, type, intrinsic);
+            v_util_function_dict_set(quark, tref, intrinsic);
+
+            if (export)  v_export_intrinsic(intrinsic, voidc_internal_index_intrinsic, (i: *void));
+            else         v_add_intrinsic   (intrinsic, voidc_internal_index_intrinsic, (i: *void));
+        }
+    }
+
+    v_set_result_type(v_static_type_t);
+    v_set_result_value((type: LLVMValueRef));
 
 
+    //-----------------------------------------------------------------
+    stmt_list = voidc_visitor_get_intrinsic(vis, "voidc.decl_stmt_list", 0);
+
+    if (!stmt_list)  v_return();
+
+    stmt_list = v_cast(stmt_list, v_ast_stmt_list_ptr);
 
 
+    expr = v_alloca(v_ast_expr_t, 3);
+    v_initialize(expr, 3);
+    defer v_terminate(expr, 3);
+
+    elst = v_alloca(v_ast_expr_list_t);
+    v_initialize(elst);
+    defer v_terminate(elst);
+
+    stmt = v_alloca(v_ast_stmt_t);
+    v_initialize(stmt);
+    defer v_terminate(stmt);
 
 
+    v_ast_make_expr_integer(expr+0, v_cast(type, intptr_t));        //- Sic!!!
+
+    v_ast_make_stmt_call(stmt, "type", "voidc.compile_type", expr+0, 1);
+
+    v_list_append(stmt_list, stmt_list, stmt);
 
 
+    if (type_name)
+    {
+        v_ast_make_expr_string(expr+0, type_name);
+
+        v_ast_make_expr_identifier(expr+1, "type");
+
+        if (export)  v_ast_make_stmt_call(stmt, "", "v_export_type", expr, 2);
+        else         v_ast_make_stmt_call(stmt, "", "v_add_type", expr, 2);
+
+        v_list_append(stmt_list, stmt_list, stmt);
+    }
+
+
+    if (v_empty(body))  v_return();
+
+    N = v_list_get_size(body);
+
+    if (N == 0)  v_return();
+
+    tref = v_reference_type(type, 0);
+
+    v_ast_make_expr_integer(expr+0, v_cast(tref, intptr_t));        //- Sic!!!
+
+    v_ast_make_stmt_call(stmt, "tref", "voidc.compile_type", expr+0, 1);
+
+    v_list_append(stmt_list, stmt_list, stmt);
+
+
+    v_ast_make_expr_identifier(expr+0, "void");
+
+    v_ast_make_expr_integer(expr+1, 0);
+
+    v_ast_make_stmt_call(stmt, "void_ptr", "v_ptr", expr+0, 2);
+
+
+    sstr = v_alloca(v_std_string_t);
+    v_initialize(sstr);
+    defer v_terminate(sstr);
+
+    for (i: &int := 0; i < N; ++i)
+    {
+        stmp = v_list_get_item(body, i);
+
+        field = v_ast_stmt_get_name(stmp);
+
+        v_std_string_set(sstr, ".");
+
+        v_std_string_append(sstr, field);
+
+        v_ast_make_expr_string(expr+0, v_std_string_get(sstr));
+
+        v_ast_make_stmt_call(stmt, "quark", "v_quark_from_string", expr+0, 1);
+
+        v_list_append(stmt_list, stmt_list, stmt);
+
+
+        v_std_string_set(sstr, "voidc.internal.index.");
+
+        v_std_string_append_number(sstr, i);
+
+        v_ast_make_expr_string(expr+2, v_std_string_get(sstr));
+
+        v_ast_make_expr_identifier(expr+0, "quark");
+
+
+        v_ast_make_expr_identifier(expr+1, "type");
+
+        v_ast_make_stmt_call(stmt, "", "v_util_function_dict_set", expr+0, 3);
+
+        v_list_append(stmt_list, stmt_list, stmt);
+
+
+        v_ast_make_expr_identifier(expr+1, "tref");
+
+        v_ast_make_stmt_call(stmt, "", "v_util_function_dict_set", expr+0, 3);
+
+        v_list_append(stmt_list, stmt_list, stmt);
+
+
+        v_copy(expr+0, expr+2);     //- kinda  "voidc.internal.index." + i
+
+
+        v_ast_make_expr_integer(expr+1, i);
+
+        v_ast_make_expr_identifier(expr+2, "void_ptr");
+
+        v_make_list(elst, expr+1, 2);
+
+        v_ast_make_expr_identifier(expr+1, "v_cast");
+
+        v_ast_make_expr_call(expr+2, expr+1, elst);
+
+
+        v_ast_make_expr_identifier(expr+1, "voidc_internal_index_intrinsic");
+
+        if (export)  v_ast_make_stmt_call(stmt, "", "v_export_intrinsic", expr+0, 3);
+        else         v_ast_make_stmt_call(stmt, "", "v_add_intrinsic",    expr+0, 3);
+
+        v_list_append(stmt_list, stmt_list, stmt);
+    }
+}
+
+
+//---------------------------------------------------------------------
+compile_unit_struct_defn: (vis: *voidc_visitor_t, aux: *void,
+                           list: *v_ast_generic_list_t
+                          ) -> void
+{
+    ast = v_list_get_item(list, 0);
+
+    v_ast_accept_visitor(ast, vis);
+}
+
+
+//---------------------------------------------------------------------
+{
+    ast_expr_struct_vtable[3] := expr_struct_q;
+
+    vis = voidc_compiler;
+
+    voidc_visitor_set_void_method(vis, vis, expr_struct_q,      compile_expr_struct,      0);
+    voidc_visitor_set_void_method(vis, vis, unit_struct_defn_q, compile_unit_struct_defn, 0);
+}
 
 //---------------------------------------------------------------------
 {
@@ -170,10 +457,9 @@ mk_stmt_struct_defn_grammar_action: (ret: v_std_any_ptr, any: v_std_any_ptr, siz
         mk_expr_struct = mk_expr_struct_grammar_action;
 
         mk_unit_struct_defn = mk_unit_struct_defn_grammar_action;
-        mk_stmt_struct_defn = mk_stmt_struct_defn_grammar_action;
 
     parsers:
-        expr_struct = p:struct_packed _"struct"_ n:struct_name? _ b:struct_body?    { mk_expr_struct(p, n, b) }
+        expr_struct = p:struct_packed _"struct" !ident_cont _ n:struct_name? _ b:struct_body?   { mk_expr_struct(p, n, b) }
                     ;
 
         struct_packed = p:"packed" !ident_cont  { 1 }
@@ -208,12 +494,6 @@ mk_stmt_struct_defn_grammar_action: (ret: v_std_any_ptr, any: v_std_any_ptr, siz
                          ;
 
         unit_defn += unit_struct_defn;
-
-
-        stmt_struct_defn = e:expr_struct _';'       { mk_stmt_struct_defn(e) }
-                         ;
-
-        stmt_defn += stmt_struct_defn;
     }
 
     v_peg_set_grammar(gr0);
@@ -224,27 +504,32 @@ mk_stmt_struct_defn_grammar_action: (ret: v_std_any_ptr, any: v_std_any_ptr, siz
 
 
 
-
-
-
-
-
-
-
-
-
-
 //---------------------------------------------------------------------
-{ v_debug_print_module(1); }
+{ v_debug_print_module(9); }
+
+
+struct qwerty_t
 {
-    v_struct("Йцукен", { int, long, char});
+    x: int;
+    y: long;
 
-    v: &v_struct("Йцукен") := { 1, 2, 'a' };
+    p: *qwerty_t;
+};
+
+s: &qwerty_t;
+
+r: &qwerty_t := { 77, 999, &s };
+
+s: &qwerty_t := { 7, 19, &r };
 
 
+{
+    q: &qwerty_t := s;
 
+//  q.y += (*r.p).y;
+    q.y += r.p~>y;
 
-
+    printf("s: { x: %d, y: %ld }\n", q.x, q.y);
 
 
 

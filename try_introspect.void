@@ -33,8 +33,7 @@ system: (cmd: *const char) -> int;
 
 //{ v_debug_print_module(99); }
 //---------------------------------------------------------------------
-// my_source: &char[] :=
-my_source: char[] =
+my_source: &char[] :=
 """
 #include "vpeg_grammar.h"
 
