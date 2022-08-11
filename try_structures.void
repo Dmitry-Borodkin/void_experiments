@@ -526,7 +526,6 @@ s: &qwerty_t := { 7, 19, &r };
 {
     q: &qwerty_t := s;
 
-//  q.y += (*r.p).y;
     q.y += r.p~>y;
 
     printf("s: { x: %d, y: %ld }\n", q.x, q.y);
