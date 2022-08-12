@@ -49,7 +49,7 @@ C: bigint_t =   4373612677928697257861252602371390152816537558161613618621437993
 
 
 //---------------------------------------------------------------------
-check_bigint: (a: bigint_t, b: bigint_t, c: bigint_t) -> bool
+check_bigint: (a: &bigint_t, b: &bigint_t, c: &bigint_t) -> bool
 {
     ab = a + b;     if (ab == 0)  v_return(false);
     ac = a + c;     if (ac == 0)  v_return(false);

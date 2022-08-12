@@ -53,7 +53,7 @@ is_finite: (x: double) -> bool
 
 infinity = 1e1000;
 
-det_3: (v: double[9]) -> double
+det_3: (v: &double[9]) -> double
 {
     v00 = v[0]; v01 = v[1]; v02 = v[2];
     v10 = v[3]; v11 = v[4]; v12 = v[5];
@@ -85,25 +85,14 @@ seq_equal: (a: *double, b: *double, n: int) -> bool
 //=====================================================================
 //- Vector (2D)
 //=====================================================================
-Vector = v_struct("Vector2D", {double, double});
-
-Vector_x_ref: (v: &Vector) -> &double   { v_return(v[0]); }
-Vector_y_ref: (v: &Vector) -> &double   { v_return(v[1]); }
-Vector_x:     (v:  Vector) ->  double   { v_return(v[0]); }
-Vector_y:     (v:  Vector) ->  double   { v_return(v[1]); }
-
-{   Vector_ref = v_reference_type(Vector, 0);
-
-    q = v_quark_from_string;
-
-    v_util_function_dict_set(q(".x"), Vector_ref, "Vector_x_ref");
-    v_util_function_dict_set(q(".y"), Vector_ref, "Vector_y_ref");
-    v_util_function_dict_set(q(".x"), Vector,     "Vector_x");
-    v_util_function_dict_set(q(".y"), Vector,     "Vector_y");
-}
+struct Vector
+{
+    x: double;
+    y: double;
+};
 
 //---------------------------------------------------------------------
-Vector_op_infix_shl_right: (s: &v_std_string_ptr, v: Vector) -> &v_std_string_ptr
+Vector_op_infix_shl_right: (s: &v_std_string_ptr, v: &Vector) -> &v_std_string_ptr
 {
     n = 1 + snprintf(0, 0, "(%g, %g)", v.x, v.y);
 
@@ -123,47 +112,47 @@ Vector_op_infix_shl_right: (s: &v_std_string_ptr, v: Vector) -> &v_std_string_pt
 }
 
 //---------------------------------------------------------------------
-Vector_op_infix_add: (a: Vector, b: Vector) -> Vector
+Vector_op_infix_add: (a: &Vector, b: &Vector) -> Vector
 {
     v_return({ a.x+b.x, a.y+b.y });
 }
 
-Vector_op_infix_sub: (a: Vector, b: Vector) -> Vector
+Vector_op_infix_sub: (a: &Vector, b: &Vector) -> Vector
 {
     v_return({ a.x-b.x, a.y-b.y });
 }
 
-Vector_op_prefix_plus: (a: Vector) -> Vector
+Vector_op_prefix_plus: (a: &Vector) -> Vector
 {
     v_return(a);
 }
 
-Vector_op_prefix_minus: (a: Vector) -> Vector
+Vector_op_prefix_minus: (a: &Vector) -> Vector
 {
     v_return({ -a.x, -a.y });
 }
 
-Vector_op_infix_mul: (a: Vector, k: double) -> Vector
+Vector_op_infix_mul: (a: &Vector, k: double) -> Vector
 {
     v_return({ a.x*k, a.y*k });
 }
 
-Vector_op_infix_mul_right: (k: double, a: Vector) -> Vector
+Vector_op_infix_mul_right: (k: double, a: &Vector) -> Vector
 {
     v_return({ k*a.x, k*a.y });
 }
 
-Vector_op_infix_div: (a: Vector, k: double) -> Vector
+Vector_op_infix_div: (a: &Vector, k: double) -> Vector
 {
     v_return({ a.x/k, a.y/k });
 }
 
-Vector_op_infix_eq: (a: Vector, b: Vector) -> bool
+Vector_op_infix_eq: (a: &Vector, b: &Vector) -> bool
 {
     v_return( is_equal(a.x, b.x)  &&  is_equal(a.y, b.y) );
 }
 
-Vector_op_infix_ne: (a: Vector, b: Vector) -> bool
+Vector_op_infix_ne: (a: &Vector, b: &Vector) -> bool
 {
     v_return( !Vector_op_infix_eq(a, b) );
 }
@@ -196,17 +185,17 @@ Vector_unit_y:   Vector = {0, 1};
 Vector_infinity: Vector = {infinity, infinity};
 
 //---------------------------------------------------------------------
-Vector_dot: (a: Vector, b: Vector) -> double
+Vector_dot: (a: &Vector, b: &Vector) -> double
 {
     v_return( a.x*b.x + a.y*b.y );
 }
 
-Vector_crs: (a: Vector, b: Vector) -> double
+Vector_crs: (a: &Vector, b: &Vector) -> double
 {
     v_return( a.x*b.y - a.y*b.x );
 }
 
-Vector_is_fininite: (a: Vector) -> bool
+Vector_is_fininite: (a: &Vector) -> bool
 {
     v_return( is_finite(a.x)  &&  is_finite(a.y) );
 }
@@ -228,29 +217,15 @@ Vector_is_fininite: (a: Vector) -> bool
 //=====================================================================
 //- Projective point (2D)
 //=====================================================================
-Point = v_struct("Point2D", {double, double, double});
-
-Point_x_ref: (p: &Point) -> &double   { v_return(p[0]); }
-Point_y_ref: (p: &Point) -> &double   { v_return(p[1]); }
-Point_w_ref: (p: &Point) -> &double   { v_return(p[2]); }
-Point_x:     (p:  Point) ->  double   { v_return(p[0]); }
-Point_y:     (p:  Point) ->  double   { v_return(p[1]); }
-Point_w:     (p:  Point) ->  double   { v_return(p[2]); }
-
-{   Point_ref = v_reference_type(Point, 0);
-
-    q = v_quark_from_string;
-
-    v_util_function_dict_set(q(".x"), Point_ref, "Point_x_ref");
-    v_util_function_dict_set(q(".y"), Point_ref, "Point_y_ref");
-    v_util_function_dict_set(q(".w"), Point_ref, "Point_w_ref");
-    v_util_function_dict_set(q(".x"), Point,     "Point_x");
-    v_util_function_dict_set(q(".y"), Point,     "Point_y");
-    v_util_function_dict_set(q(".w"), Point,     "Point_w");
-}
+struct Point
+{
+    x: double;
+    y: double;
+    w: double;
+};
 
 //---------------------------------------------------------------------
-Point_op_infix_shl_right: (s: &v_std_string_ptr, p: Point) -> &v_std_string_ptr
+Point_op_infix_shl_right: (s: &v_std_string_ptr, p: &Point) -> &v_std_string_ptr
 {
     n = 1 + snprintf(0, 0, "(%g, %g, %g)", p.x, p.y, p.w);
 
@@ -270,12 +245,12 @@ Point_op_infix_shl_right: (s: &v_std_string_ptr, p: Point) -> &v_std_string_ptr
 }
 
 //---------------------------------------------------------------------
-Point_op_infix_add: (p: Point, v: Vector) -> Point
+Point_op_infix_add: (p: &Point, v: &Vector) -> Point
 {
     v_return({ p.x + p.w*v.x, p.y + p.w*v.y, p.w });
 }
 
-Point_op_infix_sub: (a: Point, b: Point) -> Vector
+Point_op_infix_sub: (a: &Point, b: &Point) -> Vector
 {
     v_return({ a.x/a.w - b.x/b.w, a.y/a.w - b.y/b.w });
 }
@@ -292,7 +267,7 @@ Point_op_infix_sub: (a: Point, b: Point) -> Vector
 }
 
 //---------------------------------------------------------------------
-Point_norm_ref: (p: &Point) -> bool
+Point_norm: (p: &Point) -> bool
 {
     pa: &double[3] := {p.x, p.y, p.w};
 
@@ -315,53 +290,32 @@ Point_norm_ref: (p: &Point) -> bool
     v_return(true);
 }
 
-Point_norm: (p: Point) -> Point
-{
-    pa: &double[3] := {p.x, p.y, p.w};
-
-    d: &double := 0;
-
-    for (i: &int := 0; i < 3; ++i)
-    {
-        if (di = abs(pa[i]), d < di)  d := di;
-    }
-
-    if (d == 1)  v_return(p);
-
-    v_return({ p.x/d, p.y/d, p.w/d });
-}
-
 {   Point_ref = v_reference_type(Point, 0);
 
     q = v_quark_from_string;
 
-    v_util_function_dict_set(q(".norm()"), Point_ref, "Point_norm_ref");
+    v_util_function_dict_set(q(".norm()"), Point_ref, "Point_norm");
     v_util_function_dict_set(q(".norm()"), Point,     "Point_norm");
 }
 
 //---------------------------------------------------------------------
-Point_is_affine_ref: (p: &Point) -> bool
+Point_is_affine: (p: &Point) -> bool
 {
     if (!p.norm())  v_return(false);
 
     v_return( abs(p.w) > EPSILON );
 }
 
-Point_is_affine: (p: Point) -> bool
-{
-    v_return( abs(p.norm().w) > EPSILON );
-}
-
 {   Point_ref = v_reference_type(Point, 0);
 
     q = v_quark_from_string;
 
-    v_util_function_dict_set(q(".is_affine()"), Point_ref, "Point_is_affine_ref");
+    v_util_function_dict_set(q(".is_affine()"), Point_ref, "Point_is_affine");
     v_util_function_dict_set(q(".is_affine()"), Point,     "Point_is_affine");
 }
 
 //---------------------------------------------------------------------
-Point_op_infix_eq_ref: (a: &Point, b: &Point) -> bool
+Point_op_infix_eq: (a: &Point, b: &Point) -> bool
 {
     if (!(a.norm()  &&  b.norm()))  v_return(false);
 
@@ -371,23 +325,7 @@ Point_op_infix_eq_ref: (a: &Point, b: &Point) -> bool
     v_return(seq_equal(sa, sb, 3));
 }
 
-Point_op_infix_eq: (a: Point, b: Point) -> bool
-{
-    a = a.norm();
-    b = b.norm();
-
-    sa: &double[] := {a.x, a.y, a.w};
-    sb: &double[] := {b.x, b.y, b.w};
-
-    v_return(seq_equal(sa, sb, 3));
-}
-
-Point_op_infix_ne_ref: (a: &Point, b: &Point) -> bool
-{
-    v_return(!Point_op_infix_eq_ref(a, b));
-}
-
-Point_op_infix_ne: (a: Point, b: Point) -> bool
+Point_op_infix_ne: (a: &Point, b: &Point) -> bool
 {
     v_return(!Point_op_infix_eq(a, b));
 }
@@ -396,8 +334,8 @@ Point_op_infix_ne: (a: Point, b: Point) -> bool
 
     q = v_quark_from_string;
 
-    v_util_function_dict_set(q("op_infix_eq"), Point_ref, "Point_op_infix_eq_ref");
-    v_util_function_dict_set(q("op_infix_ne"), Point_ref, "Point_op_infix_ne_ref");
+    v_util_function_dict_set(q("op_infix_eq"), Point_ref, "Point_op_infix_eq");
+    v_util_function_dict_set(q("op_infix_ne"), Point_ref, "Point_op_infix_ne");
     v_util_function_dict_set(q("op_infix_eq"), Point,     "Point_op_infix_eq");
     v_util_function_dict_set(q("op_infix_ne"), Point,     "Point_op_infix_ne");
 }
@@ -413,29 +351,15 @@ Point_inf_y:  Point = {0, 1, 0};
 //=====================================================================
 //- Projective line (2D)
 //=====================================================================
-Line = v_struct("Line2D", {double, double, double});
-
-Line_cx_ref: (l: &Line) -> &double  { v_return(l[0]); }
-Line_cy_ref: (l: &Line) -> &double  { v_return(l[1]); }
-Line_cw_ref: (l: &Line) -> &double  { v_return(l[2]); }
-Line_cx:     (l:  Line) ->  double  { v_return(l[0]); }
-Line_cy:     (l:  Line) ->  double  { v_return(l[1]); }
-Line_cw:     (l:  Line) ->  double  { v_return(l[2]); }
-
-{   Line_ref = v_reference_type(Line, 0);
-
-    q = v_quark_from_string;
-
-    v_util_function_dict_set(q(".cx"), Line_ref, "Line_cx_ref");
-    v_util_function_dict_set(q(".cy"), Line_ref, "Line_cy_ref");
-    v_util_function_dict_set(q(".cw"), Line_ref, "Line_cw_ref");
-    v_util_function_dict_set(q(".cx"), Line,     "Line_cx");
-    v_util_function_dict_set(q(".cy"), Line,     "Line_cy");
-    v_util_function_dict_set(q(".cw"), Line,     "Line_cw");
-}
+struct Line
+{
+    cx: double;
+    cy: double;
+    cw: double;
+};
 
 //---------------------------------------------------------------------
-Line_op_infix_shl_right: (s: &v_std_string_ptr, l: Line) -> &v_std_string_ptr
+Line_op_infix_shl_right: (s: &v_std_string_ptr, l: &Line) -> &v_std_string_ptr
 {
     n = 1 + snprintf(0, 0, "(%g, %g, %g)", l.cx, l.cy, l.cw);
 
@@ -455,7 +379,7 @@ Line_op_infix_shl_right: (s: &v_std_string_ptr, l: Line) -> &v_std_string_ptr
 }
 
 //---------------------------------------------------------------------
-Line_op_infix_add: (l: Line, v: Vector) -> Line
+Line_op_infix_add: (l: &Line, v: &Vector) -> Line
 {
     v_return({ l.cx, l.cy, l.cw - l.cx*v.x - l.cy*v.y });
 }
@@ -469,7 +393,7 @@ Line_op_infix_add: (l: Line, v: Vector) -> Line
 }
 
 //---------------------------------------------------------------------
-Line_norm_ref: (l: &Line) -> bool
+Line_norm: (l: &Line) -> bool
 {
     la: &double[3] := {l.cx, l.cy, l.cw};
 
@@ -492,55 +416,32 @@ Line_norm_ref: (l: &Line) -> bool
     v_return(true);
 }
 
-Line_norm: (l: Line) -> Line
-{
-    la: &double[3] := {l.cx, l.cy, l.cw};
-
-    d: &double := 0;
-
-    for (i: &int := 0; i < 3; ++i)
-    {
-        if (di = abs(la[i]), d < di)  d := di;
-    }
-
-    if (d == 1)  v_return(l);
-
-    v_return({ l.cx/d, l.cy/d, l.cw/d });
-}
-
 {   Line_ref = v_reference_type(Line, 0);
 
     q = v_quark_from_string;
 
-    v_util_function_dict_set(q(".norm()"), Line_ref, "Line_norm_ref");
+    v_util_function_dict_set(q(".norm()"), Line_ref, "Line_norm");
     v_util_function_dict_set(q(".norm()"), Line,     "Line_norm");
 }
 
 //---------------------------------------------------------------------
-Line_is_affine_ref: (l: &Line) -> bool
+Line_is_affine: (l: &Line) -> bool
 {
     if (!l.norm())  v_return(false);
 
     v_return( abs(l.cx) > EPSILON  ||  abs(l.cy) > EPSILON );
 }
 
-Line_is_affine: (l: Line) -> bool
-{
-    l = l.norm();
-
-    v_return( abs(l.cx) > EPSILON  ||  abs(l.cy) > EPSILON );
-}
-
 {   Line_ref = v_reference_type(Line, 0);
 
     q = v_quark_from_string;
 
-    v_util_function_dict_set(q(".is_affine()"), Line_ref, "Line_is_affine_ref");
+    v_util_function_dict_set(q(".is_affine()"), Line_ref, "Line_is_affine");
     v_util_function_dict_set(q(".is_affine()"), Line,     "Line_is_affine");
 }
 
 //---------------------------------------------------------------------
-Line_op_infix_eq_ref: (a: &Line, b: &Line) -> bool
+Line_op_infix_eq: (a: &Line, b: &Line) -> bool
 {
     if (!(a.norm()  &&  b.norm()))  v_return(false);
 
@@ -550,23 +451,7 @@ Line_op_infix_eq_ref: (a: &Line, b: &Line) -> bool
     v_return(seq_equal(sa, sb, 3));
 }
 
-Line_op_infix_eq: (a: Line, b: Line) -> bool
-{
-    a = a.norm();
-    b = b.norm();
-
-    sa: &double[] := {a.cx, a.cy, a.cw};
-    sb: &double[] := {b.cx, b.cy, b.cw};
-
-    v_return(seq_equal(sa, sb, 3));
-}
-
-Line_op_infix_ne_ref: (a: &Line, b: &Line) -> bool
-{
-    v_return(!Line_op_infix_eq_ref(a, b));
-}
-
-Line_op_infix_ne: (a: Line, b: Line) -> bool
+Line_op_infix_ne: (a: &Line, b: &Line) -> bool
 {
     v_return(!Line_op_infix_eq(a, b));
 }
@@ -575,8 +460,8 @@ Line_op_infix_ne: (a: Line, b: Line) -> bool
 
     q = v_quark_from_string;
 
-    v_util_function_dict_set(q("op_infix_eq"), Line_ref, "Line_op_infix_eq_ref");
-    v_util_function_dict_set(q("op_infix_ne"), Line_ref, "Line_op_infix_ne_ref");
+    v_util_function_dict_set(q("op_infix_eq"), Line_ref, "Line_op_infix_eq");
+    v_util_function_dict_set(q("op_infix_ne"), Line_ref, "Line_op_infix_ne");
     v_util_function_dict_set(q("op_infix_eq"), Line,     "Line_op_infix_eq");
     v_util_function_dict_set(q("op_infix_ne"), Line,     "Line_op_infix_ne");
 }
@@ -588,29 +473,34 @@ Line_ordinate: Line = {1, 0, 0};
 
 
 //=====================================================================
-incident: (l: Line, p: Point) -> bool
+incident: (l: &Line, p: &Point) -> bool
 {
-    l = l.norm();
-    p = p.norm();
+    l.norm();
+    p.norm();
 
     v_return( abs(l.cx*p.x + l.cy*p.y + l.cw*p.w) < EPSILON );
 }
 
 //---------------------------------------------------------------------
-Point_op_infix_and: (a: Point, b: Point) -> Line
+Point_op_infix_and: (a: &Point, b: &Point) -> Line
 {
     v_return({a.y*b.w - a.w*b.y, a.w*b.x - a.x*b.w, a.x*b.y - a.y*b.x});
 }
 
-Line_op_infix_and: (a: Line, b: Line) -> Point
+Line_op_infix_and: (a: &Line, b: &Line) -> Point
 {
     v_return({a.cy*b.cw - a.cw*b.cy, a.cw*b.cx - a.cx*b.cw, a.cx*b.cy - a.cy*b.cx});
 }
 
-{   q = v_quark_from_string;
+{   Point_ref = v_reference_type(Point, 0);
+    Line_ref  = v_reference_type(Line,  0);
 
-    v_util_function_dict_set(q("op_infix_and"), Point, "Point_op_infix_and");
-    v_util_function_dict_set(q("op_infix_and"), Line,  "Line_op_infix_and");
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q("op_infix_and"), Point_ref, "Point_op_infix_and");
+    v_util_function_dict_set(q("op_infix_and"), Line_ref,  "Line_op_infix_and");
+    v_util_function_dict_set(q("op_infix_and"), Point,     "Point_op_infix_and");
+    v_util_function_dict_set(q("op_infix_and"), Line,      "Line_op_infix_and");
 }
 
 
@@ -620,7 +510,7 @@ Line_op_infix_and: (a: Line, b: Line) -> Point
 Transform = v_struct("Transform2D", { double[9] });
 
 //---------------------------------------------------------------------
-Transform_op_infix_shl_right: (s: &v_std_string_ptr, t: Transform) -> &v_std_string_ptr
+Transform_op_infix_shl_right: (s: &v_std_string_ptr, t: &Transform) -> &v_std_string_ptr
 {
     t = t[0];
 
@@ -642,7 +532,7 @@ Transform_op_infix_shl_right: (s: &v_std_string_ptr, t: Transform) -> &v_std_str
 }
 
 //---------------------------------------------------------------------
-Transform_norm_ref: (t: &Transform) -> bool
+Transform_norm: (t: &Transform) -> bool
 {
     t = t[0];
 
@@ -666,32 +556,16 @@ Transform_norm_ref: (t: &Transform) -> bool
     v_return(true);
 }
 
-Transform_norm: (_t: Transform) -> Transform
-{
-    t: &double[9] := _t[0];
-
-    d: &double := 0;
-
-    for (i: &int := 0; i < 9; ++i)
-    {
-        if (di = abs(t[i]), d < di)  d := di;
-    }
-
-    if (d == 1)  v_return(_t);
-
-    v_return({{ t[0]/d, t[1]/d, t[2]/d, t[3]/d, t[4]/d, t[5]/d, t[6]/d, t[7]/d, t[8]/d }});
-}
-
 {   Transform_ref = v_reference_type(Transform, 0);
 
     q = v_quark_from_string;
 
-    v_util_function_dict_set(q(".norm()"), Transform_ref, "Transform_norm_ref");
+    v_util_function_dict_set(q(".norm()"), Transform_ref, "Transform_norm");
     v_util_function_dict_set(q(".norm()"), Transform,     "Transform_norm");
 }
 
 //---------------------------------------------------------------------
-Transform_det: (t: Transform) -> double
+Transform_det: (t: &Transform) -> double
 {
     v_return( det_3(t[0]) );
 }
@@ -705,16 +579,9 @@ Transform_det: (t: Transform) -> double
 }
 
 //---------------------------------------------------------------------
-Transform_is_regular_ref: (t: &Transform) -> bool
+Transform_is_regular: (t: &Transform) -> bool
 {
     if (!t.norm())  v_return(false);
-
-    v_return( abs(t.det()) > EPSILON );
-}
-
-Transform_is_regular: (t: Transform) -> bool
-{
-    t = t.norm();
 
     v_return( abs(t.det()) > EPSILON );
 }
@@ -723,25 +590,14 @@ Transform_is_regular: (t: Transform) -> bool
 
     q = v_quark_from_string;
 
-    v_util_function_dict_set(q(".is_regular()"), Transform_ref, "Transform_is_regular_ref");
+    v_util_function_dict_set(q(".is_regular()"), Transform_ref, "Transform_is_regular");
     v_util_function_dict_set(q(".is_regular()"), Transform,     "Transform_is_regular");
 }
 
 //---------------------------------------------------------------------
-Transform_is_affine_ref: (t: &Transform) -> bool
+Transform_is_affine: (t: &Transform) -> bool
 {
     if (!t.norm())  v_return(false);
-
-    t = t[0];
-
-    v_return( abs(t[6]) <= EPSILON  &&
-              abs(t[7]) <= EPSILON  &&
-              abs(t[8]) >  EPSILON );
-}
-
-Transform_is_affine: (t: Transform) -> bool
-{
-    t = t.norm();
 
     t = t[0];
 
@@ -754,34 +610,21 @@ Transform_is_affine: (t: Transform) -> bool
 
     q = v_quark_from_string;
 
-    v_util_function_dict_set(q(".is_regular()"), Transform_ref, "Transform_is_regular_ref");
+    v_util_function_dict_set(q(".is_regular()"), Transform_ref, "Transform_is_regular");
     v_util_function_dict_set(q(".is_regular()"), Transform,     "Transform_is_regular");
-    v_util_function_dict_set(q(".is_affine()"),  Transform_ref, "Transform_is_affine_ref");
+    v_util_function_dict_set(q(".is_affine()"),  Transform_ref, "Transform_is_affine");
     v_util_function_dict_set(q(".is_affine()"),  Transform,     "Transform_is_affine");
 }
 
 //---------------------------------------------------------------------
-Transform_op_infix_eq_ref: (a: &Transform, b: &Transform) -> bool
+Transform_op_infix_eq: (a: &Transform, b: &Transform) -> bool
 {
     if (!(a.norm()  &&  b.norm()))  v_return(false);
 
     v_return(seq_equal(a[0], b[0], 9));
 }
 
-Transform_op_infix_eq: (a: Transform, b: Transform) -> bool
-{
-    a = a.norm();
-    b = b.norm();
-
-    v_return(seq_equal(a[0], b[0], 9));
-}
-
-Transform_op_infix_ne_ref: (a: &Transform, b: &Transform) -> bool
-{
-    v_return(!Transform_op_infix_eq_ref(a, b));
-}
-
-Transform_op_infix_ne: (a: Transform, b: Transform) -> bool
+Transform_op_infix_ne: (a: &Transform, b: &Transform) -> bool
 {
     v_return(!Transform_op_infix_eq(a, b));
 }
@@ -790,8 +633,8 @@ Transform_op_infix_ne: (a: Transform, b: Transform) -> bool
 
     q = v_quark_from_string;
 
-    v_util_function_dict_set(q("op_infix_eq"), Transform_ref, "Transform_op_infix_eq_ref");
-    v_util_function_dict_set(q("op_infix_ne"), Transform_ref, "Transform_op_infix_ne_ref");
+    v_util_function_dict_set(q("op_infix_eq"), Transform_ref, "Transform_op_infix_eq");
+    v_util_function_dict_set(q("op_infix_ne"), Transform_ref, "Transform_op_infix_ne");
     v_util_function_dict_set(q("op_infix_eq"), Transform,     "Transform_op_infix_eq");
     v_util_function_dict_set(q("op_infix_ne"), Transform,     "Transform_op_infix_ne");
 }
@@ -877,7 +720,7 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 }
 
 //---------------------------------------------------------------------
-Vector_transform: (v: Vector, t: &Transform) -> Vector
+Vector_transform: (v: &Vector, t: &Transform) -> Vector
 {
     t = t[0];
 
@@ -933,28 +776,7 @@ Line_transform: (l: &Line, t: &Transform) -> Line
 }
 
 //---------------------------------------------------------------------
-Transform_op_infix_add_ref: (t: &Transform, v: Vector) -> Transform
-{
-    t = t[0];
-
-    xx = t[0] + v.x*t[6];
-    xy = t[1] + v.x*t[7];
-    xw = t[2] + v.x*t[8];
-
-    yx = t[3] + v.y*t[6];
-    yy = t[4] + v.y*t[7];
-    yw = t[5] + v.y*t[8];
-
-    wx = t[6];
-    wy = t[7];
-    ww = t[8];
-
-    v_return({{ xx, xy, xw,
-                yx, yy, yw,
-                wx, wy, ww }});
-}
-
-Transform_op_infix_add: (t: Transform, v: Vector) -> Transform
+Transform_op_infix_add: (t: &Transform, v: &Vector) -> Transform
 {
     t = t[0];
 
@@ -979,12 +801,12 @@ Transform_op_infix_add: (t: Transform, v: Vector) -> Transform
 
     q = v_quark_from_string;
 
-    v_util_function_dict_set(q("op_infix_add"), Transform_ref, "Transform_op_infix_add_ref");
+    v_util_function_dict_set(q("op_infix_add"), Transform_ref, "Transform_op_infix_add");
     v_util_function_dict_set(q("op_infix_add"), Transform,     "Transform_op_infix_add");
 }
 
 //---------------------------------------------------------------------
-Transform_op_infix_mul_ref: (a: &Transform, b: &Transform) -> Transform
+Transform_op_infix_mul: (a: &Transform, b: &Transform) -> Transform
 {
     a = a[0];
     b = b[0];
@@ -1006,50 +828,7 @@ Transform_op_infix_mul_ref: (a: &Transform, b: &Transform) -> Transform
                 wx, wy, ww }});
 }
 
-Transform_op_infix_mul: (a: Transform, b: Transform) -> Transform
-{
-    a = a[0];
-    b = b[0];
-
-    xx = a[0]*b[0] + a[1]*b[3] + a[2]*b[6];
-    xy = a[0]*b[1] + a[1]*b[4] + a[2]*b[7];
-    xw = a[0]*b[2] + a[1]*b[5] + a[2]*b[8];
-
-    yx = a[3]*b[0] + a[4]*b[3] + a[5]*b[6];
-    yy = a[3]*b[1] + a[4]*b[4] + a[5]*b[7];
-    yw = a[3]*b[2] + a[4]*b[5] + a[5]*b[8];
-
-    wx = a[6]*b[0] + a[7]*b[3] + a[8]*b[6];
-    wy = a[6]*b[1] + a[7]*b[4] + a[8]*b[7];
-    ww = a[6]*b[2] + a[7]*b[5] + a[8]*b[8];
-
-    v_return({{ xx, xy, xw,
-                yx, yy, yw,
-                wx, wy, ww }});
-}
-
-Transform_op_infix_mul_right_ref: (k: double, t: &Transform) -> Transform
-{
-    t = t[0];
-
-    xx = k*t[0];
-    xy = k*t[1];
-    xw = k*t[2];
-
-    yx = k*t[3];
-    yy = k*t[4];
-    yw = k*t[5];
-
-    wx =   t[6];
-    wy =   t[7];
-    ww =   t[8];
-
-    v_return({{ xx, xy, xw,
-                yx, yy, yw,
-                wx, wy, ww }});
-}
-
-Transform_op_infix_mul_right: (k: double, t: Transform) -> Transform
+Transform_op_infix_mul_right: (k: double, t: &Transform) -> Transform
 {
     t = t[0];
 
@@ -1074,42 +853,14 @@ Transform_op_infix_mul_right: (k: double, t: Transform) -> Transform
 
     q = v_quark_from_string;
 
-    v_util_function_dict_set(q("op_infix_mul"),       Transform_ref, "Transform_op_infix_mul_ref");
+    v_util_function_dict_set(q("op_infix_mul"),       Transform_ref, "Transform_op_infix_mul");
     v_util_function_dict_set(q("op_infix_mul"),       Transform,     "Transform_op_infix_mul");
-    v_util_function_dict_set(q("op_infix_mul.right"), Transform_ref, "Transform_op_infix_mul_right_ref");
+    v_util_function_dict_set(q("op_infix_mul.right"), Transform_ref, "Transform_op_infix_mul_right");
     v_util_function_dict_set(q("op_infix_mul.right"), Transform,     "Transform_op_infix_mul_right");
 }
 
 //---------------------------------------------------------------------
-Transform_op_prefix_tilda_ref: (t: &Transform) -> Transform
-{
-    t = t[0];
-
-    xx = t[4]*t[8] - t[5]*t[7];
-    xy = t[2]*t[7] - t[1]*t[8];
-    xw = t[1]*t[5] - t[2]*t[4];
-
-    yx = t[5]*t[6] - t[3]*t[8];
-    yy = t[0]*t[8] - t[2]*t[6];
-    yw = t[2]*t[3] - t[0]*t[5];
-
-    wx = t[3]*t[7] - t[4]*t[6];
-    wy = t[1]*t[6] - t[0]*t[7];
-    ww = t[0]*t[4] - t[1]*t[3];
-
-    r: &Transform := {{ xx,xy,xw, yx,yy,yw, wx,wy,ww }};
-
-    if (r.det() < 0)
-    {
-        r = r[0];
-
-        for (i: &int := 0; i < 9; ++i)  r[i] := -r[i];
-    }
-
-    v_return(r);
-}
-
-Transform_op_prefix_tilda: (t: Transform) -> Transform
+Transform_op_prefix_tilda: (t: &Transform) -> Transform
 {
     t = t[0];
 
@@ -1141,17 +892,12 @@ Transform_op_prefix_tilda: (t: Transform) -> Transform
 
     q = v_quark_from_string;
 
-    v_util_function_dict_set(q("op_prefix_tilda"), Transform_ref, "Transform_op_prefix_tilda_ref");
+    v_util_function_dict_set(q("op_prefix_tilda"), Transform_ref, "Transform_op_prefix_tilda");
     v_util_function_dict_set(q("op_prefix_tilda"), Transform,     "Transform_op_prefix_tilda");
 }
 
 //---------------------------------------------------------------------
-Transform_op_infix_div_ref: (a: &Transform, b: &Transform) -> Transform
-{
-    v_return(a * (~b));
-}
-
-Transform_op_infix_div: (a: Transform, b: Transform) -> Transform
+Transform_op_infix_div: (a: &Transform, b: &Transform) -> Transform
 {
     v_return(a * (~b));
 }
@@ -1160,46 +906,22 @@ Transform_op_infix_div: (a: Transform, b: Transform) -> Transform
 
     q = v_quark_from_string;
 
-    v_util_function_dict_set(q("op_infix_div"), Transform_ref, "Transform_op_infix_div_ref");
+    v_util_function_dict_set(q("op_infix_div"), Transform_ref, "Transform_op_infix_div");
     v_util_function_dict_set(q("op_infix_div"), Transform,     "Transform_op_infix_div");
 }
 
 //---------------------------------------------------------------------
-Transform_scaled_ref: (t: &Transform, k: double) -> Transform
+Transform_scaled: (t: &Transform, k: double) -> Transform
 {
     v_return(k * t);
 }
 
-Transform_scaled: (t: Transform, k: double) -> Transform
-{
-    v_return(k * t);
-}
-
-Transform_shifted_ref: (t: &Transform, v: &Vector) -> Transform
+Transform_shifted: (t: &Transform, v: &Vector) -> Transform
 {
     v_return(t + v);
 }
 
-Transform_shifted: (t: Transform, v: Vector) -> Transform
-{
-    v_return(t + v);
-}
-
-Transform_rotated_ref: (t: &Transform, d: double) -> Transform
-{
-    a = d/180*M_PI;
-
-    sa = sin(a);
-    ca = cos(a);
-
-    r: Transform = {{  ca, -sa,  0,
-                       sa,  ca,  0,
-                        0,   0,  1  }};
-
-    v_return(r * t);
-}
-
-Transform_rotated: (t: Transform, d: double) -> Transform
+Transform_rotated: (t: &Transform, d: double) -> Transform
 {
     a = d/180*M_PI;
 
@@ -1217,21 +939,21 @@ Transform_rotated: (t: Transform, d: double) -> Transform
 
     q = v_quark_from_string;
 
-    v_util_function_dict_set(q(".scaled()"),  Transform_ref, "Transform_scaled_ref");
+    v_util_function_dict_set(q(".scaled()"),  Transform_ref, "Transform_scaled");
     v_util_function_dict_set(q(".scaled()"),  Transform,     "Transform_scaled");
-    v_util_function_dict_set(q(".shifted()"), Transform_ref, "Transform_shifted_ref");
+    v_util_function_dict_set(q(".shifted()"), Transform_ref, "Transform_shifted");
     v_util_function_dict_set(q(".shifted()"), Transform,     "Transform_shifted");
-    v_util_function_dict_set(q(".rotated()"), Transform_ref, "Transform_rotated_ref");
+    v_util_function_dict_set(q(".rotated()"), Transform_ref, "Transform_rotated");
     v_util_function_dict_set(q(".rotated()"), Transform,     "Transform_rotated");
 }
 
 //---------------------------------------------------------------------
-_map4_util: (o1: Point, o2: Point, o3: Point, o4: Point) -> Transform
+_map4_util: (o1: &Point, o2: &Point, o3: &Point, o4: &Point) -> Transform
 {
-    o1 = o1.norm();
-    o2 = o2.norm();
-    o3 = o3.norm();
-    o4 = o4.norm();
+    o1.norm();
+    o2.norm();
+    o3.norm();
+    o4.norm();
 
     a1 = det_3({ o4.x, o2.x, o3.x,
                  o4.y, o2.y, o3.y,
@@ -1250,8 +972,8 @@ _map4_util: (o1: Point, o2: Point, o3: Point, o4: Point) -> Transform
                  o1.w*a1, o2.w*a2, o3.w*a3 }} );
 }
 
-Transform_map4: (i1: Point, i2: Point, i3: Point, i4: Point,
-                 o1: Point, o2: Point, o3: Point, o4: Point
+Transform_map4: (i1: &Point, i2: &Point, i3: &Point, i4: &Point,
+                 o1: &Point, o2: &Point, o3: &Point, o4: &Point
                 ) -> Transform
 {
     t1 = _map4_util(i1, i2, i3, i4);
@@ -1260,8 +982,8 @@ Transform_map4: (i1: Point, i2: Point, i3: Point, i4: Point,
     v_return(t2 / t1);
 }
 
-Transform_map3: (i1: Point, i2: Point, i3: Point,
-                 o1: Point, o2: Point, o3: Point
+Transform_map3: (i1: &Point, i2: &Point, i3: &Point,
+                 o1: &Point, o2: &Point, o3: &Point
                 ) -> Transform
 {
     i4 = i3 + (i2 - i1);
@@ -1270,8 +992,8 @@ Transform_map3: (i1: Point, i2: Point, i3: Point,
     v_return( Transform_map4(i1, i2, i3, i4,  o1, o2, o3, o4) );
 }
 
-Transform_map2: (i1: Point, i2: Point,
-                 o1: Point, o2: Point
+Transform_map2: (i1: &Point, i2: &Point,
+                 o1: &Point, o2: &Point
                 ) -> Transform
 {
     v = i2 - i1;    v: Vector = { -v.y, v.x };
@@ -1285,8 +1007,8 @@ Transform_map2: (i1: Point, i2: Point,
     v_return( Transform_map3(i1, i2, i3,  o1, o2, o3) );
 }
 
-Transform_map2_mirror: (i1: Point, i2: Point,
-                        o1: Point, o2: Point
+Transform_map2_mirror: (i1: &Point, i2: &Point,
+                        o1: &Point, o2: &Point
                        ) -> Transform
 {
     v = i2 - i1;    v: Vector = { -v.y, v.x };
