@@ -14,34 +14,26 @@
 
 
 //---------------------------------------------------------------------
-myz_ctx_t = v_struct("myz_ctx_t",
+//- ...
+//---------------------------------------------------------------------
+struct myz_ctx_t
 {
-    *const uint(8),     //- 0 - "next_in"
-    size_t,             //- 1 - "avail_in"
+    next_in:    *const uint(8);     //- "next_in"
+    avail_in:   size_t;             //- "avail_in"
 
-    *uint(8),           //- 2 - "next_out"
-    size_t,             //- 3 - "avail_out"
+    next_out:   *uint(8);           //- "next_out"
+    avail_out:  size_t;             //- "avail_out"
 
     //-------------------------------------------------------------
-    uint(8),            //- 4 - Input bits remain (out of 8)
-    uint(8),            //- 5 - Input bits buffer
+    remain_in:  uint(8);            //- Input bits remain (out of 8)
+    buffer_in:  uint(8);            //- Input bits buffer
 
-    uint(8),            //- 6 - Output bits remain (out of 8)
-    uint(8)             //- 7 - Output bits buffer
+    remain_out: uint(8);            //- Output bits remain (out of 8)
+    buffer_out: uint(8);            //- Output bits buffer
 
     //- ...
 
-});
-
-//---------------------------------------------------------------------
-mzc_next_in         = 0;
-mzc_avail_in        = 1;
-mzc_next_out        = 2;
-mzc_avail_out       = 3;
-mzc_bits_remain_in  = 4;
-mzc_bits_buffer_in  = 5;
-mzc_bits_remain_out = 6;
-mzc_bits_buffer_out = 7;
+};
 
 
 //---------------------------------------------------------------------
@@ -49,21 +41,23 @@ mzc_bits_buffer_out = 7;
 //---------------------------------------------------------------------
 myz_get_bit: (ctx: &myz_ctx_t) -> bool
 {
-    if (ctx[mzc_bits_remain_in] == 0)
+    if (ctx.remain_in == 0)
     {
-        ctx[mzc_bits_buffer_in] := *ctx[mzc_next_in]++;
-        ctx[mzc_bits_remain_in] := 8;
+        ctx.buffer_in := *ctx.next_in++;
+        ctx.remain_in := 8;
 
-        ctx[mzc_avail_in]--;
+        //- assert(ctx.avail_in != 0);
+
+        ctx.avail_in--;
     }
 
-    b = ctx[mzc_bits_buffer_in];
+    b = ctx.buffer_in;
 
     r = b & 1;
 
     b >>= 1;
 
-    ctx[mzc_bits_remain_in] -= 1;
+    ctx.remain_in -= 1;
 
     v_return((r: bool));
 }
@@ -74,10 +68,10 @@ myz_get_bit: (ctx: &myz_ctx_t) -> bool
 //---------------------------------------------------------------------
 myz_put_bit: (ctx: &myz_ctx_t, bit: bool) -> void
 {
-    //- assert(ctx[mzc_bits_remain_out] < 8);
+    //- assert(ctx.remain_out < 8);
 
-    b = ctx[mzc_bits_buffer_out];
-    n = ctx[mzc_bits_remain_out];
+    b = ctx.buffer_out;
+    n = ctx.remain_out;
 
     b |= bit << n;
 
@@ -85,9 +79,9 @@ myz_put_bit: (ctx: &myz_ctx_t, bit: bool) -> void
 
     if (n == 8)
     {
-        *ctx[mzc_next_out]++ := b;
+        *ctx.next_out++ := b;
 
-        ctx[mzc_avail_out]--;
+        ctx.avail_out--;
 
         b := 0;
         n := 0;
@@ -128,15 +122,18 @@ myz_put_bit: (ctx: &myz_ctx_t, bit: bool) -> void
 
     msg: &char[] := "Hello world!";
 
-    ctx[mzc_next_in]  := msg;
-    ctx[mzc_avail_in] := 13;
+    ctx.next_in  := msg;
+    ctx.avail_in := 13;
 
-    ctx[mzc_next_out]  := buf;
-    ctx[mzc_avail_out] := 32;
+    ctx.next_out  := buf;
+    ctx.avail_out := 32;
 
-    for (i: &int := 0; ctx[mzc_avail_in] || i%8; ++i)
+
+    str: &char[9] := 0;
+
+    for (i: &int := 0; ctx.avail_in || i%8; ++i)
     {
-        c = *ctx[mzc_next_in];
+        c = *ctx.next_in;
 
         if (i%8 == 0)  printf("\'%c\': %02X: ", c, c);
 
@@ -144,9 +141,9 @@ myz_put_bit: (ctx: &myz_ctx_t, bit: bool) -> void
 
         myz_put_bit(ctx, b);
 
-        printf("%d", (b: int));
+        str[7 - i%8] := ('0' + b : char);
 
-        if (i%8 == 7)  printf("\n");
+        if (i%8 == 7)  printf("%s\n", str);
     }
 
     printf("\n%s\n", buf);

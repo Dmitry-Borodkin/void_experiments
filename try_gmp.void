@@ -1,0 +1,78 @@
+{   v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+
+    v_import("llvm-c/Core.void");
+    v_import("llvm-c/Support.void");
+}
+
+{   v_import("printf.void");
+}
+
+{   v_enable_level_01();
+    v_enable_level_02();
+}
+
+
+//---------------------------------------------------------------------
+{   LLVMLoadLibraryPermanently("libgmp.so");
+
+    w = v_type_integer_get_width(long);
+
+    v_add_type("ulong", v_uint_type(w));
+}
+
+
+//---------------------------------------------------------------------
+struct mpz_t
+{
+    _mp_alloc: int;
+    _mp_size:  int;
+
+    _mp_d: *void;
+};
+
+
+
+//---------------------------------------------------------------------
+__gmpz_init: (*mpz_t) -> void;
+__gmpz_clear: (*mpz_t) -> void;
+
+__gmpz_set: (*mpz_t, *const mpz_t) -> void;
+__gmpz_set_ui: (*mpz_t, ulong) -> void;
+__gmpz_set_si: (*mpz_t, long) -> void;
+
+__gmp_printf: (*const char, ...) -> int;
+
+__gmpz_add: (*mpz_t, *const mpz_t, *const mpz_t) -> void;
+__gmpz_add_ui: (*mpz_t, *const mpz_t, ulong) -> void;
+__gmpz_add_si: (*mpz_t, *const mpz_t, long) -> void;
+
+
+
+
+//---------------------------------------------------------------------
+{
+    m: &mpz_t := v_undef();
+    __gmpz_init(&m);
+    defer __gmpz_clear(&m);
+
+
+    __gmpz_set_si(&m, 777);
+
+    __gmp_printf("%Zd\n", &m);
+
+
+    __gmpz_add_ui(&m, &m, 222);
+
+    __gmp_printf("%Zd\n", &m);
+
+
+
+
+
+
+}
+
+
+

@@ -1,0 +1,55 @@
+{   v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+}
+
+{   v_import("printf.void");
+}
+
+{   v_enable_level_01();
+    v_enable_level_02();
+}
+
+
+//---------------------------------------------------------------------
+qwe_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> void
+{
+    if (any = v_ast_get_attribute(self, v_quark_from_string("root")))
+    {
+        sstr = v_std_any_get_pointer(v_std_string_t, any);
+
+        if (sstr)  printf("name: %s\n", v_std_string_get(sstr));
+        else       printf("name bad\n");
+    }
+    else
+    {
+        printf("name not found\n");
+    }
+
+    call = (self: v_ast_expr_ptr);
+
+    args = v_ast_expr_call_get_arg_list(call);
+
+    ast = v_list_get_item(args, 0);         //- Sic!
+
+    v_ast_accept_visitor((ast: v_ast_base_ptr), vis);
+}
+
+{   v_add_intrinsic("qwe", qwe_intrinsic, 0);
+}
+
+
+//---------------------------------------------------------------------
+{
+    qwe(9);
+
+    a = qwe(10);
+
+    b = qwe(11);
+
+    c = qwe(12) + 1;
+
+    printf("a: %d, b: %d, c: %d\n", a, b, c);
+}
+
+

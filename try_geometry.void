@@ -641,6 +641,7 @@ Transform_op_infix_ne: (a: &Transform, b: &Transform) -> bool
 
 //---------------------------------------------------------------------
 Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
+                                      self: v_ast_base_ptr,
                                       args: v_ast_expr_list_ptr,
                                       t0: v_type_ptr, v0: LLVMValueRef
                                      ) -> void
@@ -667,17 +668,18 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
     ok = v_util_lookup_function_dict(vis, q, t1, void_fun, void_aux, ft, fv);
     //- assert(ok);
 
-    intrinsic_p2_t = (vis: voidc_visitor_ptr, aux: *void,
-                      args: v_ast_expr_list_ptr,
-                      t0: v_type_ptr, v0: LLVMValueRef,
-                      t1: v_type_ptr, v1: LLVMValueRef
-                     ) -> void;
+    intrinsic_t = (vis: voidc_visitor_ptr, aux: *void,
+                   self: v_ast_base_ptr,
+                   args: v_ast_expr_list_ptr,
+                   t0: v_type_ptr, v0: LLVMValueRef,
+                   t1: v_type_ptr, v1: LLVMValueRef
+                  ) -> void;
 
-    if (fun = (void_fun: *intrinsic_p2_t))
+    if (fun = (void_fun: *intrinsic_t))
     {
         v_set_result_type(tt);
 
-        fun(vis, void_aux, args, t1, v1, t0, v0);       //- Sic!!!
+        fun(vis, void_aux, self, args, t1, v1, t0, v0);         //- Sic!!!
     }
     else
     {
