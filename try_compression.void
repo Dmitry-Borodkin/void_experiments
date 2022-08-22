@@ -39,7 +39,7 @@ struct myz_ctx_t
 //---------------------------------------------------------------------
 //- Get one bit
 //---------------------------------------------------------------------
-myz_get_bit: (ctx: &myz_ctx_t) -> bool
+myz_get_bit: (ctx: &myz_ctx_t) -> unsigned
 {
     if (ctx.remain_in == 0)
     {
@@ -59,7 +59,7 @@ myz_get_bit: (ctx: &myz_ctx_t) -> bool
 
     ctx.remain_in -= 1;
 
-    v_return((r: bool));
+    v_return(r);
 }
 
 
@@ -68,8 +68,6 @@ myz_get_bit: (ctx: &myz_ctx_t) -> bool
 //---------------------------------------------------------------------
 myz_put_bit: (ctx: &myz_ctx_t, bit: bool) -> void
 {
-    //- assert(ctx.remain_out < 8);
-
     b = ctx.buffer_out;
     n = ctx.remain_out;
 
@@ -79,6 +77,8 @@ myz_put_bit: (ctx: &myz_ctx_t, bit: bool) -> void
 
     if (n == 8)
     {
+        //- assert(ctx.avail_out != 0);
+
         *ctx.next_out++ := b;
 
         ctx.avail_out--;
@@ -89,64 +89,176 @@ myz_put_bit: (ctx: &myz_ctx_t, bit: bool) -> void
 }
 
 
+//---------------------------------------------------------------------
+//- Dictionary ...
+//---------------------------------------------------------------------
+struct myz_enc_t
+{
+    next: (*myz_enc_t)[2];
 
+    code: size_t;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    link: *myz_enc_t;           //- ...
+};
 
 
 //---------------------------------------------------------------------
+//- Encoding ...
+//---------------------------------------------------------------------
+write_bits: (ctx: &myz_ctx_t, code: size_t, bits: int) -> bool
 {
-    buf: &char[32] := v_undef();
+//  printf("write_bits: %d, %d\n", (code: int), bits);
+//  defer printf("write_bits leave\n");
+
+    code: &size_t := code;
+
+    for (i: &int := 0; i < bits; ++i)
+    {
+
+        myz_put_bit(ctx, (code & 1 : bool));
+
+        if (ctx.avail_out == 0)  v_return(false);       //- ?
+
+        code >>= 1;
+    }
+
+    v_return(true);
+}
+
+myz_encode: (ctx: &myz_ctx_t) -> bool
+{
+    bits: &int := 2;
+
+    next_code:  &size_t := 2;
+    next_shift: &size_t := 4;
+
+
+    dict = v_malloc(myz_enc_t);
+
+    *dict := 0;
+
+    last: &*myz_enc_t := dict;
+
+    dict~>next[0] := v_malloc(myz_enc_t);
+
+    *dict~>next[0] := 0;
+
+    last~>link := dict~>next[0];
+    last := dict~>next[0];
+
+    dict~>next[1] := v_malloc(myz_enc_t);
+
+    *dict~>next[1] := 0;
+
+    dict~>next[1]~>code := 1;
+
+    last~>link := dict~>next[1];
+    last := dict~>next[1];
+
+
+
+    link: &*myz_enc_t := dict~>next[(myz_get_bit(ctx): unsigned)];
+
+    for (i: &int := 1; ctx.avail_in || i%8; ++i)
+    {
+        c = myz_get_bit(ctx);
+
+        if (next = link~>next[c])
+        {
+            link := next;
+        }
+        else
+        {
+            if (!write_bits(ctx, link~>code, bits))  v_return(false);
+
+            next := v_malloc(myz_enc_t);
+
+            *next := 0;
+
+            last~>link := next;
+            last := next;
+
+            next~>code := next_code++;
+
+            link := dict~>next[c];
+        }
+
+        if (next_code == next_shift)
+        {
+            bits++;
+
+            next_shift *= 2;
+        }
+    }
+
+    if (!write_bits(ctx, link~>code, bits))  v_return(false);
+
+    if (!write_bits(ctx, 1, 1))  v_return(false);
+    if (!write_bits(ctx, 0, 8))  v_return(false);
+
+    for (last := dict; last; )
+    {
+        link = v_load(&last~>link);
+
+        v_free(last);
+
+        last := link;
+    }
+
+    printf("next_code: %d\n", next_code);
+
+    v_return(true);
+}
+
+
+
+
+
+//=====================================================================
+strlen: (*char) -> size_t;
+
+//---------------------------------------------------------------------
+my_source: &char[] := "Hello world!";
+
+{
+    BUFSIZE = 4096;
+
+    buf = v_malloc(char, BUFSIZE);
 
     ctx: &myz_ctx_t := 0;
 
-    msg: &char[] := "Hello world!";
+    ctx.next_in  := my_source;
+    ctx.avail_in := strlen(my_source);
 
-    ctx.next_in  := msg;
-    ctx.avail_in := 13;
+    printf("sz: %d\n", (ctx.avail_in : int));
 
     ctx.next_out  := buf;
-    ctx.avail_out := 32;
+    ctx.avail_out := BUFSIZE;
 
 
-    str: &char[9] := 0;
+    ok = myz_encode(ctx);
 
-    for (i: &int := 0; ctx.avail_in || i%8; ++i)
+    printf("ok: %d\n", (ok: int));
+
+    if (!ok)  v_return();
+
+    n = BUFSIZE - ctx.avail_out;
+
+    printf("n: %d\n", (n: int));
+
+    for (i: &int := 0; i < n; ++i)
     {
-        c = *ctx.next_in;
+        byte: &uint(8) := buf[i];
 
-        if (i%8 == 0)  printf("\'%c\': %02X: ", c, c);
+        printf("%02X", byte);
 
-        b = myz_get_bit(ctx);
-
-        myz_put_bit(ctx, b);
-
-        str[7 - i%8] := ('0' + b : char);
-
-        if (i%8 == 7)  printf("%s\n", str);
+        if (i%50 == 49)  printf("\n");
     }
 
-    printf("\n%s\n", buf);
+    printf("\n");
+
+    v_free(buf);
 }
+
 
 

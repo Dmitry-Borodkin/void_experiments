@@ -132,10 +132,12 @@ z_data_t = v_struct("z_data_t", {size_t, v_type_ptr});
 
 //---------------------------------------------------------------------
 z_stream_field_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
-                           args: v_ast_expr_list_ptr,
+                           self: v_ast_base_ptr,
                            t0: v_type_ptr, v0: LLVMValueRef
                            ) -> void
 {
+    args = v_ast_expr_call_get_arg_list((self: v_ast_expr_ptr));
+
     data = *(aux: *z_data_t);
 
     char_ptr  = v_pointer_type(char, 0);
@@ -161,8 +163,10 @@ z_stream_field_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 
 
 //---------------------------------------------------------------------
-generate_z_stream_fields_table: (vis: voidc_visitor_ptr, *void, args: v_ast_expr_list_ptr) -> void
+generate_z_stream_fields_table: (vis: voidc_visitor_ptr, *void, self: v_ast_base_ptr) -> void
 {
+    args = v_ast_expr_call_get_arg_list((self: v_ast_expr_ptr));
+
     ast = v_list_get_item(args, 0);
 
     ast = v_ast_expr_call_get_arg_list(ast);
@@ -369,6 +373,9 @@ inflateEnd: (*z_stream) -> int;
 
     strm.next_in  := my_source;
     strm.avail_in := (strlen(my_source) : ulong);
+
+
+    printf("in: %d\n", (strm.avail_in: int));
 
 
     N = 100;
