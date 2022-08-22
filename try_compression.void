@@ -39,7 +39,7 @@ struct myz_ctx_t
 //---------------------------------------------------------------------
 //- Get one bit
 //---------------------------------------------------------------------
-myz_get_bit: (ctx: &myz_ctx_t) -> unsigned
+myz_get_bit: (ctx: &myz_ctx_t) -> bool
 {
     if (ctx.remain_in == 0)
     {
@@ -59,7 +59,7 @@ myz_get_bit: (ctx: &myz_ctx_t) -> unsigned
 
     ctx.remain_in -= 1;
 
-    v_return(r);
+    v_return((r: bool));
 }
 
 
@@ -156,8 +156,7 @@ myz_encode: (ctx: &myz_ctx_t) -> bool
     last := dict~>next[1];
 
 
-
-    link: &*myz_enc_t := dict~>next[(myz_get_bit(ctx): unsigned)];
+    link: &*myz_enc_t := dict~>next[myz_get_bit(ctx)];
 
     for (i: &int := 1; ctx.avail_in || i%8; ++i)
     {
