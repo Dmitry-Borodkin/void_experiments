@@ -1,0 +1,385 @@
+{   v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+
+    v_import("llvm-c/Core.void");
+}
+
+{   v_import("printf.void");
+}
+
+{   v_enable_level_01();
+    v_enable_level_02();
+}
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+table62: &char[62] := v_undef();
+
+{   p: &*char := table62;
+
+    for (c: &char := '0'; c <= '9'; ++c)  *p++ := c;
+    for (c: &char := 'A'; c <= 'Z'; ++c)  *p++ := c;
+    for (c: &char := 'a'; c <= 'z'; ++c)  *p++ := c;
+}
+
+//---------------------------------------------------------------------
+byte = uint(8);
+
+exit: (int) -> void;
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+struct myz_ctx_t
+{
+    next_in:    *const byte;        //- "next_in"
+    avail_in:   size_t;             //- "avail_in"
+
+    next_out:   *byte;              //- "next_out"
+    avail_out:  size_t;             //- "avail_out"
+
+    //-------------------------------------------------------------
+    remain_in:  uint(8);            //- Input bits remain (out of 8)
+    buffer_in:  uint(8);            //- Input bits buffer
+
+    remain_out: uint(8);            //- Output bits remain (out of 8)
+    buffer_out: uint(8);            //- Output bits buffer
+
+    //- ...
+
+};
+
+
+//---------------------------------------------------------------------
+//- Get one bit
+//---------------------------------------------------------------------
+myz_get_bit: (ctx: &myz_ctx_t) -> bool
+{
+    if (ctx.remain_in == 0)
+    {
+        ctx.buffer_in := *ctx.next_in++;
+        ctx.remain_in := 8;
+
+        if (ctx.avail_in == 0)
+        {
+            printf("\nError: input empty\n");
+
+            exit(-1);
+        }
+
+        ctx.avail_in--;
+    }
+
+    b = ctx.buffer_in;
+
+    r = b & 1;
+
+    b >>= 1;
+
+    ctx.remain_in -= 1;
+
+    v_return((r: bool));
+}
+
+//---------------------------------------------------------------------
+//- Get one byte
+//---------------------------------------------------------------------
+myz_get_byte: (ctx: &myz_ctx_t) -> byte
+{
+    if (ctx.avail_in == 0)
+    {
+        printf("\nError: input empty\n");
+
+        exit(-1);
+    }
+
+    ctx.avail_in--;
+
+    v_return(*ctx.next_in++);
+}
+
+
+//---------------------------------------------------------------------
+//- Put one bit
+//---------------------------------------------------------------------
+myz_put_bit: (ctx: &myz_ctx_t, bit: bool) -> void
+{
+    b = ctx.buffer_out;
+    n = ctx.remain_out;
+
+    b |= bit << n;
+
+    n += 1;
+
+    if (n == 8)
+    {
+        if (ctx.avail_out == 0)
+        {
+            printf("\nError: output full\n");
+
+            exit(-1);
+        }
+
+        *ctx.next_out++ := b;
+
+        ctx.avail_out--;
+
+        b := 0;
+        n := 0;
+    }
+}
+
+//---------------------------------------------------------------------
+//- Put one byte
+//---------------------------------------------------------------------
+myz_put_byte: (ctx: &myz_ctx_t, b: byte) -> void
+{
+    if (ctx.avail_out == 0)
+    {
+        printf("\nError: output full\n");
+
+        exit(-1);
+    }
+
+    ctx.avail_out--;
+
+    *ctx.next_out++ := b;
+}
+
+//---------------------------------------------------------------------
+//- Encoding ...
+//---------------------------------------------------------------------
+write_bits: (ctx: &myz_ctx_t, code: int, bits: int) -> void
+{
+//  printf("write_bits: %d, %d\n", (code: int), bits);
+//  defer printf("write_bits leave\n");
+
+    code: &size_t := code;
+
+    for (i: &int := 0; i < bits; ++i)
+    {
+
+        myz_put_bit(ctx, (code & 1 : bool));
+
+        code >>= 1;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------
+//- Dictionary for encoding...
+//---------------------------------------------------------------------
+struct myz_enc_t
+{
+    next: int[256];
+};
+
+dict_t = v_ast_generic_list_t;
+
+{   size_v = LLVMSizeOf(v_type_get_llvm_type(myz_enc_t));
+
+    v_add_constant("myz_enc_t_size", size_t, size_v);
+}
+
+
+//---------------------------------------------------------------------
+dict_init: (dict: &dict_t) -> void
+{
+    v_initialize(&dict);
+
+    v_make_list_nil(&dict, 0);
+}
+
+//---------------------------------------------------------------------
+dict_term: (dict: &dict_t) -> void
+{
+    v_terminate(&dict);
+}
+
+//---------------------------------------------------------------------
+dict_size: (dict: &dict_t) -> size_t
+{
+    v_return(v_list_get_size(&dict));
+}
+
+
+//---------------------------------------------------------------------
+dict_expand: (dict: &dict_t) -> &myz_enc_t
+{
+    item = v_alloca(v_ast_base_t);
+    v_initialize(item);
+    defer v_terminate(item);
+
+    v_ast_make_generic(item, 0, myz_enc_t_size);
+
+    v_list_append(&dict, &dict, item);
+
+    void_obj = v_ast_generic_get_object(item);
+
+    obj = (void_obj: *myz_enc_t);
+
+    *obj := 0;
+
+    v_return(*obj);
+}
+
+//---------------------------------------------------------------------
+dict_at: (dict: &dict_t, i: int) -> &myz_enc_t
+{
+    void_obj = v_ast_generic_get_object(v_list_get_item(&dict, i));
+
+    obj = (void_obj: *myz_enc_t);
+
+    v_return(*obj);
+}
+
+
+//---------------------------------------------------------------------
+//- Encoding ...
+//---------------------------------------------------------------------
+myz_encode: (ctx: &myz_ctx_t) -> void
+{
+    bits: &int := 9;
+
+    next_code:  &int := 256;
+    next_shift: &int := 512;
+
+
+    dict: &dict_t := v_undef();
+    dict_init(dict);
+    defer dict_term(dict);
+
+    for (i: &int := 0; i < 256; ++i)  dict_expand(dict);
+
+
+    code: &int := myz_get_byte(ctx);
+
+    for (i: &int := 1; ctx.avail_in; ++i)
+    {
+        c = myz_get_byte(ctx);
+
+        if (next = dict_at(dict, code).next[c])
+        {
+            code := next;
+
+            v_continue();
+        }
+        else
+        {
+            write_bits(ctx, code, bits);
+
+            dict_expand(dict);
+
+            next := next_code++;
+
+            code := c;
+        }
+
+        if (next_code == next_shift)
+        {
+            bits++;
+
+            next_shift *= 2;
+        }
+    }
+
+    write_bits(ctx, code, bits);
+    write_bits(ctx, 1, 1);
+    write_bits(ctx, 0, 8);
+
+    printf("next_code: %d\n", next_code);
+}
+
+
+
+
+
+
+
+
+//=====================================================================
+strlen: (*char) -> size_t;
+
+//---------------------------------------------------------------------
+my_source: &char[] :=
+"""
+std::__allocated_ptr<std::allocator<std::_Sp_counted_ptr_inplace<ast_template_generic_data_t<ast_expr_base_data_t> const, std::allocator<void>, (__gnu_cxx::_Lock_policy)2> > > std::__allocate_guarded<std::allocator<std::_Sp_counted_ptr_inplace<ast_template_generic_data_t<ast_expr_base_data_t> const, std::allocator<void>, (__gnu_cxx::_Lock_policy)2> > >(std::allocator<std::_Sp_counted_ptr_inplace<ast_template_generic_data_t<ast_expr_base_data_t> const, std::allocator<void>, (__gnu_cxx::_Lock_policy)2> >&)
+""";
+
+
+{
+    BUFSIZE = 1<<16;
+
+    buf = v_malloc(char, BUFSIZE);
+
+
+    ctx: &myz_ctx_t := 0;
+
+    ctx.next_in  := my_source;
+    ctx.avail_in := strlen(my_source);
+
+    printf("sz: %d\n", (ctx.avail_in : int));
+
+    ctx.next_out  := buf;
+    ctx.avail_out := BUFSIZE;
+
+
+    //------------------------------
+    myz_encode(ctx);
+    //------------------------------
+
+
+    n = BUFSIZE - ctx.avail_out;
+
+    printf("n: %d, %g\n", (n: int), n*11.0/8);
+
+    b64: &uint64_t := 0;
+
+    c: &int := 0;
+
+    for (i: &int := 0; i < n; ++i)
+    {
+        b64 |= ((buf[i]: byte) : uint64_t) << (i%8)*8;
+
+        if (i%8 == 7  ||  i == n-1)
+        {
+            for (j: &int := 0; j < 11; ++j)
+            {
+                d = b64 % 62;
+
+                printf("%c", table62[d]);
+
+                if (c++ % 100 == 99)  printf("\n");
+
+                b64 /= 62;
+
+                if (b64 == 0  &&  i == n-1)  v_break();
+            }
+        }
+    }
+
+    printf("\n");
+
+    v_free(buf);
+}
+
+
+
+
