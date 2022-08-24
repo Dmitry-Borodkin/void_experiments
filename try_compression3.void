@@ -207,6 +207,13 @@ struct myz_enc_t
     next: unsigned[256];
 };
 
+struct dict_enc_t
+{
+    list: v_ast_generic_list_t;
+};
+
+
+//---------------------------------------------------------------------
 struct myz_dec_t
 {
     prev: unsigned;
@@ -214,8 +221,13 @@ struct myz_dec_t
     c: byte;
 };
 
-dict_t = v_ast_generic_list_t;
+struct dict_dec_t
+{
+    list: v_ast_generic_list_t;
+};
 
+
+//---------------------------------------------------------------------
 {   enc_size_v = LLVMSizeOf(v_type_get_llvm_type(myz_enc_t));
     dec_size_v = LLVMSizeOf(v_type_get_llvm_type(myz_dec_t));
 
@@ -225,28 +237,24 @@ dict_t = v_ast_generic_list_t;
 
 
 //---------------------------------------------------------------------
-dict_init: (dict: &dict_t) -> void
+dict_enc_initialize: (p: *dict_enc_t, n: int) -> void
 {
-    v_initialize(&dict);
+    for (i: &int := 0; i < n; ++i)
+    {
+        v_initialize(&p[i].list);
 
-    v_make_list_nil(&dict, 0);
+        v_make_list_nil(&p[i].list, 0);
+    }
 }
 
 //---------------------------------------------------------------------
-dict_term: (dict: &dict_t) -> void
+dict_enc_terminate: (p: *dict_enc_t, n: int) -> void
 {
-    v_terminate(&dict);
+    for (i: &int := 0; i < n; ++i)  v_terminate(&p[i].list);
 }
 
 //---------------------------------------------------------------------
-dict_size: (dict: &dict_t) -> size_t
-{
-    v_return(v_list_get_size(&dict));
-}
-
-
-//---------------------------------------------------------------------
-dict_enc_expand: (dict: &dict_t) -> &myz_enc_t
+dict_enc_expand: (dict: &dict_enc_t) -> &myz_enc_t
 {
     item = v_alloca(v_ast_base_t);
     v_initialize(item);
@@ -254,7 +262,7 @@ dict_enc_expand: (dict: &dict_t) -> &myz_enc_t
 
     v_ast_make_generic(item, 0, myz_enc_t_size);
 
-    v_list_append(&dict, &dict, item);
+    v_list_append(&dict.list, &dict.list, item);
 
     void_obj = v_ast_generic_get_object(item);
 
@@ -266,18 +274,48 @@ dict_enc_expand: (dict: &dict_t) -> &myz_enc_t
 }
 
 //---------------------------------------------------------------------
-dict_enc_at: (dict: &dict_t, i: int) -> &myz_enc_t
+dict_enc_at: (dict: &dict_enc_t, i: int) -> &myz_enc_t
 {
-    void_obj = v_ast_generic_get_object(v_list_get_item(&dict, i));
+    void_obj = v_ast_generic_get_object(v_list_get_item(&dict.list, i));
 
     obj = (void_obj: *myz_enc_t);
 
     v_return(*obj);
 }
 
+//---------------------------------------------------------------------
+{   v_util_register_initialize_impl(dict_enc_t, "dict_enc_initialize");
+    v_util_register_terminate_impl( dict_enc_t, "dict_enc_terminate");
+
+    dict_enc_ref = v_reference_type(dict_enc_t, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q(".expand()"), dict_enc_ref, "dict_enc_expand");
+
+    v_util_function_dict_set(q("op_postfix_index"), dict_enc_ref, "dict_enc_at");
+}
+
 
 //---------------------------------------------------------------------
-dict_dec_expand: (dict: &dict_t) -> &myz_dec_t
+dict_dec_initialize: (p: *dict_dec_t, n: int) -> void
+{
+    for (i: &int := 0; i < n; ++i)
+    {
+        v_initialize(&p[i].list);
+
+        v_make_list_nil(&p[i].list, 0);
+    }
+}
+
+//---------------------------------------------------------------------
+dict_dec_terminate: (p: *dict_dec_t, n: int) -> void
+{
+    for (i: &int := 0; i < n; ++i)  v_terminate(&p[i].list);
+}
+
+//---------------------------------------------------------------------
+dict_dec_expand: (dict: &dict_dec_t) -> &myz_dec_t
 {
     item = v_alloca(v_ast_base_t);
     v_initialize(item);
@@ -285,7 +323,7 @@ dict_dec_expand: (dict: &dict_t) -> &myz_dec_t
 
     v_ast_make_generic(item, 0, myz_dec_t_size);
 
-    v_list_append(&dict, &dict, item);
+    v_list_append(&dict.list, &dict.list, item);
 
     void_obj = v_ast_generic_get_object(item);
 
@@ -297,13 +335,26 @@ dict_dec_expand: (dict: &dict_t) -> &myz_dec_t
 }
 
 //---------------------------------------------------------------------
-dict_dec_at: (dict: &dict_t, i: int) -> &myz_dec_t
+dict_dec_at: (dict: &dict_dec_t, i: int) -> &myz_dec_t
 {
-    void_obj = v_ast_generic_get_object(v_list_get_item(&dict, i));
+    void_obj = v_ast_generic_get_object(v_list_get_item(&dict.list, i));
 
     obj = (void_obj: *myz_dec_t);
 
     v_return(*obj);
+}
+
+//---------------------------------------------------------------------
+{   v_util_register_initialize_impl(dict_dec_t, "dict_dec_initialize");
+    v_util_register_terminate_impl( dict_dec_t, "dict_dec_terminate");
+
+    dict_dec_ref = v_reference_type(dict_dec_t, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q(".expand()"), dict_dec_ref, "dict_dec_expand");
+
+    v_util_function_dict_set(q("op_postfix_index"), dict_dec_ref, "dict_dec_at");
 }
 
 
@@ -318,11 +369,11 @@ myz_encode: (ctx: &myz_ctx_t) -> void
     next_shift: &unsigned := 512;
 
 
-    dict: &dict_t := v_undef();
-    dict_init(dict);
-    defer dict_term(dict);
+    dict: &dict_enc_t := v_undef();
+    v_initialize(&dict);
+    defer v_terminate(&dict);
 
-    for (i: &int := 0; i < 256; ++i)  dict_enc_expand(dict);
+    for (i: &int := 0; i < 256; ++i)  dict.expand();
 
 
     code: &unsigned := myz_get_byte(ctx);
@@ -331,7 +382,7 @@ myz_encode: (ctx: &myz_ctx_t) -> void
     {
         c = myz_get_byte(ctx);
 
-        if (next = dict_enc_at(dict, code).next[c])
+        if (next = dict[code].next[c])
         {
             code := next;
 
@@ -341,7 +392,7 @@ myz_encode: (ctx: &myz_ctx_t) -> void
         {
             write_bits(ctx, code, bits);
 
-            dict_enc_expand(dict);
+            dict.expand();
 
             next := next_code++;
 
@@ -374,16 +425,11 @@ myz_decode: (ctx: &myz_ctx_t) -> void
     next_shift: &unsigned := 512;
 
 
-    dict: &dict_t := v_undef();
-    dict_init(dict);
-    defer dict_term(dict);
+    dict: &dict_dec_t := v_undef();
+    v_initialize(&dict);
+    defer v_terminate(&dict);
 
-    for (i: &int := 0; i < 256; ++i)
-    {
-        d = dict_dec_expand(dict);
-
-        d.c := (i: byte);
-    }
+    for (i: &int := 0; i < 256; ++i)  dict.expand().c := (i: byte);
 
 
     while (!check_eod(ctx))
@@ -397,20 +443,20 @@ myz_decode: (ctx: &myz_ctx_t) -> void
             exit(-1);
         }
 
-        dict_dec_expand(dict).prev := c;
+        dict.expand().prev := c;
 
         while (c > 255)
         {
-            t = dict_dec_at(dict, c).prev;
+            t = dict[c].prev;
 
-            dict_dec_at(dict, t).back := c;
+            dict[t].back := c;
 
             c := t;
         }
 
-        dict_dec_at(dict, next_code-1).c := (c: byte);
+        dict[next_code-1].c := (c: byte);
 
-        while (it = dict_dec_at(dict, c), it.back)
+        while (it = dict[c], it.back)
         {
             myz_put_byte(ctx, it.c);
 
@@ -419,7 +465,7 @@ myz_decode: (ctx: &myz_ctx_t) -> void
             it.back := 0;
         }
 
-        myz_put_byte(ctx, dict_dec_at(dict, c).c);
+        myz_put_byte(ctx, dict[c].c);
 
         if (++next_code >= next_shift)
         {
