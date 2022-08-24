@@ -55,6 +55,23 @@ struct myz_ctx_t
 
 
 //---------------------------------------------------------------------
+//- Get one byte
+//---------------------------------------------------------------------
+myz_get_byte: (ctx: &myz_ctx_t) -> byte
+{
+    if (ctx.avail_in == 0)
+    {
+        printf("\nError: input empty\n");
+
+        exit(-1);
+    }
+
+    ctx.avail_in--;
+
+    v_return(*ctx.next_in++);
+}
+
+//---------------------------------------------------------------------
 //- Get one bit
 //---------------------------------------------------------------------
 myz_get_bit: (ctx: &myz_ctx_t) -> bool
@@ -86,22 +103,47 @@ myz_get_bit: (ctx: &myz_ctx_t) -> bool
 }
 
 //---------------------------------------------------------------------
-//- Get one byte
+//- ...
 //---------------------------------------------------------------------
-myz_get_byte: (ctx: &myz_ctx_t) -> byte
+read_bits: (ctx: &myz_ctx_t, bits: int) -> unsigned
 {
-    if (ctx.avail_in == 0)
+    code: &unsigned := 0;
+
+    for (i: &int := 0; i < bits; ++i)
     {
-        printf("\nError: input empty\n");
+        b = myz_get_bit(ctx);
+
+        code |= (b: unsigned) << i;
+    }
+
+    v_return(code);
+}
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+check_eod: (ctx: &myz_ctx_t) -> bool
+{
+    v_return(ctx.avail_in == 0  &&  ctx.buffer_in == 1);
+}
+
+
+//---------------------------------------------------------------------
+//- Put one byte
+//---------------------------------------------------------------------
+myz_put_byte: (ctx: &myz_ctx_t, b: byte) -> void
+{
+    if (ctx.avail_out == 0)
+    {
+        printf("\nError: output full\n");
 
         exit(-1);
     }
 
-    ctx.avail_in--;
+    ctx.avail_out--;
 
-    v_return(*ctx.next_in++);
+    *ctx.next_out++ := b;
 }
-
 
 //---------------------------------------------------------------------
 //- Put one bit
@@ -134,68 +176,51 @@ myz_put_bit: (ctx: &myz_ctx_t, bit: bool) -> void
 }
 
 //---------------------------------------------------------------------
-//- Put one byte
+//- ...
 //---------------------------------------------------------------------
-myz_put_byte: (ctx: &myz_ctx_t, b: byte) -> void
+write_bits: (ctx: &myz_ctx_t, code: unsigned, bits: int) -> void
 {
-    if (ctx.avail_out == 0)
-    {
-        printf("\nError: output full\n");
-
-        exit(-1);
-    }
-
-    ctx.avail_out--;
-
-    *ctx.next_out++ := b;
-}
-
-//---------------------------------------------------------------------
-//- Encoding ...
-//---------------------------------------------------------------------
-write_bits: (ctx: &myz_ctx_t, code: int, bits: int) -> void
-{
-//  printf("write_bits: %d, %d\n", (code: int), bits);
-//  defer printf("write_bits leave\n");
-
-    code: &size_t := code;
+    code: &unsigned := code;
 
     for (i: &int := 0; i < bits; ++i)
     {
-
         myz_put_bit(ctx, (code & 1 : bool));
 
         code >>= 1;
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+write_eod: (ctx: &myz_ctx_t) -> void
+{
+    write_bits(ctx, 1, 8);
+}
 
 
 //---------------------------------------------------------------------
-//- Dictionary for encoding...
+//- Dictionaries ...
 //---------------------------------------------------------------------
 struct myz_enc_t
 {
-    next: int[256];
+    next: unsigned[256];
+};
+
+struct myz_dec_t
+{
+    prev: unsigned;
+    back: unsigned;
+    c: byte;
 };
 
 dict_t = v_ast_generic_list_t;
 
-{   size_v = LLVMSizeOf(v_type_get_llvm_type(myz_enc_t));
+{   enc_size_v = LLVMSizeOf(v_type_get_llvm_type(myz_enc_t));
+    dec_size_v = LLVMSizeOf(v_type_get_llvm_type(myz_dec_t));
 
-    v_add_constant("myz_enc_t_size", size_t, size_v);
+    v_add_constant("myz_enc_t_size", size_t, enc_size_v);
+    v_add_constant("myz_dec_t_size", size_t, dec_size_v);
 }
 
 
@@ -221,7 +246,7 @@ dict_size: (dict: &dict_t) -> size_t
 
 
 //---------------------------------------------------------------------
-dict_expand: (dict: &dict_t) -> &myz_enc_t
+dict_enc_expand: (dict: &dict_t) -> &myz_enc_t
 {
     item = v_alloca(v_ast_base_t);
     v_initialize(item);
@@ -241,7 +266,7 @@ dict_expand: (dict: &dict_t) -> &myz_enc_t
 }
 
 //---------------------------------------------------------------------
-dict_at: (dict: &dict_t, i: int) -> &myz_enc_t
+dict_enc_at: (dict: &dict_t, i: int) -> &myz_enc_t
 {
     void_obj = v_ast_generic_get_object(v_list_get_item(&dict, i));
 
@@ -252,30 +277,61 @@ dict_at: (dict: &dict_t, i: int) -> &myz_enc_t
 
 
 //---------------------------------------------------------------------
+dict_dec_expand: (dict: &dict_t) -> &myz_dec_t
+{
+    item = v_alloca(v_ast_base_t);
+    v_initialize(item);
+    defer v_terminate(item);
+
+    v_ast_make_generic(item, 0, myz_dec_t_size);
+
+    v_list_append(&dict, &dict, item);
+
+    void_obj = v_ast_generic_get_object(item);
+
+    obj = (void_obj: *myz_dec_t);
+
+    *obj := 0;
+
+    v_return(*obj);
+}
+
+//---------------------------------------------------------------------
+dict_dec_at: (dict: &dict_t, i: int) -> &myz_dec_t
+{
+    void_obj = v_ast_generic_get_object(v_list_get_item(&dict, i));
+
+    obj = (void_obj: *myz_dec_t);
+
+    v_return(*obj);
+}
+
+
+//---------------------------------------------------------------------
 //- Encoding ...
 //---------------------------------------------------------------------
 myz_encode: (ctx: &myz_ctx_t) -> void
 {
-    bits: &int := 9;
+    bits: &unsigned := 9;
 
-    next_code:  &int := 256;
-    next_shift: &int := 512;
+    next_code:  &unsigned := 256;
+    next_shift: &unsigned := 512;
 
 
     dict: &dict_t := v_undef();
     dict_init(dict);
     defer dict_term(dict);
 
-    for (i: &int := 0; i < 256; ++i)  dict_expand(dict);
+    for (i: &int := 0; i < 256; ++i)  dict_enc_expand(dict);
 
 
-    code: &int := myz_get_byte(ctx);
+    code: &unsigned := myz_get_byte(ctx);
 
     for (i: &int := 1; ctx.avail_in; ++i)
     {
         c = myz_get_byte(ctx);
 
-        if (next = dict_at(dict, code).next[c])
+        if (next = dict_enc_at(dict, code).next[c])
         {
             code := next;
 
@@ -285,7 +341,7 @@ myz_encode: (ctx: &myz_ctx_t) -> void
         {
             write_bits(ctx, code, bits);
 
-            dict_expand(dict);
+            dict_enc_expand(dict);
 
             next := next_code++;
 
@@ -301,8 +357,77 @@ myz_encode: (ctx: &myz_ctx_t) -> void
     }
 
     write_bits(ctx, code, bits);
-    write_bits(ctx, 1, 1);
-    write_bits(ctx, 0, 8);
+    write_eod(ctx);
+
+    printf("next_code: %d\n", next_code);
+}
+
+
+//---------------------------------------------------------------------
+//- Decoding ...
+//---------------------------------------------------------------------
+myz_decode: (ctx: &myz_ctx_t) -> void
+{
+    bits: &unsigned := 9;
+
+    next_code:  &unsigned := 256;
+    next_shift: &unsigned := 512;
+
+
+    dict: &dict_t := v_undef();
+    dict_init(dict);
+    defer dict_term(dict);
+
+    for (i: &int := 0; i < 256; ++i)
+    {
+        d = dict_dec_expand(dict);
+
+        d.c := (i: byte);
+    }
+
+
+    while (!check_eod(ctx))
+    {
+        c: &unsigned := read_bits(ctx, bits);
+
+        if (c >= next_code)
+        {
+            printf("\nError: bad sequence\n");
+
+            exit(-1);
+        }
+
+        dict_dec_expand(dict).prev := c;
+
+        while (c > 255)
+        {
+            t = dict_dec_at(dict, c).prev;
+
+            dict_dec_at(dict, t).back := c;
+
+            c := t;
+        }
+
+        dict_dec_at(dict, next_code-1).c := (c: byte);
+
+        while (it = dict_dec_at(dict, c), it.back)
+        {
+            myz_put_byte(ctx, it.c);
+
+            c := it.back;
+
+            it.back := 0;
+        }
+
+        myz_put_byte(ctx, dict_dec_at(dict, c).c);
+
+        if (++next_code >= next_shift)
+        {
+            ++bits;
+
+            next_shift *= 2;
+        }
+    }
 
     printf("next_code: %d\n", next_code);
 }
@@ -316,6 +441,8 @@ myz_encode: (ctx: &myz_ctx_t) -> void
 
 //=====================================================================
 strlen: (*char) -> size_t;
+strcmp: (*char, *char) -> int;
+
 
 //---------------------------------------------------------------------
 my_source: &char[] :=
@@ -327,7 +454,7 @@ std::__allocated_ptr<std::allocator<std::_Sp_counted_ptr_inplace<ast_template_ge
 {
     BUFSIZE = 1<<16;
 
-    buf = v_malloc(char, BUFSIZE);
+    buf = v_malloc(byte, BUFSIZE);
 
 
     ctx: &myz_ctx_t := 0;
@@ -356,7 +483,7 @@ std::__allocated_ptr<std::allocator<std::_Sp_counted_ptr_inplace<ast_template_ge
 
     for (i: &int := 0; i < n; ++i)
     {
-        b64 |= ((buf[i]: byte) : uint64_t) << (i%8)*8;
+        b64 |= (buf[i]: uint64_t) << (i%8)*8;
 
         if (i%8 == 7  ||  i == n-1)
         {
@@ -377,6 +504,31 @@ std::__allocated_ptr<std::allocator<std::_Sp_counted_ptr_inplace<ast_template_ge
 
     printf("\n");
 
+
+    buf2 = v_malloc(byte, BUFSIZE);
+
+    ctx.next_in  := buf;
+    ctx.avail_in := n;
+
+    ctx.next_out  := buf2;
+    ctx.avail_out := BUFSIZE;
+
+
+    //------------------------------
+    myz_decode(ctx);
+    //------------------------------
+
+
+    m = BUFSIZE - ctx.avail_out;
+
+    printf("m: %d\n", (m: int));
+
+    *ctx.next_out := 0;
+
+    printf("strcmp: %d\n", strcmp(my_source, buf2));
+
+
+    v_free(buf2);
     v_free(buf);
 }
 
