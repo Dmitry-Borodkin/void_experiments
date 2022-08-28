@@ -22,6 +22,8 @@
     v_add_type("ulong", v_uint_type(w));
 }
 
+double = float(64);
+
 
 //---------------------------------------------------------------------
 struct mpz_t
@@ -35,38 +37,545 @@ struct mpz_t
 
 
 //---------------------------------------------------------------------
+//- <x86_64-pc-linux-gnu/gmp.h>
+//---------------------------------------------------------------------
 __gmpz_init: (*mpz_t) -> void;
 __gmpz_clear: (*mpz_t) -> void;
 
+//---------------------------------------------------------------------
+mpz_initialize: (p: *mpz_t, n: int) -> void
+{
+    for (i: &int := 0; i < n; ++i)  __gmpz_init(p+i);
+}
+
+mpz_terminate: (p: *mpz_t, n: int) -> void
+{
+    for (i: &int := 0; i < n; ++i)  __gmpz_clear(p+i);
+}
+
+{   v_util_register_initialize_impl(mpz_t, "mpz_initialize");
+    v_util_register_terminate_impl( mpz_t, "mpz_terminate");
+}
+
+
+//---------------------------------------------------------------------
 __gmpz_set: (*mpz_t, *const mpz_t) -> void;
 __gmpz_set_ui: (*mpz_t, ulong) -> void;
 __gmpz_set_si: (*mpz_t, long) -> void;
+__gmpz_set_d: (*mpz_t, double) -> void;
+__gmpz_set_str: (*mpz_t, *const char, int) -> int;
 
-__gmp_printf: (*const char, ...) -> int;
+__gmpz_swap: (*mpz_t, *mpz_t) -> void;
 
+//---------------------------------------------------------------------
+__gmpz_init_set: (*mpz_t, *const mpz_t) -> void;
+__gmpz_init_set_ui: (*mpz_t, ulong) -> void;
+__gmpz_init_set_si: (*mpz_t, long) -> void;
+__gmpz_init_set_d: (*mpz_t, double) -> void;
+__gmpz_init_set_str: (*mpz_t, *const char, int) -> int;
+
+//---------------------------------------------------------------------
+mpz_copy: (d: *mpz_t, s: *const mpz_t, n: int) -> void
+{
+    for (i: &int := 0; i < n; ++i)  __gmpz_set(d+i, s+i);
+}
+
+{   v_util_register_copy_impl(mpz_t, "mpz_copy");
+}
+
+
+//---------------------------------------------------------------------
+struct ast_expr_compiled_t
+{
+    type:  *v_type_t;
+    value: LLVMValueRef;
+};
+
+ast_expr_compiled_vtable: &v_ast_generic_vtable := {0, 0};
+
+{   ast_expr_compiled_vtable[2] := v_quark_from_string("expr_compiled");
+
+    sz_v = LLVMSizeOf(v_type_get_llvm_type(ast_expr_compiled_t));
+
+    v_add_constant("ast_expr_compiled_size", size_t, sz_v);
+}
+
+v_ast_make_expr_compiled: (expr: *v_ast_expr_t, t: *v_type_t, v: LLVMValueRef) -> void
+{
+    v_ast_make_generic(expr, &ast_expr_compiled_vtable, ast_expr_compiled_size);
+
+    void_obj = v_ast_generic_get_object(expr);
+
+    obj = (void_obj: *ast_expr_compiled_t);
+
+    obj~>type  := t;
+    obj~>value := v;
+}
+
+compile_expr_compiled: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+{
+    void_obj = v_ast_generic_get_object((self: *v_ast_expr_t));
+
+    obj = (void_obj: *ast_expr_compiled_t);
+
+    v_adopt_result(obj~>type, obj~>value);
+}
+
+{   vis = voidc_compiler;
+
+    voidc_visitor_set_void_method(vis, vis, ast_expr_compiled_vtable[2], compile_expr_compiled, 0);
+}
+
+
+//---------------------------------------------------------------------
+mpz_ptr = *mpz_t;
+mpz_ref = &mpz_t;
+
+{   q_ref = v_reference_type(v_quark_t, 0);
+
+    q = v_quark_ptr_from_string;
+
+    v_add_symbol("infix_add_q", q_ref, q("op_infix_add"));
+    v_add_symbol("infix_sub_q", q_ref, q("op_infix_sub"));
+    v_add_symbol("infix_mul_q", q_ref, q("op_infix_mul"));
+    v_add_symbol("infix_div_q", q_ref, q("op_infix_div"));
+    v_add_symbol("infix_rem_q", q_ref, q("op_infix_rem"));
+    v_add_symbol("infix_and_q", q_ref, q("op_infix_and"));
+    v_add_symbol("infix_or_q",  q_ref, q("op_infix_or"));
+    v_add_symbol("infix_xor_q", q_ref, q("op_infix_xor"));
+}
+
+
+//---------------------------------------------------------------------
+mpz_temporary_cleaner: (void_tmp: *void) -> void
+{
+    vtmp = (void_tmp: LLVMValueRef);
+
+    ft: &v_type_ptr   := v_undef();
+    fv: &LLVMValueRef := v_undef();
+
+    v_obtain_identifier("__gmpz_clear", &ft, &fv);
+
+    builder = v_target_get_builder();
+
+    if (v_type_is_pointer(ft))  ft := v_type_refptr_get_element_type(ft);
+
+    LLVMBuildCall2(builder, v_type_get_llvm_type(ft), fv, &vtmp, 1, "");
+}
+
+
+//---------------------------------------------------------------------
 __gmpz_add: (*mpz_t, *const mpz_t, *const mpz_t) -> void;
 __gmpz_add_ui: (*mpz_t, *const mpz_t, ulong) -> void;
-__gmpz_add_si: (*mpz_t, *const mpz_t, long) -> void;
 
+__gmpz_sub: (*mpz_t, *const mpz_t, *const mpz_t) -> void;
+__gmpz_sub_ui: (*mpz_t, *const mpz_t, ulong) -> void;
+__gmpz_ui_sub: (*mpz_t, ulong, *const mpz_t) -> void;
+
+__gmpz_mul: (*mpz_t, *const mpz_t, *const mpz_t) -> void;
+__gmpz_mul_ui: (*mpz_t, *const mpz_t, ulong) -> void;
+__gmpz_mul_si: (*mpz_t, *const mpz_t, long) -> void;
+
+__gmpz_tdiv_q: (*mpz_t, *const mpz_t, *const mpz_t) -> void;
+__gmpz_tdiv_r: (*mpz_t, *const mpz_t, *const mpz_t) -> void;
+
+__gmpz_and: (*mpz_t, *const mpz_t, *const mpz_t) -> void;
+__gmpz_ior: (*mpz_t, *const mpz_t, *const mpz_t) -> void;
+__gmpz_xor: (*mpz_t, *const mpz_t, *const mpz_t) -> void;
+
+//- ...
+
+
+//---------------------------------------------------------------------
+mpz_binary_intrinsic: (vis: *voidc_visitor_t, aux: *void,
+                       self: *v_ast_base_t,
+                       t0: v_type_ptr, v0: LLVMValueRef
+                      ) -> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    rhs = v_list_get_item(args, 2);
+
+    tt = v_get_result_type();
+
+    v_set_result_type(INVIOLABLE_TAG);
+
+    v_ast_accept_visitor((rhs: *v_ast_base_t), vis);
+
+    t1: &v_type_ptr   := v_get_result_type();
+    v1: &LLVMValueRef := v_get_result_value();
+
+    builder = v_target_get_builder();
+
+    if (t1 != mpz_ref)
+    {
+        v_set_result_type(UNREFERENCE_TAG);
+
+        v_adopt_result(t1, v1);
+
+        t1 := v_get_result_type();
+        v1 := v_get_result_value();
+
+        vtmp = v_make_temporary(mpz_t, 0);
+
+        if (v_type_is_floating_point(t1))
+        {
+            if (t1 != double)
+            {
+                v1 := LLVMBuildFPCast(builder, v1, v_type_get_llvm_type(double), "");
+            }
+
+            val: &LLVMValueRef[2] := {vtmp, v1};
+
+            ft: &v_type_ptr   := v_undef();
+            fv: &LLVMValueRef := v_undef();
+
+            v_obtain_identifier("__gmpz_init_set_d", &ft, &fv);
+
+            if (v_type_is_pointer(ft))  ft := v_type_refptr_get_element_type(ft);
+
+            LLVMBuildCall2(builder, v_type_get_llvm_type(ft), fv, val, 2, "");
+        }
+        else
+        {
+            //- assert(v_type_is_integer(t1));
+
+            sign = v_type_integer_is_signed(t1);
+
+            if (t1 != long  &&  t1 != ulong)
+            {
+                v1 := LLVMBuildIntCast2(builder, v1, v_type_get_llvm_type(long), sign, "");
+            }
+
+            val: &LLVMValueRef[2] := {vtmp, v1};
+
+            ft: &v_type_ptr   := v_undef();
+            fv: &LLVMValueRef := v_undef();
+
+            if (sign)  v_obtain_identifier("__gmpz_init_set_si", &ft, &fv);
+            else       v_obtain_identifier("__gmpz_init_set_ui", &ft, &fv);
+
+            if (v_type_is_pointer(ft))  ft := v_type_refptr_get_element_type(ft);
+
+            LLVMBuildCall2(builder, v_type_get_llvm_type(ft), fv, val, 2, "");
+        }
+
+        v_add_temporary_cleaner(mpz_temporary_cleaner, vtmp);
+
+        t1 := mpz_ref;
+        v1 := vtmp;
+    }
+
+    //-----------------------------------------------------------------
+    vr: &LLVMValueRef := v_undef();
+
+    if (v_ast_get_attribute(self, v_quark_from_string("root")))
+    {
+        t_front = v_get_temporaries_front();
+
+        if (t_front)
+        {
+            v_save_builder_ip();
+
+            LLVMPositionBuilderBefore(builder, t_front);
+        }
+
+        vr := LLVMBuildAlloca(builder, v_type_get_llvm_type(mpz_t), "");
+
+        expr = v_alloca(v_ast_expr_t);
+        v_initialize(expr);
+        defer v_terminate(expr);
+
+        v_ast_make_expr_compiled(expr, mpz_ptr, vr);
+
+        stmt = v_alloca(v_ast_stmt_t);
+        v_initialize(stmt);
+        defer v_terminate(stmt);
+
+        v_ast_make_stmt_call(stmt, "", "__gmpz_init", expr, 1);
+
+        v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
+
+        v_ast_make_stmt_call(stmt, "", "__gmpz_clear", expr, 1);
+
+        v_ast_make_stmt_defer(stmt, stmt);
+
+        v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
+
+        if (t_front)  v_restore_builder_ip();
+    }
+    else
+    {
+        vr := v_make_temporary(mpz_t, 0);
+
+        ft: &v_type_ptr   := v_undef();
+        fv: &LLVMValueRef := v_undef();
+
+        v_obtain_identifier("__gmpz_init", &ft, &fv);
+
+        if (v_type_is_pointer(ft))  ft := v_type_refptr_get_element_type(ft);
+
+        LLVMBuildCall2(builder, v_type_get_llvm_type(ft), fv, &vr, 1, "");
+
+        v_add_temporary_cleaner(mpz_temporary_cleaner, vr);
+    }
+
+    //-----------------------------------------------------------------
+    quark = (aux: v_quark_t);
+
+    fname: &*const char := "bad_gmp_infix_operator";
+
+    if      (quark == infix_add_q)  fname := "__gmpz_add";
+    else if (quark == infix_sub_q)  fname := "__gmpz_sub";
+    else if (quark == infix_mul_q)  fname := "__gmpz_mul";
+    else if (quark == infix_div_q)  fname := "__gmpz_tdiv_q";
+    else if (quark == infix_rem_q)  fname := "__gmpz_tdiv_r";
+    else if (quark == infix_and_q)  fname := "__gmpz_and";
+    else if (quark == infix_or_q)   fname := "__gmpz_ior";
+    else if (quark == infix_xor_q)  fname := "__gmpz_xor";
+
+    val: &LLVMValueRef[3] := {vr, v0, v1};
+
+    ft: &v_type_ptr   := v_undef();
+    fv: &LLVMValueRef := v_undef();
+
+    v_obtain_identifier(fname, &ft, &fv);
+
+    if (v_type_is_pointer(ft))  ft := v_type_refptr_get_element_type(ft);
+
+    LLVMBuildCall2(builder, v_type_get_llvm_type(ft), fv, val, 3, "");
+
+    v_set_result_type(tt);
+
+    v_adopt_result(mpz_ref, vr);
+}
+
+//---------------------------------------------------------------------
+{   vis = voidc_compiler;
+
+    v_util_function_dict_set(infix_add_q, mpz_ref, "mpz.infix_add");
+    v_util_function_dict_set(infix_sub_q, mpz_ref, "mpz.infix_sub");
+    v_util_function_dict_set(infix_mul_q, mpz_ref, "mpz.infix_mul");
+    v_util_function_dict_set(infix_div_q, mpz_ref, "mpz.infix_div");
+    v_util_function_dict_set(infix_rem_q, mpz_ref, "mpz.infix_rem");
+    v_util_function_dict_set(infix_and_q, mpz_ref, "mpz.infix_and");
+    v_util_function_dict_set(infix_or_q,  mpz_ref, "mpz.infix_or");
+    v_util_function_dict_set(infix_xor_q, mpz_ref, "mpz.infix_xor");
+
+    voidc_visitor_set_intrinsic(vis, vis, "mpz.infix_add", mpz_binary_intrinsic, (infix_add_q: *void));
+    voidc_visitor_set_intrinsic(vis, vis, "mpz.infix_sub", mpz_binary_intrinsic, (infix_sub_q: *void));
+    voidc_visitor_set_intrinsic(vis, vis, "mpz.infix_mul", mpz_binary_intrinsic, (infix_mul_q: *void));
+    voidc_visitor_set_intrinsic(vis, vis, "mpz.infix_div", mpz_binary_intrinsic, (infix_div_q: *void));
+    voidc_visitor_set_intrinsic(vis, vis, "mpz.infix_rem", mpz_binary_intrinsic, (infix_rem_q: *void));
+    voidc_visitor_set_intrinsic(vis, vis, "mpz.infix_and", mpz_binary_intrinsic, (infix_and_q: *void));
+    voidc_visitor_set_intrinsic(vis, vis, "mpz.infix_or",  mpz_binary_intrinsic, (infix_or_q:  *void));
+    voidc_visitor_set_intrinsic(vis, vis, "mpz.infix_xor", mpz_binary_intrinsic, (infix_xor_q: *void));
+}
+
+//---------------------------------------------------------------------
+mpz_binary_right_intrinsic: (vis: *voidc_visitor_t, aux: *void,
+                             self: *v_ast_base_t,
+                             t0: v_type_ptr, v0: LLVMValueRef,
+                             t1: v_type_ptr, v1: LLVMValueRef
+                            ) -> void
+{
+    t0: &v_type_ptr   := t0;
+    v0: &LLVMValueRef := v0;
+
+    tt = v_get_result_type();
+
+    builder = v_target_get_builder();
+
+    if (t0 != mpz_ref)
+    {
+        v_set_result_type(UNREFERENCE_TAG);
+
+        v_adopt_result(t0, v0);
+
+        t0 := v_get_result_type();
+        v0 := v_get_result_value();
+
+        vtmp = v_make_temporary(mpz_t, 0);
+
+        if (v_type_is_floating_point(t0))
+        {
+            if (t0 != double)
+            {
+                v0 := LLVMBuildFPCast(builder, v0, v_type_get_llvm_type(double), "");
+            }
+
+            val: &LLVMValueRef[2] := {vtmp, v0};
+
+            ft: &v_type_ptr   := v_undef();
+            fv: &LLVMValueRef := v_undef();
+
+            v_obtain_identifier("__gmpz_init_set_d", &ft, &fv);
+
+            if (v_type_is_pointer(ft))  ft := v_type_refptr_get_element_type(ft);
+
+            LLVMBuildCall2(builder, v_type_get_llvm_type(ft), fv, val, 2, "");
+        }
+        else
+        {
+            //- assert(v_type_is_integer(t0));
+
+            sign = v_type_integer_is_signed(t0);
+
+            if (t0 != long  &&  t0 != ulong)
+            {
+                v0 := LLVMBuildIntCast2(builder, v0, v_type_get_llvm_type(long), sign, "");
+            }
+
+            val: &LLVMValueRef[2] := {vtmp, v0};
+
+            ft: &v_type_ptr   := v_undef();
+            fv: &LLVMValueRef := v_undef();
+
+            if (sign)  v_obtain_identifier("__gmpz_init_set_si", &ft, &fv);
+            else       v_obtain_identifier("__gmpz_init_set_ui", &ft, &fv);
+
+            if (v_type_is_pointer(ft))  ft := v_type_refptr_get_element_type(ft);
+
+            LLVMBuildCall2(builder, v_type_get_llvm_type(ft), fv, val, 2, "");
+        }
+
+        v_add_temporary_cleaner(mpz_temporary_cleaner, vtmp);
+
+        t0 := mpz_ref;
+        v0 := vtmp;
+    }
+
+    //-----------------------------------------------------------------
+    vr: &LLVMValueRef := v_undef();
+
+    if (v_ast_get_attribute(self, v_quark_from_string("root")))
+    {
+        t_front = v_get_temporaries_front();
+
+        if (t_front)
+        {
+            v_save_builder_ip();
+
+            LLVMPositionBuilderBefore(builder, t_front);
+        }
+
+        vr := LLVMBuildAlloca(builder, v_type_get_llvm_type(mpz_t), "");
+
+        expr = v_alloca(v_ast_expr_t);
+        v_initialize(expr);
+        defer v_terminate(expr);
+
+        v_ast_make_expr_compiled(expr, mpz_ptr, vr);
+
+        stmt = v_alloca(v_ast_stmt_t);
+        v_initialize(stmt);
+        defer v_terminate(stmt);
+
+        v_ast_make_stmt_call(stmt, "", "__gmpz_init", expr, 1);
+
+        v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
+
+        v_ast_make_stmt_call(stmt, "", "__gmpz_clear", expr, 1);
+
+        v_ast_make_stmt_defer(stmt, stmt);
+
+        v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
+
+        if (t_front)  v_restore_builder_ip();
+    }
+    else
+    {
+        vr := v_make_temporary(mpz_t, 0);
+
+        ft: &v_type_ptr   := v_undef();
+        fv: &LLVMValueRef := v_undef();
+
+        v_obtain_identifier("__gmpz_init", &ft, &fv);
+
+        if (v_type_is_pointer(ft))  ft := v_type_refptr_get_element_type(ft);
+
+        LLVMBuildCall2(builder, v_type_get_llvm_type(ft), fv, &vr, 1, "");
+
+        v_add_temporary_cleaner(mpz_temporary_cleaner, vr);
+    }
+
+    //-----------------------------------------------------------------
+    quark = (aux: v_quark_t);
+
+    fname: &*const char := "bad_gmp_infix_operator";
+
+    if      (quark == infix_add_q)  fname := "__gmpz_add";
+    else if (quark == infix_sub_q)  fname := "__gmpz_sub";
+    else if (quark == infix_mul_q)  fname := "__gmpz_mul";
+    else if (quark == infix_div_q)  fname := "__gmpz_tdiv_q";
+    else if (quark == infix_rem_q)  fname := "__gmpz_tdiv_r";
+    else if (quark == infix_and_q)  fname := "__gmpz_and";
+    else if (quark == infix_or_q)   fname := "__gmpz_ior";
+    else if (quark == infix_xor_q)  fname := "__gmpz_xor";
+
+    val: &LLVMValueRef[3] := {vr, v0, v1};
+
+    ft: &v_type_ptr   := v_undef();
+    fv: &LLVMValueRef := v_undef();
+
+    v_obtain_identifier(fname, &ft, &fv);
+
+    if (v_type_is_pointer(ft))  ft := v_type_refptr_get_element_type(ft);
+
+    LLVMBuildCall2(builder, v_type_get_llvm_type(ft), fv, val, 3, "");
+
+    v_set_result_type(tt);
+
+    v_adopt_result(mpz_ref, vr);
+}
+
+//---------------------------------------------------------------------
+{   q = v_quark_from_string;
+
+    v_util_function_dict_set(q("op_infix_add.right"), mpz_ref, "mpz.right_add");
+    v_util_function_dict_set(q("op_infix_sub.right"), mpz_ref, "mpz.right_sub");
+    v_util_function_dict_set(q("op_infix_mul.right"), mpz_ref, "mpz.right_mul");
+    v_util_function_dict_set(q("op_infix_div.right"), mpz_ref, "mpz.right_div");
+    v_util_function_dict_set(q("op_infix_rem.right"), mpz_ref, "mpz.right_rem");
+    v_util_function_dict_set(q("op_infix_and.right"), mpz_ref, "mpz.right_and");
+    v_util_function_dict_set(q("op_infix_or.right"),  mpz_ref, "mpz.right_or");
+    v_util_function_dict_set(q("op_infix_xor.right"), mpz_ref, "mpz.right_xor");
+
+    vis = voidc_compiler;
+
+    voidc_visitor_set_intrinsic(vis, vis, "mpz.right_add", mpz_binary_right_intrinsic, (infix_add_q: *void));
+    voidc_visitor_set_intrinsic(vis, vis, "mpz.right_sub", mpz_binary_right_intrinsic, (infix_sub_q: *void));
+    voidc_visitor_set_intrinsic(vis, vis, "mpz.right_mul", mpz_binary_right_intrinsic, (infix_mul_q: *void));
+    voidc_visitor_set_intrinsic(vis, vis, "mpz.right_div", mpz_binary_right_intrinsic, (infix_div_q: *void));
+    voidc_visitor_set_intrinsic(vis, vis, "mpz.right_rem", mpz_binary_right_intrinsic, (infix_rem_q: *void));
+    voidc_visitor_set_intrinsic(vis, vis, "mpz.right_and", mpz_binary_right_intrinsic, (infix_and_q: *void));
+    voidc_visitor_set_intrinsic(vis, vis, "mpz.right_or",  mpz_binary_right_intrinsic, (infix_or_q:  *void));
+    voidc_visitor_set_intrinsic(vis, vis, "mpz.right_xor", mpz_binary_right_intrinsic, (infix_xor_q: *void));
+}
 
 
 
 //---------------------------------------------------------------------
+__gmp_printf: (*const char, ...) -> int;
+
+
+
+//---------------------------------------------------------------------
+{ v_debug_print_module(1); }
 {
     m: &mpz_t := v_undef();
-    __gmpz_init(&m);
-    defer __gmpz_clear(&m);
+    v_initialize(&m);
+    defer v_terminate(&m);
 
 
-    __gmpz_set_si(&m, 777);
-
-    __gmp_printf("%Zd\n", &m);
-
-
-    __gmpz_add_ui(&m, &m, 222);
+    __gmpz_set_si(&m, -777);
 
     __gmp_printf("%Zd\n", &m);
 
+
+    n = 1000*m + 999;
+
+    __gmp_printf("%Zd\n", &n);
 
 
 
