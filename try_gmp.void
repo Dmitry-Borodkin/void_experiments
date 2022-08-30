@@ -143,6 +143,8 @@ mpz_ref = &mpz_t;
     v_add_symbol("infix_and_q", q_ref, q("op_infix_and"));
     v_add_symbol("infix_or_q",  q_ref, q("op_infix_or"));
     v_add_symbol("infix_xor_q", q_ref, q("op_infix_xor"));
+
+    v_add_symbol("root_q", q_ref, q("root"));
 }
 
 
@@ -269,7 +271,7 @@ mpz_binary_intrinsic: (vis: *voidc_visitor_t, aux: *void,
     //-----------------------------------------------------------------
     vr: &LLVMValueRef := v_undef();
 
-    if (v_ast_get_attribute(self, v_quark_from_string("root")))
+    if (v_ast_get_attribute(self, root_q))
     {
         t_front = v_get_temporaries_front();
 
@@ -448,7 +450,7 @@ mpz_binary_right_intrinsic: (vis: *voidc_visitor_t, aux: *void,
     //-----------------------------------------------------------------
     vr: &LLVMValueRef := v_undef();
 
-    if (v_ast_get_attribute(self, v_quark_from_string("root")))
+    if (v_ast_get_attribute(self, root_q))
     {
         t_front = v_get_temporaries_front();
 
@@ -561,7 +563,7 @@ __gmp_printf: (*const char, ...) -> int;
 
 
 //---------------------------------------------------------------------
-{ v_debug_print_module(1); }
+//{ v_debug_print_module(1); }
 {
     m: &mpz_t := v_undef();
     v_initialize(&m);
@@ -576,11 +578,27 @@ __gmp_printf: (*const char, ...) -> int;
     n = 1000*m + 999;
 
     __gmp_printf("%Zd\n", &n);
+}
 
 
+//---------------------------------------------------------------------
+{
+    f: &mpz_t[2] := v_undef();
+    v_initialize(&f[0], 2);
+    defer v_terminate(&f[0], 2);
 
+    __gmpz_set_si(&f[0], 0);
+    __gmpz_set_si(&f[1], 1);
 
+    for (n: &int := 2; n <= 4782; ++n)
+    {
+        fn = f[0] + f[1];
 
+        __gmpz_set(&f[0], &f[1]);
+        __gmpz_set(&f[1], &fn);
+    }
+
+    __gmp_printf("\n%Zd\n", &f[1]);
 }
 
 
