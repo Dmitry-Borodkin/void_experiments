@@ -492,10 +492,11 @@ strcmp: (*char, *char) -> int;
 
 //---------------------------------------------------------------------
 my_source: &char[] :=
-"""
-std::__allocated_ptr<std::allocator<std::_Sp_counted_ptr_inplace<ast_template_generic_data_t<ast_expr_base_data_t> const, std::allocator<void>, (__gnu_cxx::_Lock_policy)2> > > std::__allocate_guarded<std::allocator<std::_Sp_counted_ptr_inplace<ast_template_generic_data_t<ast_expr_base_data_t> const, std::allocator<void>, (__gnu_cxx::_Lock_policy)2> > >(std::allocator<std::_Sp_counted_ptr_inplace<ast_template_generic_data_t<ast_expr_base_data_t> const, std::allocator<void>, (__gnu_cxx::_Lock_policy)2> >&)
-""";
+"""*((*v_struct("voidc_visitor_t"), *void, *v_struct("v_ast_expr_t"), *v_struct("v_type_t"), *v_struct("struct.LLVMOpaqueValue")) -> void)""";
 
+//"""
+//std::__allocated_ptr<std::allocator<std::_Sp_counted_ptr_inplace<ast_template_generic_data_t<ast_expr_base_data_t> const, std::allocator<void>, (__gnu_cxx::_Lock_policy)2> > > std::__allocate_guarded<std::allocator<std::_Sp_counted_ptr_inplace<ast_template_generic_data_t<ast_expr_base_data_t> const, std::allocator<void>, (__gnu_cxx::_Lock_policy)2> > >(std::allocator<std::_Sp_counted_ptr_inplace<ast_template_generic_data_t<ast_expr_base_data_t> const, std::allocator<void>, (__gnu_cxx::_Lock_policy)2> >&)
+//""";
 
 {
     BUFSIZE = 1<<16;
