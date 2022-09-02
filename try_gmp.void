@@ -15,9 +15,46 @@
 
 
 //---------------------------------------------------------------------
-{   LLVMLoadLibraryPermanently("libgmp.so");
+struct FILE;
 
-    w = v_type_integer_get_width(long);
+v_popen: (command: *const char, prop: *const char) -> *FILE;
+
+v_pclose: (*FILE) -> int;
+
+fscanf: (stream: *FILE, format: *const char, ...) -> int;
+
+
+//{ v_debug_print_module(1); }
+//---------------------------------------------------------------------
+{   buffer: &*char := 0;
+    defer v_free(buffer);
+
+    libname: &*char := 0;
+
+    if (v_find_constant("_WIN32", 0, 0))
+    {
+        buffer := v_malloc(char, 1024);
+
+        {   p = v_popen("bash -c \"dlltool -I $(pkg-config --variable=libdir gmp)/libgmp.dll.a\"", "r");
+            defer v_pclose(p);
+
+            fscanf(p, "%1023s", buffer);
+        }
+
+        libname := buffer;
+    }
+    else
+    {
+        libname := "libgmp.so";
+    }
+
+    ok = LLVMLoadLibraryPermanently(libname);
+
+//  printf("ok: %d\n", ok);
+}
+
+//---------------------------------------------------------------------
+{   w = v_type_integer_get_width(long);
 
     v_add_type("ulong", v_uint_type(w));
 }
