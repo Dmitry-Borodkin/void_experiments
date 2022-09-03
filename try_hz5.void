@@ -1,0 +1,374 @@
+{   v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+
+    v_import("llvm-c/Core.void");
+}
+
+{   v_import("printf.void");
+}
+
+{   v_enable_level_01();
+    v_enable_level_02();
+}
+
+
+//---------------------------------------------------------------------
+struct node_t
+{
+    key: *v_type_t;
+    idx: size_t;
+};
+
+//---------------------------------------------------------------------
+compare_nodes: (lhs: *void, rhs: *void) -> int
+{
+    lhs = *(lhs: *node_t);
+    rhs = *(rhs: *node_t);
+
+    lhs = (lhs.key: size_t);
+    rhs = (rhs.key: size_t);
+
+    if (lhs < rhs)  v_return(-1);
+    if (lhs > rhs)  v_return(+1);
+
+    v_return(0);
+}
+
+
+//---------------------------------------------------------------------
+struct dict_t
+{
+    root: *void;
+    size: size_t;
+};
+
+//---------------------------------------------------------------------
+dict_initialize_impl: (dict: *dict_t, count: int) -> void
+{
+    for (i: &int := 0; i < count; ++i)  dict[i] := 0;
+}
+
+dict_terminate_impl: (dict: *dict_t, count: int) -> void
+{
+    free: (*void) -> void;
+
+    for (i: &int := 0; i < count; ++i)  v_tdestroy(dict[i].root, free);
+}
+
+{   v_util_register_initialize_impl(dict_t, "dict_initialize_impl");
+    v_util_register_terminate_impl(dict_t, "dict_terminate_impl");
+}
+
+//---------------------------------------------------------------------
+dict_find: (dict: *dict_t, key: *v_type_t) -> intptr_t
+{
+    r = v_tfind(&key, &dict~>root, compare_nodes);
+
+    if (!r)  v_return(-1);
+
+    r = *(r: **node_t);
+
+    v_return((r~>idx : intptr_t));
+}
+
+dict_insert: (dict: *dict_t, key: *v_type_t) -> void
+{
+    node = v_malloc(node_t);
+
+    node~>key := key;
+    node~>idx := dict~>size++;
+
+    v_tsearch(node, &dict~>root, compare_nodes);
+}
+
+
+//---------------------------------------------------------------------
+append_string_repr: (str: v_std_string_ptr, s: *const char) -> void
+{
+    s: &*const char := s;
+
+    v_std_string_append(str, "\"");
+
+    buf: &char[2] := 0;
+
+    while(c = *s++)
+    {
+        switch((c: char32_t))
+        {
+        case '\n':  v_std_string_append(str, "\\n");  v_break();
+        case '\r':  v_std_string_append(str, "\\r");  v_break();
+        case '\t':  v_std_string_append(str, "\\t");  v_break();
+        case '\'':  v_std_string_append(str, "\\\'"); v_break();
+        case '\"':  v_std_string_append(str, "\\\""); v_break();
+        case '\\':  v_std_string_append(str, "\\\\"); v_break();
+
+        default:
+
+           buf[0] := c;
+
+           v_std_string_append(str, buf);
+
+           v_break();
+        }
+    }
+
+    v_std_string_append(str, "\"");
+}
+
+
+//---------------------------------------------------------------------
+append_type: (str: *v_std_string_t, dict: *dict_t, t: *v_type_t) -> void
+{
+    if (idx = dict_find(dict, t), idx >= 0)
+    {
+        v_std_string_append_number(str, idx);
+
+        v_return();
+    }
+
+    flag: &bool := false;
+
+    switch(k = v_kind(t))
+    {
+    case v_type_kind_void:  v_std_string_append(str, "void");       v_break();
+    case v_type_kind_f16:   v_std_string_append(str, "float(16)");  v_break();
+    case v_type_kind_f32:   v_std_string_append(str, "float(32)");  v_break();
+    case v_type_kind_f64:   v_std_string_append(str, "float(64)");  v_break();
+    case v_type_kind_f128:  v_std_string_append(str, "float(128)"); v_break();
+
+    case v_type_kind_int:
+
+        flag := true;
+
+        //- Fallthrough!
+
+    case v_type_kind_uint:
+
+        if (flag)  v_std_string_append(str, "int(");
+        else       v_std_string_append(str, "uint(");
+
+        v_std_string_append_number(str, v_type_integer_get_width(t));
+
+        v_std_string_append(str, ")");
+
+        v_break();
+
+    case v_type_kind_function:
+
+        v_std_string_append(str, "((");
+
+        pc = v_type_function_get_param_count(t);
+        pt = v_type_function_get_param_types(t);
+
+        for (i: &int := 0; i < pc; ++i)
+        {
+            if (i)  v_std_string_append(str, ", ");
+
+            append_type(str, dict, pt[i]);
+        }
+
+        if (v_type_function_is_var_arg(t))
+        {
+            if (pc)  v_std_string_append(str, ", ");
+
+            v_std_string_append(str, "...");
+        }
+
+        v_std_string_append(str, ") -> ");
+
+        append_type(str, dict, v_type_function_get_return_type(t));
+
+        v_std_string_append(str, ")");
+
+        v_break();
+
+    case v_type_kind_pointer:
+
+        flag := true;
+
+        //- Fallthrough!
+
+    case v_type_kind_reference:
+
+        et = v_type_refptr_get_element_type(t);
+        as = v_type_refptr_get_address_space(t);
+
+        if (as == 0)
+        {
+            if (flag) v_std_string_append(str, "*");
+            else      v_std_string_append(str, "&");
+
+            append_type(str, dict, et);
+        }
+        else
+        {
+            if (flag) v_std_string_append(str, "v_ptr(");       //- Sic!
+            else      v_std_string_append(str, "v_ref(");       //- Sic!
+
+            append_type(str, dict, et);
+
+            v_std_string_append(str, ", ");
+
+            v_std_string_append_number(str, as);
+
+            v_std_string_append(str, ")");
+        }
+
+        v_break();
+
+    case v_type_kind_struct:
+
+        v_std_string_append(str, "v_struct(");
+
+        if (n = v_type_struct_get_name(t))
+        {
+            append_string_repr(str, n);
+
+            flag := true;
+        }
+
+        if (!flag  &&  !v_type_struct_is_opaque(t))
+        {
+            if (v_type_struct_is_packed(t))
+            {
+                v_std_string_append(str, "packed, ");
+            }
+
+            v_std_string_append(str, "{");
+
+            ec = v_type_struct_get_element_count(t);
+            et = v_type_struct_get_element_types(t);
+
+            for (i: &int := 0; i < ec; ++i)
+            {
+                if (i)  v_std_string_append(str, ", ");
+
+                append_type(str, dict, et[i]);
+            }
+
+            v_std_string_append(str, "}");
+        }
+
+        v_std_string_append(str, ")");
+
+        v_break();
+
+    case v_type_kind_array:
+
+        append_type(str, dict, v_type_array_get_element_type(t));
+
+        v_std_string_append(str, "[");
+
+        v_std_string_append_number(str, v_type_array_get_length(t));
+
+        v_std_string_append(str, "]");
+
+        v_break();
+
+    case v_type_kind_vector:
+
+        flag := true;
+
+        //- Fallthrough!
+
+    case v_type_kind_svector:
+
+        if (flag) v_std_string_append(str, "vec(");
+        else      v_std_string_append(str, "svec(");
+
+        append_type(str, dict, v_type_vector_get_element_type(t));
+
+        v_std_string_append(str, ", ");
+
+        v_std_string_append_number(str, v_type_vector_get_size(t));
+
+        v_std_string_append(str, ")");
+
+        v_break();
+    }
+
+    dict_insert(dict, t);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------
+static_type_to_string_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
+                                  args: v_ast_expr_list_ptr,
+                                  t0: v_type_ptr, v0: LLVMValueRef
+                                  ) -> void
+{
+    sstr = v_alloca(v_std_string_t);
+    v_initialize(sstr);
+    defer v_terminate(sstr);
+
+    dict = v_alloca(dict_t);
+    v_initialize(dict);
+    defer v_terminate(dict);
+
+    append_type(sstr, dict, (v0: v_type_ptr));
+
+    etmp = v_alloca(v_ast_expr_t);
+    v_initialize(etmp);
+    defer v_terminate(etmp);
+
+    v_ast_make_expr_string(etmp, v_std_string_get(sstr));
+
+    v_ast_accept_visitor((etmp: v_ast_base_ptr), vis);
+}
+
+{
+    v_util_function_dict_set(v_quark_from_string(".str"),  v_static_type_t, "v.static_type_to_string");
+
+    v_add_intrinsic("v.static_type_to_string",  static_type_to_string_intrinsic,  0);
+}
+
+//---------------------------------------------------------------------
+{
+    intrinsic_t = (vis: voidc_visitor_ptr, aux: *void,
+                   ast: v_ast_expr_ptr,
+                   t0: v_type_ptr, v0: LLVMValueRef
+                   ) -> void;
+
+    t = intrinsic_t;
+
+
+    t = v_struct({intptr_t[2]});
+
+
+    printf("t: %s\n", t.str);
+
+}
+
+
+
+
+
+
+

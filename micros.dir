@@ -2,10 +2,11 @@
                                                                │
                                                                │
                                                                │
-try_temporaries.void                                           │try_temporaries.void
+try_hz5.void                                                   │try_hz5.void
                                                                │
+                                                               │
+───────────────────────────────────────────────────────────────│
 try_gmp.void                                                   │try_gmp.void
-                                                               │
                                                                │
 ───────────────────────────────────────────────────────────────│
 try_structures.void                                            │try_structures.void
