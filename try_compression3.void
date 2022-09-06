@@ -49,6 +49,13 @@ struct myz_ctx_t
     remain_out: uint(8);            //- Output bits remain (out of 8)
     buffer_out: uint(8);            //- Output bits buffer
 
+    //-------------------------------------------------------------
+    check_in: *((&myz_ctx_t) -> bool);
+    aux_in:   *void;
+
+    check_out: *((&myz_ctx_t) -> bool);
+    aux_out:   *void;
+
     //- ...
 
 };
@@ -59,12 +66,14 @@ struct myz_ctx_t
 //---------------------------------------------------------------------
 myz_get_byte: (ctx: &myz_ctx_t) -> byte
 {
-    if (ctx.avail_in == 0)
+    if (ctx.avail_in == 0  &&  !(ctx.check_in  &&  ctx.check_in(ctx)))
     {
         printf("\nError: input empty\n");
 
         exit(-1);
     }
+
+    //- assert(ctx.avail_in != 0);
 
     ctx.avail_in--;
 
@@ -78,17 +87,8 @@ myz_get_bit: (ctx: &myz_ctx_t) -> bool
 {
     if (ctx.remain_in == 0)
     {
-        ctx.buffer_in := *ctx.next_in++;
+        ctx.buffer_in := myz_get_byte(ctx);
         ctx.remain_in := 8;
-
-        if (ctx.avail_in == 0)
-        {
-            printf("\nError: input empty\n");
-
-            exit(-1);
-        }
-
-        ctx.avail_in--;
     }
 
     b = ctx.buffer_in;
@@ -133,12 +133,14 @@ check_eod: (ctx: &myz_ctx_t) -> bool
 //---------------------------------------------------------------------
 myz_put_byte: (ctx: &myz_ctx_t, b: byte) -> void
 {
-    if (ctx.avail_out == 0)
+    if (ctx.avail_out == 0  &&  !(ctx.check_out  &&  ctx.check_out(ctx)))
     {
         printf("\nError: output full\n");
 
         exit(-1);
     }
+
+    //- assert(ctx.avail_out != 0);
 
     ctx.avail_out--;
 
@@ -159,16 +161,7 @@ myz_put_bit: (ctx: &myz_ctx_t, bit: bool) -> void
 
     if (n == 8)
     {
-        if (ctx.avail_out == 0)
-        {
-            printf("\nError: output full\n");
-
-            exit(-1);
-        }
-
-        *ctx.next_out++ := b;
-
-        ctx.avail_out--;
+        myz_put_byte(ctx, b);
 
         b := 0;
         n := 0;
@@ -378,7 +371,7 @@ myz_encode: (ctx: &myz_ctx_t) -> void
 
     code: &unsigned := myz_get_byte(ctx);
 
-    for (i: &int := 1; ctx.avail_in; ++i)
+    for (i: &int := 1; ctx.avail_in || (ctx.check_in && ctx.check_in(ctx)); ++i)
     {
         c = myz_get_byte(ctx);
 
@@ -409,6 +402,8 @@ myz_encode: (ctx: &myz_ctx_t) -> void
 
     write_bits(ctx, code, bits);
     write_eod(ctx);
+
+    if (ctx.check_out)  ctx.check_out(ctx);
 
     printf("next_code: %d\n", next_code);
 }
@@ -475,6 +470,8 @@ myz_decode: (ctx: &myz_ctx_t) -> void
         }
     }
 
+    if (ctx.check_out)  ctx.check_out(ctx);
+
     printf("next_code: %d\n", next_code);
 }
 
@@ -492,7 +489,9 @@ strcmp: (*char, *char) -> int;
 
 //---------------------------------------------------------------------
 my_source: &char[] :=
-"""*((*v_struct("voidc_visitor_t"), *void, *v_struct("v_ast_expr_t"), *v_struct("v_type_t"), *v_struct("struct.LLVMOpaqueValue")) -> void)""";
+""""Превед!", v_struct({int(64)[2]})""";
+
+//"""*((*v_struct("voidc_visitor_t"), *void, *v_struct("v_ast_expr_t"), *v_struct("v_type_t"), *v_struct("struct.LLVMOpaqueValue")) -> void)""";
 
 //"""
 //std::__allocated_ptr<std::allocator<std::_Sp_counted_ptr_inplace<ast_template_generic_data_t<ast_expr_base_data_t> const, std::allocator<void>, (__gnu_cxx::_Lock_policy)2> > > std::__allocate_guarded<std::allocator<std::_Sp_counted_ptr_inplace<ast_template_generic_data_t<ast_expr_base_data_t> const, std::allocator<void>, (__gnu_cxx::_Lock_policy)2> > >(std::allocator<std::_Sp_counted_ptr_inplace<ast_template_generic_data_t<ast_expr_base_data_t> const, std::allocator<void>, (__gnu_cxx::_Lock_policy)2> >&)

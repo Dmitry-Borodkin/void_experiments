@@ -36,7 +36,7 @@ compare_nodes: (lhs: *void, rhs: *void) -> int
 }
 
 
-//---------------------------------------------------------------------
+//=====================================================================
 struct dict_t
 {
     root: *void;
@@ -292,6 +292,357 @@ append_type: (str: *v_std_string_t, dict: *dict_t, t: *v_type_t) -> void
 }
 
 
+//=====================================================================
+table62: &char[62] := v_undef();
+
+{   p: &*char := table62;
+
+    for (c: &char := '0'; c <= '9'; ++c)  *p++ := c;
+    for (c: &char := 'A'; c <= 'Z'; ++c)  *p++ := c;
+    for (c: &char := 'a'; c <= 'z'; ++c)  *p++ := c;
+}
+
+//---------------------------------------------------------------------
+byte = uint(8);
+
+exit: (int) -> void;
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+struct myz_ctx_t
+{
+    next_in:    *const byte;        //- "next_in"
+    avail_in:   size_t;             //- "avail_in"
+
+    next_out:   *byte;              //- "next_out"
+    avail_out:  size_t;             //- "avail_out"
+
+    //-------------------------------------------------------------
+    remain_in:  uint(8);            //- Input bits remain (out of 8)
+    buffer_in:  uint(8);            //- Input bits buffer
+
+    remain_out: uint(8);            //- Output bits remain (out of 8)
+    buffer_out: uint(8);            //- Output bits buffer
+
+    //-------------------------------------------------------------
+    check_in: *((&myz_ctx_t) -> bool);
+    aux_in:   *void;
+
+    check_out: *((&myz_ctx_t) -> bool);
+    aux_out:   *void;
+
+    //- ...
+
+};
+
+//---------------------------------------------------------------------
+//- Get one byte
+//---------------------------------------------------------------------
+myz_get_byte: (ctx: &myz_ctx_t) -> byte
+{
+    if (ctx.avail_in == 0  &&  !(ctx.check_in  &&  ctx.check_in(ctx)))
+    {
+        printf("\nError: input empty\n");
+
+        exit(-1);
+    }
+
+    //- assert(ctx.avail_in != 0);
+
+    ctx.avail_in--;
+
+    v_return(*ctx.next_in++);
+}
+
+//---------------------------------------------------------------------
+//- Put one byte
+//---------------------------------------------------------------------
+myz_put_byte: (ctx: &myz_ctx_t, b: byte) -> void
+{
+    if (ctx.avail_out == 0  &&  !(ctx.check_out  &&  ctx.check_out(ctx)))
+    {
+        printf("\nError: output full\n");
+
+        exit(-1);
+    }
+
+    //- assert(ctx.avail_out != 0);
+
+    ctx.avail_out--;
+
+    *ctx.next_out++ := b;
+}
+
+//---------------------------------------------------------------------
+//- Put one bit
+//---------------------------------------------------------------------
+myz_put_bit: (ctx: &myz_ctx_t, bit: bool) -> void
+{
+    b = ctx.buffer_out;
+    n = ctx.remain_out;
+
+    b |= bit << n;
+
+    n += 1;
+
+    if (n == 8)
+    {
+        myz_put_byte(ctx, b);
+
+        b := 0;
+        n := 0;
+    }
+}
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+write_bits: (ctx: &myz_ctx_t, code: unsigned, bits: int) -> void
+{
+    code: &unsigned := code;
+
+    for (i: &int := 0; i < bits; ++i)
+    {
+        myz_put_bit(ctx, (code & 1 : bool));
+
+        code >>= 1;
+    }
+}
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+write_eod: (ctx: &myz_ctx_t) -> void
+{
+    write_bits(ctx, 1, 8);
+}
+
+
+//---------------------------------------------------------------------
+//- Dictionary ...
+//---------------------------------------------------------------------
+struct myz_enc_t
+{
+    next: unsigned[256];
+};
+
+struct dict_enc_t
+{
+    list: v_ast_generic_list_t;
+};
+
+//---------------------------------------------------------------------
+{   enc_size_v = LLVMSizeOf(v_type_get_llvm_type(myz_enc_t));
+
+    v_add_constant("myz_enc_t_size", size_t, enc_size_v);
+}
+
+//---------------------------------------------------------------------
+dict_enc_initialize: (p: *dict_enc_t, n: int) -> void
+{
+    for (i: &int := 0; i < n; ++i)
+    {
+        v_initialize(&p[i].list);
+
+        v_make_list_nil(&p[i].list, 0);
+    }
+}
+
+//---------------------------------------------------------------------
+dict_enc_terminate: (p: *dict_enc_t, n: int) -> void
+{
+    for (i: &int := 0; i < n; ++i)  v_terminate(&p[i].list);
+}
+
+//---------------------------------------------------------------------
+dict_enc_expand: (dict: &dict_enc_t) -> &myz_enc_t
+{
+    item = v_alloca(v_ast_base_t);
+    v_initialize(item);
+    defer v_terminate(item);
+
+    v_ast_make_generic(item, 0, myz_enc_t_size);
+
+    v_list_append(&dict.list, &dict.list, item);
+
+    void_obj = v_ast_generic_get_object(item);
+
+    obj = (void_obj: *myz_enc_t);
+
+    *obj := 0;
+
+    v_return(*obj);
+}
+
+//---------------------------------------------------------------------
+dict_enc_at: (dict: &dict_enc_t, i: int) -> &myz_enc_t
+{
+    void_obj = v_ast_generic_get_object(v_list_get_item(&dict.list, i));
+
+    obj = (void_obj: *myz_enc_t);
+
+    v_return(*obj);
+}
+
+//---------------------------------------------------------------------
+{   v_util_register_initialize_impl(dict_enc_t, "dict_enc_initialize");
+    v_util_register_terminate_impl( dict_enc_t, "dict_enc_terminate");
+
+    dict_enc_ref = v_reference_type(dict_enc_t, 0);
+
+    q = v_quark_from_string;
+
+    v_util_function_dict_set(q(".expand()"), dict_enc_ref, "dict_enc_expand");
+
+    v_util_function_dict_set(q("op_postfix_index"), dict_enc_ref, "dict_enc_at");
+}
+
+//---------------------------------------------------------------------
+//- Encoding ...
+//---------------------------------------------------------------------
+myz_encode: (ctx: &myz_ctx_t) -> void
+{
+    bits: &unsigned := 9;
+
+    next_code:  &unsigned := 256;
+    next_shift: &unsigned := 512;
+
+
+    dict: &dict_enc_t := v_undef();
+    v_initialize(&dict);
+    defer v_terminate(&dict);
+
+    for (i: &int := 0; i < 256; ++i)  dict.expand();
+
+
+    code: &unsigned := myz_get_byte(ctx);
+
+    for (i: &int := 1; ctx.avail_in || (ctx.check_in && ctx.check_in(ctx)); ++i)
+    {
+        c = myz_get_byte(ctx);
+
+        if (next = dict[code].next[c])
+        {
+            code := next;
+
+            v_continue();
+        }
+        else
+        {
+            write_bits(ctx, code, bits);
+
+            dict.expand();
+
+            next := next_code++;
+
+            code := c;
+        }
+
+        if (next_code == next_shift)
+        {
+            bits++;
+
+            next_shift *= 2;
+        }
+    }
+
+    write_bits(ctx, code, bits);
+    write_eod(ctx);
+
+    if (ctx.check_out)  ctx.check_out(ctx);
+}
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+OUTBUFSIZE = 8*16;      //- ?...
+
+//---------------------------------------------------------------------
+encode_base62: (ctx: &myz_ctx_t) -> bool
+{
+    sstr = (ctx.aux_out: *v_std_string_t);
+
+    n = OUTBUFSIZE - ctx.avail_out;
+
+    buf = ctx.next_out - n;
+
+    b64: &uint64_t := 0;
+
+    str: &char[12] := v_undef();
+
+    for (i: &int := 0; i < n; ++i)
+    {
+        i8 = i % 8;
+
+        b64 |= (buf[i]: uint64_t) << i8*8;
+
+        if (i8 == 7  ||  i == n-1)
+        {
+            j: &int := 0;
+
+            for (; j < 11; ++j)
+            {
+                if (b64 == 0  &&  i == n-1)  v_break();
+
+                d = b64 % 62;
+
+                str[j] := table62[d];
+
+                b64 /= 62;
+            }
+
+            str[j] := 0;
+
+            v_std_string_append(sstr, str);
+        }
+    }
+
+    v_return(true);
+}
+
+
+//---------------------------------------------------------------------
+append_mangle: (sstr: *v_std_string_t, q: v_quark_t, t: *v_type_t) -> void
+{
+    stmp = v_alloca(v_std_string_t);
+    v_initialize(stmp);
+    defer v_terminate(stmp);
+
+    append_string_repr(stmp, v_quark_to_string(q));
+
+    v_std_string_append(stmp, ", ");
+
+    {   dict = v_alloca(dict_t);
+        v_initialize(dict);
+        defer v_terminate(dict);
+
+        append_type(stmp, dict, t);
+    }
+
+printf("%s\n", v_std_string_get(stmp));
+
+    ctx: &myz_ctx_t := 0;
+
+    ctx.next_in  := v_std_string_get(stmp);
+    ctx.avail_in := v_std_string_get_size(stmp);
+
+    buf = v_alloca(byte, OUTBUFSIZE);
+
+    ctx.next_out  := buf;
+    ctx.avail_out := OUTBUFSIZE;
+
+    ctx.check_out := encode_base62;
+    ctx.aux_out   := sstr;
+
+    myz_encode(ctx);
+}
+
+
+
+//=====================================================================
 
 
 
@@ -314,57 +665,125 @@ append_type: (str: *v_std_string_t, dict: *dict_t, t: *v_type_t) -> void
 
 
 
+
+
+
+
+
+
+//=====================================================================
+{
+    gr0 = v_alloca(v_peg_grammar_t);
+    v_initialize(gr0);
+    defer v_terminate(gr0);
+
+    v_peg_get_grammar(gr0);
+
+    grammar gr0
+    {
+    actions:
+
+    parsers:
+
+        spec_ident = '(' _ '_' _ op:infix _ '_' _ ')'       { mk_spec_ident_infix(op) }
+                   / '(' _ '_' _ op:infix _ "__" _ ')'      { mk_spec_ident_infix_right(op) }
+                   / '(' _ '_' _ op:postfix _ ')'           { mk_spec_ident_postfix(op) }
+                   / '(' _ op:prefix _ '_' _ ')'            { mk_spec_ident_prefix(op) }
+                   ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    }
+
+    v_peg_set_grammar(gr0);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//=====================================================================
 
 
 
 
 //---------------------------------------------------------------------
-static_type_to_string_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
-                                  args: v_ast_expr_list_ptr,
-                                  t0: v_type_ptr, v0: LLVMValueRef
-                                  ) -> void
+intrinsic_t = (vis: voidc_visitor_ptr, aux: *void,
+               ast: v_ast_expr_ptr,
+               t0: v_type_ptr, v0: LLVMValueRef
+               ) -> void;
+
+//typ = intrinsic_t;
+
+typ = v_struct({intptr_t[2]});
+
+
+//---------------------------------------------------------------------
 {
     sstr = v_alloca(v_std_string_t);
     v_initialize(sstr);
     defer v_terminate(sstr);
 
-    dict = v_alloca(dict_t);
-    v_initialize(dict);
-    defer v_terminate(dict);
+    v_std_string_set(sstr, "v__");
 
-    append_type(sstr, dict, (v0: v_type_ptr));
+    q = v_quark_from_string("Превед!");
 
-    etmp = v_alloca(v_ast_expr_t);
-    v_initialize(etmp);
-    defer v_terminate(etmp);
+    append_mangle(sstr, q, typ);
 
-    v_ast_make_expr_string(etmp, v_std_string_get(sstr));
+    printf("%s\n", v_std_string_get(sstr));
 
-    v_ast_accept_visitor((etmp: v_ast_base_ptr), vis);
+
+
+
+
+
 }
 
-{
-    v_util_function_dict_set(v_quark_from_string(".str"),  v_static_type_t, "v.static_type_to_string");
-
-    v_add_intrinsic("v.static_type_to_string",  static_type_to_string_intrinsic,  0);
-}
-
-//---------------------------------------------------------------------
-{
-    intrinsic_t = (vis: voidc_visitor_ptr, aux: *void,
-                   ast: v_ast_expr_ptr,
-                   t0: v_type_ptr, v0: LLVMValueRef
-                   ) -> void;
-
-    t = intrinsic_t;
 
 
-    t = v_struct({intptr_t[2]});
 
 
-    printf("t: %s\n", t.str);
 
-}
 
 
 
