@@ -293,16 +293,6 @@ append_type: (str: *v_std_string_t, dict: *dict_t, t: *v_type_t) -> void
 
 
 //=====================================================================
-table62: &char[62] := v_undef();
-
-{   p: &*char := table62;
-
-    for (c: &char := '0'; c <= '9'; ++c)  *p++ := c;
-    for (c: &char := 'A'; c <= 'Z'; ++c)  *p++ := c;
-    for (c: &char := 'a'; c <= 'z'; ++c)  *p++ := c;
-}
-
-//---------------------------------------------------------------------
 byte = uint(8);
 
 exit: (int) -> void;
@@ -589,7 +579,13 @@ encode_base62: (ctx: &myz_ctx_t) -> bool
 
                 d = b64 % 62;
 
-                str[j] := table62[d];
+                D: &char32_t := v_undef();
+
+                if (d < 10)       D := '0';
+                else if (d < 36)  D := 'A' - 10;
+                else              D := 'a' - 36;
+
+                str[j] := (D + d : byte);
 
                 b64 /= 62;
             }
@@ -1048,10 +1044,6 @@ v_internal_spec_fun_decl_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *v
 
 
 
-
-
-
-
 //---------------------------------------------------------------------
 {   vis = voidc_compiler;
 
@@ -1059,25 +1051,6 @@ v_internal_spec_fun_decl_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *v
 
     voidc_visitor_set_intrinsic(vis, vis, "v.internal.spec_fun_decl", v_internal_spec_fun_decl_intrinsic,  0);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1129,35 +1102,6 @@ v_internal_spec_fun_decl_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *v
 
     v_peg_set_grammar(gr0);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1284,5 +1228,56 @@ struct vec2
 
 }
 
+
+//---------------------------------------------------------------------
+(_()): (v: &vec2, s: *const char) -> void
+{
+    printf("%s: (%g, %g)\n", s, v.x, v.y);
+}
+
+{
+    v: vec2 = {2, 3};
+
+    (v/7)("qwe");
+}
+
+
+//---------------------------------------------------------------------
+(_.rec()): (x: int, y: int) -> void
+{
+    printf("%d.rec(%d)\n", x, y);
+
+    if (y > 0)  x.rec(y - 1);
+}
+
+{
+    5.rec(3);
+}
+
+
+//---------------------------------------------------------------------
+{ v_debug_print_module(9); }
+
+//---------------------------------------------------------------------
+(_.rec_2()): (x: int, y: int) -> void;
+
+(_.rec_1()): (x: int, y: int) -> void
+{
+    printf("%d.rec_1(%d)\n", x, y);
+
+    if (y > 0)  x.rec_2(y - 1);
+}
+
+(_.rec_2()): (x: int, y: int) -> void
+{
+    printf("%d.rec_2(%d)\n", x, y);
+
+    if (y > 0)  x.rec_1(y - 1);
+}
+
+
+{
+    5.rec_1(3);
+}
 
 
