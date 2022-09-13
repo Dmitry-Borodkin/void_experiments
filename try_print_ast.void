@@ -1,0 +1,1114 @@
+{   v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+
+    v_import("llvm-c/Core.void");
+}
+
+{   v_import("printf.void");
+}
+
+{   v_enable_level_01();
+    v_enable_level_02();
+}
+
+
+//---------------------------------------------------------------------
+append_string_repr: (str: v_std_string_ptr, s: *const char) -> void
+{
+    s: &*const char := s;
+
+    v_std_string_append(str, "\"");
+
+    buf: &char[2] := 0;
+
+    while(c = *s++)
+    {
+        switch((c: char32_t))
+        {
+        case '\n':  v_std_string_append(str, "\\n");  v_break();
+        case '\r':  v_std_string_append(str, "\\r");  v_break();
+        case '\t':  v_std_string_append(str, "\\t");  v_break();
+        case '\'':  v_std_string_append(str, "\\\'"); v_break();
+        case '\"':  v_std_string_append(str, "\\\""); v_break();
+        case '\\':  v_std_string_append(str, "\\\\"); v_break();
+
+        default:
+
+           buf[0] := c;
+
+           v_std_string_append(str, buf);
+
+           v_break();
+        }
+    }
+
+    v_std_string_append(str, "\"");
+}
+
+//---------------------------------------------------------------------
+append_char32_repr: (str: v_std_string_ptr, c: char32_t) -> void
+{
+    v_std_string_append(str, "\'");
+
+    switch(c)
+    {
+    case '\n':  v_std_string_append(str, "\\n");  v_break();
+    case '\r':  v_std_string_append(str, "\\r");  v_break();
+    case '\t':  v_std_string_append(str, "\\t");  v_break();
+    case '\'':  v_std_string_append(str, "\\\'"); v_break();
+    case '\"':  v_std_string_append(str, "\\\""); v_break();
+    case '\\':  v_std_string_append(str, "\\\\"); v_break();
+
+    default:    v_std_string_append_char(str, c); v_break();
+    }
+
+    v_std_string_append(str, "\'");
+}
+
+
+//---------------------------------------------------------------------
+//- expr_identifier
+//- expr_integer
+//- expr_char
+//- expr_string
+//-
+//- expr_call
+//- expr_list
+//-
+//- expr_struct
+//-
+//- stmt
+//- stmt_list
+//-
+//- stmt_if_then_else
+//-
+//- stmt_block
+//-
+//- stmt_loop
+//-
+//- stmt_switch
+//- case_block
+//- case_list           - generic_list
+//-
+//- stmt_defer
+//-
+//- br_item_list        - generic_list
+//-
+//- operator_unary
+//- operator_binary
+//-
+//- projection_payload  - generic_list
+//-
+//- ...
+//-
+//---------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------
+struct ctx_t
+{
+    sstr: *v_std_string_t;
+
+    indent: int;
+};
+
+
+//---------------------------------------------------------------------
+print_indent: (ctx: &ctx_t) -> void
+{
+    for (i: &int := 0; i < ctx.indent; ++i)  v_std_string_append(ctx.sstr, "  ");
+}
+
+//---------------------------------------------------------------------
+print_generic_list: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+{
+    ctx = *(aux: *ctx_t);
+
+    print_indent(ctx);
+
+    v_std_string_append(ctx.sstr, "generic_list(");
+
+    q = v_ast_base_get_visitor_method_tag(self);
+
+    append_string_repr(ctx.sstr, v_quark_to_string(q));
+
+    v_std_string_append(ctx.sstr, "\n");
+
+    ctx.indent += 1;
+
+    lst = (self: *v_ast_generic_list_t);
+
+    for (N = v_list_get_size(lst), i: &int := 0; i < N; ++i)
+    {
+        item = v_list_get_item(lst, i);
+
+        if (v_empty(item))
+        {
+            print_indent(ctx);  v_std_string_append(ctx.sstr, "0\n");
+
+            v_continue();
+        }
+
+        v_ast_accept_visitor(item, vis);
+    }
+
+    ctx.indent -= 1;
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, ")\n");
+}
+
+
+//---------------------------------------------------------------------
+//- expr_identifier
+//---------------------------------------------------------------------
+print_expr_identifier: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+{
+    ctx = *(aux: *ctx_t);
+
+    print_indent(ctx);
+
+    v_std_string_append(ctx.sstr, "expr_identifier(");
+
+    append_string_repr(ctx.sstr, v_ast_expr_identifier_get_name((self: *v_ast_expr_t)));
+
+    v_std_string_append(ctx.sstr, ")\n");
+}
+
+//---------------------------------------------------------------------
+//- expr_integer
+//---------------------------------------------------------------------
+print_expr_integer: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+{
+    ctx = *(aux: *ctx_t);
+
+    print_indent(ctx);
+
+    v_std_string_append(ctx.sstr, "expr_integer(");
+
+    v_std_string_append_number(ctx.sstr, v_ast_expr_integer_get_number((self: *v_ast_expr_t)));
+
+    v_std_string_append(ctx.sstr, ")\n");
+}
+
+//---------------------------------------------------------------------
+//- expr_char
+//---------------------------------------------------------------------
+print_expr_char: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+{
+    ctx = *(aux: *ctx_t);
+
+    print_indent(ctx);
+
+    v_std_string_append(ctx.sstr, "expr_char(");
+
+    append_char32_repr(ctx.sstr, v_ast_expr_char_get_char((self: *v_ast_expr_t)));
+
+    v_std_string_append(ctx.sstr, ")\n");
+}
+
+//---------------------------------------------------------------------
+//- expr_string
+//---------------------------------------------------------------------
+print_expr_string: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+{
+    ctx = *(aux: *ctx_t);
+
+    print_indent(ctx);
+
+    v_std_string_append(ctx.sstr, "expr_string(");
+
+    append_string_repr(ctx.sstr, v_ast_expr_string_get_string((self: *v_ast_expr_t)));
+
+    v_std_string_append(ctx.sstr, ")\n");
+}
+
+
+//---------------------------------------------------------------------
+//- expr_call
+//---------------------------------------------------------------------
+print_expr_call: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+{
+    ctx = *(aux: *ctx_t);
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, "expr_call(\n");
+
+    ctx.indent += 1;
+
+    v_ast_accept_visitor((v_ast_expr_call_get_fun_expr((self: *v_ast_expr_t)): *v_ast_base_t), vis);
+
+    v_ast_accept_visitor((v_ast_expr_call_get_arg_list((self: *v_ast_expr_t)): *v_ast_base_t), vis);
+
+    ctx.indent -= 1;
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, ")\n");
+}
+
+//---------------------------------------------------------------------
+//- expr_list
+//---------------------------------------------------------------------
+print_expr_list: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+{
+    ctx = *(aux: *ctx_t);
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, "expr_list(\n");
+
+    ctx.indent += 1;
+
+    lst = (self: *v_ast_expr_list_t);
+
+    for (N = v_list_get_size(lst), i: &int := 0; i < N; ++i)
+    {
+        item = v_list_get_item(lst, i);
+
+        if (v_empty(item))
+        {
+            print_indent(ctx);  v_std_string_append(ctx.sstr, "0\n");
+
+            v_continue();
+        }
+
+        v_ast_accept_visitor((item: v_ast_base_ptr), vis);
+    }
+
+    ctx.indent -= 1;
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, ")\n");
+}
+
+
+//---------------------------------------------------------------------
+//- expr_struct
+//---------------------------------------------------------------------
+print_expr_struct: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+{
+    ctx = *(aux: *ctx_t);
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, "expr_struct(\n");
+
+    void_obj = v_ast_generic_get_object((self: v_ast_expr_ptr));
+
+    obj = *(void_obj: *v_ast_expr_struct_t);
+
+    name   = &obj[0];
+    body   = &obj[1];
+    packed =  obj[2];
+    export =  obj[3];
+
+    ctx.indent += 1;
+
+    v_ast_accept_visitor((name: *v_ast_base_t), vis);
+
+    v_ast_accept_visitor((body: *v_ast_base_t), vis);
+
+    print_indent(ctx);  v_std_string_append_number(ctx.sstr, packed);  v_std_string_append(ctx.sstr, "\n");
+    print_indent(ctx);  v_std_string_append_number(ctx.sstr, export);  v_std_string_append(ctx.sstr, "\n");
+
+    ctx.indent -= 1;
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, ")\n");
+}
+
+
+//---------------------------------------------------------------------
+//- stmt
+//---------------------------------------------------------------------
+print_stmt: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+{
+    ctx = *(aux: *ctx_t);
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, "stmt(\n");
+
+    ctx.indent += 1;
+
+    name = v_ast_stmt_get_name((self: *v_ast_stmt_t));
+    expr = v_ast_stmt_get_expr((self: *v_ast_stmt_t));
+
+    print_indent(ctx);  append_string_repr(ctx.sstr, name);  v_std_string_append(ctx.sstr, "\n");
+
+    if (v_empty(expr))
+    {
+        print_indent(ctx);  v_std_string_append(ctx.sstr, "0\n");
+    }
+    else
+    {
+        v_ast_accept_visitor((expr: *v_ast_base_t), vis);
+    }
+
+    ctx.indent -= 1;
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, ")\n");
+}
+
+//---------------------------------------------------------------------
+//- stmt_list
+//---------------------------------------------------------------------
+print_stmt_list: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+{
+    ctx = *(aux: *ctx_t);
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, "stmt_list(\n");
+
+    ctx.indent += 1;
+
+    lst = (self: *v_ast_stmt_list_t);
+
+    for (N = v_list_get_size(lst), i: &int := 0; i < N; ++i)
+    {
+        item = v_list_get_item(lst, i);
+
+        if (v_empty(item))
+        {
+            print_indent(ctx);  v_std_string_append(ctx.sstr, "0\n");
+
+            v_continue();
+        }
+
+        v_ast_accept_visitor((item: v_ast_base_ptr), vis);
+    }
+
+    ctx.indent -= 1;
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, ")\n");
+}
+
+
+//---------------------------------------------------------------------
+//- stmt_if_then_else
+//---------------------------------------------------------------------
+print_stmt_if_then_else: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+{
+    ctx = *(aux: *ctx_t);
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, "stmt_if_then_else(\n");
+
+    void_obj = v_ast_generic_get_object((self: v_ast_expr_ptr));
+
+    obj = *(void_obj: *v_ast_stmt_if_then_else_t);
+
+    condition = &obj[0];
+    stmt_then = &obj[1];
+    stmt_else = &obj[2];
+
+    ctx.indent += 1;
+
+    v_ast_accept_visitor((condition: v_ast_base_ptr), vis);
+
+    v_ast_accept_visitor((stmt_then: v_ast_base_ptr), vis);
+
+    if (v_empty(stmt_else))
+    {
+        print_indent(ctx);  v_std_string_append(ctx.sstr, "0\n");
+    }
+    else
+    {
+        v_ast_accept_visitor((stmt_else: v_ast_base_ptr), vis);
+    }
+
+    ctx.indent -= 1;
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, ")\n");
+}
+
+
+//---------------------------------------------------------------------
+//- stmt_block
+//---------------------------------------------------------------------
+print_stmt_block: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+{
+    ctx = *(aux: *ctx_t);
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, "stmt_block(\n");
+
+    void_obj = v_ast_generic_get_object((self: v_ast_expr_ptr));
+
+    obj = *(void_obj: *v_ast_stmt_block_t);
+
+    list = &obj[0];
+    flag =  obj[1];
+
+    ctx.indent += 1;
+
+    print_indent(ctx);  v_std_string_append_number(ctx.sstr, flag);  v_std_string_append(ctx.sstr, "\n");
+
+    v_ast_accept_visitor((list: v_ast_base_ptr), vis);
+
+    ctx.indent -= 1;
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, ")\n");
+}
+
+
+//---------------------------------------------------------------------
+//- stmt_loop
+//---------------------------------------------------------------------
+print_stmt_loop: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+{
+    ctx = *(aux: *ctx_t);
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, "stmt_loop(\n");
+
+    void_obj = v_ast_generic_get_object((self: v_ast_expr_ptr));
+
+    obj = *(void_obj: *v_ast_stmt_loop_t);
+
+    stmt = &obj[0];
+
+    ctx.indent += 1;
+
+    v_ast_accept_visitor((stmt: v_ast_base_ptr), vis);
+
+    ctx.indent -= 1;
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, ")\n");
+}
+
+
+//---------------------------------------------------------------------
+//- stmt_switch
+//---------------------------------------------------------------------
+print_stmt_switch: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+{
+    ctx = *(aux: *ctx_t);
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, "stmt_switch(\n");
+
+    void_obj = v_ast_generic_get_object((self: v_ast_expr_ptr));
+
+    obj = *(void_obj: *v_ast_stmt_switch_t);
+
+    expr = &obj[0];
+    list = &obj[1];
+
+    ctx.indent += 1;
+
+    v_ast_accept_visitor((expr: v_ast_base_ptr), vis);
+    v_ast_accept_visitor((list: v_ast_base_ptr), vis);
+
+    ctx.indent -= 1;
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, ")\n");
+}
+
+//---------------------------------------------------------------------
+//- case_block
+//---------------------------------------------------------------------
+print_case_block: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+{
+    ctx = *(aux: *ctx_t);
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, "case_block(\n");
+
+    void_obj = v_ast_generic_get_object((self: v_ast_expr_ptr));
+
+    obj = *(void_obj: *v_ast_case_block_t);
+
+    tags = &obj[0];
+    list = &obj[1];
+
+    ctx.indent += 1;
+
+    v_ast_accept_visitor((tags: v_ast_base_ptr), vis);
+    v_ast_accept_visitor((list: v_ast_base_ptr), vis);
+
+    ctx.indent -= 1;
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, ")\n");
+}
+
+//---------------------------------------------------------------------
+//- stmt_defer
+//---------------------------------------------------------------------
+print_stmt_defer: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+{
+    ctx = *(aux: *ctx_t);
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, "stmt_defer(\n");
+
+    void_obj = v_ast_generic_get_object((self: v_ast_expr_ptr));
+
+    obj = *(void_obj: *v_ast_stmt_defer_t);
+
+    stmt = &obj[0];
+
+    ctx.indent += 1;
+
+    v_ast_accept_visitor((stmt: v_ast_base_ptr), vis);
+
+    ctx.indent -= 1;
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, ")\n");
+}
+
+
+//---------------------------------------------------------------------
+//- operator_unary
+//---------------------------------------------------------------------
+print_operator_unary: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+{
+    ctx = *(aux: *ctx_t);
+
+    void_obj = v_ast_generic_get_object((self: v_ast_expr_ptr));
+
+    obj = *(void_obj: *v_ast_operator_unary_t);
+
+    quark =  obj[0];
+    pay   = &obj[2];
+
+    print_indent(ctx);
+
+    v_std_string_append(ctx.sstr, "operator_unary(");
+
+    append_string_repr(ctx.sstr, v_quark_to_string(quark));
+
+    if (v_empty(pay))
+    {
+        v_std_string_append(ctx.sstr, ")\n");
+
+        v_return();
+    }
+
+    v_std_string_append(ctx.sstr, "\n");
+
+    ctx.indent += 1;
+
+    v_ast_accept_visitor(pay, vis);
+
+    ctx.indent -= 1;
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, ")\n");
+}
+
+//---------------------------------------------------------------------
+//- operator_binary
+//---------------------------------------------------------------------
+print_operator_binary: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+{
+    ctx = *(aux: *ctx_t);
+
+    void_obj = v_ast_generic_get_object((self: v_ast_expr_ptr));
+
+    obj = *(void_obj: *v_ast_operator_binary_t);
+
+    quark =  obj[0];
+    pay   = &obj[3];
+
+    print_indent(ctx);
+
+    v_std_string_append(ctx.sstr, "operator_binary(");
+
+    append_string_repr(ctx.sstr, v_quark_to_string(quark));
+
+    if (v_empty(pay))
+    {
+        v_std_string_append(ctx.sstr, ")\n");
+
+        v_return();
+    }
+
+    v_std_string_append(ctx.sstr, "\n");
+
+    ctx.indent += 1;
+
+    v_ast_accept_visitor(pay, vis);
+
+    ctx.indent -= 1;
+
+    print_indent(ctx);  v_std_string_append(ctx.sstr, ")\n");
+}
+
+
+//-
+//- ...
+//-
+
+
+
+
+
+//---------------------------------------------------------------------
+print_visitor: &voidc_visitor_t := v_undef();
+
+print_visitor_cleaner: (*void) -> void
+{
+    v_terminate(&print_visitor);
+}
+
+
+//---------------------------------------------------------------------
+ctx: &ctx_t := 0;
+
+
+
+//---------------------------------------------------------------------
+mk_test_stmt_grammar_action: (ret: *v_std_any_t, any: *v_std_any_t, size_t) -> void
+{
+    stmt = v_std_any_get_pointer(v_ast_stmt_t, any);
+
+    sstr = v_alloca(v_std_string_t);
+    v_initialize(sstr);
+    defer v_terminate(sstr);
+
+    ctx.sstr   := sstr;
+    ctx.indent := 0;
+
+    v_ast_accept_visitor((stmt: v_ast_base_ptr), &print_visitor);
+
+    printf("\n%s\n", v_std_string_get(sstr));
+
+    v_std_any_set_value(ret, 1);
+}
+
+
+//=====================================================================
+{
+    v_initialize(&print_visitor);
+
+    voidc_make_visitor(&print_visitor);
+
+    v_add_local_cleaner(print_visitor_cleaner, 0);
+
+    vis = &print_visitor;
+
+    q = v_quark_from_string;
+
+    voidc_visitor_set_void_method(vis, vis, q("expr_identifier"),    print_expr_identifier,   &ctx);
+    voidc_visitor_set_void_method(vis, vis, q("expr_integer"),       print_expr_integer,      &ctx);
+    voidc_visitor_set_void_method(vis, vis, q("expr_char"),          print_expr_char,         &ctx);
+    voidc_visitor_set_void_method(vis, vis, q("expr_string"),        print_expr_string,       &ctx);
+    voidc_visitor_set_void_method(vis, vis, q("expr_call"),          print_expr_call,         &ctx);
+    voidc_visitor_set_void_method(vis, vis, q("expr_list"),          print_expr_list,         &ctx);
+    voidc_visitor_set_void_method(vis, vis, q("expr_struct"),        print_expr_struct,       &ctx);
+    voidc_visitor_set_void_method(vis, vis, q("stmt"),               print_stmt,              &ctx);
+    voidc_visitor_set_void_method(vis, vis, q("stmt_list"),          print_stmt_list,         &ctx);
+    voidc_visitor_set_void_method(vis, vis, q("stmt_if_then_else"),  print_stmt_if_then_else, &ctx);
+    voidc_visitor_set_void_method(vis, vis, q("stmt_block"),         print_stmt_block,        &ctx);
+    voidc_visitor_set_void_method(vis, vis, q("stmt_loop"),          print_stmt_loop,         &ctx);
+    voidc_visitor_set_void_method(vis, vis, q("stmt_switch"),        print_stmt_switch,       &ctx);
+    voidc_visitor_set_void_method(vis, vis, q("case_block"),         print_case_block,        &ctx);
+    voidc_visitor_set_void_method(vis, vis, q("case_list"),          print_generic_list,      &ctx);
+    voidc_visitor_set_void_method(vis, vis, q("stmt_defer"),         print_stmt_defer,        &ctx);
+    voidc_visitor_set_void_method(vis, vis, q("br_item_list"),       print_generic_list,      &ctx);
+    voidc_visitor_set_void_method(vis, vis, q("operator_unary"),     print_operator_unary,    &ctx);
+    voidc_visitor_set_void_method(vis, vis, q("operator_binary"),    print_operator_binary,   &ctx);
+    voidc_visitor_set_void_method(vis, vis, q("projection_payload"), print_generic_list,      &ctx);
+
+    gr0 = v_alloca(v_peg_grammar_t);
+    v_initialize(gr0);
+    defer v_terminate(gr0);
+
+    v_peg_get_grammar(gr0);
+
+    grammar gr0
+    {
+    actions:
+        mk_test_stmt = mk_test_stmt_grammar_action;
+
+    parsers:
+        stmt += "$print_ast" _ s:stmt   { mk_test_stmt(s) };
+    }
+
+    v_peg_set_grammar(gr0);
+}
+
+
+//=====================================================================
+{
+
+$print_ast
+{
+    args = v_ast_expr_call_get_arg_list((self: v_ast_expr_ptr));
+
+    N: &int := 2;
+
+    {   ast: &v_ast_expr_ptr := v_list_get_item(args, 1);
+
+        while(check_relation(ast, &ast, 0)) ++N;
+    }
+
+    ast = v_malloc(v_ast_expr_ptr, N);
+    defer v_free(ast);
+
+    Nm1 = N - 1;
+
+    rel = v_malloc(int, Nm1);
+    defer v_free(rel);
+
+    {   i = N - 2;
+
+        ast_i: &*v_ast_expr_ptr := ast + i;
+        rel_i: &*int            := rel + i;
+
+        ast_i[0] := v_list_get_item(args, 1);
+        ast_i[1] := v_list_get_item(args, 2);
+
+        *rel_i := (aux: int);
+
+        while(ast_i1 = ast_i-1, rk = check_relation(*ast_i, ast_i1, ast_i))
+        {
+            ast_i := ast_i1;
+            rel_i := rel_i - 1;
+
+            *rel_i := rk;
+        }
+    }
+
+
+    tt = v_get_result_type();
+
+    builder = v_target_get_builder();
+
+    cur_b = LLVMGetInsertBlock(builder);
+
+    cur_f = LLVMGetBasicBlockParent(cur_b);
+
+    cmp_result_v: &LLVMValueRef := 0;
+
+    branch_if_false_b: &LLVMBasicBlockRef := 0;
+
+    _bool = v_find_type("bool");
+
+    bool_ = v_type_get_llvm_type(_bool);
+
+    if (N != 2)
+    {
+        cmp_result_v := LLVMBuildAlloca(builder, bool_, "");
+
+        LLVMBuildStore(builder, LLVMConstNull(bool_), cmp_result_v);
+
+        branch_if_false_b := LLVMAppendBasicBlock(cur_f, "branch_if_false_b");
+    }
+
+
+    v_set_result_type(INVIOLABLE_TAG);
+
+    v_ast_accept_visitor((ast[0] : v_ast_base_ptr), vis);
+
+    typ: &v_type_ptr   := v_get_result_type();
+    val: &LLVMValueRef := v_get_result_value();
+
+    t0: &v_type_ptr   := v_undef();
+    v0: &LLVMValueRef := v_undef();
+    t1: &v_type_ptr   := v_undef();
+    v1: &LLVMValueRef := v_undef();
+
+    r: &LLVMValueRef := v_undef();
+
+    for (i: &int := 0; i < Nm1; ++i)
+    {
+        r := 0;
+
+        rel_i = rel[i];
+
+        //- First argument
+
+        t0 := typ;
+        v0 := val;
+
+        q0 = op_table[rel_i][2];            //- Quark (left)
+
+        void_fun: &*void := 0;
+        void_aux: &*void := 0;
+
+        ft: &v_type_ptr   := 0;
+        fv: &LLVMValueRef := 0;
+
+        if (v_util_lookup_function_dict(vis, q0, typ, void_fun, void_aux, ft, fv))
+        {
+            //- Got overloading!
+
+            intrinsic_p12_t = (vis: voidc_visitor_ptr, aux: *void,
+                               ast: *v_ast_expr_ptr,
+                               t0:  v_type_ptr, v0:  LLVMValueRef,
+                               t1: &v_type_ptr, v1: &LLVMValueRef
+                              ) -> void;
+
+            if (fun = (void_fun: *intrinsic_p12_t))
+            {
+                v_set_result_type(tt);      //- Sic !?!
+
+                fun(vis, void_aux, ast+i, t0, v0, t1, v1);
+            }
+            else
+            {
+                vv: &LLVMValueRef[2] := v_undef();
+
+                fpar = v_type_function_get_param_types(ft);
+
+                v_set_result_type(fpar[0]);
+
+                v_adopt_result(t0, v0);
+
+                vv[0] := v_get_result_value();
+
+                v_set_result_type(fpar[1]);
+
+                v_ast_accept_visitor((ast[i+1] : v_ast_base_ptr), vis);
+
+                t1 := v_get_result_type();
+                v1 := v_get_result_value();
+
+                vv[1] := v1;
+
+                ft_ = v_type_get_llvm_type(ft);
+
+                vr = LLVMBuildCall2(builder, ft_, fv, &vv[0], 2, "");
+
+                v_set_result_type(tt);      //- Sic !?!
+
+                v_adopt_result(v_type_function_get_return_type(ft), vr);
+            }
+
+            r := v_get_result_value();
+        }
+        else
+        {
+            //- Second argument
+
+            v_set_result_type(INVIOLABLE_TAG);
+
+            v_ast_accept_visitor((ast[i+1] : v_ast_base_ptr), vis);
+
+            t1 := v_get_result_type();
+            v1 := v_get_result_value();
+
+            q1 = op_table[rel_i][3];            //- Quark (right)
+
+            if (v_util_lookup_function_dict(vis, q1, t1, void_fun, void_aux, ft, fv))
+            {
+                //- Got overloading!
+
+                intrinsic_p22_t = (vis: voidc_visitor_ptr, aux: *void,
+                                   ast: *v_ast_expr_ptr,
+                                   t0: v_type_ptr, v0: LLVMValueRef,
+                                   t1: v_type_ptr, v1: LLVMValueRef
+                                  ) -> void;
+
+                if (fun = (void_fun: *intrinsic_p22_t))
+                {
+                    v_set_result_type(tt);      //- Sic !?!
+
+                    fun(vis, void_aux, ast+i, t0, v0, t1, v1);
+                }
+                else
+                {
+                    vv: &LLVMValueRef[2] := v_undef();
+
+                    fpar = v_type_function_get_param_types(ft);
+
+                    v_set_result_type(fpar[0]);
+
+                    v_adopt_result(t0, v0);
+
+                    vv[0] := v_get_result_value();
+
+                    v_set_result_type(fpar[1]);
+
+                    v_adopt_result(t1, v1);
+
+                    vv[1] := v_get_result_value();
+
+                    ft_ = v_type_get_llvm_type(ft);
+
+                    vr = LLVMBuildCall2(builder, ft_, fv, &vv[0], 2, "");
+
+                    v_set_result_type(tt);      //- Sic !?!
+
+                    v_adopt_result(v_type_function_get_return_type(ft), vr);
+                }
+
+                r := v_get_result_value();
+            }
+        }
+
+        typ := t1;
+        val := v1;
+
+        if (!r)
+        {
+            //- Default treatment...
+
+            v_set_result_type(UNREFERENCE_TAG);
+
+            v_adopt_result(t0, v0);
+
+            t0 := v_get_result_type();
+            v0 := v_get_result_value();
+
+            v_set_result_type(UNREFERENCE_TAG);
+
+            v_adopt_result(t1, v1);
+
+            t1 := v_get_result_type();
+            v1 := v_get_result_value();
+
+            voidc_internal_convert_to_common_type_helper(t0, v0, t1, v1);
+
+
+            st = v_type_get_scalar_type(t0);
+
+
+            if (v_type_is_floating_point(st))
+            {
+                opc: &LLVMRealPredicate := v_undef();
+
+                switch(rel_i)
+                {
+                case id_infix_eq: opc := LLVMRealOEQ; v_break();    //- 'O' ?...
+                case id_infix_ne: opc := LLVMRealUNE; v_break();    //- 'U' ?!?!?..
+                case id_infix_lt: opc := LLVMRealOLT; v_break();    //- 'O' ?...
+                case id_infix_le: opc := LLVMRealOLE; v_break();    //- 'O' ?...
+                case id_infix_gt: opc := LLVMRealOGT; v_break();    //- 'O' ?...
+                case id_infix_ge: opc := LLVMRealOGE; v_break();    //- 'O' ?...
+                }
+
+                r := LLVMBuildFCmp(builder, opc, v0, v1, "");
+            }
+            else
+            {
+                opc: &LLVMIntPredicate := v_undef();
+
+                s: &bool := false;
+
+                if (v_type_is_integer(st))  s := v_type_integer_is_signed(st);
+
+                switch(rel_i)
+                {
+                case id_infix_eq: opc := LLVMIntEQ; v_break();
+                case id_infix_ne: opc := LLVMIntNE; v_break();
+
+                case id_infix_lt: if (s)  opc := LLVMIntSLT;  else  opc := LLVMIntULT;  v_break();
+                case id_infix_le: if (s)  opc := LLVMIntSLE;  else  opc := LLVMIntULE;  v_break();
+                case id_infix_gt: if (s)  opc := LLVMIntSGT;  else  opc := LLVMIntUGT;  v_break();
+                case id_infix_ge: if (s)  opc := LLVMIntSGE;  else  opc := LLVMIntUGE;  v_break();
+                }
+
+                r := LLVMBuildICmp(builder, opc, v0, v1, "");
+            }
+        }
+
+        if (branch_if_false_b)
+        {
+            if (i < N-2)
+            {
+                branch_if_true_b = LLVMAppendBasicBlock(cur_f, "branch_if_true_b");
+
+                LLVMBuildCondBr(builder, r, branch_if_true_b, branch_if_false_b);
+
+                LLVMPositionBuilderAtEnd(builder, branch_if_true_b);
+            }
+            else        //- Last ...
+            {
+                LLVMBuildStore(builder, r, cmp_result_v);
+
+                LLVMBuildBr(builder, branch_if_false_b);
+
+                cur_b = LLVMGetInsertBlock(builder);
+
+                LLVMMoveBasicBlockAfter(branch_if_false_b, cur_b);
+
+                LLVMPositionBuilderAtEnd(builder, branch_if_false_b);
+
+                r := LLVMBuildLoad2(builder, bool_, cmp_result_v, "");
+            }
+        }
+    }
+
+
+    if (v_type_is_vector(t0))
+    {
+        sz = v_type_vector_get_size(t0);
+
+        if (v_type_vector_is_scalable(t0))
+        {
+            t0 := v_svector_type(_bool, sz);
+        }
+        else
+        {
+            t0 := v_vector_type(_bool, sz);
+        }
+    }
+    else
+    {
+        t0 := _bool;
+    }
+
+
+    v_set_result_type(tt);
+
+    v_adopt_result(t0, r);
+}
+
+$print_ast
+{
+    bits: &unsigned := 9;
+
+    next_code:  &unsigned := 256;
+    next_shift: &unsigned := 512;
+
+
+    dict: &v_myz_dict_dec_t := v_undef();
+    dict_dec_init(dict);
+    defer dict_dec_term(dict);
+
+    for (i: &int := 0; i < 256; ++i)  dict.expand().c := (i: byte);
+
+
+    while (!myz_check_eod(ctx))
+    {
+        c: &unsigned := myz_read_bits(ctx, bits);
+
+        if (c >= next_code)
+        {
+            printf("\nError: bad sequence\n");
+
+            exit(-1);
+        }
+
+        dict.expand().prev := c;
+
+        while (c > 255)
+        {
+            t = dict[c].prev;
+
+            dict[t].back := c;
+
+            c := t;
+        }
+
+        dict[next_code-1].c := (c: byte);
+
+        while (it = dict[c], it.back)
+        {
+            myz_put_byte(ctx, it.c);
+
+            c := it.back;
+
+            it.back := 0;
+        }
+
+        myz_put_byte(ctx, dict[c].c);
+
+        if (++next_code >= next_shift)
+        {
+            ++bits;
+
+            next_shift *= 2;
+        }
+    }
+
+    if (ctx.check_out)  ctx.check_out(ctx);
+}
+
+$print_ast
+{
+    struct test
+    {
+        x: int;
+        y: *((f: *const char, ...) -> int);
+    };
+}
+
+}
+
+

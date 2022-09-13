@@ -1,0 +1,163 @@
+{   v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+
+    v_import("llvm-c/Core.void");
+}
+
+{   v_import("printf.void");
+}
+
+{   v_enable_level_01();
+    v_enable_level_02();
+}
+
+
+//---------------------------------------------------------------------
+FILE = v_struct("FILE");
+
+v_popen: (command: *const char, prop: *const char) -> *FILE;
+
+v_pclose: (*FILE) -> int;
+
+fprintf: (stream: *FILE, format: *const char, ...) -> int;
+
+fscanf: (stream: *FILE, format: *const char, ...) -> int;
+
+fputs: (buf: *char, stream: *FILE) -> int;
+
+sprintf: (str: *char, format: *const char, ...) -> int;
+
+system: (cmd: *const char) -> int;
+
+
+//{ v_debug_print_module(99); }
+//---------------------------------------------------------------------
+my_source: &char[] :=
+"""
+#include "voidc_visitor.h"
+
+extern "C"
+{
+
+
+size_t
+visitor_methods_count(const visitor_t *vis)
+{
+    return (*vis)->void_methods.size();
+}
+
+
+typedef void (*visitor_method_ft)(void *aux, v_quark_t quark);
+
+void
+visitor_methods_iter(const visitor_t *vis, visitor_method_ft fun, void *aux)
+{
+    for (auto &it: (*vis)->void_methods)
+    {
+        auto quark = it.first;
+
+        if (fun)  fun(aux, quark);
+    }
+}
+
+
+}
+
+""";
+
+
+//---------------------------------------------------------------------
+buffer: &*char := 0;
+
+{   buflen = 1024;
+
+    buffer := v_malloc(char, buflen);
+
+    {   p = v_popen("mktemp", "r");
+        defer v_pclose(p);
+
+        fscanf(p, "%500s", buffer);
+    }
+
+    if (v_find_constant("_WIN32", 0, 0))
+    {
+        cmd = buffer + 512;
+
+        sprintf(cmd, "cygpath -m %s", buffer);
+
+        p = v_popen(cmd, "r");
+        defer v_pclose(p);
+
+        fscanf(p, "%1000s", buffer);
+    }
+
+    //-----------------------------------------------------------------
+    {   p = v_popen("bash", "w");
+        defer v_pclose(p);
+
+        fprintf(p, "clang -x c++ -O3 -c -fPIC");
+
+        fprintf(p, " $(llvm-config --cxxflags) -std=c++17");
+
+        fprintf(p, " -I../voidc/level-00");
+
+        if (v_find_constant("_WIN32", 0, 0))
+        {
+            fprintf(p, " -IC:/Tools/include -frtti -fcxx-exceptions");
+        }
+
+        fprintf(p, " -o %s", buffer);
+
+        fprintf(p, " - <<HEREDOC\n%s\nHEREDOC\n", my_source);
+    }
+
+    //-----------------------------------------------------------------
+    mb: &LLVMMemoryBufferRef := 0;
+    defer LLVMDisposeMemoryBuffer(mb);
+
+    LLVMCreateMemoryBufferWithContentsOfFile(buffer, &mb, 0);
+
+    voidc_add_local_object_file_to_jit(mb);
+}
+
+
+//---------------------------------------------------------------------
+visitor_methods_count: (*voidc_visitor_t) -> size_t;
+
+visitor_method_ft = *((*void, v_quark_t) -> void);
+
+visitor_methods_iter: (*voidc_visitor_t, visitor_method_ft) -> void;
+
+
+//---------------------------------------------------------------------
+visitor_method_fun: (aux: *void, quark: v_quark_t) -> void
+{
+    printf("%s\n", v_quark_to_string(quark));
+}
+
+
+//---------------------------------------------------------------------
+{   sz = visitor_methods_count(voidc_compiler);
+
+//  printf("sz: %d\n\n", (sz: int));
+
+    visitor_methods_iter(voidc_compiler, visitor_method_fun);
+}
+
+
+
+
+
+
+//---------------------------------------------------------------------
+{
+    p = v_popen("bash", "w");
+    defer v_pclose(p);
+
+    fprintf(p, "rm %s\n", buffer);
+
+    v_free(buffer);
+}
+
+

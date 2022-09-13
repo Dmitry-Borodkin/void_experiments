@@ -1,9 +1,14 @@
                          ****  ?  ****                         │*
                                                                │
                                                                │
+try_print_ast.void                                             │try_print_ast.void
                                                                │
+                                                               │
+try_introspect2.void                                           │try_introspect2.void
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
 try_hz5.void                                                   │try_hz5.void
-                                                               │
                                                                │
 ───────────────────────────────────────────────────────────────│
 try_gmp.void                                                   │try_gmp.void
