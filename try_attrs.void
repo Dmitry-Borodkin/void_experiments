@@ -1,12 +1,13 @@
 {
-    v_import("voidc_target.void");
-    v_import("voidc_types.void");
+    v_import("level-00/voidc_target.void");
+    v_import("level-00/voidc_types.void");
+    v_import("level-00/voidc_util.void");
 
     v_import("llvm-c/Core.void");
 
-    v_import("function_hack.void");
-    v_import("expression.void");
-    v_import("memory.void");
+    v_import("level-01/function_hack.void");
+    v_import("level-01/expression.void");
+    v_import("level-01/memory.void");
 }
 
 {
@@ -25,15 +26,6 @@
 
 //---------------------------------------------------------------------
 {
-    ak = LLVMGetEnumAttributeKindForName("alwaysinline", 12);
-
-    printf("ak: %d\n", ak);
-
-    a = LLVMCreateEnumAttribute(v_target_get_llvm_ctx(), ak, 0);
-
-    printf("a: %p\n", a);
-
-
     typ = *v_alloca(v_type_ptr) := int;
 
     ft = v_function_type(int, &typ, 1, false);
@@ -43,12 +35,28 @@
 
     LLVMSetLinkage(f, LLVMPrivateLinkage);
 
-    LLVMAddAttributeAtIndex(f, LLVMAttributeFunctionIndex, a);
-
     v_add_parameter_name(f, 0, "v", int);
 }
 {
     v_return(v + 1);
+}
+
+
+//---------------------------------------------------------------------
+{
+    ak = LLVMGetEnumAttributeKindForName("alwaysinline", 12);
+//  ak = LLVMGetEnumAttributeKindForName("inlinehint", 10);
+
+    printf("ak: %d\n", ak);
+
+    a = LLVMCreateEnumAttribute(v_target_get_llvm_ctx(), ak, 0);
+
+    printf("a: %p\n", a);
+
+
+    f = v_obtain_function("test_fn");
+
+    LLVMAddAttributeAtIndex(f, LLVMAttributeFunctionIndex, a);
 }
 
 
@@ -79,7 +87,8 @@
 
     v_debug_print_module(1);
 
-    voidc_unit_load_module_to_jit(module);
+//  voidc_unit_load_module_to_jit(module);
+    voidc_add_module_to_jit(module);
 
     LLVMDisposeModule(module);
     v_set_module(0);

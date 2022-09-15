@@ -1,0 +1,154 @@
+{   v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+
+    v_import("llvm-c/Core.void");
+    v_import("llvm-c/BitWriter.void");
+    v_import("llvm-c/BitReader.void");
+    v_import("llvm-c/Linker.void");
+}
+
+{   v_import("printf.void");
+}
+
+{   v_enable_level_01();
+    v_enable_level_02();
+}
+
+
+//=====================================================================
+struct data_t
+{
+    v: int;
+};
+
+
+
+//=====================================================================
+module_1: &LLVMModuleRef := v_undef();
+
+attr: &LLVMAttributeRef := v_undef();
+
+{   module_1 := LLVMModuleCreateWithName("try_inline_1_module");
+
+    v_set_module(module_1);
+}
+
+//---------------------------------------------------------------------
+foo: (a: &data_t) -> data_t
+{
+    v_return({a.v + 1});
+}
+
+//---------------------------------------------------------------------
+{
+    ak = LLVMGetEnumAttributeKindForName("alwaysinline", 12);
+//  ak = LLVMGetEnumAttributeKindForName("inlinehint", 10);
+
+    attr := LLVMCreateEnumAttribute(v_target_get_llvm_ctx(), ak, 0);
+
+    f = LLVMGetNamedFunction(module_1, "foo");
+
+    LLVMAddAttributeAtIndex(f, LLVMAttributeFunctionIndex, attr);
+}
+
+//---------------------------------------------------------------------
+{   v_debug_print_module(1);
+
+    v_verify_module(module_1);
+
+    v_set_module(0);
+}
+
+
+//=====================================================================
+module_2: &LLVMModuleRef := v_undef();
+
+{   module_2 := LLVMModuleCreateWithName("try_inline_2_module");
+
+    v_set_module(module_2);
+}
+
+//---------------------------------------------------------------------
+bar: (a: &data_t) -> data_t
+{
+    v_return(foo(a));
+}
+
+//---------------------------------------------------------------------
+{
+    f = LLVMGetNamedFunction(module_2, "foo");
+
+    LLVMAddAttributeAtIndex(f, LLVMAttributeFunctionIndex, attr);
+}
+
+
+//---------------------------------------------------------------------
+{   v_debug_print_module(1);
+
+    v_verify_module(module_2);
+
+    v_set_module(0);
+}
+
+
+//=====================================================================
+{
+    m = LLVMCloneModule(module_1);
+
+    mb = LLVMWriteBitcodeToMemoryBuffer(m);
+
+    mm: &LLVMModuleRef := v_undef();
+
+    ok = LLVMParseBitcode2(mb, &mm);
+
+    printf("ok: %d\n", (ok: int));
+
+    LLVMDisposeMemoryBuffer(mb);
+
+
+    v_debug_print_module(1);
+
+    v_verify_module(mm);
+
+
+
+    ok = LLVMLinkModules2(module_2, mm);
+
+    printf("ok: %d\n", (ok: int));
+
+    f = LLVMGetNamedFunction(module_2, "foo");
+
+    LLVMSetLinkage(f, LLVMPrivateLinkage);
+}
+
+{   v_debug_print_module(2);
+
+    voidc_prepare_module_for_jit(module_2);
+
+    v_verify_module(module_2);
+}
+
+
+//---------------------------------------------------------------------
+{
+    voidc_add_local_module_to_jit(module_2);
+}
+
+{   d: &data_t := { 7 };
+
+    dd = bar(d);
+
+    printf("dd.v: %d\n", dd.v);
+}
+
+
+
+
+//=====================================================================
+{
+    LLVMDisposeModule(module_2);
+    LLVMDisposeModule(module_1);
+}
+
+

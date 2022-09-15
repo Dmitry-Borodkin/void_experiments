@@ -1,11 +1,11 @@
                          ****  ?  ****                         │*
                                                                │
                                                                │
+try_inline.void                                                │try_inline.void
+                                                               │
 try_print_ast.void                                             │try_print_ast.void
                                                                │
-                                                               │
 try_introspect2.void                                           │try_introspect2.void
-                                                               │
                                                                │
 ───────────────────────────────────────────────────────────────│
 try_hz5.void                                                   │try_hz5.void

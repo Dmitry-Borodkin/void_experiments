@@ -1109,6 +1109,12 @@ $print_ast
     };
 }
 
+$print_ast
+{
+    (_/__): (int, int) -> int;
+}
+
+
 }
 
 
