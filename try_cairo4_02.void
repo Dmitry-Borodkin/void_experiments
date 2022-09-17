@@ -29,32 +29,25 @@ double = float(64);
 
 
 //---------------------------------------------------------------------
-{
-    cairo_ptr         = v_pointer_type(cairo_t,         0);
-    cairo_surface_ptr = v_pointer_type(cairo_surface_t, 0);
+(_.flush())        = cairo_surface_flush;
+(_.write_to_png()) = cairo_surface_write_to_png;
+(_.destroy())      = cairo_surface_destroy;
 
-    q = v_quark_from_string;
-
-    v_util_function_dict_set(q(".flush()"),        cairo_surface_ptr, "cairo_surface_flush");
-    v_util_function_dict_set(q(".write_to_png()"), cairo_surface_ptr, "cairo_surface_write_to_png");
-    v_util_function_dict_set(q(".destroy()"),      cairo_surface_ptr, "cairo_surface_destroy");
-
-    v_util_function_dict_set(q(".destroy()"),         cairo_ptr, "cairo_destroy");
-    v_util_function_dict_set(q(".paint()"),           cairo_ptr, "cairo_paint");
-    v_util_function_dict_set(q(".fill()"),            cairo_ptr, "cairo_fill");
-    v_util_function_dict_set(q(".fill_preserve()"),   cairo_ptr, "cairo_fill_preserve");
-    v_util_function_dict_set(q(".stroke()"),          cairo_ptr, "cairo_stroke");
-    v_util_function_dict_set(q(".set_source_rgb()"),  cairo_ptr, "cairo_set_source_rgb");
-    v_util_function_dict_set(q(".set_source_rgba()"), cairo_ptr, "cairo_set_source_rgba");
-    v_util_function_dict_set(q(".rectangle()"),       cairo_ptr, "cairo_rectangle");
-    v_util_function_dict_set(q(".set_line_width()"),  cairo_ptr, "cairo_set_line_width");
-    v_util_function_dict_set(q(".line_to()"),         cairo_ptr, "cairo_line_to");
-    v_util_function_dict_set(q(".move_to()"),         cairo_ptr, "cairo_move_to");
-    v_util_function_dict_set(q(".close_path()"),      cairo_ptr, "cairo_close_path");
-    v_util_function_dict_set(q(".set_fill_rule()"),   cairo_ptr, "cairo_set_fill_rule");
-    v_util_function_dict_set(q(".set_operator()"),    cairo_ptr, "cairo_set_operator");
-    v_util_function_dict_set(q(".get_operator()"),    cairo_ptr, "cairo_get_operator");
-}
+(_.destroy())         = cairo_destroy;
+(_.paint())           = cairo_paint;
+(_.fill())            = cairo_fill;
+(_.fill_preserve())   = cairo_fill_preserve;
+(_.stroke())          = cairo_stroke;
+(_.set_source_rgb())  = cairo_set_source_rgb;
+(_.set_source_rgba()) = cairo_set_source_rgba;
+(_.rectangle())       = cairo_rectangle;
+(_.set_line_width())  = cairo_set_line_width;
+(_.line_to())         = cairo_line_to;
+(_.move_to())         = cairo_move_to;
+(_.close_path())      = cairo_close_path;
+(_.set_fill_rule())   = cairo_set_fill_rule;
+(_.set_operator())    = cairo_set_operator;
+(_.get_operator())    = cairo_get_operator;
 
 
 //---------------------------------------------------------------------
