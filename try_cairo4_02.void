@@ -118,8 +118,8 @@ random_triangle: (cr: *cairo_t, w: int, h: int) -> void
 //---------------------------------------------------------------------
 nod: (N: int, M: int) -> int
 {
-    n: &int = N;
-    m: &int = M;
+    n: &int := N;
+    m: &int := M;
 
     loop
     {
