@@ -1,0 +1,368 @@
+{   v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+
+    v_import("llvm-c/Core.void");
+
+    v_import("cairo.void");
+}
+
+{   v_import("printf.void");
+}
+
+{   v_enable_level_01();
+    v_enable_level_02();
+}
+
+
+//---------------------------------------------------------------------
+FILE = v_struct("FILE");
+
+v_popen: (command: *const char, prop: *const char) -> *FILE;
+
+v_pclose: (*FILE) -> int;
+
+fprintf: (stream: *FILE, format: *const char, ...) -> int;
+
+fscanf: (stream: *FILE, format: *const char, ...) -> int;
+
+fputs: (buf: *char, stream: *FILE) -> int;
+
+sprintf: (str: *char, format: *const char, ...) -> int;
+
+system: (cmd: *const char) -> int;
+
+
+//{ v_debug_print_module(99); }
+//---------------------------------------------------------------------
+my_source: &char[] :=
+"""
+#include "voidc_target.h"
+
+extern "C"
+{
+
+
+typedef void (*symbol_type_ft)(void *aux, const std::string *name, const v_type_t *type);
+
+void
+symbol_types_iter(symbol_type_ft fun, void *aux)
+{
+    auto &gctx = *voidc_global_ctx_t::target;
+    auto &lctx = *gctx.local_ctx;
+
+    for (auto &it: lctx.decls.symbols)
+    {
+        fun(aux, &it.first, it.second);
+    }
+}
+
+
+}
+
+""";
+
+
+//---------------------------------------------------------------------
+buffer: &*char := 0;
+
+{   buflen = 1024;
+
+    buffer := v_malloc(char, buflen);
+
+    {   p = v_popen("mktemp", "r");
+        defer v_pclose(p);
+
+        fscanf(p, "%500s", buffer);
+    }
+
+    if (v_find_constant("_WIN32", 0, 0))
+    {
+        cmd = buffer + 512;
+
+        sprintf(cmd, "cygpath -m %s", buffer);
+
+        p = v_popen(cmd, "r");
+        defer v_pclose(p);
+
+        fscanf(p, "%1000s", buffer);
+    }
+
+    //-----------------------------------------------------------------
+    {   p = v_popen("bash", "w");
+        defer v_pclose(p);
+
+        fprintf(p, "clang -x c++ -O3 -c -fPIC");
+
+        fprintf(p, " $(llvm-config --cxxflags) -std=c++17");
+
+        fprintf(p, " -I../voidc/level-00");
+
+        if (v_find_constant("_WIN32", 0, 0))
+        {
+            fprintf(p, " -IC:/Tools/include -frtti -fcxx-exceptions");
+        }
+
+        fprintf(p, " -o %s", buffer);
+
+        fprintf(p, " - <<HEREDOC\n%s\nHEREDOC\n", my_source);
+    }
+
+    //-----------------------------------------------------------------
+    mb: &LLVMMemoryBufferRef := 0;
+    defer LLVMDisposeMemoryBuffer(mb);
+
+    LLVMCreateMemoryBufferWithContentsOfFile(buffer, &mb, 0);
+
+    voidc_add_local_object_file_to_jit(mb);
+}
+
+
+//---------------------------------------------------------------------
+append_string_repr: (str: v_std_string_ptr, s: *const char) -> void
+{
+    s: &*const char := s;
+
+    v_std_string_append(str, "\"");
+
+    buf: &char[2] := 0;
+
+    while(c = *s++)
+    {
+        switch((c: char32_t))
+        {
+        case '\n':  v_std_string_append(str, "\\n");  v_break();
+        case '\r':  v_std_string_append(str, "\\r");  v_break();
+        case '\t':  v_std_string_append(str, "\\t");  v_break();
+        case '\'':  v_std_string_append(str, "\\\'"); v_break();
+        case '\"':  v_std_string_append(str, "\\\""); v_break();
+        case '\\':  v_std_string_append(str, "\\\\"); v_break();
+
+        default:
+
+           buf[0] := c;
+
+           v_std_string_append(str, buf);
+
+           v_break();
+        }
+    }
+
+    v_std_string_append(str, "\"");
+}
+
+//---------------------------------------------------------------------
+append_type: (str: *v_std_string_t, t: *v_type_t) -> void
+{
+    flag: &bool := false;
+
+    switch(k = v_kind(t))
+    {
+    case v_type_kind_void:  v_std_string_append(str, "void");       v_break();
+    case v_type_kind_f16:   v_std_string_append(str, "float(16)");  v_break();
+    case v_type_kind_f32:   v_std_string_append(str, "float(32)");  v_break();
+    case v_type_kind_f64:   v_std_string_append(str, "float(64)");  v_break();
+    case v_type_kind_f128:  v_std_string_append(str, "float(128)"); v_break();
+
+    case v_type_kind_int:
+
+        flag := true;
+
+        //- Fallthrough!
+
+    case v_type_kind_uint:
+
+        if (flag)  v_std_string_append(str, "int(");
+        else       v_std_string_append(str, "uint(");
+
+        v_std_string_append_number(str, v_type_integer_get_width(t));
+
+        v_std_string_append(str, ")");
+
+        v_break();
+
+    case v_type_kind_function:
+
+        v_std_string_append(str, "((");
+
+        pc = v_type_function_get_param_count(t);
+        pt = v_type_function_get_param_types(t);
+
+        for (i: &int := 0; i < pc; ++i)
+        {
+            if (i)  v_std_string_append(str, ", ");
+
+            append_type(str, pt[i]);
+        }
+
+        if (v_type_function_is_var_arg(t))
+        {
+            if (pc)  v_std_string_append(str, ", ");
+
+            v_std_string_append(str, "...");
+        }
+
+        v_std_string_append(str, ") -> ");
+
+        append_type(str, v_type_function_get_return_type(t));
+
+        v_std_string_append(str, ")");
+
+        v_break();
+
+    case v_type_kind_pointer:
+
+        flag := true;
+
+        //- Fallthrough!
+
+    case v_type_kind_reference:
+
+        et = v_type_refptr_get_element_type(t);
+        as = v_type_refptr_get_address_space(t);
+
+        if (as == 0)
+        {
+            if (flag) v_std_string_append(str, "*");
+            else      v_std_string_append(str, "&");
+
+            append_type(str, et);
+        }
+        else
+        {
+            if (flag) v_std_string_append(str, "v_ptr(");       //- Sic!
+            else      v_std_string_append(str, "v_ref(");       //- Sic!
+
+            append_type(str, et);
+
+            v_std_string_append(str, ", ");
+
+            v_std_string_append_number(str, as);
+
+            v_std_string_append(str, ")");
+        }
+
+        v_break();
+
+    case v_type_kind_struct:
+
+        v_std_string_append(str, "v_struct(");
+
+        if (n = v_type_struct_get_name(t))
+        {
+            append_string_repr(str, n);
+
+            flag := true;
+        }
+
+        if (!flag  &&  !v_type_struct_is_opaque(t))
+        {
+            if (v_type_struct_is_packed(t))
+            {
+                v_std_string_append(str, "packed, ");
+            }
+
+            v_std_string_append(str, "{");
+
+            ec = v_type_struct_get_element_count(t);
+            et = v_type_struct_get_element_types(t);
+
+            for (i: &int := 0; i < ec; ++i)
+            {
+                if (i)  v_std_string_append(str, ", ");
+
+                append_type(str, et[i]);
+            }
+
+            v_std_string_append(str, "}");
+        }
+
+        v_std_string_append(str, ")");
+
+        v_break();
+
+    case v_type_kind_array:
+
+        append_type(str, v_type_array_get_element_type(t));
+
+        v_std_string_append(str, "[");
+
+        v_std_string_append_number(str, v_type_array_get_length(t));
+
+        v_std_string_append(str, "]");
+
+        v_break();
+
+    case v_type_kind_vector:
+
+        flag := true;
+
+        //- Fallthrough!
+
+    case v_type_kind_svector:
+
+        if (flag) v_std_string_append(str, "vec(");
+        else      v_std_string_append(str, "svec(");
+
+        append_type(str, v_type_vector_get_element_type(t));
+
+        v_std_string_append(str, ", ");
+
+        v_std_string_append_number(str, v_type_vector_get_size(t));
+
+        v_std_string_append(str, ")");
+
+        v_break();
+    }
+}
+
+
+//---------------------------------------------------------------------
+symbol_type_ft = *((*void, *const v_std_string_t, *v_type_t) -> void);
+symbol_types_iter: (symbol_type_ft, *void) -> void;
+
+
+//---------------------------------------------------------------------
+symbol_type_fun: (aux: *void, sstr: *const v_std_string_t, type: *v_type_t) -> void
+{
+    sname = v_std_string_get(sstr);
+
+    strncmp: (*const char, *const char, int) -> int;
+
+    if (strncmp(sname, "cairo_", 6) != 0)  v_return();
+
+    if (!v_type_is_function(type))  v_return();
+
+    stmp = v_alloca(v_std_string_t);
+    v_initialize(stmp);
+    defer v_terminate(stmp);
+
+    v_std_string_set(stmp, "");
+
+    append_type(stmp, type);
+
+    printf("%s: %s;\n", sname, v_std_string_get(stmp));
+}
+
+
+//---------------------------------------------------------------------
+{
+    symbol_types_iter(symbol_type_fun, 0);
+}
+
+
+
+
+
+
+//---------------------------------------------------------------------
+{
+    p = v_popen("bash", "w");
+    defer v_pclose(p);
+
+    fprintf(p, "rm %s\n", buffer);
+
+    v_free(buffer);
+}
+
+

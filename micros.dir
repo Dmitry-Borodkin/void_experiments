@@ -1,6 +1,10 @@
                          ****  ?  ****                         │*
                                                                │
                                                                │
+try_introspect3.void                                           │try_introspect3.void
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
 try_inline.void                                                │try_inline.void
                                                                │
 try_print_ast.void                                             │try_print_ast.void
