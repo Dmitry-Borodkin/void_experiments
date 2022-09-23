@@ -1,0 +1,102 @@
+{   v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+
+//  v_import("llvm-c/Core.void");
+}
+
+{   v_import("printf.void");
+}
+
+{   v_enable_level_01();
+    v_enable_level_02();
+}
+
+
+//---------------------------------------------------------------------
+qf_inlinehint:   intptr_t = 1 << 2;         //- Sic!!!
+qf_alwaysinline: intptr_t = 1 << 3;         //- Sic!!!
+
+//---------------------------------------------------------------------
+{
+    q_ref = v_reference_type(v_quark_t, 0);
+
+    q = v_quark_ptr_from_string;
+
+    v_add_symbol("unit_fun_defn_q",      q_ref, q("unit_fun_defn"));
+    v_add_symbol("unit_spec_fun_defn_q", q_ref, q("unit_spec_fun_defn"));
+}
+
+
+//---------------------------------------------------------------------
+struct inlining_ctx_t
+{
+
+
+
+};
+
+
+//=====================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//=====================================================================
+{
+    any = v_alloca(v_std_any_t, 2);
+    v_initialize(any, 2);
+    defer v_terminate(any, 2);
+
+    any_qf_inlinehint   = any + 0;
+    any_qf_alwaysinline = any + 1;
+
+    v_std_any_set_value(any_qf_inlinehint,   qf_inlinehint);
+    v_std_any_set_value(any_qf_alwaysinline, qf_alwaysinline);
+
+
+    gr0 = v_alloca(v_peg_grammar_t);
+    v_initialize(gr0);
+    defer v_terminate(gr0);
+
+    v_peg_get_grammar(gr0);
+
+    grammar gr0
+    {
+    values:
+
+        qf_inlinehint   = any_qf_inlinehint;
+        qf_alwaysinline = any_qf_alwaysinline;
+
+    parsers:
+
+        qualif_flag += "inlinehint"   !ident_cont   {qf_inlinehint}
+                     / "alwaysinline" !ident_cont   {qf_alwaysinline}
+                     ;
+    }
+
+    v_peg_set_grammar(gr0);
+}
+
+
+
+
+
+//=====================================================================
+
+
+
+
+

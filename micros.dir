@@ -1,8 +1,11 @@
                          ****  ?  ****                         │*
                                                                │
                                                                │
-try_introspect3.void                                           │try_introspect3.void
+try_inlining.void                                              │try_inlining.void
                                                                │
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_introspect3.void                                           │try_introspect3.void
                                                                │
 ───────────────────────────────────────────────────────────────│
 try_inline.void                                                │try_inline.void
@@ -12,7 +15,7 @@ try_print_ast.void                                             │try_print_ast.
 try_introspect2.void                                           │try_introspect2.void
                                                                │
 ───────────────────────────────────────────────────────────────│
-try_hz5.void                                                   │try_hz5.void
+try_hz5.void    ... mangling ...                               │try_hz5.void
                                                                │
 ───────────────────────────────────────────────────────────────│
 try_gmp.void                                                   │try_gmp.void
