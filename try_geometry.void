@@ -46,6 +46,7 @@ is_equal: (x: double, y: double) -> bool
     v_return(false);
 }
 
+alwaysinline
 is_finite: (x: double) -> bool
 {
     v_return(abs(x) < 1e15);        //- ?...
@@ -104,36 +105,43 @@ struct Vector
 }
 
 //---------------------------------------------------------------------
+alwaysinline
 (_+_): (a: &Vector, b: &Vector) -> Vector
 {
     v_return({ a.x+b.x, a.y+b.y });
 }
 
+alwaysinline
 (_-_): (a: &Vector, b: &Vector) -> Vector
 {
     v_return({ a.x-b.x, a.y-b.y });
 }
 
+alwaysinline
 (+_): (a: &Vector) -> Vector
 {
     v_return(a);
 }
 
+alwaysinline
 (-_): (a: &Vector) -> Vector
 {
     v_return({ -a.x, -a.y });
 }
 
+alwaysinline
 (_*_): (a: &Vector, k: double) -> Vector
 {
     v_return({ a.x*k, a.y*k });
 }
 
+alwaysinline
 (_*__): (k: double, a: &Vector) -> Vector
 {
     v_return({ k*a.x, k*a.y });
 }
 
+alwaysinline
 (_/_): (a: &Vector, k: double) -> Vector
 {
     v_return({ a.x/k, a.y/k });
@@ -144,6 +152,7 @@ struct Vector
     v_return( is_equal(a.x, b.x)  &&  is_equal(a.y, b.y) );
 }
 
+alwaysinline
 (_!=_): (a: &Vector, b: &Vector) -> bool
 {
     v_return( !(a == b) );
@@ -156,16 +165,19 @@ Vector_unit_y:   Vector = {0, 1};
 Vector_infinity: Vector = {infinity, infinity};
 
 //---------------------------------------------------------------------
+alwaysinline
 (_.dot()): (a: &Vector, b: &Vector) -> double
 {
     v_return( a.x*b.x + a.y*b.y );
 }
 
+alwaysinline
 (_.crs()): (a: &Vector, b: &Vector) -> double
 {
     v_return( a.x*b.y - a.y*b.x );
 }
 
+alwaysinline
 (_.is_fininite()): (a: &Vector) -> bool
 {
     v_return( is_finite(a.x)  &&  is_finite(a.y) );
@@ -195,11 +207,13 @@ struct Point
 }
 
 //---------------------------------------------------------------------
+alwaysinline
 (_+_): (p: &Point, v: &Vector) -> Point
 {
     v_return({ p.x + p.w*v.x, p.y + p.w*v.y, p.w });
 }
 
+alwaysinline
 (_-_): (a: &Point, b: &Point) -> Vector
 {
     v_return({ a.x/a.w - b.x/b.w, a.y/a.w - b.y/b.w });
@@ -248,6 +262,7 @@ struct Point
     v_return(seq_equal(sa, sb, 3));
 }
 
+alwaysinline
 (_!=_): (a: &Point, b: &Point) -> bool
 {
     v_return(!(a == b));
@@ -284,6 +299,7 @@ struct Line
 }
 
 //---------------------------------------------------------------------
+alwaysinline
 (_+_): (l: &Line, v: &Vector) -> Line
 {
     v_return({ l.cx, l.cy, l.cw - l.cx*v.x - l.cy*v.y });
@@ -332,6 +348,7 @@ struct Line
     v_return(seq_equal(sa, sb, 3));
 }
 
+alwaysinline
 (_!=_): (a: &Line, b: &Line) -> bool
 {
     v_return(!(a == b));
@@ -353,11 +370,13 @@ incident: (l: &Line, p: &Point) -> bool
 }
 
 //---------------------------------------------------------------------
+alwaysinline
 (_&_): (a: &Point, b: &Point) -> Line
 {
     v_return({a.y*b.w - a.w*b.y, a.w*b.x - a.x*b.w, a.x*b.y - a.y*b.x});
 }
 
+alwaysinline
 (_&_): (a: &Line, b: &Line) -> Point
 {
     v_return({a.cy*b.cw - a.cw*b.cy, a.cw*b.cx - a.cx*b.cw, a.cx*b.cy - a.cy*b.cx});
@@ -409,6 +428,7 @@ Transform = v_struct("Transform2D", { double[9] });
 }
 
 //---------------------------------------------------------------------
+alwaysinline
 (_.det()): (t: &Transform) -> double
 {
     v_return( det_3(t[0]) );
@@ -442,6 +462,7 @@ Transform = v_struct("Transform2D", { double[9] });
     v_return(seq_equal(a[0], b[0], 9));
 }
 
+alwaysinline
 (_!=_): (a: &Transform, b: &Transform) -> bool
 {
     v_return(!(a == b));
@@ -674,11 +695,13 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 }
 
 //---------------------------------------------------------------------
+alwaysinline
 (_.scaled()): (t: &Transform, k: double) -> Transform
 {
     v_return(k * t);
 }
 
+alwaysinline
 (_.shifted()): (t: &Transform, v: &Vector) -> Transform
 {
     v_return(t + v);
@@ -686,7 +709,7 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 
 (_.rotated()): (t: &Transform, d: double) -> Transform
 {
-    a = d/180*M_PI;
+    a = d * (M_PI/180);
 
     sa = sin(a);
     ca = cos(a);
@@ -783,6 +806,7 @@ Transform_flip_y:   Transform = {{ 1, 0, 0,  0,-1, 0,  0, 0, 1 }};
 
 
 //=====================================================================
+//{ voidc_verify_jit_module_optimized(true); }
 //{ v_debug_print_module(2); }
 {
     sstr = v_alloca(v_std_string_t);
@@ -842,7 +866,7 @@ Transform_flip_y:   Transform = {{ 1, 0, 0,  0,-1, 0,  0, 0, 1 }};
 }
 
 //---------------------------------------------------------------------
-//{ v_debug_print_module(1); }
+//{ v_debug_print_module(2); }
 {
     sstr = v_alloca(v_std_string_t);
     v_initialize(sstr);
