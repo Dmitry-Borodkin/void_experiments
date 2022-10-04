@@ -1,8 +1,11 @@
                          ****  ?  ****                         │*
                                                                │
                                                                │
-try_inlining.void                                              │try_inlining.void
+try_dll3.void                                                  │try_dll3.void
                                                                │
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_inlining.void                                              │try_inlining.void
                                                                │
 ───────────────────────────────────────────────────────────────│
 try_introspect3.void                                           │try_introspect3.void

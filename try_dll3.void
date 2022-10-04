@@ -1,43 +1,33 @@
-{   v_import("level-00/voidc_target.void");
-    v_import("level-00/voidc_types.void");
+{   v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
 
     v_import("llvm-c/Core.void");
     v_import("llvm-c/TargetMachine.void");
     v_import("llvm-c/Transform/PassManagerBuilder.void");
     v_import("llvm-c/Support.void");
 
-    v_import("level-01/function_hack.void");
-    v_import("level-01/memory.void");
-    v_import("level-01/if_then_else.void");
-    v_import("level-01/block.void");
-    v_import("level-01/loop.void");
-    v_import("level-01/grammar.void");
-    v_import("level-01/expression.void");
-    v_import("level-01/defer.void");
-
     v_import("printf.void");
 }
 
-{   voidc_enable_statement_if_then_else();
-    voidc_enable_statement_block();
-    voidc_enable_statement_loop();
-    voidc_enable_statement_grammar();
-    voidc_enable_expression();
-    voidc_enable_statement_defer();
+{   v_enable_level_01();
+    v_enable_level_02();
 }
 
 
 //---------------------------------------------------------------------
+target_machine: &LLVMTargetMachineRef := v_undef();
+
 {   triple = LLVMGetDefaultTargetTriple();
 
-    tr = *v_alloca(LLVMTargetRef);
+    tr: &LLVMTargetRef := v_undef();
 
     LLVMGetTargetFromTriple(triple, &tr, 0);
 
     cpu_name     = LLVMGetHostCPUName();
     cpu_features = LLVMGetHostCPUFeatures();
 
-    target_machine =
+    target_machine :=
         LLVMCreateTargetMachine
         (
             tr,
@@ -52,8 +42,6 @@
     LLVMDisposeMessage(cpu_features);
     LLVMDisposeMessage(cpu_name);
     LLVMDisposeMessage(triple);
-
-    v_add_symbol("target_machine", v_type_refptr_get_element_type(LLVMTargetMachineRef), target_machine);
 }
 
 //=====================================================================
@@ -83,40 +71,30 @@
     v_target_set_global_ctx(gctx);
 }
 
+
 //=====================================================================
 {   llvm_ctx = v_target_get_llvm_ctx();
 
-    module = LLVMModuleCreateWithNameInContext("try_dll_mod", llvm_ctx);
+    module = LLVMModuleCreateWithNameInContext("try_dll3_mod", llvm_ctx);
 
     v_set_module(module);
 }
 
+
 //---------------------------------------------------------------------
-{   v_add_symbol("try_variable", int, 0);
+v_find_symbol_value: (*const char) -> *void;
 
-}
-
-{   void_ptr = v_pointer_type(v_find_type("void"), 0);
-    char_ptr = v_pointer_type(v_find_type("char"), 0);
-
-    v_add_symbol("v_find_symbol_value", v_function_type(void_ptr, &char_ptr, 1, false), 0);
-
-    v_add_symbol("printf", v_function_type(v_find_type("int"), &char_ptr, 1, true), 0);
-}
+printf: (*const char, ...) -> int;
 
 
 //---------------------------------------------------------------------
-{   v_function_hack("try_dll", v_function_type(v_find_type("void"), 0, 0, false));
-}
+try_dll3: () -> void
 {
-//  v = v_ast_unit_t_visitor_method_tag;
-//  v = *try_variable;
-
-    v = *v_cast(v_find_symbol_value("try_variable"), *int);
+    v = *(v_find_symbol_value("try_variable") : *int);
 
     v += 700;
 
-    printf("try_dll: %d\n", v);
+    printf("try_dll3: %d\n", v);
 }
 
 
@@ -162,7 +140,7 @@
     //-----------------------------------------------------------------
     LLVMTargetMachineEmitToFile(target_machine,
                                 module,
-                                "try_dll.o",
+                                "try_dll3.o",
                                 LLVMObjectFile,
                                 0);
 
@@ -198,7 +176,7 @@
     v_export_symbol_type("system", system_ft);
 }
 
-{   system("clang try_dll.o -shared -o try_dll.so");
+{   system("clang try_dll3.o -shared -o try_dll3.so");
 
 }
 
@@ -213,15 +191,15 @@
 
 
 //---------------------------------------------------------------------
-{   ok = LLVMLoadLibraryPermanently("try_dll.so");
+{   ok = LLVMLoadLibraryPermanently("try_dll3.so");
 
     printf("ok: %d\n", ok);
 
-    v_add_symbol("try_dll", v_function_type(void, 0, 0, false), 0);
+    v_add_symbol("try_dll3", v_function_type(void, 0, 0, false), 0);
 }
 
 
-{   try_dll();
+{   try_dll3();
 }
 
 
