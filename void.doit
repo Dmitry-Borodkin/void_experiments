@@ -1,3 +1,1 @@
-export ASAN_OPTIONS=handle_abort=1
-
 time voidc $1.void $2 $3 $4 $5 $6 $7 $8 $9

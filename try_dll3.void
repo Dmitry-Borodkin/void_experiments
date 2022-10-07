@@ -88,9 +88,33 @@ printf: (*const char, ...) -> int;
 
 
 //---------------------------------------------------------------------
+private
+ptr_variable: &*int := v_undef();
+
+private
+try_dll3_ctor: () -> void
+{
+    ptr_variable := (v_find_symbol_value("try_variable") : *int);
+}
+
+//---------------------------------------------------------------------
+my_llvm_global_ctors: &v_struct({int(32), *(() -> void), *void})[1] := {{0, try_dll3_ctor, 0}};
+
+{   module = v_get_module();
+
+    g = LLVMGetNamedGlobal(module, "my_llvm_global_ctors");
+
+    LLVMSetValueName2(g, "llvm.global_ctors", 17);
+
+    LLVMSetLinkage(g, LLVMAppendingLinkage);
+}
+
+
+//---------------------------------------------------------------------
 try_dll3: () -> void
 {
-    v = *(v_find_symbol_value("try_variable") : *int);
+//  v = *(v_find_symbol_value("try_variable") : *int);
+    v = *ptr_variable;
 
     v += 700;
 
@@ -182,29 +206,23 @@ try_dll3: () -> void
 
 
 //---------------------------------------------------------------------
-{   var = v_malloc(int);
-
-    v_store(77, var);
-
-    v_add_symbol("try_variable", int, var);
-}
+try_variable: &int := 77;
 
 
 //---------------------------------------------------------------------
 {   ok = LLVMLoadLibraryPermanently("try_dll3.so");
 
     printf("ok: %d\n", ok);
-
-    v_add_symbol("try_dll3", v_function_type(void, 0, 0, false), 0);
-}
-
-
-{   try_dll3();
 }
 
 
 //---------------------------------------------------------------------
-{   v_free(try_variable);
+try_dll3: () -> void;
+
+{   try_dll3();
+
+    printf("try_variable: %d\n", try_variable);
 }
+
 
 
