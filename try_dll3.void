@@ -82,8 +82,6 @@ target_machine: &LLVMTargetMachineRef := v_undef();
 
 
 //---------------------------------------------------------------------
-v_find_symbol_value: (*const char) -> *void;
-
 printf: (*const char, ...) -> int;
 
 
@@ -91,13 +89,27 @@ printf: (*const char, ...) -> int;
 private
 ptr_variable: &*int := v_undef();
 
+
+//---------------------------------------------------------------------
+try_dll3: () -> void
+{
+    v = *ptr_variable;
+
+    v += 700;
+
+    printf("try_dll3: %d\n", v);
+}
+
+
+//---------------------------------------------------------------------
 private
 try_dll3_ctor: () -> void
 {
+    v_find_symbol_value: (*const char) -> *void;
+
     ptr_variable := (v_find_symbol_value("try_variable") : *int);
 }
 
-//---------------------------------------------------------------------
 my_llvm_global_ctors: &v_struct({int(32), *(() -> void), *void})[1] := {{0, try_dll3_ctor, 0}};
 
 {   module = v_get_module();
@@ -108,19 +120,6 @@ my_llvm_global_ctors: &v_struct({int(32), *(() -> void), *void})[1] := {{0, try_
 
     LLVMSetLinkage(g, LLVMAppendingLinkage);
 }
-
-
-//---------------------------------------------------------------------
-try_dll3: () -> void
-{
-//  v = *(v_find_symbol_value("try_variable") : *int);
-    v = *ptr_variable;
-
-    v += 700;
-
-    printf("try_dll3: %d\n", v);
-}
-
 
 //---------------------------------------------------------------------
 {
@@ -200,7 +199,15 @@ try_dll3: () -> void
     v_export_symbol_type("system", system_ft);
 }
 
-{   system("clang try_dll3.o -shared -o try_dll3.so");
+{
+    if (v_find_constant("_WIN32", 0, 0))
+    {
+        system("clang try_dll3.o -shared -L ../voidc/build -lvoidc -o try_dll3.so");
+    }
+    else
+    {
+        system("clang try_dll3.o -shared -o try_dll3.so");
+    }
 
 }
 
