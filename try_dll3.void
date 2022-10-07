@@ -110,7 +110,13 @@ try_dll3_ctor: () -> void
     ptr_variable := (v_find_symbol_value("try_variable") : *int);
 }
 
-my_llvm_global_ctors: &v_struct({int(32), *(() -> void), *void})[1] := {{0, try_dll3_ctor, 0}};
+private
+llvm_global_cdtors_item_t = v_struct({int(32), *(() -> void), *void});
+
+my_llvm_global_ctors: &llvm_global_cdtors_item_t[] :=
+{
+    {0, try_dll3_ctor, 0}
+};
 
 {   module = v_get_module();
 
@@ -186,29 +192,17 @@ my_llvm_global_ctors: &v_struct({int(32), *(() -> void), *void})[1] := {{0, try_
 }
 
 
-
 //=====================================================================
-{   typ = v_alloca(v_type_ptr);
+{   system: (*const char) -> int;
 
-    char_ptr = v_pointer_type(char, 0);
-
-    v_store(char_ptr, typ);
-
-    system_ft = v_function_type(int, typ, 1, false);
-
-    v_export_symbol_type("system", system_ft);
-}
-
-{
     if (v_find_constant("_WIN32", 0, 0))
     {
-        system("clang try_dll3.o -shared -L ../voidc/build -lvoidc -o try_dll3.so");
+        system("clang try_dll3.o -shared -L../voidc/build -lvoidc -o try_dll3.so");
     }
     else
     {
         system("clang try_dll3.o -shared -o try_dll3.so");
     }
-
 }
 
 
