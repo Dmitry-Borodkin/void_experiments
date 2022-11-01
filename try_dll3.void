@@ -16,11 +16,11 @@
 
 
 //---------------------------------------------------------------------
-target_machine: &LLVMTargetMachineRef := v_undef();
+target_machine: &LLVMTargetMachineRef := {};
 
 {   triple = LLVMGetDefaultTargetTriple();
 
-    tr: &LLVMTargetRef := v_undef();
+    tr: &LLVMTargetRef := {};
 
     LLVMGetTargetFromTriple(triple, &tr, 0);
 
@@ -87,7 +87,7 @@ printf: (*const char, ...) -> int;
 
 //---------------------------------------------------------------------
 private
-ptr_variable: &*int := v_undef();
+ptr_variable: &*int := {};
 
 
 //---------------------------------------------------------------------

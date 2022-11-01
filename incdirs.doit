@@ -3,3 +3,6 @@
 $HOME_BIN/incdirs.clang $@ \
 $(llvm-config --cxxflags) \
 
+
+echo ../voidc >>micros.incdirs
+
