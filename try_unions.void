@@ -178,7 +178,7 @@ compile_expr_union: (vis: *voidc_visitor_t, aux: *void,
 
     if (!v_empty(&obj.name))
     {
-        union_name: &*const char := {};
+        union_name: &*const char := v_undef();
 
         tag = v_ast_base_get_visitor_method_tag((&obj.name: v_ast_base_ptr));
 
@@ -235,9 +235,9 @@ compile_expr_union: (vis: *voidc_visitor_t, aux: *void,
 
         i8_t = v_int_type(8);
 
-        ta: &v_type_ptr[2] := { v_uint_type(1), {} };
+        ta: &v_type_ptr[2] := { v_uint_type(1), v_undef() };
 
-        ts: &v_type_ptr[2] := { {}, v_array_type(i8_t, 0) };
+        ts: &v_type_ptr[2] := { v_undef(), v_array_type(i8_t, 0) };
 
         for (i: &int := 0; i < N; ++i)
         {
@@ -511,7 +511,7 @@ union qwerty_t
     v: vec(int, 3);
 };
 
-s: &qwerty_t := {};
+s: &qwerty_t := v_undef();
 
 
 {

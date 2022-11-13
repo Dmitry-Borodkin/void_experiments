@@ -1,12 +1,14 @@
                          ****  ?  ****                         │*
                                                                │
                                                                │
-try_unions.void                                                │try_unions.void
+try_hz6.void                                                   │try_hz6.void
                                                                │
                                                                │
 ───────────────────────────────────────────────────────────────│
-try_dll3.void                                                  │try_dll3.void
+try_unions.void                                                │try_unions.void
                                                                │
+───────────────────────────────────────────────────────────────│
+try_dll3.void                                                  │try_dll3.void
                                                                │
 ───────────────────────────────────────────────────────────────│
 try_inlining.void                                              │try_inlining.void
