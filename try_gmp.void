@@ -172,14 +172,14 @@ mpz_ref = &mpz_t;
 
     q = v_quark_ptr_from_string;
 
-    v_add_symbol("infix_add_q", q_ref, q("op_infix_add"));
-    v_add_symbol("infix_sub_q", q_ref, q("op_infix_sub"));
-    v_add_symbol("infix_mul_q", q_ref, q("op_infix_mul"));
-    v_add_symbol("infix_div_q", q_ref, q("op_infix_div"));
-    v_add_symbol("infix_rem_q", q_ref, q("op_infix_rem"));
-    v_add_symbol("infix_and_q", q_ref, q("op_infix_and"));
-    v_add_symbol("infix_or_q",  q_ref, q("op_infix_or"));
-    v_add_symbol("infix_xor_q", q_ref, q("op_infix_xor"));
+    v_add_symbol("q_op_infix_add", q_ref, q("v.op_infix_add"));
+    v_add_symbol("q_op_infix_sub", q_ref, q("v.op_infix_sub"));
+    v_add_symbol("q_op_infix_mul", q_ref, q("v.op_infix_mul"));
+    v_add_symbol("q_op_infix_div", q_ref, q("v.op_infix_div"));
+    v_add_symbol("q_op_infix_rem", q_ref, q("v.op_infix_rem"));
+    v_add_symbol("q_op_infix_and", q_ref, q("v.op_infix_and"));
+    v_add_symbol("q_op_infix_or",  q_ref, q("v.op_infix_or"));
+    v_add_symbol("q_op_infix_xor", q_ref, q("v.op_infix_xor"));
 
     v_add_symbol("root_q", q_ref, q("root"));
 }
@@ -308,7 +308,7 @@ mpz_binary_intrinsic: (vis: *voidc_visitor_t, aux: *void,
     //-----------------------------------------------------------------
     vr: &LLVMValueRef := v_undef();
 
-    if (v_ast_get_attribute(self, root_q))
+    if (v_ast_get_property(self, root_q))
     {
         t_front = v_get_temporaries_front();
 
@@ -331,11 +331,13 @@ mpz_binary_intrinsic: (vis: *voidc_visitor_t, aux: *void,
         v_initialize(stmt);
         defer v_terminate(stmt);
 
-        v_ast_make_stmt_call(stmt, "", "__gmpz_init", expr, 1);
+        q = v_quark_from_string;
+
+        v_ast_make_stmt_call(stmt, 0, q("__gmpz_init"), expr, 1);
 
         v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
 
-        v_ast_make_stmt_call(stmt, "", "__gmpz_clear", expr, 1);
+        v_ast_make_stmt_call(stmt, 0, q("__gmpz_clear"), expr, 1);
 
         v_ast_make_stmt_defer(stmt, stmt);
 
@@ -364,14 +366,17 @@ mpz_binary_intrinsic: (vis: *voidc_visitor_t, aux: *void,
 
     fname: &*const char := "bad_gmp_infix_operator";
 
-    if      (quark == infix_add_q)  fname := "__gmpz_add";
-    else if (quark == infix_sub_q)  fname := "__gmpz_sub";
-    else if (quark == infix_mul_q)  fname := "__gmpz_mul";
-    else if (quark == infix_div_q)  fname := "__gmpz_tdiv_q";
-    else if (quark == infix_rem_q)  fname := "__gmpz_tdiv_r";
-    else if (quark == infix_and_q)  fname := "__gmpz_and";
-    else if (quark == infix_or_q)   fname := "__gmpz_ior";
-    else if (quark == infix_xor_q)  fname := "__gmpz_xor";
+    block
+    {
+        if (quark == q_op_infix_add)  { fname := "__gmpz_add";    v_break(); }
+        if (quark == q_op_infix_sub)  { fname := "__gmpz_sub";    v_break(); }
+        if (quark == q_op_infix_mul)  { fname := "__gmpz_mul";    v_break(); }
+        if (quark == q_op_infix_div)  { fname := "__gmpz_tdiv_q"; v_break(); }
+        if (quark == q_op_infix_rem)  { fname := "__gmpz_tdiv_r"; v_break(); }
+        if (quark == q_op_infix_and)  { fname := "__gmpz_and";    v_break(); }
+        if (quark == q_op_infix_or)   { fname := "__gmpz_ior";    v_break(); }
+        if (quark == q_op_infix_xor)  { fname := "__gmpz_xor";    v_break(); }
+    }
 
     val: &LLVMValueRef[3] := {vr, v0, v1};
 
@@ -392,23 +397,25 @@ mpz_binary_intrinsic: (vis: *voidc_visitor_t, aux: *void,
 //---------------------------------------------------------------------
 {   vis = voidc_compiler;
 
-    v_util_function_dict_set(infix_add_q, mpz_ref, "mpz.infix_add");
-    v_util_function_dict_set(infix_sub_q, mpz_ref, "mpz.infix_sub");
-    v_util_function_dict_set(infix_mul_q, mpz_ref, "mpz.infix_mul");
-    v_util_function_dict_set(infix_div_q, mpz_ref, "mpz.infix_div");
-    v_util_function_dict_set(infix_rem_q, mpz_ref, "mpz.infix_rem");
-    v_util_function_dict_set(infix_and_q, mpz_ref, "mpz.infix_and");
-    v_util_function_dict_set(infix_or_q,  mpz_ref, "mpz.infix_or");
-    v_util_function_dict_set(infix_xor_q, mpz_ref, "mpz.infix_xor");
+    v_util_function_dict_set(mpz_ref, q_op_infix_add, "mpz.infix_add");
+    v_util_function_dict_set(mpz_ref, q_op_infix_sub, "mpz.infix_sub");
+    v_util_function_dict_set(mpz_ref, q_op_infix_mul, "mpz.infix_mul");
+    v_util_function_dict_set(mpz_ref, q_op_infix_div, "mpz.infix_div");
+    v_util_function_dict_set(mpz_ref, q_op_infix_rem, "mpz.infix_rem");
+    v_util_function_dict_set(mpz_ref, q_op_infix_and, "mpz.infix_and");
+    v_util_function_dict_set(mpz_ref, q_op_infix_or,  "mpz.infix_or");
+    v_util_function_dict_set(mpz_ref, q_op_infix_xor, "mpz.infix_xor");
 
-    voidc_visitor_set_intrinsic(vis, vis, "mpz.infix_add", mpz_binary_intrinsic, (infix_add_q: *void));
-    voidc_visitor_set_intrinsic(vis, vis, "mpz.infix_sub", mpz_binary_intrinsic, (infix_sub_q: *void));
-    voidc_visitor_set_intrinsic(vis, vis, "mpz.infix_mul", mpz_binary_intrinsic, (infix_mul_q: *void));
-    voidc_visitor_set_intrinsic(vis, vis, "mpz.infix_div", mpz_binary_intrinsic, (infix_div_q: *void));
-    voidc_visitor_set_intrinsic(vis, vis, "mpz.infix_rem", mpz_binary_intrinsic, (infix_rem_q: *void));
-    voidc_visitor_set_intrinsic(vis, vis, "mpz.infix_and", mpz_binary_intrinsic, (infix_and_q: *void));
-    voidc_visitor_set_intrinsic(vis, vis, "mpz.infix_or",  mpz_binary_intrinsic, (infix_or_q:  *void));
-    voidc_visitor_set_intrinsic(vis, vis, "mpz.infix_xor", mpz_binary_intrinsic, (infix_xor_q: *void));
+    q = v_quark_from_string;
+
+    voidc_visitor_set_intrinsic(vis, vis, q("mpz.infix_add"), mpz_binary_intrinsic, (q_op_infix_add: *void));
+    voidc_visitor_set_intrinsic(vis, vis, q("mpz.infix_sub"), mpz_binary_intrinsic, (q_op_infix_sub: *void));
+    voidc_visitor_set_intrinsic(vis, vis, q("mpz.infix_mul"), mpz_binary_intrinsic, (q_op_infix_mul: *void));
+    voidc_visitor_set_intrinsic(vis, vis, q("mpz.infix_div"), mpz_binary_intrinsic, (q_op_infix_div: *void));
+    voidc_visitor_set_intrinsic(vis, vis, q("mpz.infix_rem"), mpz_binary_intrinsic, (q_op_infix_rem: *void));
+    voidc_visitor_set_intrinsic(vis, vis, q("mpz.infix_and"), mpz_binary_intrinsic, (q_op_infix_and: *void));
+    voidc_visitor_set_intrinsic(vis, vis, q("mpz.infix_or"),  mpz_binary_intrinsic, (q_op_infix_or:  *void));
+    voidc_visitor_set_intrinsic(vis, vis, q("mpz.infix_xor"), mpz_binary_intrinsic, (q_op_infix_xor: *void));
 }
 
 //---------------------------------------------------------------------
@@ -487,7 +494,7 @@ mpz_binary_right_intrinsic: (vis: *voidc_visitor_t, aux: *void,
     //-----------------------------------------------------------------
     vr: &LLVMValueRef := v_undef();
 
-    if (v_ast_get_attribute(self, root_q))
+    if (v_ast_get_property(self, root_q))
     {
         t_front = v_get_temporaries_front();
 
@@ -510,11 +517,13 @@ mpz_binary_right_intrinsic: (vis: *voidc_visitor_t, aux: *void,
         v_initialize(stmt);
         defer v_terminate(stmt);
 
-        v_ast_make_stmt_call(stmt, "", "__gmpz_init", expr, 1);
+        q = v_quark_from_string;
+
+        v_ast_make_stmt_call(stmt, 0, q("__gmpz_init"), expr, 1);
 
         v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
 
-        v_ast_make_stmt_call(stmt, "", "__gmpz_clear", expr, 1);
+        v_ast_make_stmt_call(stmt, 0, q("__gmpz_clear"), expr, 1);
 
         v_ast_make_stmt_defer(stmt, stmt);
 
@@ -543,14 +552,17 @@ mpz_binary_right_intrinsic: (vis: *voidc_visitor_t, aux: *void,
 
     fname: &*const char := "bad_gmp_infix_operator";
 
-    if      (quark == infix_add_q)  fname := "__gmpz_add";
-    else if (quark == infix_sub_q)  fname := "__gmpz_sub";
-    else if (quark == infix_mul_q)  fname := "__gmpz_mul";
-    else if (quark == infix_div_q)  fname := "__gmpz_tdiv_q";
-    else if (quark == infix_rem_q)  fname := "__gmpz_tdiv_r";
-    else if (quark == infix_and_q)  fname := "__gmpz_and";
-    else if (quark == infix_or_q)   fname := "__gmpz_ior";
-    else if (quark == infix_xor_q)  fname := "__gmpz_xor";
+    block
+    {
+        if (quark == q_op_infix_add)  { fname := "__gmpz_add";    v_break(); }
+        if (quark == q_op_infix_sub)  { fname := "__gmpz_sub";    v_break(); }
+        if (quark == q_op_infix_mul)  { fname := "__gmpz_mul";    v_break(); }
+        if (quark == q_op_infix_div)  { fname := "__gmpz_tdiv_q"; v_break(); }
+        if (quark == q_op_infix_rem)  { fname := "__gmpz_tdiv_r"; v_break(); }
+        if (quark == q_op_infix_and)  { fname := "__gmpz_and";    v_break(); }
+        if (quark == q_op_infix_or)   { fname := "__gmpz_ior";    v_break(); }
+        if (quark == q_op_infix_xor)  { fname := "__gmpz_xor";    v_break(); }
+    }
 
     val: &LLVMValueRef[3] := {vr, v0, v1};
 
@@ -571,25 +583,25 @@ mpz_binary_right_intrinsic: (vis: *voidc_visitor_t, aux: *void,
 //---------------------------------------------------------------------
 {   q = v_quark_from_string;
 
-    v_util_function_dict_set(q("op_infix_add.right"), mpz_ref, "mpz.right_add");
-    v_util_function_dict_set(q("op_infix_sub.right"), mpz_ref, "mpz.right_sub");
-    v_util_function_dict_set(q("op_infix_mul.right"), mpz_ref, "mpz.right_mul");
-    v_util_function_dict_set(q("op_infix_div.right"), mpz_ref, "mpz.right_div");
-    v_util_function_dict_set(q("op_infix_rem.right"), mpz_ref, "mpz.right_rem");
-    v_util_function_dict_set(q("op_infix_and.right"), mpz_ref, "mpz.right_and");
-    v_util_function_dict_set(q("op_infix_or.right"),  mpz_ref, "mpz.right_or");
-    v_util_function_dict_set(q("op_infix_xor.right"), mpz_ref, "mpz.right_xor");
+    v_util_function_dict_set(mpz_ref, q("v.op_infix_add.right"), "mpz.right_add");
+    v_util_function_dict_set(mpz_ref, q("v.op_infix_sub.right"), "mpz.right_sub");
+    v_util_function_dict_set(mpz_ref, q("v.op_infix_mul.right"), "mpz.right_mul");
+    v_util_function_dict_set(mpz_ref, q("v.op_infix_div.right"), "mpz.right_div");
+    v_util_function_dict_set(mpz_ref, q("v.op_infix_rem.right"), "mpz.right_rem");
+    v_util_function_dict_set(mpz_ref, q("v.op_infix_and.right"), "mpz.right_and");
+    v_util_function_dict_set(mpz_ref, q("v.op_infix_or.right"),  "mpz.right_or");
+    v_util_function_dict_set(mpz_ref, q("v.op_infix_xor.right"), "mpz.right_xor");
 
     vis = voidc_compiler;
 
-    voidc_visitor_set_intrinsic(vis, vis, "mpz.right_add", mpz_binary_right_intrinsic, (infix_add_q: *void));
-    voidc_visitor_set_intrinsic(vis, vis, "mpz.right_sub", mpz_binary_right_intrinsic, (infix_sub_q: *void));
-    voidc_visitor_set_intrinsic(vis, vis, "mpz.right_mul", mpz_binary_right_intrinsic, (infix_mul_q: *void));
-    voidc_visitor_set_intrinsic(vis, vis, "mpz.right_div", mpz_binary_right_intrinsic, (infix_div_q: *void));
-    voidc_visitor_set_intrinsic(vis, vis, "mpz.right_rem", mpz_binary_right_intrinsic, (infix_rem_q: *void));
-    voidc_visitor_set_intrinsic(vis, vis, "mpz.right_and", mpz_binary_right_intrinsic, (infix_and_q: *void));
-    voidc_visitor_set_intrinsic(vis, vis, "mpz.right_or",  mpz_binary_right_intrinsic, (infix_or_q:  *void));
-    voidc_visitor_set_intrinsic(vis, vis, "mpz.right_xor", mpz_binary_right_intrinsic, (infix_xor_q: *void));
+    voidc_visitor_set_intrinsic(vis, vis, q("mpz.right_add"), mpz_binary_right_intrinsic, (q_op_infix_add: *void));
+    voidc_visitor_set_intrinsic(vis, vis, q("mpz.right_sub"), mpz_binary_right_intrinsic, (q_op_infix_sub: *void));
+    voidc_visitor_set_intrinsic(vis, vis, q("mpz.right_mul"), mpz_binary_right_intrinsic, (q_op_infix_mul: *void));
+    voidc_visitor_set_intrinsic(vis, vis, q("mpz.right_div"), mpz_binary_right_intrinsic, (q_op_infix_div: *void));
+    voidc_visitor_set_intrinsic(vis, vis, q("mpz.right_rem"), mpz_binary_right_intrinsic, (q_op_infix_rem: *void));
+    voidc_visitor_set_intrinsic(vis, vis, q("mpz.right_and"), mpz_binary_right_intrinsic, (q_op_infix_and: *void));
+    voidc_visitor_set_intrinsic(vis, vis, q("mpz.right_or"),  mpz_binary_right_intrinsic, (q_op_infix_or:  *void));
+    voidc_visitor_set_intrinsic(vis, vis, q("mpz.right_xor"), mpz_binary_right_intrinsic, (q_op_infix_xor: *void));
 }
 
 

@@ -43,7 +43,7 @@ extern "C"
 {
 
 
-typedef void (*symbol_type_ft)(void *aux, const std::string *name, const v_type_t *type);
+typedef void (*symbol_type_ft)(void *aux, v_quark_t qname, const v_type_t *type);
 
 void
 symbol_types_iter(symbol_type_ft fun, void *aux)
@@ -53,7 +53,7 @@ symbol_types_iter(symbol_type_ft fun, void *aux)
 
     for (auto &it: lctx.decls.symbols)
     {
-        fun(aux, &it.first, it.second);
+        fun(aux, it.first, it.second);
     }
 }
 
@@ -92,7 +92,10 @@ buffer: &*char := 0;
     {   p = v_popen("bash", "w");
         defer v_pclose(p);
 
-        fprintf(p, "clang -x c++ -O3 -c -fPIC");
+//      fprintf(p, "clang -x c++ -O3 -DNDEBUG -c -fPIC");
+        fprintf(p, "clang -x c++ -c -fPIC");
+
+//      fprintf(p, " -emit-llvm");
 
         fprintf(p, " $(llvm-config --cxxflags) -std=c++17");
 
@@ -117,8 +120,17 @@ buffer: &*char := 0;
     voidc_add_local_object_file_to_jit(mb);
 }
 
-
 //---------------------------------------------------------------------
+{   p = v_popen("bash", "w");
+    defer v_pclose(p);
+
+    fprintf(p, "rm %s\n", buffer);
+
+    v_free(buffer);
+}
+
+
+//====================================================================-
 append_string_repr: (str: v_std_string_ptr, s: *const char) -> void
 {
     s: &*const char := s;
@@ -318,14 +330,14 @@ append_type: (str: *v_std_string_t, t: *v_type_t) -> void
 
 
 //---------------------------------------------------------------------
-symbol_type_ft = *((*void, *const v_std_string_t, *v_type_t) -> void);
+symbol_type_ft = *((*void, v_quark_t, *v_type_t) -> void);
 symbol_types_iter: (symbol_type_ft, *void) -> void;
 
 
 //---------------------------------------------------------------------
-symbol_type_fun: (aux: *void, sstr: *const v_std_string_t, type: *v_type_t) -> void
+symbol_type_fun: (aux: *void, qname: v_quark_t, type: *v_type_t) -> void
 {
-    sname = v_std_string_get(sstr);
+    sname = v_quark_to_string(qname);
 
     strncmp: (*const char, *const char, int) -> int;
 
@@ -345,7 +357,7 @@ symbol_type_fun: (aux: *void, sstr: *const v_std_string_t, type: *v_type_t) -> v
 }
 
 
-//---------------------------------------------------------------------
+//=====================================================================
 {
     symbol_types_iter(symbol_type_fun, 0);
 }
@@ -353,16 +365,5 @@ symbol_type_fun: (aux: *void, sstr: *const v_std_string_t, type: *v_type_t) -> v
 
 
 
-
-
-//---------------------------------------------------------------------
-{
-    p = v_popen("bash", "w");
-    defer v_pclose(p);
-
-    fprintf(p, "rm %s\n", buffer);
-
-    v_free(buffer);
-}
 
 

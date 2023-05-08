@@ -96,7 +96,7 @@ buffer: &*char := 0;
     {   p = v_popen("bash", "w");
         defer v_pclose(p);
 
-        fprintf(p, "clang -x c++ -O3 -c -fPIC");
+        fprintf(p, "clang -x c++ -O3 -DNDEBUG -c -fPIC");
 
         fprintf(p, " $(llvm-config --cxxflags) -std=c++17");
 

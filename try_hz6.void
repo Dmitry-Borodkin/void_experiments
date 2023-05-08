@@ -31,11 +31,31 @@
 }
 
 
+//---------------------------------------------------------------------
+{
+    aux: &*void := v_undef();
+
+    q = v_quark_from_string;
+
+    fun = voidc_visitor_get_intrinsic(voidc_compiler, q("v.op_infix_add"), &aux);
+
+    v_add_intrinsic("crazy_add", fun, aux);
+}
+
+{   n = crazy_add(hzhzhz, 2, 3);
+
+    printf("n: %d\n", n);
+}
 
 
+//---------------------------------------------------------------------
+{   N = v_quark_from_string("ЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫ");
 
-
-
+    for (q: &v_quark_t := 1; q <= N; ++q)
+    {
+        printf("%5d: %s\n", q, v_quark_to_string(q));
+    }
+}
 
 
 

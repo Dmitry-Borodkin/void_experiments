@@ -169,10 +169,10 @@ alwaysinline
 }
 
 //---------------------------------------------------------------------
-Vector_zero:     Vector = {0, 0};
-Vector_unit_x:   Vector = {1, 0};
-Vector_unit_y:   Vector = {0, 1};
-Vector_infinity: Vector = {infinity, infinity};
+Vector_zero:     &Vector := {0, 0};
+Vector_unit_x:   &Vector := {1, 0};
+Vector_unit_y:   &Vector := {0, 1};
+Vector_infinity: &Vector := {infinity, infinity};
 
 //---------------------------------------------------------------------
 alwaysinline
@@ -279,11 +279,11 @@ alwaysinline
 }
 
 //---------------------------------------------------------------------
-Point_zero:   Point = {0, 0, 1};
-Point_unit_x: Point = {1, 0, 1};
-Point_unit_y: Point = {0, 1, 1};
-Point_inf_x:  Point = {1, 0, 0};
-Point_inf_y:  Point = {0, 1, 0};
+Point_zero:   &Point := {0, 0, 1};
+Point_unit_x: &Point := {1, 0, 1};
+Point_unit_y: &Point := {0, 1, 1};
+Point_inf_x:  &Point := {1, 0, 0};
+Point_inf_y:  &Point := {0, 1, 0};
 
 
 //=====================================================================
@@ -365,9 +365,9 @@ alwaysinline
 }
 
 //---------------------------------------------------------------------
-Line_infinity: Line = {0, 0, 1};
-Line_abscissa: Line = {0, 1, 0};
-Line_ordinate: Line = {1, 0, 0};
+Line_infinity: &Line := {0, 0, 1};
+Line_abscissa: &Line := {0, 1, 0};
+Line_ordinate: &Line := {1, 0, 0};
 
 
 //=====================================================================
@@ -807,9 +807,9 @@ Transform_map2_mirror: (i1: &Point, i2: &Point,
 }
 
 //---------------------------------------------------------------------
-Transform_identity: Transform = {{ 1, 0, 0,  0, 1, 0,  0, 0, 1 }};
-Transform_flip_x:   Transform = {{-1, 0, 0,  0, 1, 0,  0, 0, 1 }};
-Transform_flip_y:   Transform = {{ 1, 0, 0,  0,-1, 0,  0, 0, 1 }};
+Transform_identity: &Transform := {{ 1, 0, 0,  0, 1, 0,  0, 0, 1 }};
+Transform_flip_x:   &Transform := {{-1, 0, 0,  0, 1, 0,  0, 0, 1 }};
+Transform_flip_y:   &Transform := {{ 1, 0, 0,  0,-1, 0,  0, 0, 1 }};
 
 
 

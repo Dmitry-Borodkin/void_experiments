@@ -16,6 +16,13 @@
 //---------------------------------------------------------------------
 append_string_repr: (str: v_std_string_ptr, s: *const char) -> void
 {
+    if (!s)
+    {
+        v_std_string_append(str, "(null)");
+
+        v_return();
+    }
+
     s: &*const char := s;
 
     v_std_string_append(str, "\"");
@@ -1113,7 +1120,6 @@ $print_ast
 {
     (_/__): (int, int) -> int;      //- ?!?!?!?!?!?!?!?!?!?!?!?!?!?!?!?
 }
-
 
 }
 
