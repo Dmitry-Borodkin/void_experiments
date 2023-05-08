@@ -12,7 +12,129 @@
 }
 
 
+//=====================================================================
+struct finish_module_ctx_t
+{
+    fun: *((*void, LLVMModuleRef) -> void);
+    ctx: *void;
+};
+
 //---------------------------------------------------------------------
+struct item_t
+{
+    pri: int;
+
+    fun: LLVMValueRef;
+};
+
+{   sz = LLVMSizeOf(v_type_get_llvm_type(item_t));
+
+    v_add_constant("item_t_sz", size_t, sz);
+}
+
+qsort: (ptr: *void, count: size_t, size: size_t, comp: *((*const void, *const void) -> int)) -> void;
+
+compare: (void_lhs: *const void, void_rhs: *const void) -> int
+{
+    lhs = (void_lhs: *const item_t);
+    rhs = (void_rhs: *const item_t);
+
+    v_return(lhs~>pri - rhs~>pri);
+}
+
+//---------------------------------------------------------------------
+finish_module_cdtors: (void_ctx: *void, module: LLVMModuleRef) -> void
+{
+    cdtors: &(*const char)[2] :=
+    {
+        "llvm.global_ctors",
+        "llvm.global_dtors"
+    };
+
+    prefs: &(*const char)[2] :=
+    {
+        "__orc_init_func.",
+        "__orc_deinit_func.",
+    };
+
+    for (i: &int := 0; i < 2; ++i)
+    {
+        cdt = LLVMGetNamedGlobal(module, cdtors[i]);
+
+        if (!cdt) v_continue();
+
+        cdt0 = LLVMGetOperand(cdt, 0);
+
+        n = LLVMGetNumOperands(cdt0);
+
+        tab: &*item_t := v_malloc(item_t, n);
+        defer v_free(tab);
+
+        for (j: &int := 0; j < n; ++j)
+        {
+            it = LLVMGetOperand(cdt0, j);
+
+            pri: &int := (LLVMConstIntGetZExtValue(LLVMGetOperand(it, 0)) : int);
+
+            if (i) pri := -pri;
+
+            tab[j].pri := pri;
+
+            tab[j].fun := LLVMGetOperand(it, 1);
+        }
+
+        qsort(tab, n, item_t_sz, compare);
+
+        sstr = v_alloca(v_std_string_t);
+        v_initialize(sstr);
+        defer v_terminate(sstr);
+
+        v_std_string_set(sstr, prefs[i]);
+
+        len: &size_t := v_undef();
+
+        v_std_string_append(sstr, LLVMGetModuleIdentifier(module, &len));
+
+        fun_name = v_std_string_get(sstr);
+
+        ft = v_type_get_llvm_type(v_function_type(void, 0, 0, false));
+        fv = LLVMAddFunction(module, fun_name, ft);
+
+        LLVMSetVisibility(fv, LLVMHiddenVisibility);        //- ?
+
+        entry = LLVMAppendBasicBlock(fv, "entry");
+
+        builder = v_target_get_builder();
+
+        LLVMPositionBuilderAtEnd(builder, entry);
+
+        for (j: &int := 0; j < n; ++j)
+        {
+            LLVMBuildCall2(builder, ft, tab[j].fun, 0, 0, "");          //- ft "reuse" - Sic!
+        }
+
+        LLVMBuildRetVoid(builder);
+
+        LLVMDeleteGlobal(cdt);
+    }
+
+    ctx = (void_ctx: *finish_module_ctx_t);
+
+    if (ctx  &&  ctx~>fun)  ctx~>fun(ctx~>ctx, module);
+}
+
+
+//---------------------------------------------------------------------
+finish_module_ctx: &finish_module_ctx_t := v_undef();
+
+{   finish_module_ctx.fun := v_get_finish_module(&finish_module_ctx.ctx);
+
+    v_set_finish_module(finish_module_cdtors, &finish_module_ctx);
+}
+
+
+
+//=====================================================================
 try_variable: &int := 77;
 
 
@@ -28,13 +150,9 @@ ptr_variable: &*int := v_undef();
 //---------------------------------------------------------------------
 try_ctors: () -> void
 {
-    printf("ptr_variable: %p\n", ptr_variable);
-
     v = *ptr_variable;
 
     v += 700;
-
-    printf("try_ctors: %d\n", v);
 }
 
 
@@ -52,49 +170,48 @@ try_ctors_ctor: () -> void
 }
 
 private
+try_ctors_ctor_0: () -> void
+{
+    printf("try_ctors_ctor_0\n");
+}
+
+private
+try_ctors_dtor: () -> void
+{
+    printf("try_ctors_dtor\n");
+}
+
+private
+try_ctors_dtor_0: () -> void
+{
+    printf("try_ctors_dtor_0\n");
+}
+
+private
 llvm_global_cdtors_item_t = v_struct({int(32), *(() -> void), *void});
 
 my_llvm_global_ctors: &llvm_global_cdtors_item_t[] :=
 {
-    {65535, try_ctors_ctor, 0}
+    {65535, try_ctors_ctor, 0},
+    {65534, try_ctors_ctor_0, 0},
+};
+
+my_llvm_global_dtors: &llvm_global_cdtors_item_t[] :=
+{
+    {65535, try_ctors_dtor, 0},
+    {65534, try_ctors_dtor_0, 0},
 };
 
 {   module = v_get_module();
 
-    g = LLVMGetNamedGlobal(module, "my_llvm_global_ctors");
+    c = LLVMGetNamedGlobal(module, "my_llvm_global_ctors");
+    d = LLVMGetNamedGlobal(module, "my_llvm_global_dtors");
 
-    LLVMSetValueName2(g, "llvm.global_ctors", 17);
+    LLVMSetValueName2(c, "llvm.global_ctors", 17);
+    LLVMSetValueName2(d, "llvm.global_dtors", 17);
 
-    LLVMSetLinkage(g, LLVMAppendingLinkage);
-}
-
-
-//---------------------------------------------------------------------
-try_ctors_ctor_my: () -> void
-{
-    printf("try_ctors_ctor_my\n");
-
-    v_find_symbol_value: (*const char) -> *void;
-
-    ptr_variable := (v_find_symbol_value("try_variable") : *int);
-
-    printf("ptr_variable: %p\n", ptr_variable);
-}
-
-try_ctors_dtor_my: () -> void
-{
-    printf("try_ctors_dtor_my\n");
-}
-
-{   module = v_get_module();
-
-    f = LLVMGetNamedFunction(module, "try_ctors_ctor_my");
-
-    LLVMSetValueName2(f, "__orc_init_func.hzhzhz", 22);
-
-    f = LLVMGetNamedFunction(module, "try_ctors_dtor_my");
-
-    LLVMSetValueName2(f, "__orc_deinit_func.hzhzhz", 24);
+    LLVMSetLinkage(c, LLVMAppendingLinkage);
+    LLVMSetLinkage(d, LLVMAppendingLinkage);
 }
 
 
@@ -108,11 +225,15 @@ try_ctors_dtor_my: () -> void
 //try_ctors: () -> void;
 
 {
-    printf("try_ctors: %p\n", try_ctors);
+    printf("{\n");
+
+    printf("try_variable: %d\n", try_variable);
 
     try_ctors();
 
     printf("try_variable: %d\n", try_variable);
+
+    printf("}\n");
 }
 
 
