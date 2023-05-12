@@ -14,7 +14,7 @@
 }
 
 
-//---------------------------------------------------------------------
+//=====================================================================
 struct FILE;
 
 v_popen: (command: *const char, prop: *const char) -> *FILE;
@@ -53,7 +53,57 @@ fscanf: (stream: *FILE, format: *const char, ...) -> int;
 //  printf("ok: %d\n", ok);
 }
 
+
+//=====================================================================
+{   root_q = v_quark_ptr_from_string("root");
+
+    v_add_symbol("root_q", v_reference_type(v_quark_t, 0), root_q);
+}
+
 //---------------------------------------------------------------------
+mk_stmt_object_hook_grammar_action: (ret: v_std_any_ptr, any: v_std_any_ptr, size_t) -> void
+{
+    name: &*const char := "";
+
+    if (s = v_std_any_get_pointer(v_std_string_t, any+0))   name := v_std_string_get(s);
+
+    expr = v_alloca(v_ast_expr_t);
+    v_initialize(expr);
+    defer v_terminate(expr);
+
+    if (p = v_std_any_get_pointer(v_ast_expr_t, any+1))
+    {
+        if (name[0])
+        {
+            v_ast_set_property((p: *v_ast_base_t), root_q, any+0);      //- name...
+        }
+
+        v_copy(expr, p);
+    }
+
+    stmt = v_alloca(v_ast_stmt_t);
+    v_initialize(stmt);
+    defer v_terminate(stmt);
+
+    v_ast_make_stmt(stmt, name, expr);
+
+    v_std_any_set_pointer(ret, stmt);
+}
+
+//---------------------------------------------------------------------
+{   gr0 = v_alloca(v_peg_grammar_t);
+    v_initialize(gr0);
+    defer v_terminate(gr0);
+
+    v_peg_get_grammar(gr0);
+
+    v_peg_grammar_set_action(gr0, gr0, "mk_stmt", mk_stmt_object_hook_grammar_action);
+
+    v_peg_set_grammar(gr0);
+}
+
+
+//=====================================================================
 {   w = v_type_integer_get_width(long);
 
     v_add_type("ulong", v_uint_type(w));
@@ -72,7 +122,6 @@ struct mpz_t
 };
 
 
-
 //---------------------------------------------------------------------
 //- <x86_64-pc-linux-gnu/gmp.h>
 //---------------------------------------------------------------------
@@ -80,11 +129,13 @@ __gmpz_init: (*mpz_t) -> void;
 __gmpz_clear: (*mpz_t) -> void;
 
 //---------------------------------------------------------------------
+alwaysinline
 mpz_initialize: (p: *mpz_t, n: int) -> void
 {
     for (i: &int := 0; i < n; ++i)  __gmpz_init(p+i);
 }
 
+alwaysinline
 mpz_terminate: (p: *mpz_t, n: int) -> void
 {
     for (i: &int := 0; i < n; ++i)  __gmpz_clear(p+i);
@@ -397,16 +448,16 @@ mpz_binary_intrinsic: (vis: *voidc_visitor_t, aux: *void,
 //---------------------------------------------------------------------
 {   vis = voidc_compiler;
 
-    v_util_function_dict_set(mpz_ref, q_op_infix_add, "mpz.infix_add");
-    v_util_function_dict_set(mpz_ref, q_op_infix_sub, "mpz.infix_sub");
-    v_util_function_dict_set(mpz_ref, q_op_infix_mul, "mpz.infix_mul");
-    v_util_function_dict_set(mpz_ref, q_op_infix_div, "mpz.infix_div");
-    v_util_function_dict_set(mpz_ref, q_op_infix_rem, "mpz.infix_rem");
-    v_util_function_dict_set(mpz_ref, q_op_infix_and, "mpz.infix_and");
-    v_util_function_dict_set(mpz_ref, q_op_infix_or,  "mpz.infix_or");
-    v_util_function_dict_set(mpz_ref, q_op_infix_xor, "mpz.infix_xor");
-
     q = v_quark_from_string;
+
+    v_util_function_dict_set(mpz_ref, q_op_infix_add, q("mpz.infix_add"));
+    v_util_function_dict_set(mpz_ref, q_op_infix_sub, q("mpz.infix_sub"));
+    v_util_function_dict_set(mpz_ref, q_op_infix_mul, q("mpz.infix_mul"));
+    v_util_function_dict_set(mpz_ref, q_op_infix_div, q("mpz.infix_div"));
+    v_util_function_dict_set(mpz_ref, q_op_infix_rem, q("mpz.infix_rem"));
+    v_util_function_dict_set(mpz_ref, q_op_infix_and, q("mpz.infix_and"));
+    v_util_function_dict_set(mpz_ref, q_op_infix_or,  q("mpz.infix_or"));
+    v_util_function_dict_set(mpz_ref, q_op_infix_xor, q("mpz.infix_xor"));
 
     voidc_visitor_set_intrinsic(vis, vis, q("mpz.infix_add"), mpz_binary_intrinsic, (q_op_infix_add: *void));
     voidc_visitor_set_intrinsic(vis, vis, q("mpz.infix_sub"), mpz_binary_intrinsic, (q_op_infix_sub: *void));
@@ -583,14 +634,14 @@ mpz_binary_right_intrinsic: (vis: *voidc_visitor_t, aux: *void,
 //---------------------------------------------------------------------
 {   q = v_quark_from_string;
 
-    v_util_function_dict_set(mpz_ref, q("v.op_infix_add.right"), "mpz.right_add");
-    v_util_function_dict_set(mpz_ref, q("v.op_infix_sub.right"), "mpz.right_sub");
-    v_util_function_dict_set(mpz_ref, q("v.op_infix_mul.right"), "mpz.right_mul");
-    v_util_function_dict_set(mpz_ref, q("v.op_infix_div.right"), "mpz.right_div");
-    v_util_function_dict_set(mpz_ref, q("v.op_infix_rem.right"), "mpz.right_rem");
-    v_util_function_dict_set(mpz_ref, q("v.op_infix_and.right"), "mpz.right_and");
-    v_util_function_dict_set(mpz_ref, q("v.op_infix_or.right"),  "mpz.right_or");
-    v_util_function_dict_set(mpz_ref, q("v.op_infix_xor.right"), "mpz.right_xor");
+    v_util_function_dict_set(mpz_ref, q("v.op_infix_add.right"), q("mpz.right_add"));
+    v_util_function_dict_set(mpz_ref, q("v.op_infix_sub.right"), q("mpz.right_sub"));
+    v_util_function_dict_set(mpz_ref, q("v.op_infix_mul.right"), q("mpz.right_mul"));
+    v_util_function_dict_set(mpz_ref, q("v.op_infix_div.right"), q("mpz.right_div"));
+    v_util_function_dict_set(mpz_ref, q("v.op_infix_rem.right"), q("mpz.right_rem"));
+    v_util_function_dict_set(mpz_ref, q("v.op_infix_and.right"), q("mpz.right_and"));
+    v_util_function_dict_set(mpz_ref, q("v.op_infix_or.right"),  q("mpz.right_or"));
+    v_util_function_dict_set(mpz_ref, q("v.op_infix_xor.right"), q("mpz.right_xor"));
 
     vis = voidc_compiler;
 
@@ -612,7 +663,11 @@ __gmp_printf: (*const char, ...) -> int;
 
 
 //---------------------------------------------------------------------
-//{ v_debug_print_module(1); }
+{   v_debug_print_module(2);
+
+    voidc_verify_jit_module_optimized(true);
+}
+
 {
     m: &mpz_t := v_undef();
     v_initialize(&m);

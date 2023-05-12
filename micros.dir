@@ -27,10 +27,10 @@ try_print_ast.void                                             │try_print_ast.
 try_introspect2.void    ... visitor methods ...                │try_introspect2.void
                                                                │
 ───────────────────────────────────────────────────────────────│
-try_hz5.void    ... mangling ...                               │try_hz5.void
+try_hz5.void        ... mangling ...                           │try_hz5.void
                                                                │
 ───────────────────────────────────────────────────────────────│
-try_gmp.void                                                   │try_gmp.void
+try_gmp.void        ... objects ...                            │try_gmp.void
                                                                │
 ───────────────────────────────────────────────────────────────│
 try_structures.void                                            │try_structures.void

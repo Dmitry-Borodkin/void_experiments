@@ -98,7 +98,8 @@ buffer: &*char := 0;
     {   p = v_popen("bash", "w");
         defer v_pclose(p);
 
-        fprintf(p, "clang -x c++ -O3 -DNDEBUG -c -fPIC");
+//      fprintf(p, "clang -x c++ -O3 -DNDEBUG -c -fPIC");
+        fprintf(p, "clang -x c++ -c -fPIC");
 
         fprintf(p, " $(llvm-config --cxxflags) -std=c++17");
 
@@ -129,7 +130,7 @@ parsers_count: (*v_peg_grammar_t) -> size_t;
 
 item_ft = *((*void, *const char) -> void);
 
-parsers_iter: (*v_peg_grammar_t, item_ft) -> void;
+parsers_iter: (*v_peg_grammar_t, item_ft, *void) -> void;
 
 
 //---------------------------------------------------------------------
@@ -150,7 +151,7 @@ item_fun: (aux: *void, name: *const char) -> void
 
     printf("sz: %d\n\n", (sz: int));
 
-    parsers_iter(gr, item_fun);
+    parsers_iter(gr, item_fun, 0);
 }
 
 

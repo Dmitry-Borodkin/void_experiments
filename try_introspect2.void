@@ -96,7 +96,8 @@ buffer: &*char := 0;
     {   p = v_popen("bash", "w");
         defer v_pclose(p);
 
-        fprintf(p, "clang -x c++ -O3 -DNDEBUG -c -fPIC");
+//      fprintf(p, "clang -x c++ -O3 -DNDEBUG -c -fPIC");
+        fprintf(p, "clang -x c++ -c -fPIC");
 
         fprintf(p, " $(llvm-config --cxxflags) -std=c++17");
 
@@ -127,7 +128,7 @@ visitor_methods_count: (*voidc_visitor_t) -> size_t;
 
 visitor_method_ft = *((*void, v_quark_t) -> void);
 
-visitor_methods_iter: (*voidc_visitor_t, visitor_method_ft) -> void;
+visitor_methods_iter: (*voidc_visitor_t, visitor_method_ft, *void) -> void;
 
 
 //---------------------------------------------------------------------
@@ -140,9 +141,9 @@ visitor_method_fun: (aux: *void, quark: v_quark_t) -> void
 //---------------------------------------------------------------------
 {   sz = visitor_methods_count(voidc_compiler);
 
-//  printf("sz: %d\n\n", (sz: int));
+    printf("sz: %d\n\n", (sz: int));
 
-    visitor_methods_iter(voidc_compiler, visitor_method_fun);
+    visitor_methods_iter(voidc_compiler, visitor_method_fun, 0);
 }
 
 
