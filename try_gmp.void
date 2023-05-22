@@ -70,11 +70,9 @@ struct grammar_action_hook_t
 //---------------------------------------------------------------------
 mk_stmt_object_hook_grammar_action: (ret: v_std_any_ptr, void_aux: *void, any: v_std_any_ptr, sz: size_t) -> void
 {
-    block
+    if (v_std_any_get_pointer(v_std_string_t, any+0))
     {
-        if (!v_std_any_get_pointer(v_std_string_t, any+0))  v_break();
-
-        p = v_std_any_get_pointer(v_ast_expr_t, any+1);     if (!p) v_break();
+        p = v_std_any_get_pointer(v_ast_expr_t, any+1);
 
         v_ast_set_property((p: *v_ast_base_t), root_q, any+0);      //- name...
     }

@@ -648,7 +648,7 @@ ctx: &ctx_t := 0;
 
 
 //---------------------------------------------------------------------
-mk_test_stmt_grammar_action: (ret: *v_std_any_t, any: *v_std_any_t, size_t) -> void
+mk_test_stmt_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) -> void
 {
     stmt = v_std_any_get_pointer(v_ast_stmt_t, any);
 
