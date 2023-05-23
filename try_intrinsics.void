@@ -100,8 +100,11 @@ bsearch: (key: *const void, ptr: *const void, count: size_t, size: size_t, comp:
     v_add_symbol("q_load",          q_ref, q("v_load"));
     v_add_symbol("q_store",         q_ref, q("v_store"));
     v_add_symbol("q_break",         q_ref, q("v_break"));
+    v_add_symbol("q_icmp",          q_ref, q("v_icmp"));
+    v_add_symbol("q_binop",         q_ref, q("v_binop"));
 
-    v_add_symbol("q_idx", q_ref, q("v.idx"));
+    v_add_symbol("q_idx",   q_ref, q("v.idx"));
+    v_add_symbol("q_idx_v", q_ref, q("v.idx.v"));
 }
 
 //---------------------------------------------------------------------
@@ -251,31 +254,31 @@ v_internal_spec_fun_derive_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: 
 
     v_ast_make_expr_identifier(expr+0, "int");
 
-    v_ast_make_stmt_call(stmt+0, q_idx, q_alloca, expr, 1);
+    v_ast_make_stmt_call(stmt+0, q_idx, q_alloca, expr+0, 1);
     v_list_append(stmt_list+0, stmt_list+0, stmt+0);
 
     v_ast_make_expr_integer(expr+0, 0);
-    v_ast_make_expr_identifier(expr+1, "v.idx");
+    v_ast_make_expr_identifier_q(expr+1, q_idx);
 
     v_ast_make_stmt_call(stmt+0, 0, q_store, expr, 2);
     v_list_append(stmt_list+0, stmt_list+0, stmt+0);
 
     //-------------------------------------------------------------
+    v_ast_make_expr_identifier_q(expr+0, q_idx);
+
+    v_ast_make_stmt_call(stmt+0, q_idx_v, q_load, expr+0, 1);
+    v_list_append(stmt_list+1, stmt_list+1, stmt+0);
+
+    //-------------------------------------------------------------
     v_ast_make_expr_identifier(expr+0, "LLVMIntSGE");
 
-    v_ast_make_expr_identifier_q(expr+1, q_idx);
-
-    v_make_list(expr_list+0, expr+1, 1);
-
-    v_ast_make_expr_identifier_q(expr+1, q_load);
-
-    v_ast_make_expr_call(expr+1, expr+1, expr_list+0);
+    v_ast_make_expr_identifier_q(expr+1, q_idx_v);
 
     v_ast_make_expr_identifier(expr+2, "v.count");
 
     v_make_list(expr_list+0, expr, 3);
 
-    v_ast_make_expr_identifier(expr+0, "v_icmp");
+    v_ast_make_expr_identifier_q(expr+0, q_icmp);
 
     v_ast_make_expr_call(expr+0, expr+0, expr_list+0);
 
@@ -304,15 +307,11 @@ v_internal_spec_fun_derive_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: 
     {
         v_ast_make_expr_identifier(expr+0, "v.dst");
 
-        v_ast_make_expr_identifier_q(expr+1, q_idx);
+        v_ast_make_expr_identifier_q(expr+1, q_idx_v);
 
-        v_make_list(expr_list+0, expr+1, 1);
+        v_ast_make_expr_integer(expr+2, n);
 
-        v_ast_make_expr_identifier_q(expr+1, q_load);
-
-        v_ast_make_expr_call(expr+1, expr+1, expr_list+0);
-
-        v_make_list(expr_list+0, expr+0, 2);
+        v_make_list(expr_list+0, expr+0, 3);
 
         v_copy(expr_list+2, expr_list+0);
 
@@ -320,16 +319,12 @@ v_internal_spec_fun_derive_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: 
         {
             v_ast_make_expr_identifier(expr+0, "v.src");
 
-            v_make_list(expr_list+1, expr+0, 2);
+            v_make_list(expr_list+1, expr+0, 3);
 
             v_copy(expr_list+3, expr_list+1);
         }
 
-        v_ast_make_expr_integer(expr+0, n);
-
-        v_list_append(expr_list+0, expr_list+0, expr+0, 1);
-
-        if (is_copy)  v_list_append(expr_list+1, expr_list+1, expr+0, 1);
+        v_ast_make_expr_integer(expr+0, 0);
 
         et: &v_type_ptr := types[n];
 
@@ -393,13 +388,7 @@ v_internal_spec_fun_derive_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: 
     //-------------------------------------------------------------
     v_ast_make_expr_identifier(expr+0, "LLVMAdd");
 
-    v_ast_make_expr_identifier_q(expr+1, q_idx);
-
-    v_make_list(expr_list+0, expr+1, 1);
-
-    v_ast_make_expr_identifier_q(expr+1, q_load);
-
-    v_ast_make_expr_call(expr+1, expr+1, expr_list+0);
+    v_ast_make_expr_identifier_q(expr+1, q_idx_v);
 
     v_ast_make_expr_integer(expr+2, 1);
 
@@ -463,49 +452,67 @@ v_internal_spec_fun_derive_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: 
 
 
 //=====================================================================
-struct smart_ptr_int
+struct unique_ptr_int
 {
     ptr: *int;
 };
 
 alwaysinline
-(v_initialize(_)): (sp: *smart_ptr_int, N: int) -> void
+(v_initialize(_)): (sp: *unique_ptr_int, N: int) -> void
 {
     for (i: &int := 0; i < N; ++i)  sp[i].ptr := 0;
 }
 
 alwaysinline
-(v_terminate(_)): (sp: *smart_ptr_int, N: int) -> void
+(v_terminate(_)): (sp: *unique_ptr_int, N: int) -> void
 {
     for (i: &int := 0; i < N; ++i)  v_free(sp[i].ptr);
 }
 
 alwaysinline
-(*_): (sp: &smart_ptr_int) -> &int
+(v_move(_)): (dst: *unique_ptr_int, src: *unique_ptr_int, N: int) -> void
+{
+    for (i: &int := 0; i < N; ++i)
+    {
+        v_free(dst[i].ptr);
+
+        dst[i].ptr := src[i].ptr;
+
+        src[i].ptr := 0;
+    }
+}
+
+alwaysinline
+(*_): (sp: &unique_ptr_int) -> &int
 {
     v_return(*sp.ptr);
 }
 
+alwaysinline
+(_:=_): (dst: &unique_ptr_int, src: &unique_ptr_int) -> &unique_ptr_int
+{
+    v_move(&dst, &src);
 
-
-
+    v_return(dst);
+}
 
 //---------------------------------------------------------------------
-print: (a: &smart_ptr_int) -> void
+print: (a: &unique_ptr_int) -> void
 {
-    printf("%d\n", *a);
+    if (a.ptr)  printf("%d\n", *a);
+    else        printf("(nil)\n");
 }
 
 N: &int := 7;
 
 
 //---------------------------------------------------------------------
-//{   v_debug_print_module(2);
-//
-//    voidc_verify_jit_module_optimized(true);
-//}
+{   v_debug_print_module(2);
 
-{   a: &smart_ptr_int := v_undef();
+    voidc_verify_jit_module_optimized(true);
+}
+
+{   a: &unique_ptr_int := v_undef();
     v_initialize(&a);
     defer v_terminate(&a);
 
@@ -515,9 +522,9 @@ N: &int := 7;
 
     printf("a: ");  print(a);
 
-    N *= 13;
+    N *= 2;
 
-    b = v_alloca(smart_ptr_int, N);
+    b = v_alloca(unique_ptr_int, N);
     v_initialize(b, N);
     defer v_terminate(b, N);
 
@@ -528,6 +535,11 @@ N: &int := 7;
         *b[i] := 111 + i;
     }
 
+    for (i: &int := 0; i < N; i += 2)
+    {
+        b[i] := b[i+1];
+    }
+
     for (i: &int := 0; i < N; ++i)
     {
         printf("b[%d]: ", i);   print(b[i]);
@@ -536,20 +548,21 @@ N: &int := 7;
 
 
 //---------------------------------------------------------------------
-{   v_debug_print_module(2);
-
-    voidc_verify_jit_module_optimized(true);
-}
+//{   v_debug_print_module(2);
+//
+//    voidc_verify_jit_module_optimized(true);
+//}
 
 struct qwe_t
 {
-    q: v_ast_base_t[3][7][2];
-    p: v_ast_expr_t[5][4][3];
+    p: v_ast_base_t[3][7][2];
+    q: int[3];
+    r: v_ast_expr_t[5][4][3];
 };
 
 (v_initialize(_)): (*qwe_t, int) -> void = derive;
 (v_terminate(_)):  (*qwe_t, int) -> void = derive;
 
-(v_copy(_)): (*qwe_t, *qwe_t, int) -> void = derive;
+(v_copy(_)): (*qwe_t, *const qwe_t, int) -> void = derive;
 
 
