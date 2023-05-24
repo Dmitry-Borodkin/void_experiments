@@ -30,7 +30,11 @@ my_compute_key_quark_type_ctx: &my_compute_key_quark_type_ctx_t := v_undef();
 
 
 //---------------------------------------------------------------------
-my_quarks_item_t = v_struct({ *const char, *v_quark_t });
+struct my_quarks_item_t
+{
+    name:  *const char;
+    quark: *v_quark_t;
+};
 
 my_quarks: &my_quarks_item_t[] :=
 {
@@ -60,7 +64,7 @@ my_quarks_compare: (void_lhs: *const void, void_rhs: *const void) -> int
     lhs = *(void_lhs: *my_quarks_item_t);
     rhs = *(void_rhs: *my_quarks_item_t);
 
-    v_return((*lhs[1]: int) - (*rhs[1]: int));
+    v_return((*lhs.quark: int) - (*rhs.quark: int));
 }
 
 //---------------------------------------------------------------------
@@ -79,7 +83,7 @@ bsearch: (key: *const void, ptr: *const void, count: size_t, size: size_t, comp:
 
     for (i: &int := 0; i < l; ++i)
     {
-        my_quarks[i][1] := v_quark_ptr_from_string(my_quarks[i][0]);
+        my_quarks[i].quark := v_quark_ptr_from_string(my_quarks[i].name);
     }
 
     qsort(my_quarks, l, my_quarks_item_t.size, my_quarks_compare);
@@ -507,10 +511,10 @@ N: &int := 7;
 
 
 //---------------------------------------------------------------------
-{   v_debug_print_module(2);
-
-    voidc_verify_jit_module_optimized(true);
-}
+//{   v_debug_print_module(2);
+//
+//    voidc_verify_jit_module_optimized(true);
+//}
 
 {   a: &unique_ptr_int := v_undef();
     v_initialize(&a);
@@ -548,10 +552,10 @@ N: &int := 7;
 
 
 //---------------------------------------------------------------------
-//{   v_debug_print_module(2);
-//
-//    voidc_verify_jit_module_optimized(true);
-//}
+{   v_debug_print_module(4);
+
+    voidc_verify_jit_module_optimized(true);
+}
 
 struct qwe_t
 {
@@ -564,5 +568,33 @@ struct qwe_t
 (v_terminate(_)):  (*qwe_t, int) -> void = derive;
 
 (v_copy(_)): (*qwe_t, *const qwe_t, int) -> void = derive;
+
+
+//---------------------------------------------------------------------
+struct asd_t
+{
+    a: struct { z: int; x: qwe_t; };
+
+    b: qwe_t;
+};
+
+zxc_t = struct { z: int; x: qwe_t; };
+
+(v_initialize(_)): (*zxc_t, int) -> void = derive;
+
+(v_initialize(_)): (*asd_t, int) -> void = derive;
+
+
+//---------------------------------------------------------------------
+{   a: &asd_t := 0;
+
+    a.a.x.q[1] := N;
+
+    printf("a.a.x.q[1]: %d\n", v_load(&a).a.x.q[1]);
+}
+
+
+
+
 
 
