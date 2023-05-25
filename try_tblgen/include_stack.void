@@ -12,26 +12,13 @@
 //---------------------------------------------------------------------
 //- include_stack_node_t ...
 //---------------------------------------------------------------------
+private
+struct include_stack_node_t
 {
-    include_stack_node_t = v_struct_type_named("struct.include_stack_node_t");
-
-    include_stack_node_ptr = v_pointer_type(include_stack_node_t, 0);
-
-    typ = v_alloca(v_type_ptr, 3);
-
-    typ[0] := v_pointer_type(FILE, 0);      //- File opened
-    typ[1] := int;                          //- ifdef counter
-    typ[2] := include_stack_node_ptr;       //- Next node ...
-
-    v_type_struct_set_body(include_stack_node_t, typ, 3, 0);
-
-    //-----------------------------------------------------------------
-    v_add_type("include_stack_node_t", include_stack_node_t);
-
-    //-----------------------------------------------------------------
-    LLVMDisposeMemoryBuffer(voidc_get_unit_buffer());
-    voidc_set_unit_buffer(0);
-}
+    file:  *FILE;                           //- File opened
+    count: int;                             //- ifdef counter
+    next:  *include_stack_node_t;           //- Next node ...
+};
 
 //---------------------------------------------------------------------
 private
@@ -45,9 +32,9 @@ include_stack_push: (f: *FILE) -> void
 {
     node = *v_malloc(include_stack_node_t);
 
-    node[0] := f;
-    node[1] := 0;
-    node[2] := include_stack;
+    node.file  := f;
+    node.count := 0;
+    node.next  := include_stack;
 
     include_stack := &node;
 }
@@ -57,7 +44,7 @@ include_stack_pop: () -> void
 {
     node = *include_stack;
 
-    include_stack := node[2];
+    include_stack := node.next;
 
     v_free(&node);
 }
@@ -67,7 +54,7 @@ include_stack_peek: () -> *FILE
 {
     node = *include_stack;
 
-    v_return(node[0]);
+    v_return(node.file);
 }
 
 //---------------------------------------------------------------------
@@ -75,7 +62,7 @@ include_stack_peek_ifdef_counter: () -> &int
 {
     node = *include_stack;
 
-    v_return(node[1]);
+    v_return(node.count);
 }
 
 //---------------------------------------------------------------------

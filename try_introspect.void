@@ -98,8 +98,9 @@ buffer: &*char := 0;
     {   p = v_popen("bash", "w");
         defer v_pclose(p);
 
-//      fprintf(p, "clang -x c++ -O3 -DNDEBUG -c -fPIC");
         fprintf(p, "clang -x c++ -c -fPIC");
+
+        if (v_find_constant("NDEBUG", 0, 0))  fprintf(p, " -O3 -DNDEBUG");
 
         fprintf(p, " $(llvm-config --cxxflags) -std=c++17");
 

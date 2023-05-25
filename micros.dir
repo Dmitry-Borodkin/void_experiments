@@ -1,7 +1,7 @@
                          ****  ?  ****                         │*
                                                                │
                                                                │
-try_intrinsics.void                                            │try_intrinsics.void
+try_intrinsics.void     ... deriving ...                       │try_intrinsics.void
                                                                │
 try_ctors.void                                                 │try_ctors.void
                                                                │
@@ -115,7 +115,7 @@ gtk_clock.void                                                 │gtk_clock.void
 try_tsearch.void                                               │try_tsearch.void
                                                                │
 ───────────────────────────────────────────────────────────────│
-try_tblgen/                                                    │try_tblgen/micros.dir
+try_tblgen/         ... preprocessing ...                      │try_tblgen/micros.dir
                                                                │
 ───────────────────────────────────────────────────────────────│
 try_shebang.void                                               │try_shebang.void

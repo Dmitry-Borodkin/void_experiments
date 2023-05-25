@@ -9,7 +9,7 @@
 
 //---------------------------------------------------------------------
 {
-    ctx = v_alloca(v_peg_opaque_context_sptr, 2);
+    ctx = v_alloca(v_peg_context_t, 2);
     v_initialize(ctx, 2);
     defer v_terminate(ctx, 2);
 
@@ -25,7 +25,7 @@
     v_peg_set_context(my_ctx);
 
     //-----------------------------------------------------------------
-    grm = v_alloca(v_peg_opaque_grammar_sptr);
+    grm = v_alloca(v_peg_grammar_t);
     v_initialize(grm);
     defer v_terminate(grm);
 
@@ -52,7 +52,7 @@
 
     include_stack_push(f);
 
-    res = v_alloca(v_util_opaque_std_any);
+    res = v_alloca(v_std_any_t);
     v_initialize(res);
     defer v_terminate(res);
 
@@ -67,7 +67,7 @@
             exit(-1);
         }
 
-        sstr = v_std_any_get_pointer(v_util_opaque_std_string, res);
+        sstr = v_std_any_get_pointer(v_std_string_t, res);
 
         if (!sstr)  v_break();
 

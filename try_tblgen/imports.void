@@ -1,84 +1,34 @@
-{
-    v_export_import("llvm-c/Core.void");
-
-    v_export_import("level-00");
+{   v_export_import("level-00");
     v_export_import("level-01");
+    v_export_import("level-02");
+
+    v_export_import("llvm-c/Core.void");
 }
 
 {   v_export_import("printf.void");
 }
 
 //---------------------------------------------------------------------
-{   voidc_enable_definitions();
+{   v_enable_level_01();
+    v_enable_level_02();
 }
 
 {   v_set_export_flag(true); }
 
 
 //=====================================================================
-{   module = LLVMModuleCreateWithName("imports_module_N1");
-
-    v_set_module(module);
-
-    //-----------------------------------------------------------------
-    LLVMDisposeMemoryBuffer(voidc_get_unit_buffer());
-    voidc_set_unit_buffer(0);
-}
-
-//---------------------------------------------------------------------
-voidc_unit_begin_module: (name: *const char) -> LLVMModuleRef
-{
-    module = LLVMModuleCreateWithName(name);
-
-    v_set_module(module);
-
-    LLVMDisposeMemoryBuffer(voidc_get_unit_buffer());
-    voidc_set_unit_buffer(0);
-
-    v_return(module);
-}
-
-//---------------------------------------------------------------------
-voidc_unit_end_module: () -> void
-{
-    module = v_get_module();
-
-    voidc_unit_load_module_to_jit(module);
-
-    LLVMDisposeModule(module);
-    v_set_module(0);
-}
-
-
-//---------------------------------------------------------------------
-{
-    module = v_get_module();
-
-    //-----------------------------------------------------------------
-//  v_debug_print_module(1);
-
-    voidc_unit_load_module_to_jit(module);
-
-    LLVMDisposeModule(module);
-    v_set_module(0);
-}
-
-
-//=====================================================================
-{   voidc_unit_begin_module("imports_module_N2"); }
+{   voidc_unit_begin_module("imports_module"); }
 
 //---------------------------------------------------------------------
 enable_imports: () -> void
 {
     v_enable_level_01();
+    v_enable_level_02();
 }
 
 
 //---------------------------------------------------------------------
-{   FILE = v_struct_type_named("FILE");
-
-    v_export_type("FILE", FILE);
-}
+struct FILE;
 
 v_fopen: (filename: *const char, mode: *const char) -> *FILE;       //- Sic!
 
