@@ -2,6 +2,8 @@
     v_import("level-01");
     v_import("level-02");
 
+    v_import("llvm-c/Core.void");
+
     v_import("printf.void");
 }
 
@@ -56,6 +58,55 @@
         printf("%5d: %s\n", q, v_quark_to_string(q));
     }
 }
+
+
+//---------------------------------------------------------------------
+v_source_filename_intrinsic: (vis: *voidc_visitor_t, *void, *v_ast_base_t) -> void
+{
+    len: &size_t := 0;
+
+    module = v_get_module();
+
+    str = LLVMGetSourceFileName(module, &len);
+
+    llvm_ctx = v_target_get_llvm_ctx();
+
+    val = LLVMConstStringInContext(llvm_ctx, str, (len: unsigned), 0);
+
+    typ = v_array_type(char, len+1);
+
+    v_adopt_result(typ, val);
+}
+
+
+//---------------------------------------------------------------------
+{
+    v_add_intrinsic("v_source_filename", v_source_filename_intrinsic, 0);
+
+}
+
+
+//---------------------------------------------------------------------
+strdup: (*const char) -> *char;
+
+dirname: (*char) -> *char;
+
+free: (*void) -> void;
+
+//---------------------------------------------------------------------
+{ v_debug_print_module(1); }
+{
+    str = v_source_filename();
+
+    printf("\n%s\n", str);
+
+    buf = strdup(str);
+
+    printf("\n%s\n", dirname(buf));
+
+    free(buf);
+}
+
 
 
 

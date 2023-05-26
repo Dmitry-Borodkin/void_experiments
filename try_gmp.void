@@ -60,42 +60,56 @@ fscanf: (stream: *FILE, format: *const char, ...) -> int;
 }
 
 //---------------------------------------------------------------------
-struct grammar_action_hook_t
+struct compile_stmt_hook_t
 {
-    fun: *((*v_std_any_t, *void, *v_std_any_t, size_t) -> void);
+    fun: *((vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void);
     aux: *void;
 };
 
 //---------------------------------------------------------------------
-mk_stmt_object_hook_grammar_action: (ret: v_std_any_ptr, void_aux: *void, any: v_std_any_ptr, sz: size_t) -> void
+my_compile_stmt: (vis: *voidc_visitor_t, void_aux: *void, self: *v_ast_base_t) -> void
 {
-    if (v_std_any_get_pointer(v_std_string_t, any+0))
+    block
     {
-        p = v_std_any_get_pointer(v_ast_expr_t, any+1);
+        expr = v_ast_stmt_get_expr((self: *v_ast_stmt_t));
+        if (v_empty(expr))  v_break();
 
-        v_ast_set_property((p: *v_ast_base_t), root_q, any+0);      //- name...
+        name = v_ast_stmt_get_name((self: *v_ast_stmt_t));
+
+        any = v_alloca(v_std_any_t);
+        v_initialize(any);
+        defer v_terminate(any);
+
+        any: &*v_std_any_t := any;      //- Sic!
+
+        if (name  &&  name[0])
+        {
+            v_std_any_set_value(any, true);         //- Sic!
+        }
+        else
+        {
+            any := 0;
+        }
+
+        v_ast_set_property((expr: *v_ast_base_t), root_q, any);
     }
 
-    aux = *(void_aux: *grammar_action_hook_t);
+    aux = *(void_aux: *compile_stmt_hook_t);
 
-    aux.fun(ret, aux.aux, any, sz);
+    aux.fun(vis, aux.aux, self);
 }
 
 //---------------------------------------------------------------------
-my_stmt_hook: &grammar_action_hook_t := v_undef();
+my_stmt_hook: &compile_stmt_hook_t := v_undef();
 
 //---------------------------------------------------------------------
-{   gr0 = v_alloca(v_peg_grammar_t);
-    v_initialize(gr0);
-    defer v_terminate(gr0);
+{   vis = voidc_compiler;
 
-    v_peg_get_grammar(gr0);
+    stmt_q = v_quark_from_string("stmt");
 
-    my_stmt_hook.fun := v_peg_grammar_get_action(gr0, "mk_stmt", &my_stmt_hook.aux);
+    my_stmt_hook.fun := voidc_visitor_get_void_method(vis, stmt_q, &my_stmt_hook.aux);
 
-    v_peg_grammar_set_action(gr0, gr0, "mk_stmt", mk_stmt_object_hook_grammar_action, &my_stmt_hook);
-
-    v_peg_set_grammar(gr0);
+    voidc_visitor_set_void_method(vis, vis, stmt_q, my_compile_stmt, &my_stmt_hook);
 }
 
 
@@ -614,7 +628,7 @@ __gmp_printf: (*const char, ...) -> int;
 
 
 //=====================================================================
-{   v_debug_print_module(2);
+{   v_debug_print_module(4);
 
     voidc_verify_jit_module_optimized(true);
 }
