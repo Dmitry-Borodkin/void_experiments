@@ -87,11 +87,7 @@ v_source_filename_intrinsic: (vis: *voidc_visitor_t, *void, *v_ast_base_t) -> vo
 
 
 //---------------------------------------------------------------------
-strdup: (*const char) -> *char;
-
-dirname: (*char) -> *char;
-
-free: (*void) -> void;
+strrchr: (*const char, int) -> *char;
 
 //---------------------------------------------------------------------
 { v_debug_print_module(1); }
@@ -100,11 +96,17 @@ free: (*void) -> void;
 
     printf("\n%s\n", str);
 
-    buf = strdup(str);
+    sstr = v_alloca(v_std_string_t);
+    v_initialize(sstr);
+    defer v_terminate(sstr);
 
-    printf("\n%s\n", dirname(buf));
+    v_std_string_set(sstr, str);
 
-    free(buf);
+    buf = v_std_string_get(sstr);
+
+    *strrchr(buf, '/') := 0;
+
+    printf("\n%s\n", buf);
 }
 
 
