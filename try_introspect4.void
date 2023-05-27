@@ -1,0 +1,156 @@
+{   v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+
+    v_import("llvm-c/Core.void");
+
+    v_import("cairo.void");
+}
+
+{   v_import("printf.void");
+}
+
+{   v_enable_level_01();
+    v_enable_level_02();
+}
+
+
+//====================================================================-
+FILE = v_struct("FILE");
+
+v_popen: (command: *const char, prop: *const char) -> *FILE;
+
+v_pclose: (*FILE) -> int;
+
+fprintf: (stream: *FILE, format: *const char, ...) -> int;
+
+fscanf: (stream: *FILE, format: *const char, ...) -> int;
+
+fputs: (buf: *char, stream: *FILE) -> int;
+
+sprintf: (str: *char, format: *const char, ...) -> int;
+
+system: (cmd: *const char) -> int;
+
+
+//---------------------------------------------------------------------
+my_source: &char[] :=
+"""
+#include <list>
+#include <filesystem>
+
+extern "C"
+{
+
+typedef std::list<std::filesystem::path> import_paths_t;
+
+typedef void (*import_path_ft)(void *aux, const char *path);
+
+void
+import_paths_iter(void *void_list, import_path_ft fun, void *aux)
+{
+    auto &list = *reinterpret_cast<import_paths_t *>(void_list);
+
+    for (auto &it: list)
+    {
+        auto str = it.generic_u8string();
+
+        fun(aux, str.c_str());
+    }
+}
+
+
+}
+
+""";
+
+
+//---------------------------------------------------------------------
+buffer: &*char := 0;
+
+{   buflen = 1024;
+
+    buffer := v_malloc(char, buflen);
+
+    {   p = v_popen("mktemp", "r");
+        defer v_pclose(p);
+
+        fscanf(p, "%500s", buffer);
+    }
+
+    if (v_find_constant("_WIN32", 0, 0))
+    {
+        cmd = buffer + 512;
+
+        sprintf(cmd, "cygpath -m %s", buffer);
+
+        p = v_popen(cmd, "r");
+        defer v_pclose(p);
+
+        fscanf(p, "%1000s", buffer);
+    }
+
+    //-----------------------------------------------------------------
+    {   p = v_popen("bash", "w");
+        defer v_pclose(p);
+
+        fprintf(p, "clang -x c++ -c -fPIC");
+
+        if (v_find_constant("NDEBUG", 0, 0))  fprintf(p, " -O3 -DNDEBUG");
+
+//      fprintf(p, " -emit-llvm");
+
+        fprintf(p, " $(llvm-config --cxxflags) -std=c++17");
+
+        if (v_find_constant("_WIN32", 0, 0))
+        {
+            fprintf(p, " -IC:/Tools/include -frtti -fcxx-exceptions");
+        }
+
+        fprintf(p, " -o %s", buffer);
+
+        fprintf(p, " - <<HEREDOC\n%s\nHEREDOC\n", my_source);
+    }
+
+    //-----------------------------------------------------------------
+    mb: &LLVMMemoryBufferRef := 0;
+    defer LLVMDisposeMemoryBuffer(mb);
+
+    LLVMCreateMemoryBufferWithContentsOfFile(buffer, &mb, 0);
+
+    voidc_add_local_object_file_to_jit(mb);
+}
+
+
+//---------------------------------------------------------------------
+{   p = v_popen("bash", "w");
+    defer v_pclose(p);
+
+    fprintf(p, "rm %s\n", buffer);
+
+    v_free(buffer);
+}
+
+
+//====================================================================-
+import_path_ft = (*void, *const char) -> void;
+
+import_paths_iter: (*void, *import_path_ft, *void) -> void;
+
+
+//---------------------------------------------------------------------
+import_path_fun: (*void, path: *const char) -> void
+{
+    printf("%s\n", path);
+}
+
+
+//=====================================================================
+{
+    voidc_import_paths: *void;
+
+    import_paths_iter(voidc_import_paths, import_path_fun, 0);
+}
+
+
+

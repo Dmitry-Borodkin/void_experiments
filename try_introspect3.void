@@ -33,6 +33,23 @@ sprintf: (str: *char, format: *const char, ...) -> int;
 system: (cmd: *const char) -> int;
 
 
+//---------------------------------------------------------------------
+v_find_file_for_import: (*v_std_string_t, *const char, *const char) -> void;
+
+voidc_include_path: &v_std_string_t := v_undef();
+
+{   v_initialize(&voidc_include_path);
+
+    v_find_file_for_import(&voidc_include_path, "", "level-00");
+
+    strrchr: (*const char, int) -> *char;
+
+    *strrchr(v_std_string_get(&voidc_include_path), '/') := 0;
+
+//  printf("voidc_include_path: %s\n", v_std_string_get(&voidc_include_path));
+}
+
+
 //{ v_debug_print_module(99); }
 //---------------------------------------------------------------------
 my_source: &char[] :=
@@ -100,7 +117,7 @@ buffer: &*char := 0;
 
         fprintf(p, " $(llvm-config --cxxflags) -std=c++17");
 
-        fprintf(p, " -I../voidc/level-00");
+        fprintf(p, " -I%s", v_std_string_get(&voidc_include_path));
 
         if (v_find_constant("_WIN32", 0, 0))
         {
@@ -128,6 +145,8 @@ buffer: &*char := 0;
     fprintf(p, "rm %s\n", buffer);
 
     v_free(buffer);
+
+    v_terminate(&voidc_include_path);
 }
 
 

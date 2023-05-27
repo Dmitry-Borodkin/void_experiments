@@ -108,6 +108,16 @@ free: (*void) -> void;
 }
 
 
+//---------------------------------------------------------------------
+{   path = v_alloca(v_std_string_t);
+    v_initialize(path);
+    defer v_terminate(path);
 
+    v_find_file_for_import: (*v_std_string_t, *const char, *const char) -> void;
+
+    v_find_file_for_import(path, "", "level-00");
+
+    printf("\n%s\n", v_std_string_get(path));
+}
 
 
