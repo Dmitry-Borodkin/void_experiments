@@ -1,0 +1,26 @@
+{   v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+
+    v_import("printf.void");
+}
+
+{   v_enable_level_01();
+    v_enable_level_02();
+}
+
+
+//=====================================================================
+void
+v_assert_intrinsic: (vis: voidc_visitor_ptr, *void,
+                     self: v_ast_base_ptr) -> void
+{
+    //- TH;DW ...
+
+
+}
+
+
+
+
+//---------------------------------------------------------------------

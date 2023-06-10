@@ -1,0 +1,344 @@
+{   v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+    v_import("level-03");
+
+    v_import("llvm-c/Core.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_level_01();
+    v_enable_level_02();
+    v_enable_level_03();
+}
+
+
+//=====================================================================
+v_internal_fake_initialization_intrinsic: (*voidc_visitor_t, *void, *v_ast_base_t,
+                                           *v_type_t, LLVMValueRef) -> void
+{
+    printf("voidc_fake_initialization: ...\n");
+
+    exit: (int) -> void;
+
+    exit(-1);       //- Sic!
+}
+
+{   q_ref = v_reference_type(v_quark_t, 0);
+
+    q = v_quark_ptr_from_string;
+
+    q_internal_fake_initialization = q("v.internal.fake_initialization");
+
+    v_add_symbol("q_internal_fake_initialization", q_ref, q_internal_fake_initialization);
+
+    v_add_intrinsic_q(*q_internal_fake_initialization, v_internal_fake_initialization_intrinsic, 0);
+
+    v_add_symbol("root_q", q_ref, q("v.internal.root"));
+}
+
+
+//---------------------------------------------------------------------
+v_type_is_initializable: (t: *v_type_t) -> bool;
+
+//---------------------------------------------------------------------
+v_type_check_initializable: (t: *v_type_t) -> void
+{
+    switch(v_type_get_kind(t))
+    {
+    case v_type_kind_array:
+    case v_type_kind_struct:
+        v_break();
+
+    default:
+        v_return();
+    }
+
+    q = v_quark_from_string("v.initializable.checked");
+
+    if (v_type_get_property(t, q))  v_return();
+
+    block
+    {
+        if (v_type_is_array(t))
+        {
+            v_type_check_initializable(v_type_array_get_element_type(t));
+            v_break();
+        }
+
+        if (v_type_is_struct(t))
+        {
+            q_initialize = v_quark_from_string("v_initialize");
+
+            if (v_type_get_property(t, q_initialize))   v_break();
+
+            flag: &bool := false;
+
+            count = v_type_struct_get_element_count(t);
+            types = v_type_struct_get_element_types(t);
+
+            for (i: &int := 0; i < count; ++i)
+            {
+                flag |= v_type_is_initializable(types[i]);
+            }
+
+            if (flag)
+            {
+                v_util_function_dict_set(t, q_initialize, q_internal_fake_initialization);
+            }
+
+            v_break();
+        }
+
+        //- ?!? ...
+    }
+
+    any = v_alloca(v_std_any_t);
+    v_initialize(any);
+    defer v_terminate(any);
+
+    v_std_any_set_value(any, true);
+
+    v_type_set_property(t, q, any);
+}
+
+
+//---------------------------------------------------------------------
+v_type_is_initializable: (t: *v_type_t) -> bool
+{
+    switch(v_type_get_kind(t))
+    {
+    case v_type_kind_array:
+        v_return(v_type_is_initializable(v_type_array_get_element_type(t)));
+
+    case v_type_kind_struct:
+        v_break();
+
+    default:
+        v_return(false);        //- Sic!!!
+    }
+
+    v_type_check_initializable(t);
+
+    q = v_quark_from_string("v_initialize");
+
+    v_return(v_type_get_property(t, q) != 0);
+}
+
+
+//=====================================================================
+struct compile_stmt_hook_t
+{
+    fun: *((*voidc_visitor_t, *void, *v_ast_base_t) -> void);
+    aux: *void;
+};
+
+//---------------------------------------------------------------------
+my_compile_stmt: (vis: *voidc_visitor_t, void_aux: *void, self: *v_ast_base_t) -> void
+{
+    block
+    {
+        expr = v_ast_stmt_get_expr((self: *v_ast_stmt_t));
+        if (v_empty(expr))  v_break();
+
+        name = v_ast_stmt_get_name((self: *v_ast_stmt_t));
+
+        any = v_alloca(v_std_any_t);
+        v_initialize(any);
+        defer v_terminate(any);
+
+        any: &*v_std_any_t := any;      //- Sic!
+
+        if (name  &&  name[0])
+        {
+            v_std_any_set_value(any, true);         //- Sic!
+        }
+        else
+        {
+            any := 0;
+        }
+
+        v_ast_set_property((expr: *v_ast_base_t), root_q, any);
+    }
+
+    aux = *(void_aux: *compile_stmt_hook_t);
+
+    aux.fun(vis, aux.aux, self);
+}
+
+//---------------------------------------------------------------------
+my_stmt_hook: &compile_stmt_hook_t := v_undef();
+
+//---------------------------------------------------------------------
+{   vis = voidc_compiler;
+
+    stmt_q = v_quark_from_string("stmt");
+
+    my_stmt_hook.fun := voidc_visitor_get_void_method(vis, stmt_q, &my_stmt_hook.aux);
+
+    voidc_visitor_set_void_method(vis, vis, stmt_q, my_compile_stmt, &my_stmt_hook);
+}
+
+
+//=====================================================================
+v_type_function_obtain_llvm_type_hook: (*void, ft: *v_type_t) -> LLVMTypeRef
+{
+    par_count = v_type_function_get_param_count(ft);
+    par_types = v_type_function_get_param_types(ft);
+
+    n: &unsigned := par_count;
+
+    rt = v_type_function_get_return_type(ft);
+
+    rt_initializable = v_type_is_initializable(rt);
+
+    if (rt_initializable) ++n;
+
+    par = v_malloc(LLVMTypeRef, n);
+    defer v_free(par);
+
+    llvm_ctx = v_target_get_llvm_ctx();
+
+    llvm_ptr = LLVMPointerTypeInContext(llvm_ctx, 0);
+
+    ppar: &*LLVMTypeRef := par;
+
+    if (rt_initializable)
+    {
+        par[0] := llvm_ptr;
+
+        ++ppar;
+    }
+
+    for(i: &unsigned := 0; i < par_count; ++i, ++ppar)
+    {
+        pt = par_types[i];
+
+        if (v_type_is_initializable(pt))  *ppar := llvm_ptr;
+        else                              *ppar := v_type_get_llvm_type(pt);
+    }
+
+    ret: &LLVMTypeRef := v_undef();
+
+    if (rt_initializable)   ret := LLVMVoidTypeInContext(llvm_ctx);
+    else                    ret := v_type_get_llvm_type(rt);
+
+    var_arg = v_type_function_is_var_arg(ft);
+
+    v_return(LLVMFunctionType(ret, par, n, var_arg));
+}
+
+//---------------------------------------------------------------------
+//- voidc_llvm_build_call_helper ...
+//---------------------------------------------------------------------
+my_llvm_build_call_helper_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t,
+                                      ft: v_type_ptr, fv: LLVMValueRef,
+                                      arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                                     ) -> void
+{
+
+
+    //- ????????????????????????
+
+
+    par_count = v_type_function_get_param_count(ft);
+    par_types = v_type_function_get_param_types(ft);
+
+    values = v_malloc(LLVMValueRef, arg_count);
+    defer v_free(values);
+
+    tt = v_get_result_type();
+
+    for (i: &unsigned := 0; i < arg_count; ++i)
+    {
+        if (i < par_count)  v_set_result_type(par_types[i]);
+        else                v_set_result_type(UNREFERENCE_TAG);
+
+        v_ast_accept_visitor((arg_ptrs[i]: v_ast_base_ptr), vis);
+
+        values[i] := v_get_result_value();
+    }
+
+    builder = v_target_get_builder();
+
+    ft_ = v_type_get_llvm_type(ft);
+
+    vr = LLVMBuildCall2(builder, ft_, fv, values, arg_count, "");
+
+    tr = v_type_function_get_return_type(ft);
+
+    v_set_result_type(tt);
+
+    v_adopt_result(tr, vr);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------
+T = struct { v_std_any_t; };
+
+{
+    f = v_type_is_initializable(T);
+
+    printf("f: %d\n", f);
+}
+
+(v_initialize(_)): (*T, size_t) -> void = derive;
+(v_terminate(_)):  (*T, size_t) -> void = derive;
+
+{
+    u = v_alloca(T);
+    v_initialize(u);
+    defer v_terminate(u);
+
+
+}
+
+
+
+
