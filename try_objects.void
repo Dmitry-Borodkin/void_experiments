@@ -234,15 +234,16 @@ v_type_function_obtain_llvm_type_hook: (*void, ft: *v_type_t) -> LLVMTypeRef
 //---------------------------------------------------------------------
 //- voidc_llvm_build_call_helper ...
 //---------------------------------------------------------------------
+struct my_temporary_cleaner_ctx_t
+{
+    typ: *v_type_t;
+    val: LLVMValueRef;
+    vis: *voidc_visitor_t;
+};
+
 my_temporary_cleaner: (void_ctx: *void) -> void
 {
-    ctx_t = struct {*v_type_t; LLVMValueRef; *voidc_visitor_t;};
-
-    ctx = *(void_ctx: *ctx_t);
-
-    typ = ctx[0];
-    val = ctx[1];
-    vis = ctx[2];
+    ctx = *(void_ctx: *my_temporary_cleaner_ctx_t);
 
     q = v_quark_from_string;
 
@@ -250,7 +251,7 @@ my_temporary_cleaner: (void_ctx: *void) -> void
     v_initialize(expr);
     defer v_terminate(expr);
 
-    v_ast_make_expr_compiled(expr, v_pointer_type(typ, 0), val);
+    v_ast_make_expr_compiled(expr, v_pointer_type(ctx.typ, 0), ctx.val);
 
     stmt = v_alloca(v_ast_stmt_t);
     v_initialize(stmt);
@@ -258,7 +259,7 @@ my_temporary_cleaner: (void_ctx: *void) -> void
 
     v_ast_make_stmt_call(stmt, 0, q("v_terminate"), expr, 1);
 
-    v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
+    v_ast_accept_visitor((stmt: *v_ast_base_t), ctx.vis);
 
     v_free(&ctx);
 }
@@ -345,11 +346,7 @@ my_llvm_build_call_helper_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *
 
                 v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
 
-                ctx = *v_malloc(struct {*v_type_t; LLVMValueRef; *voidc_visitor_t;});
-
-                ctx[0] := tr;
-                ctx[1] := vr;
-                ctx[2] := vis;
+                ctx = *v_malloc(my_temporary_cleaner_ctx_t) := {tr, vr, vis};
 
                 v_add_temporary_cleaner(my_temporary_cleaner, &ctx);
             }
