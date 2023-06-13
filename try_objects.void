@@ -15,35 +15,58 @@
 
 
 //=====================================================================
-v_internal_fake_initialization_intrinsic: (*voidc_visitor_t, *void, *v_ast_base_t,
-                                           *v_type_t, LLVMValueRef) -> void
+v_internal_fake_utility_intrinsic: (*voidc_visitor_t, aux: *void, *v_ast_base_t,
+                                    *v_type_t, LLVMValueRef) -> void
 {
-    printf("voidc_fake_initialization: ...\n");
+    q = v_quark_to_string((aux: v_quark_t));
+
+    printf("v_internal_fake_utility_intrinsic: %s\n", q);
 
     exit: (int) -> void;
 
     exit(-1);       //- Sic!
 }
 
-{   q_ref = v_reference_type(v_quark_t, 0);
+{   sstr = v_alloca(v_std_string_t);
+    v_initialize(sstr);
+    defer v_terminate(sstr);
+
+    qnames: &(*const char)[] :=
+    {
+        "v_initialize",
+        "v_terminate",
+        "v_copy",
+        0
+    };
+
+    for (name: &**const char := &qnames[0]; *name; ++name)
+    {
+        v_std_string_set(sstr, "v.internal.fake_utility.");
+
+        v_std_string_append(sstr, *name);
+
+        q_fake = v_quark_from_string(v_std_string_get(sstr));
+        q_name = v_quark_from_string(*name);
+
+        v_add_intrinsic_q(q_fake, v_internal_fake_utility_intrinsic, (q_name: *void));
+    }
+
+    //-----------------------------------------------------------------
+    q_ref = v_reference_type(v_quark_t, 0);
 
     q = v_quark_ptr_from_string;
 
-    q_internal_fake_initialization = q("v.internal.fake_initialization");
-
-    v_add_symbol("q_internal_fake_initialization", q_ref, q_internal_fake_initialization);
-
-    v_add_intrinsic_q(*q_internal_fake_initialization, v_internal_fake_initialization_intrinsic, 0);
-
-    v_add_symbol("root_q", q_ref, q("v.internal.root"));
+    v_add_symbol("q_initialize", q_ref, q("v_initialize"));
+    v_add_symbol("q_terminate",  q_ref, q("v_terminate"));
+    v_add_symbol("q_copy",       q_ref, q("v_copy"));
 }
 
 
 //---------------------------------------------------------------------
-v_type_is_initializable: (t: *v_type_t) -> bool;
+v_type_is_special: (t: *v_type_t, q: v_quark_t) -> bool;
 
 //---------------------------------------------------------------------
-v_type_check_initializable: (t: *v_type_t) -> void
+v_type_check_special: (t: *v_type_t, q: v_quark_t) -> void
 {
     switch(v_type_get_kind(t))
     {
@@ -55,23 +78,29 @@ v_type_check_initializable: (t: *v_type_t) -> void
         v_return();
     }
 
-    q = v_quark_from_string("v.initializable.checked");
+    sstr = v_alloca(v_std_string_t);
+    v_initialize(sstr);
+    defer v_terminate(sstr);
 
-    if (v_type_get_property(t, q))  v_return();
+    v_std_string_set(sstr, v_quark_to_string(q));
+
+    v_std_string_append(sstr, ".checked");
+
+    q_checked = v_quark_from_string(v_std_string_get(sstr));
+
+    if (v_type_get_property(t, q_checked))  v_return();
 
     block
     {
         if (v_type_is_array(t))
         {
-            v_type_check_initializable(v_type_array_get_element_type(t));
+            v_type_check_special(v_type_array_get_element_type(t), q);
             v_break();
         }
 
         if (v_type_is_struct(t))
         {
-            q_initialize = v_quark_from_string("v_initialize");
-
-            if (v_type_get_property(t, q_initialize))   v_break();
+            if (v_type_get_property(t, q))  v_break();
 
             flag: &bool := false;
 
@@ -80,14 +109,20 @@ v_type_check_initializable: (t: *v_type_t) -> void
 
             for (i: &int := 0; i < count; ++i)
             {
-                flag |= v_type_is_initializable(types[i]);
+                flag |= v_type_is_special(types[i], q);
 
                 if (flag)   v_break();
             }
 
             if (flag)
             {
-                v_util_function_dict_set(t, q_initialize, q_internal_fake_initialization);
+                v_std_string_set(sstr, "v.internal.fake_utility.");
+
+                v_std_string_append(sstr, v_quark_to_string(q));
+
+                q_fake = v_quark_from_string(v_std_string_get(sstr));
+
+                v_util_function_dict_set(t, q, q_fake);
             }
 
             v_break();
@@ -102,17 +137,17 @@ v_type_check_initializable: (t: *v_type_t) -> void
 
     v_std_any_set_value(any, true);
 
-    v_type_set_property(t, q, any);
+    v_type_set_property(t, q_checked, any);
 }
 
 
 //---------------------------------------------------------------------
-v_type_is_initializable: (t: *v_type_t) -> bool
+v_type_is_special: (t: *v_type_t, q: v_quark_t) -> bool
 {
     switch(v_type_get_kind(t))
     {
     case v_type_kind_array:
-        v_return(v_type_is_initializable(v_type_array_get_element_type(t)));
+        v_return(v_type_is_special(v_type_array_get_element_type(t), q));
 
     case v_type_kind_struct:
         v_break();
@@ -121,9 +156,7 @@ v_type_is_initializable: (t: *v_type_t) -> bool
         v_return(false);        //- Sic!!!
     }
 
-    v_type_check_initializable(t);
-
-    q = v_quark_from_string("v_initialize");
+    v_type_check_special(t, q);
 
     v_return(v_type_get_property(t, q) != 0);
 }
@@ -137,32 +170,19 @@ struct compile_stmt_hook_t
 };
 
 //---------------------------------------------------------------------
+UNNAMED_VTAG = ( 0: LLVMValueRef);
+NAMED_VTAG   = (-1: LLVMValueRef);
+
+//---------------------------------------------------------------------
 my_compile_stmt: (vis: *voidc_visitor_t, void_aux: *void, self: *v_ast_base_t) -> void
 {
-    block
-    {
-        expr = v_ast_stmt_get_expr((self: *v_ast_stmt_t));
-        if (v_empty(expr))  v_break();
+    expr = v_ast_stmt_get_expr((self: *v_ast_stmt_t));
+    if (v_empty(expr))  v_return();                             //- Sic!
 
-        name = v_ast_stmt_get_name((self: *v_ast_stmt_t));
+    name = v_ast_stmt_get_name((self: *v_ast_stmt_t));
 
-        any = v_alloca(v_std_any_t);
-        v_initialize(any);
-        defer v_terminate(any);
-
-        any: &*v_std_any_t := any;      //- Sic!
-
-        if (name  &&  name[0])
-        {
-            v_std_any_set_value(any, true);         //- Sic!
-        }
-        else
-        {
-            any := 0;
-        }
-
-        v_ast_set_property((expr: *v_ast_base_t), root_q, any);
-    }
+    if (name  &&  name[0])  v_set_result_value(NAMED_VTAG);     //- Sic!
+    else                    v_set_result_value(UNNAMED_VTAG);   //- Sic!
 
     aux = *(void_aux: *compile_stmt_hook_t);
 
@@ -193,7 +213,7 @@ v_type_function_obtain_llvm_type_hook: (*void, ft: *v_type_t) -> LLVMTypeRef
 
     rt = v_type_function_get_return_type(ft);
 
-    rt_initializable = v_type_is_initializable(rt);
+    rt_initializable = v_type_is_special(rt, q_initialize);
 
     if (rt_initializable) ++n;
 
@@ -217,8 +237,8 @@ v_type_function_obtain_llvm_type_hook: (*void, ft: *v_type_t) -> LLVMTypeRef
     {
         pt = par_types[i];
 
-        if (v_type_is_initializable(pt))  *ppar := llvm_ptr;
-        else                              *ppar := v_type_get_llvm_type(pt);
+        if (v_type_is_special(pt, q_initialize))  *ppar := llvm_ptr;
+        else                                      *ppar := v_type_get_llvm_type(pt);
     }
 
     ret: &LLVMTypeRef := v_undef();
@@ -244,8 +264,9 @@ struct my_temporary_cleaner_ctx_t
 my_temporary_cleaner: (void_ctx: *void) -> void
 {
     ctx = *(void_ctx: *my_temporary_cleaner_ctx_t);
+    defer v_free(&ctx);
 
-    q = v_quark_from_string;
+    if (!v_type_is_special(ctx.typ, q_terminate))   v_return();     //- ?..
 
     expr = v_alloca(v_ast_expr_t);
     v_initialize(expr);
@@ -257,11 +278,9 @@ my_temporary_cleaner: (void_ctx: *void) -> void
     v_initialize(stmt);
     defer v_terminate(stmt);
 
-    v_ast_make_stmt_call(stmt, 0, q("v_terminate"), expr, 1);
+    v_ast_make_stmt_call(stmt, 0, q_terminate, expr, 1);
 
     v_ast_accept_visitor((stmt: *v_ast_base_t), ctx.vis);
-
-    v_free(&ctx);
 }
 
 //---------------------------------------------------------------------
@@ -278,7 +297,7 @@ my_llvm_build_call_helper_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *
 
     tr = v_type_function_get_return_type(ft);
 
-    tr_initializable = v_type_is_initializable(tr);
+    tr_initializable = v_type_is_special(tr, q_initialize);
 
     if (tr_initializable)
     {
@@ -289,7 +308,8 @@ my_llvm_build_call_helper_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *
     values = v_malloc(LLVMValueRef, arg_count);
     defer v_free(values);
 
-    tt = v_get_result_type();
+    tt   = v_get_result_type();
+    vtag = v_get_result_value();
 
     vr: &LLVMValueRef := v_undef();
 
@@ -309,8 +329,10 @@ my_llvm_build_call_helper_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *
             v_initialize(stmt);
             defer v_terminate(stmt);
 
-            if (v_ast_get_property(self, root_q))
+            switch((vtag: intptr_t))
             {
+            case -1:        //- NAMED_VTAG
+
                 t_front = v_get_temporaries_front();
 
                 if (t_front)
@@ -324,31 +346,45 @@ my_llvm_build_call_helper_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *
 
                 v_ast_make_expr_compiled(expr, v_pointer_type(tr, 0), vr);
 
-                v_ast_make_stmt_call(stmt, 0, q("v_initialize"), expr, 1);
+                v_ast_make_stmt_call(stmt, 0, q_initialize, expr, 1);
 
                 v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
 
-                v_ast_make_stmt_call(stmt, 0, q("v_terminate"), expr, 1);
+                if (v_type_is_special(tr, q_terminate))
+                {
+                    v_ast_make_stmt_call(stmt, 0, q_terminate, expr, 1);
 
-                v_ast_make_stmt_defer(stmt, stmt);
+                    v_ast_make_stmt_defer(stmt, stmt);
 
-                v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
+                    v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
+                }
 
                 if (t_front)  v_restore_builder_ip();
-            }
-            else
-            {
+
+                v_break();
+
+            case 0:         //- UNNAMED_VTAG
+
                 vr := v_make_temporary(tr, 0);
 
                 v_ast_make_expr_compiled(expr, v_pointer_type(tr, 0), vr);
 
-                v_ast_make_stmt_call(stmt, 0, q("v_initialize"), expr, 1);
+                v_ast_make_stmt_call(stmt, 0, q_initialize, expr, 1);
 
                 v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
 
-                ctx = *v_malloc(my_temporary_cleaner_ctx_t) := {tr, vr, vis};
+                if (v_type_is_special(tr, q_terminate))
+                {
+                    ctx = *v_malloc(my_temporary_cleaner_ctx_t) := {tr, vr, vis};
 
-                v_add_temporary_cleaner(my_temporary_cleaner, &ctx);
+                    v_add_temporary_cleaner(my_temporary_cleaner, &ctx);
+                }
+
+                v_break();
+
+            default:
+
+                vr := vtag;
             }
 
             values[0] := vr;
@@ -363,6 +399,8 @@ my_llvm_build_call_helper_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *
         if (i < par_count)  v_set_result_type(par_types[j]);
         else                v_set_result_type(UNREFERENCE_TAG);
 
+        v_set_result_value(UNNAMED_VTAG);
+
         v_ast_accept_visitor((arg_ptrs[j]: v_ast_base_ptr), vis);
 
         values[i] := v_get_result_value();
@@ -375,6 +413,7 @@ my_llvm_build_call_helper_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *
     if (!tr_initializable)  vr := _vr;
 
     v_set_result_type(tt);
+    v_set_result_value(vtag);       //- ?
 
     v_adopt_result(tr, vr);                 //- ?!?!?!?!?!?!?!?!?!?!?!?!?!?!?!?
 }
@@ -429,7 +468,7 @@ my_llvm_build_call_helper_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *
 T = struct { v_std_any_t; };
 
 {
-    f = v_type_is_initializable(T);
+    f = v_type_is_special(T, q_initialize);
 
     printf("f: %d\n", (f: int));
 }
