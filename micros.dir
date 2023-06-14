@@ -3,6 +3,8 @@
                                                                │
 try_objects.void                                               │try_objects.void
                                                                │
+... objects_thoughts.txt                                       │objects_thoughts.txt
+                                                               │
 try_assert.void         ... TH;DW ...                          │try_assert.void
                                                                │
 try_intrinsics.void     ... deriving ...                       │try_intrinsics.void

@@ -315,95 +315,120 @@ my_llvm_build_call_helper_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *
 
     builder = v_target_get_builder();
 
-    for (i: &unsigned := 0; i < arg_count; ++i)
+    i: &unsigned := 0;
+
+    if (tr_initializable)
     {
-        if (tr_initializable  &&  i == 0)
+        switch((tt: intptr_t))
         {
-            q = v_quark_from_string;
+        case -1:        //- UNREFERENCE_TAG
+        case 0:         //- INVIOLABLE_TAG
 
-            expr = v_alloca(v_ast_expr_t);
-            v_initialize(expr);
-            defer v_terminate(expr);
+        default:
 
-            stmt = v_alloca(v_ast_stmt_t);
-            v_initialize(stmt);
-            defer v_terminate(stmt);
-
-            switch((vtag: intptr_t))
-            {
-            case -1:        //- NAMED_VTAG
-
-                t_front = v_get_temporaries_front();
-
-                if (t_front)
-                {
-                    v_save_builder_ip();
-
-                    LLVMPositionBuilderBefore(builder, t_front);
-                }
-
-                vr := LLVMBuildAlloca(builder, v_type_get_llvm_type(tr), "");
-
-                v_ast_make_expr_compiled(expr, v_pointer_type(tr, 0), vr);
-
-                v_ast_make_stmt_call(stmt, 0, q_initialize, expr, 1);
-
-                v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
-
-                if (v_type_is_special(tr, q_terminate))
-                {
-                    v_ast_make_stmt_call(stmt, 0, q_terminate, expr, 1);
-
-                    v_ast_make_stmt_defer(stmt, stmt);
-
-                    v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
-                }
-
-                if (t_front)  v_restore_builder_ip();
-
-                v_break();
-
-            case 0:         //- UNNAMED_VTAG
-
-                vr := v_make_temporary(tr, 0);
-
-                v_ast_make_expr_compiled(expr, v_pointer_type(tr, 0), vr);
-
-                v_ast_make_stmt_call(stmt, 0, q_initialize, expr, 1);
-
-                v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
-
-                if (v_type_is_special(tr, q_terminate))
-                {
-                    ctx = *v_malloc(my_temporary_cleaner_ctx_t) := {tr, vr, vis};
-
-                    v_add_temporary_cleaner(my_temporary_cleaner, &ctx);
-                }
-
-                v_break();
-
-            default:
-
-                //- assert(INVIOLABLE_TAG != tt != UNREFERENCE_TAG);
-
-                vr := vtag;
-
-                if (tt != tr)
-                {
-                    v_set_result_type(tr);
-                    v_set_result_value(UNNAMED_VTAG);
-
-                    v_adopt_result(tt, vtag);           //- ?...
-
-                    vr := v_get_result_value();
-                }
-            }
-
-            values[0] := vr;
-
-            v_continue();
         }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        q = v_quark_from_string;
+
+        expr = v_alloca(v_ast_expr_t);
+        v_initialize(expr);
+        defer v_terminate(expr);
+
+        stmt = v_alloca(v_ast_stmt_t);
+        v_initialize(stmt);
+        defer v_terminate(stmt);
+
+        switch((vtag: intptr_t))
+        {
+        case -1:        //- NAMED_VTAG
+
+            t_front = v_get_temporaries_front();
+
+            if (t_front)
+            {
+                v_save_builder_ip();
+
+                LLVMPositionBuilderBefore(builder, t_front);
+            }
+
+            vr := LLVMBuildAlloca(builder, v_type_get_llvm_type(tr), "");
+
+            v_ast_make_expr_compiled(expr, v_pointer_type(tr, 0), vr);
+
+            v_ast_make_stmt_call(stmt, 0, q_initialize, expr, 1);
+
+            v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
+
+            if (v_type_is_special(tr, q_terminate))
+            {
+                v_ast_make_stmt_call(stmt, 0, q_terminate, expr, 1);
+
+                v_ast_make_stmt_defer(stmt, stmt);
+
+                v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
+            }
+
+            if (t_front)  v_restore_builder_ip();
+
+            v_break();
+
+        case 0:         //- UNNAMED_VTAG
+
+            vr := v_make_temporary(tr, 0);
+
+            v_ast_make_expr_compiled(expr, v_pointer_type(tr, 0), vr);
+
+            v_ast_make_stmt_call(stmt, 0, q_initialize, expr, 1);
+
+            v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
+
+            if (v_type_is_special(tr, q_terminate))
+            {
+                ctx = *v_malloc(my_temporary_cleaner_ctx_t) := {tr, vr, vis};
+
+                v_add_temporary_cleaner(my_temporary_cleaner, &ctx);
+            }
+
+            v_break();
+
+        default:
+
+            //- assert(INVIOLABLE_TAG != tt != UNREFERENCE_TAG);
+
+            vr := vtag;
+
+            if (tt != tr)
+            {
+                v_set_result_type(tr);
+                v_set_result_value(UNNAMED_VTAG);
+
+                v_adopt_result(tt, vtag);           //- ?...
+
+                vr := v_get_result_value();
+            }
+        }
+
+        values[0] := vr;
+
+        i := 1;
+    }
+
+    for (; i < arg_count; ++i)
+    {
         j: &unsigned := i;
 
         if (tr_initializable)   --j;
