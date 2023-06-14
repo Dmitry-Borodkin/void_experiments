@@ -319,29 +319,6 @@ my_llvm_build_call_helper_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *
 
     if (tr_initializable)
     {
-        switch((tt: intptr_t))
-        {
-        case -1:        //- UNREFERENCE_TAG
-        case 0:         //- INVIOLABLE_TAG
-
-        default:
-
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         q = v_quark_from_string;
 
         expr = v_alloca(v_ast_expr_t);
@@ -594,7 +571,50 @@ my_adopt_result: (void_ctx: *void, type: *v_type_t, value: LLVMValueRef) -> void
 
         //- Now value has type dst_typ!
 
-        if (dst_ref)  value := v_make_temporary(dst_typ, value);        //- Sic!!!
+        if (dst_ref)
+        {
+            if (v_type_is_special(dst_typ, q_initialize))
+            {
+                expr = v_alloca(v_ast_expr_t, 2);
+                v_initialize(expr, 2);
+                defer v_terminate(expr, 2);
+
+                stmt = v_alloca(v_ast_stmt_t);
+                v_initialize(stmt);
+                defer v_terminate(stmt);
+
+                v = v_make_temporary(dst_typ, 0);
+
+                dst_ptr = v_pointer_type(dst_typ, 0);
+
+                v_ast_make_expr_compiled(expr+0, dst_ptr, v);
+
+                v_ast_make_stmt_call(stmt, 0, q_initialize, expr+0, 1);
+
+                vis = voidc_compiler;           //- ?!?!?!?!?!?!?!?!?!?!?!?!?!?!?
+
+                v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
+
+                v_ast_make_expr_compiled(expr+1, dst_ptr, value);
+
+                v_ast_make_stmt_call(stmt, 0, q_copy, expr+0, 2);
+
+                v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
+
+                if (v_type_is_special(dst_typ, q_terminate))
+                {
+                    ctx = *v_malloc(my_temporary_cleaner_ctx_t) := {dst_typ, v, vis};
+
+                    v_add_temporary_cleaner(my_temporary_cleaner, &ctx);
+                }
+
+                value := v;
+            }
+            else
+            {
+                value := v_make_temporary(dst_typ, value);        //- Sic!!!
+            }
+        }
     }
 
     v_set_result_value(value);          //- ?!?!?!?!?!?!?!?!?!?
