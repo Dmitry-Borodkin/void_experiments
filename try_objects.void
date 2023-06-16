@@ -1060,6 +1060,14 @@ mk_expr_list_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> v
         v_return();
     }
 
+
+    lltyp: &LLVMTypeRef :=  v_undef();
+
+    llvm_stacksave_f = v_obtain_function("llvm.stacksave", &lltyp);
+
+    blk = LLVMBuildCall2(builder, lltyp, llvm_stacksave_f, 0, 0, "blk");
+
+
     size_t_ = v_type_get_llvm_type(size_t);
 
     args_count_ = LLVMConstInt(size_t_, args_count, 0);
@@ -1083,12 +1091,6 @@ mk_expr_list_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> v
         v_ast_make_stmt_call(stmt, 0, q_initialize, expr, 2);
 
         v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
-
-        v_ast_make_stmt_call(stmt, 0, q_terminate, expr, 2);
-
-        v_ast_make_stmt_defer(stmt, stmt);
-
-        v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
     }
 
     for (i: &int := 0; i < args_count; ++i)
@@ -1104,6 +1106,61 @@ mk_expr_list_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> v
 
         v_ast_accept_visitor((expr: *v_ast_base_t), vis);
     }
+
+
+    {   er = mk_expr_compiled(v_pointer_type(tr, 0), vr);
+
+        expr = v_get_object_pointer(er);
+
+        list = v_alloca(v_ast_expr_list_t);
+        v_initialize(list);
+        defer v_terminate(list);
+
+        v_make_list(list, expr, 1);
+
+        eb = mk_expr_compiled(v_pointer_type(v_ast_expr_t, 0), buf_v);
+
+        expr = v_get_object_pointer(eb);
+
+        v_list_append(list, list, expr);
+
+        en = mk_expr_integer(args_count);
+
+        expr = v_get_object_pointer(en);
+
+        v_list_append(list, list, expr);
+
+        e = mk_expr_call(mk_expr_identifier("v_make_list"), list);      //- list ???
+
+        v_set_result_type(ttag);
+        v_set_result_value(vtag);
+
+        v_ast_accept_visitor((v_get_object_pointer(e): *v_ast_base_t), vis);
+    }
+
+
+    {   expr = v_alloca(v_ast_expr_t, 2);
+        v_initialize(expr, 2);
+        defer v_terminate(expr, 2);
+
+        stmt = v_alloca(v_ast_stmt_t);
+        v_initialize(stmt);
+        defer v_terminate(stmt);
+
+        v_ast_make_expr_compiled(expr+0, v_pointer_type(v_ast_expr_t, 0), buf_v);
+
+        v_ast_make_expr_integer(expr+1, args_count);
+
+        v_ast_make_stmt_call(stmt, 0, q_terminate, expr, 2);
+
+        v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
+    }
+
+
+    llvm_stackrestore_f = v_obtain_function("llvm.stackrestore", &lltyp);
+
+    LLVMBuildCall2(builder, lltyp, llvm_stackrestore_f, &blk, 1, "");
+
 
     v_set_result_type(tr);
     v_set_result_value(vr);
@@ -1220,15 +1277,9 @@ mk_stmt_list_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> v
     {
         er = mk_expr_compiled(v_pointer_type(tr, 0), vr);
 
-        expr = v_get_object_pointer(er);
+        lst = mk_expr_list(er);
 
-        list = v_alloca(v_ast_expr_list_t);
-        v_initialize(list);
-        defer v_terminate(list);
-
-        v_make_list(list, expr, 1);
-
-        e = mk_expr_call(mk_expr_identifier("v_make_list_nil"), list);      //- list ???
+        e = mk_expr_call(mk_expr_identifier("v_make_list_nil"), lst);
 
         v_set_result_type(ttag);
         v_set_result_value(vtag);
@@ -1240,6 +1291,14 @@ mk_stmt_list_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> v
 
         v_return();
     }
+
+
+    lltyp: &LLVMTypeRef :=  v_undef();
+
+    llvm_stacksave_f = v_obtain_function("llvm.stacksave", &lltyp);
+
+    blk = LLVMBuildCall2(builder, lltyp, llvm_stacksave_f, 0, 0, "blk");
+
 
     size_t_ = v_type_get_llvm_type(size_t);
 
@@ -1264,12 +1323,6 @@ mk_stmt_list_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> v
         v_ast_make_stmt_call(stmt, 0, q_initialize, expr, 2);
 
         v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
-
-        v_ast_make_stmt_call(stmt, 0, q_terminate, expr, 2);
-
-        v_ast_make_stmt_defer(stmt, stmt);
-
-        v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
     }
 
     for (i: &int := 0; i < args_count; ++i)
@@ -1285,6 +1338,49 @@ mk_stmt_list_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> v
 
         v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
     }
+
+    {   er = mk_expr_compiled(v_pointer_type(tr, 0), vr);
+
+        lst = mk_expr_list
+        (
+            mk_expr_compiled(v_pointer_type(tr, 0), vr),
+
+            mk_expr_compiled(v_pointer_type(v_ast_expr_t, 0), buf_v),
+
+            mk_expr_integer(args_count)
+        );
+
+        e = mk_expr_call(mk_expr_identifier("v_make_list"), lst);
+
+        v_set_result_type(ttag);
+        v_set_result_value(vtag);
+
+        v_ast_accept_visitor((v_get_object_pointer(e): *v_ast_base_t), vis);
+    }
+
+
+    {   expr = v_alloca(v_ast_expr_t, 2);
+        v_initialize(expr, 2);
+        defer v_terminate(expr, 2);
+
+        stmt = v_alloca(v_ast_stmt_t);
+        v_initialize(stmt);
+        defer v_terminate(stmt);
+
+        v_ast_make_expr_compiled(expr+0, v_pointer_type(v_ast_stmt_t, 0), buf_v);
+
+        v_ast_make_expr_integer(expr+1, args_count);
+
+        v_ast_make_stmt_call(stmt, 0, q_terminate, expr, 2);
+
+        v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
+    }
+
+
+    llvm_stackrestore_f = v_obtain_function("llvm.stackrestore", &lltyp);
+
+    LLVMBuildCall2(builder, lltyp, llvm_stackrestore_f, &blk, 1, "");
+
 
     v_set_result_type(tr);
     v_set_result_value(vr);
@@ -1324,11 +1420,27 @@ mk_stmt_list_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> v
     v_return(p);
 }
 
+//---------------------------------------------------------------------
+(_+=_): (l: &v_ast_expr_list_t, e: v_ast_expr_t) -> &v_ast_expr_list_t
+{
+    v_list_append(&l, &l, v_get_object_pointer(e));
+
+    v_return(l);
+}
+
+(_+=_): (l: &v_ast_stmt_list_t, s: v_ast_stmt_t) -> &v_ast_stmt_list_t
+{
+    v_list_append(&l, &l, v_get_object_pointer(s));
+
+    v_return(l);
+}
+
+
 
 
 
 //---------------------------------------------------------------------
-//{ v_debug_print_module(1); }
+{ v_debug_print_module(1); }
 {
     e = mk_expr_call(mk_expr_identifier("fun"), mk_expr_list());
 
@@ -1366,7 +1478,7 @@ mk_stmt_list_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> v
 
 
 //---------------------------------------------------------------------
-{ v_debug_print_module(1); }
+//{ v_debug_print_module(1); }
 {
     e: &v_ast_expr_t := v_undef();
     v_initialize(&e);
@@ -1374,9 +1486,26 @@ mk_stmt_list_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> v
 
     e := mk_expr_identifier("foo");
 
-    e := mk_expr_call(e, mk_expr_list());
+    printf("e: %p[%p, %p]\n", &e, (e[0][0]: *void), (e[0][1]: *void));
+
+    l: &v_ast_expr_list_t := v_undef();
+    v_initialize(&l);
+    defer v_terminate(&l);
+
+    l := mk_expr_list();
+
+    l += mk_expr_identifier("a");
+    l += mk_expr_identifier("b");
+    l += mk_expr_identifier("c");
+
+    e := mk_expr_call(e, l);
 
 
+    printf("e: %p[%p, %p]\n", &e, (e[0][0]: *void), (e[0][1]: *void));
+
+    f = *v_ast_expr_call_get_fun_expr(&e);
+
+    printf("f: %p[%p, %p]\n", &f, (f[0][0]: *void), (f[0][1]: *void));
 
 
 }
