@@ -1151,7 +1151,7 @@ my_op_braces_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t)
 
             v_set_result_value(vr_i);
 
-            v_ast_accept_visitor((expr: v_ast_base_ptr), vis);
+            v_ast_accept_visitor((expr: *v_ast_base_t), vis);
         }
     }
 
