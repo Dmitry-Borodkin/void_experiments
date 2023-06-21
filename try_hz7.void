@@ -1,0 +1,243 @@
+{   v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+    v_import("level-03");
+
+    v_import("llvm-c/Core.void");
+    v_import("llvm-c/TargetMachine.void");
+    v_import("llvm-c/Transform/PassManagerBuilder.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_level_01();
+    v_enable_level_02();
+    v_enable_level_03();
+}
+
+
+//=====================================================================
+{   gctx = v_target_create_global_ctx(int.size, long.size, intptr_t.size);
+
+    v_add_symbol("my_gctx", v_target_global_ctx_t, gctx);
+
+
+    lctx = v_target_create_local_ctx("<target test>", gctx);
+
+    v_add_symbol("my_lctx", v_target_local_ctx_t, lctx);
+
+
+    v_target_set_global_ctx(gctx);
+}
+
+
+//=====================================================================
+{   v_enable_level_01();
+    v_enable_level_02();
+    v_enable_level_03();
+}
+
+
+//=====================================================================
+{   module = LLVMModuleCreateWithNameInContext("hz7_module", v_target_get_llvm_ctx());
+
+    v_set_module(module);
+}
+
+
+//---------------------------------------------------------------------
+printf: (*const char, ...) -> int;
+
+
+//---------------------------------------------------------------------
+alwaysinline
+(_.inc): (i: &int) -> void
+{
+    ++i;
+}
+
+
+//---------------------------------------------------------------------
+struct data_t
+{
+    v: int;
+};
+
+(v_initialize(_)): (s: *data_t, n: size_t) -> void
+{
+    printf("init s: %p, n: %d\n", s, (n: int));
+
+    for (i: &size_t := 0; i < n; ++i)   s[i].v := (i: int);
+}
+
+(v_terminate(_)): (s: *data_t, n: size_t) -> void
+{
+    printf("term s: %p, n: %d\n", s, (n: int));
+}
+
+
+//---------------------------------------------------------------------
+struct data2_t
+{
+    vv: data_t[2];
+};
+
+(v_initialize(_)): (*data2_t, size_t) -> void = derive;
+(v_terminate(_)):  (*data2_t, size_t) -> void = derive;
+
+
+//---------------------------------------------------------------------
+//- As is...
+//---------------------------------------------------------------------
+main: (argc: int, argv: **const char) -> int
+{
+    for (i: &int := 0; i < argc; i.inc)
+    {
+        printf("%s\n", argv[i]);
+    }
+
+    d2: &data2_t := v_undef();
+    v_initialize(&d2);
+    defer v_terminate(&d2);
+
+    printf("Hello!\n");
+
+    v_return(0);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//=====================================================================
+{   triple = LLVMGetDefaultTargetTriple();
+
+    tr_v = v_alloca(LLVMTargetRef);
+
+    LLVMGetTargetFromTriple(triple, tr_v, 0);
+
+    tr = v_load(tr_v);
+
+    cpu_name     = LLVMGetHostCPUName();
+    cpu_features = LLVMGetHostCPUFeatures();
+
+    target_machine =
+        LLVMCreateTargetMachine
+        (
+            tr,
+            triple,
+            cpu_name,
+            cpu_features,
+            LLVMCodeGenLevelAggressive,
+
+//          LLVMRelocDefault,
+            LLVMRelocPIC,               //- WTF ?
+
+            LLVMCodeModelDefault
+        );
+
+    LLVMDisposeMessage(cpu_features);
+    LLVMDisposeMessage(cpu_name);
+    LLVMDisposeMessage(triple);
+
+    //-----------------------------------------------------------------
+    module = v_get_module();
+
+    v_finish_module(module);
+
+    //-----------------------------------------------------------------
+    pass_manager = LLVMCreatePassManager();
+
+    pm_builder = LLVMPassManagerBuilderCreate();
+
+    LLVMPassManagerBuilderSetOptLevel(pm_builder, 3);       //- -O3
+//  LLVMPassManagerBuilderSetSizeLevel(pm_builder, 2);      //- -Oz
+
+    LLVMPassManagerBuilderPopulateModulePassManager(pm_builder, pass_manager);
+
+    LLVMPassManagerBuilderDispose(pm_builder);
+
+    //-----------------------------------------------------------------
+    LLVMAddAlwaysInlinerPass: (LLVMPassManagerRef) -> void;
+
+    LLVMAddAlwaysInlinerPass(pass_manager);
+
+    //-----------------------------------------------------------------
+    dl = LLVMCreateTargetDataLayout(target_machine);
+    tr = LLVMGetTargetMachineTriple(target_machine);
+
+    LLVMSetModuleDataLayout(module, dl);
+    LLVMSetTarget(module, tr);
+
+    LLVMDisposeMessage(tr);
+    LLVMDisposeTargetData(dl);
+
+    LLVMRunPassManager(pass_manager, module);
+
+    LLVMDisposePassManager(pass_manager);
+
+    //-----------------------------------------------------------------
+    msg = LLVMPrintModuleToString(module);
+
+    printf("\n%s\n", msg);
+
+    LLVMDisposeMessage(msg);
+
+    //-----------------------------------------------------------------
+    LLVMTargetMachineEmitToFile(target_machine,
+                                module,
+                                "hz7_module.o",
+                                LLVMObjectFile,
+                                0);
+
+    //-----------------------------------------------------------------
+    LLVMDisposeModule(module);
+
+    LLVMDisposeTargetMachine(target_machine);
+}
+
+
+//=====================================================================
+{   v_target_set_global_ctx(v_target_get_voidc_global_ctx());
+
+    v_target_destroy_local_ctx(my_lctx);
+    v_target_destroy_global_ctx(my_gctx);
+}
+
+//---------------------------------------------------------------------
+{   printf("\n\n");
+}
+
+
+//=====================================================================
+system: (*const char) -> int;
+
+//---------------------------------------------------------------------
+{   system("clang hz7_module.o -o hz_seven");
+
+    system("bash -c \"./hz_seven a b c d\"");
+}
+
+
+

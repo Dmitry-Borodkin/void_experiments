@@ -15,6 +15,9 @@ try_ctors.void                                                 │try_ctors.void
                                                                │
                                                                │
 ───────────────────────────────────────────────────────────────│
+try_hz7.void                                                   │try_hz7.void
+                                                               │
+───────────────────────────────────────────────────────────────│
 try_introspect4.void    ... import_paths ...                   │try_introspect4.void
                                                                │
 try_hz6.void                                                   │try_hz6.void

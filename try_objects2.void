@@ -281,7 +281,7 @@ my_prepare_function_parameters_ctx: &my_prepare_function_parameters_ctx_t := v_u
 
     ctx = my_prepare_function_parameters_ctx;
 
-    vis = voidc_compiler;
+    vis = v_get_compiler();
 
     ctx.fun := voidc_visitor_get_intrinsic(vis, q, &ctx.aux);
 
@@ -382,7 +382,7 @@ my_temporary_cleaner: (void_ctx: *void) -> void
 
     make_special_intrinsic_call(stmt, q_terminate, ctx.typ, ctx.val, 0);
 
-    v_ast_accept_visitor((stmt: *v_ast_base_t), voidc_compiler);
+    v_ast_accept_visitor((stmt: *v_ast_base_t), v_get_compiler());
 }
 
 
@@ -501,7 +501,7 @@ voidc_obtain_special_result_value_helper: (vis: *voidc_visitor_t, *void, t: *v_t
 
     v_add_symbol("voidc_obtain_special_result_value_q", q_ref, quark);
 
-    vis = voidc_compiler;
+    vis = v_get_compiler();
 
     voidc_visitor_set_intrinsic(vis, vis, *quark, voidc_obtain_special_result_value_helper, 0);
 }
@@ -553,7 +553,7 @@ my_compile_stmt: (vis: *voidc_visitor_t, void_aux: *void, self: *v_ast_base_t) -
 my_stmt_hook: &compile_stmt_hook_t := v_undef();
 
 //---------------------------------------------------------------------
-{   vis = voidc_compiler;
+{   vis = v_get_compiler();
 
     stmt_q = v_quark_from_string("stmt");
 
@@ -637,7 +637,7 @@ my_llvm_build_call_helper_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *
 //---------------------------------------------------------------------
 {   q = v_quark_from_string("voidc.llvm_build_call_helper");
 
-    vis = voidc_compiler;
+    vis = v_get_compiler();
 
     voidc_visitor_set_intrinsic(vis, vis, q, my_llvm_build_call_helper_intrinsic, 0);
 }
@@ -744,7 +744,7 @@ my_adopt_result: (void_ctx: *void, type: *v_type_t, value: LLVMValueRef) -> void
 
                 make_special_intrinsic_call(stmt, q_copy, ttag, vtag, value);
 
-                v_ast_accept_visitor((stmt: *v_ast_base_t), voidc_compiler);
+                v_ast_accept_visitor((stmt: *v_ast_base_t), v_get_compiler());
 
                 value := vtag;
             }
@@ -817,11 +817,13 @@ my_adopt_result: (void_ctx: *void, type: *v_type_t, value: LLVMValueRef) -> void
 
                 make_special_intrinsic_call(stmt, q_initialize, dst_typ, v, 0);
 
-                v_ast_accept_visitor((stmt: *v_ast_base_t), voidc_compiler);
+                vis = v_get_compiler();
+
+                v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
 
                 make_special_intrinsic_call(stmt, q_copy, dst_typ, v, value);           //- Sic!
 
-                v_ast_accept_visitor((stmt: *v_ast_base_t), voidc_compiler);
+                v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
 
                 if (v_type_is_special(dst_typ, q_terminate))
                 {
@@ -837,6 +839,11 @@ my_adopt_result: (void_ctx: *void, type: *v_type_t, value: LLVMValueRef) -> void
                 value := v_make_temporary(dst_typ, value);        //- Sic!!!
             }
         }
+
+
+        //- ??!?!?!?!?!?!?!?
+
+
     }
 
     v_set_result_value(value);          //- ?..
@@ -1058,7 +1065,7 @@ my_internal_val_defn_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *v_ast
 }
 
 //---------------------------------------------------------------------
-{   vis = voidc_compiler;
+{   vis = v_get_compiler();
 
     q = v_quark_from_string;
 
@@ -1165,7 +1172,7 @@ my_op_braces_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t)
 my_op_braces_intrinsic_ctx: &my_op_braces_intrinsic_ctx_t := v_undef();
 
 //---------------------------------------------------------------------
-{   vis = voidc_compiler;
+{   vis = v_get_compiler();
 
     q = v_quark_from_string("v.op_braces");
 
@@ -1615,12 +1622,16 @@ mk_ast_list_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) 
 }
 
 
+{   v_debug_print_module(1); }
+//---------------------------------------------------------------------
+(_[]): (l: v_ast_expr_list_t, i: size_t) -> v_ast_expr_t
+{
+    p = v_get_object_pointer(l);
 
+    r: &v_ast_expr_t := *v_list_get_item(p, i);
 
-
-
-
-
+    v_return(r);
+}
 
 
 
