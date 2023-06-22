@@ -57,18 +57,21 @@ strlen: (*const char) -> int;
 }
 
 //---------------------------------------------------------------------
-mk_str_literal_intrinsic: (vis: voidc_visitor_ptr, *void,
-                           arg_list: v_ast_expr_list_ptr, count: int) -> void
+mk_str_literal_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
 {
-    expr = v_alloca(v_ast_opaque_expr_sptr);
-    v_initialize(expr);
-    defer v_terminate(expr);
+    call = (self: *v_ast_expr_t);
 
-    v_list_get_items(arg_list, 0, expr);
+    arg_list = v_ast_expr_call_get_arg_list(call);
 
-    name = v_ast_expr_identifier_get_name(expr);
+    arg0 = v_list_get_item(arg_list, 0);
+
+    name = v_ast_expr_identifier_get_name(arg0);
 
     value = (v_find_symbol_value(name) : *char);
+
+    expr = v_alloca(v_ast_expr_t);
+    v_initialize(expr);
+    defer v_terminate(expr);
 
     v_ast_make_expr_string(expr, value);
 
@@ -80,9 +83,9 @@ mk_str_literal_intrinsic: (vis: voidc_visitor_ptr, *void,
 
 
 //---------------------------------------------------------------------
-_strdup: (*const char) -> *char;
+strdup: (*const char) -> *char;
 
-{   s = _strdup("QWERTY");
+{   s = strdup("QWERTY");
 
     v_add_symbol("qwerty", v_pointer_type(char, 0), s);
 }
