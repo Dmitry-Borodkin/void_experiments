@@ -188,7 +188,7 @@ alwaysinline
 }
 
 alwaysinline
-(_.is_fininite()): (a: &Vector) -> bool
+(_.is_finite()): (a: &Vector) -> bool
 {
     v_return( is_finite(a.x)  &&  is_finite(a.y) );
 }
@@ -396,7 +396,10 @@ alwaysinline
 //=====================================================================
 //- Projective transformation (2D)
 //=====================================================================
-Transform = v_struct("Transform2D", { double[9] });
+struct Transform
+{
+    double[9];
+};
 
 //---------------------------------------------------------------------
 (_<<__): (s: &v_std_string_ptr, t: &Transform) -> &v_std_string_ptr
@@ -488,9 +491,11 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 {
     arg = v_list_get_item(args, 0);
 
-    tt = v_get_result_type();
+    ttag = v_get_result_type();
+    vtag = v_get_result_value();
 
     v_set_result_type(INVIOLABLE_TAG);
+    v_set_result_value(0);
 
     v_ast_accept_visitor((arg: v_ast_base_ptr), vis);
 
@@ -505,7 +510,7 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
     ft: &v_type_ptr   := 0;
     fv: &LLVMValueRef := 0;
 
-    ok = v_util_lookup_function_dict(vis, q, t1, void_fun, void_aux, ft, fv);
+    ok = v_util_lookup_function_dict(vis, t1, q, void_fun, void_aux, ft, fv);
     //- assert(ok);
 
     intrinsic_t = (vis: voidc_visitor_ptr, aux: *void,
@@ -517,7 +522,8 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 
     if (fun = (void_fun: *intrinsic_t))
     {
-        v_set_result_type(tt);
+        v_set_result_type(ttag);
+        v_set_result_value(vtag);
 
         fun(vis, void_aux, self, args, t1, v1, t0, v0);         //- Sic!!!
     }
@@ -528,12 +534,14 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
         fpar = v_type_function_get_param_types(ft);
 
         v_set_result_type(fpar[0]);
+        v_set_result_value(0);
 
         v_adopt_result(t1, v1);                         //- 1 !!!
 
         val[0] := v_get_result_value();
 
         v_set_result_type(fpar[1]);
+        v_set_result_value(0);
 
         v_adopt_result(t0, v0);                         //- 0 !!!
 
@@ -545,7 +553,8 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 
         vr = LLVMBuildCall2(builder, ft_, fv, &val[0], 2, "");
 
-        v_set_result_type(tt);
+        v_set_result_type(ttag);
+        v_set_result_value(vtag);
 
         v_adopt_result(v_type_function_get_return_type(ft), vr);
     }
@@ -555,8 +564,8 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 
     q = v_quark_from_string;
 
-    v_util_function_dict_set(q("op_postfix_call"), Transform_ref, "Transform.op_postfix_call_intrinsic");
-    v_util_function_dict_set(q("op_postfix_call"), Transform,     "Transform.op_postfix_call_intrinsic");
+    v_util_function_dict_set(Transform_ref, q("v.op_postfix_call"), q("Transform.op_postfix_call_intrinsic"));
+    v_util_function_dict_set(Transform,     q("v.op_postfix_call"), q("Transform.op_postfix_call_intrinsic"));
 
     v_add_intrinsic("Transform.op_postfix_call_intrinsic", Transform_op_postfix_call_intrinsic, 0);
 }
