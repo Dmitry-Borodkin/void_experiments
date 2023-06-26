@@ -39,7 +39,7 @@
 
     q = v_quark_from_string;
 
-    fun = voidc_visitor_get_intrinsic(voidc_compiler, q("v.op_infix_add"), &aux);
+    fun = voidc_visitor_get_intrinsic(v_get_compiler(), q("v.op_infix_add"), &aux);
 
     v_add_intrinsic("crazy_add", fun, aux);
 }

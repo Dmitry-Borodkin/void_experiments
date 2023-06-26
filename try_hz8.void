@@ -1,0 +1,51 @@
+{   v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+    v_import("level-03");
+
+    v_import("printf.void");
+}
+
+{   v_enable_level_01();
+    v_enable_level_02();
+    v_enable_level_03();
+}
+
+
+//---------------------------------------------------------------------
+print_position_intrinsic: (*voidc_visitor_t, *void, self: *v_ast_base_t) -> void
+{
+    pos_start_q = v_quark_from_string("pos_start");
+    pos_end_q   = v_quark_from_string("pos_end");
+
+    ps = v_std_any_get_value(size_t, v_ast_get_property(self, pos_start_q));
+    pe = v_std_any_get_value(size_t, v_ast_get_property(self, pos_end_q));
+
+    ls: &size_t[2] := v_undef();    v_peg_get_line_column(ps, ls[0], ls[1]);
+    le: &size_t[2] := v_undef();    v_peg_get_line_column(pe, le[0], le[1]);
+
+
+    printf("ps: %zd(%zd, %zd), pe: %zd(%zd, %zd)\n", ps, ls[0]+1, ls[1]+1, pe, le[0]+1, le[1]+1);
+
+    sstr: &v_std_string_t := {};
+
+    v_peg_take_string(&sstr, ps, pe);
+
+    printf("<<<<%s>>>>\n", v_std_string_get(&sstr));
+}
+
+{   v_add_intrinsic("print_position", print_position_intrinsic, 0);
+}
+
+
+//---------------------------------------------------------------------
+{
+    print_position
+    (
+        a
+    )
+    ;
+
+}
+
+

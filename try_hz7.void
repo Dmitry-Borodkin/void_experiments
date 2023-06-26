@@ -107,29 +107,6 @@ main: (argc: int, argv: **const char) -> int
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 //═════════════════════════════════════════════════════════════════════
 {   triple = LLVMGetDefaultTargetTriple();
 
