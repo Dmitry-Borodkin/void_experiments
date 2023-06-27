@@ -1,0 +1,146 @@
+{   v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+    v_import("level-03");
+
+    v_import("llvm-c/Core.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_level_01();
+    v_enable_level_02();
+    v_enable_level_03();
+}
+
+
+//=====================================================================
+op_prefix_new:          &v_ast_expr_t := v_undef();
+op_prefix_new_array:    &v_ast_expr_t := v_undef();
+op_prefix_delete:       &v_ast_expr_t := v_undef();
+op_prefix_delete_array: &v_ast_expr_t := v_undef();
+
+voidc_heap_objects_internal_globals_cleaner: (*void) -> void
+{
+    v_terminate(&op_prefix_new);
+    v_terminate(&op_prefix_new_array);
+    v_terminate(&op_prefix_delete);
+    v_terminate(&op_prefix_delete_array);
+}
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+{
+    v_initialize(&op_prefix_new);
+    v_initialize(&op_prefix_new_array);
+    v_initialize(&op_prefix_delete);
+    v_initialize(&op_prefix_delete_array);
+
+    q = v_quark_from_string;
+
+    v_ast_make_operator_unary(&op_prefix_new,          q("v.op_prefix_new"),          20000, 0);    //- "Prefix" priority
+    v_ast_make_operator_unary(&op_prefix_new_array,    q("v.op_prefix_new_array"),    20000, 0);    //- "Prefix" priority
+    v_ast_make_operator_unary(&op_prefix_delete,       q("v.op_prefix_delete"),       20000, 0);    //- "Prefix" priority
+    v_ast_make_operator_unary(&op_prefix_delete_array, q("v.op_prefix_delete_array"), 20000, 0);    //- "Prefix" priority
+
+//  v_add_cleaner(voidc_heap_objects_internal_globals_cleaner, 0);
+    v_add_local_cleaner(voidc_heap_objects_internal_globals_cleaner, 0);
+}
+
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+op_prefix_new_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
+                          self: v_ast_base_ptr) -> void
+{
+    args = v_ast_expr_call_get_arg_list((self: v_ast_expr_ptr));
+
+    ttag = v_get_result_type();
+    vtag = v_get_result_value();
+
+    arg = v_list_get_item(args, 1);
+
+    v_set_result_type(INVIOLABLE_TAG);
+    v_set_result_value(0);
+
+    v_ast_accept_visitor((arg: v_ast_base_ptr), vis);
+
+    t0 = v_get_result_type();
+    v0 = v_get_result_value();
+
+
+    v_set_result_type(ttag);
+    v_set_result_value(vtag);
+
+    op_postfix_dot_helper(vis, self, t0, v0);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+//=====================================================================
+{
+    any: &v_std_any_t[4] := {};
+
+    any_new          = any[0];
+    any_new_array    = any[1];
+    any_delete       = any[2];
+    any_delete_array = any[3];
+
+    v_std_any_set_pointer(&any_new,          &op_prefix_new);
+    v_std_any_set_pointer(&any_new_array,    &op_prefix_new_array);
+    v_std_any_set_pointer(&any_delete,       &op_prefix_delete);
+    v_std_any_set_pointer(&any_delete_array, &op_prefix_delete_array);
+
+    gr0: &v_peg_grammar_t := {};    gr0 = &gr0;
+
+    v_peg_get_grammar(gr0);
+
+    grammar gr0
+    {
+    values:
+        op_prefix_new          = any_new;
+        op_prefix_new_array    = any_new_array;
+        op_prefix_delete       = any_delete;
+        op_prefix_delete_array = any_delete_array;
+
+    parsers:
+        prefix += "new"    !ident_cont  { op_prefix_new }
+                / "new"    _'['_']'     { op_prefix_new_array }
+                / "delete" !ident_cont  { op_prefix_delete }
+                / "delete" _'['_']'_    { op_prefix_delete_array }
+                ;
+    }
+
+    v_peg_set_grammar(gr0);
+}
+
+
+//=====================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
