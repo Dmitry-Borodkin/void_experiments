@@ -1,0 +1,36 @@
+                                                               │*
+                                                               │
+try_main.void                                                  │try_main.void
+...                                                            │try_main *
+                                                               │
+try_header.void                                                │try_header.void
+                                                               │
+try_module.void                                                │try_module.void
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_cstdarg.void                                               │try_cstdarg.void
+                                                               │
+                                                               │
+try_module2.void                                               │try_module2.void
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_cstdio.void                                                │try_cstdio.void
+                                                               │
+try_cassert.void                                               │try_cassert.void
+                                                               │
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_imports.void                                               │try_imports.void
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
+Makefile                                                       │Makefile -j9
+    clean                                                      │Makefile clean
+───────────────────────────────────────────────────────────────│
+void.doit                                                      │void.doit
+═══════════════════════════════════════════════════════════════│
+micros.incdirs                                                 │micros.incdirs
+  ..                                                           │incdirs.doit

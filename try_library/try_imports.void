@@ -1,0 +1,197 @@
+{   voidc_guard_target("try_imports.void  must be imported into the voidc target only!");
+
+    v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+    v_import("level-03");
+
+    v_import("llvm-c/Core.void");
+    v_import("llvm-c/TargetMachine.void");
+    v_import("llvm-c/Transform/PassManagerBuilder.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_level_01();
+    v_enable_level_02();
+    v_enable_level_03();
+}
+
+
+//=====================================================================
+{   voidc_unit_begin_module("try_imports_module"); }
+
+
+//---------------------------------------------------------------------
+private
+collect_defines: () -> void
+{
+    optind: &int;
+    optarg: &*char;
+
+    getopt: (argc: int, argv: **char, optstring: *const char) -> int;
+
+    voidc_argc: &int;
+    voidc_argv: &**char;
+
+    while (optind < voidc_argc)
+    {
+        c: &int := v_undef();
+
+        if ((c := getopt(voidc_argc, voidc_argv, "D:")) != -1)
+        {
+            //- Option argument
+
+            switch (c)
+            {
+            case 'D':
+                v_export_constant(optarg, v_find_type("void"), 0);
+                v_break();
+
+            default:
+                v_break();
+            }
+        }
+
+        if (c == -1)  v_break();
+    }
+}
+
+
+//---------------------------------------------------------------------
+export
+make_header: (name: *const char) -> void
+{
+    gctx = v_target_get_global_ctx();
+    vctx = v_target_get_voidc_global_ctx();
+
+    if (gctx != vctx)
+    {
+        v_target_set_global_ctx(vctx);
+
+        v_import("level-00");
+        v_import("level-01");
+        v_import("level-02");
+        v_import("level-03");
+
+        v_enable_level_01();
+        v_enable_level_02();
+        v_enable_level_03();
+
+        v_target_set_global_ctx(gctx);
+    }
+    else
+    {
+        v_import("level-00");
+        v_import("level-01");
+        v_import("level-02");
+        v_import("level-03");
+    }
+
+    v_enable_level_01();
+    v_enable_level_02();
+    v_enable_level_03();
+
+    v_set_export_flag(true);
+}
+
+
+//---------------------------------------------------------------------
+export
+make_module: (modname: *const char) -> void
+{
+    voidc_guard_target("make_module  must be called from the voidc target only!");
+
+    v_import("level-00");
+    v_import("level-01");
+    v_import("level-02");
+    v_import("level-03");
+
+    v_enable_level_01();
+    v_enable_level_02();
+    v_enable_level_03();
+
+    //----------------------------------------------------------
+    filename = v_target_local_ctx_get_filename(v_target_get_voidc_local_ctx());
+
+    gctx = v_target_create_global_ctx(int.size, long.size, intptr_t.size);
+    lctx = v_target_create_local_ctx(filename, gctx);
+
+    v_target_set_global_ctx(gctx);
+
+    //----------------------------------------------------------
+    dl = v_target_get_voidc_data_layout();
+
+    v_target_set_data_layout(dl);
+
+    //----------------------------------------------------------
+    collect_defines();
+
+    //----------------------------------------------------------
+    v_enable_level_01();
+    v_enable_level_02();
+    v_enable_level_03();
+
+    //----------------------------------------------------------
+    module = LLVMModuleCreateWithNameInContext(modname, v_target_get_llvm_ctx());
+
+    strlen: (*const char) -> size_t;
+
+    LLVMSetSourceFileName(module, filename, strlen(filename));
+
+    v_set_module(module);
+}
+
+
+//---------------------------------------------------------------------
+export
+emit_module: (filename: *const char) -> void
+{
+    module = v_get_module();
+
+    v_finish_module(module);
+
+    //----------------------------------------------------------
+    target_machine = voidc_target_machine;          //- Sic!
+    pass_manager   = voidc_pass_manager;            //- Sic!
+
+    //----------------------------------------------------------
+    dl = LLVMCreateTargetDataLayout(target_machine);
+    tr = LLVMGetTargetMachineTriple(target_machine);
+
+    LLVMSetModuleDataLayout(module, dl);
+    LLVMSetTarget(module, tr);
+
+    LLVMDisposeMessage(tr);
+    LLVMDisposeTargetData(dl);
+
+    LLVMRunPassManager(pass_manager, module);
+
+    //----------------------------------------------------------
+//    msg = LLVMPrintModuleToString(module);
+//
+//    printf("\n%s\n", msg);
+//
+//    LLVMDisposeMessage(msg);
+
+    //----------------------------------------------------------
+    LLVMTargetMachineEmitToFile(target_machine, module, filename, LLVMObjectFile, 0);
+
+    //----------------------------------------------------------
+    LLVMDisposeModule(module);
+
+    //----------------------------------------------------------
+    lctx = v_target_get_local_ctx();
+    gctx = v_target_get_global_ctx();
+
+    v_target_set_global_ctx(v_target_get_voidc_global_ctx());
+
+    v_target_destroy_local_ctx(lctx);
+    v_target_destroy_global_ctx(gctx);
+}
+
+
+//=====================================================================
+{   voidc_unit_end_module(); }
+
+

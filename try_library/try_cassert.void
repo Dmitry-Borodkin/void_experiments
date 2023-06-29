@@ -1,0 +1,131 @@
+//---------------------------------------------------------------------
+{ voidc_import("try_imports.void"); }
+
+{ make_header("try_cassert"); }
+//---------------------------------------------------------------------
+
+{   gctx = v_target_get_global_ctx();
+    vctx = v_target_get_voidc_global_ctx();
+
+    v_target_set_global_ctx(vctx);
+
+    v_add_symbol("cur_gctx", v_target_global_ctx_t, gctx);
+
+    q_ref = v_reference_type(v_quark_t, 0);
+
+    q = v_quark_ptr_from_string;
+
+    v_add_symbol("pos_start_q", q_ref, q("pos_start"));
+    v_add_symbol("pos_end_q",   q_ref, q("pos_end"));
+}
+
+//---------------------------------------------------------------------
+{   v_import("llvm-c/Core.void");
+
+    v_set_export_flag(false);
+
+    //-----------------------------------------------------------------
+    LLVMDisposeMemoryBuffer: (LLVMMemoryBufferRef) -> void;
+
+    LLVMDisposeMemoryBuffer(voidc_get_unit_buffer());
+    voidc_set_unit_buffer(0);
+}
+
+
+//---------------------------------------------------------------------
+{   voidc_unit_begin_module("try_cassert_module");
+}
+
+//---------------------------------------------------------------------
+v_assert_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> void
+{
+    if (v_find_constant("NDEBUG", 0, 0))   v_return();
+
+    call = (self: *v_ast_expr_t);
+
+    arg_list = v_ast_expr_call_get_arg_list(call);
+
+    arg0 = v_list_get_item(arg_list, 0);
+
+    len: &size_t := 0;
+
+    module = v_get_module();
+
+    filename = LLVMGetSourceFileName(module, &len);
+
+    builder = v_target_get_builder();
+
+    cur_b = LLVMGetInsertBlock(builder);
+
+    fun = LLVMGetBasicBlockParent(cur_b);
+
+    function = LLVMGetValueName2(fun, &len);
+
+    line:   &size_t := v_undef();
+    column: &size_t := v_undef();
+
+    ps = v_std_any_get_value(size_t, v_ast_get_property((arg0: *v_ast_base_t), pos_start_q));
+    pe = v_std_any_get_value(size_t, v_ast_get_property((arg0: *v_ast_base_t), pos_end_q));
+
+    v_peg_get_line_column(ps, line, column);
+
+    sstr: &v_std_string_t := {};
+
+    v_peg_take_string(&sstr, ps, pe);
+
+    list: &v_ast_expr_list_t := {};
+
+    v_make_list_nil(&list);
+
+    expr: &v_ast_expr_t := {};
+
+    v_ast_make_expr_string(&expr, v_std_string_get(&sstr));
+
+    v_list_append(&list, &list, &expr);
+
+    v_ast_make_expr_string(&expr, filename);
+
+    v_list_append(&list, &list, &expr);
+
+    v_ast_make_expr_integer(&expr, (line: intptr_t));
+
+    v_list_append(&list, &list, &expr);
+
+    v_ast_make_expr_string(&expr, function);
+
+    v_list_append(&list, &list, &expr);
+
+    v_ast_make_expr_identifier(&expr, "__assert_fail");
+
+    v_ast_make_expr_call(&expr, &expr, &list);
+
+    stmt: &v_ast_stmt_t[2] := {};
+
+    v_ast_make_stmt(&stmt[1], "", &expr);
+
+    v_ast_make_stmt_if_then_else(&stmt[0], arg0, &stmt[0], &stmt[1]);
+
+    v_ast_accept_visitor((&stmt[0] : *v_ast_base_t), vis);
+}
+
+//---------------------------------------------------------------------
+{   if (v_find_symbol_value("v_assert_intrinsic"))
+    {
+        voidc_skip_object_file_load(1);
+    }
+}
+
+//---------------------------------------------------------------------
+{   voidc_unit_end_module(); }
+
+
+//---------------------------------------------------------------------
+{   v_target_set_global_ctx(cur_gctx);
+
+    v_add_intrinsic("v_assert", v_assert_intrinsic, 0);
+}
+
+//---------------------------------------------------------------------
+__assert_fail: (__assertion: *const char, __file: *const char, __line: unsigned, _function: *const char) -> void;
+
+
