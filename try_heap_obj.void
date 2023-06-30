@@ -14,6 +14,19 @@
 }
 
 
+//---------------------------------------------------------------------
+{   q_ref = v_reference_type(v_quark_t, 0);
+
+    q = v_quark_ptr_from_string;
+
+    v_add_symbol("q_initialize", q_ref, q("v_initialize"));
+
+    v_add_symbol("expr_call_q",       q_ref, q("expr_call"));
+    v_add_symbol("expr_identifier_q", q_ref, q("expr_identifier"));
+
+    v_add_symbol("q_op_postfix_index", q_ref, q("v.op_postfix_index"));
+}
+
 //=====================================================================
 op_prefix_new:          &v_ast_expr_t := v_undef();
 op_prefix_new_array:    &v_ast_expr_t := v_undef();
@@ -52,41 +65,384 @@ voidc_heap_objects_internal_globals_cleaner: (*void) -> void
 
 
 //---------------------------------------------------------------------
+mk_expr_new_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) -> void
+{
+    type   = v_std_any_get_pointer(v_ast_expr_t,      any+0);
+    values = v_std_any_get_pointer(v_ast_expr_list_t, any+1);
+
+    list: &v_ast_expr_list_t := {};
+
+    v_make_list(&list, type, 1);
+
+    expr: &v_ast_expr_t := {};
+
+    if (values)
+    {
+        v_op_braces: &v_ast_expr_t;
+
+        v_ast_make_expr_call(&expr, &v_op_braces, values);
+
+        v_list_append(&list, &list, &expr);
+    }
+
+    v_ast_make_expr_identifier(&expr, "v.op_prefix_new");           //- Sic!
+
+    v_ast_make_expr_call(&expr, &expr, &list);
+
+    v_std_any_set_pointer(ret, &expr);
+}
+
+
+//---------------------------------------------------------------------
 //- ...
 //---------------------------------------------------------------------
-op_prefix_new_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
-                          self: v_ast_base_ptr) -> void
+make_special_intrinsic_call: (stmt: *v_ast_stmt_t, q: v_quark_t,
+                              t: *v_type_t, v: LLVMValueRef,
+                              length: size_t, idx_v: LLVMValueRef
+                              ) -> void
 {
-    args = v_ast_expr_call_get_arg_list((self: v_ast_expr_ptr));
+    _size_t = v_find_type("size_t");
+
+    size_t_ = v_type_get_llvm_type(_size_t);
+
+    count_v: &LLVMValueRef := LLVMConstInt(size_t_, length, 0);
+
+    builder = v_target_get_builder();
+
+    if (idx_v)  count_v := LLVMBuildMul(builder, count_v, idx_v, "");
+
+    t_ptr = v_pointer_type(t, 0);
+
+    expr: &v_ast_expr_t := {};
+
+    v_ast_make_expr_compiled(&expr, t_ptr, v);
+
+    list: &v_ast_expr_list_t := {};
+
+    v_make_list(&list, &expr, 1);
+
+    v_ast_make_expr_compiled(&expr, _size_t, count_v);
+
+    v_list_append(&list, &list, &expr);
+
+    v_ast_make_expr_identifier_q(&expr, q);
+
+    v_ast_make_expr_call(&expr, &expr, &list);
+
+    v_ast_make_stmt(stmt, "", &expr);
+}
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+check_index: (arg: *v_ast_expr_t, agg: **v_ast_expr_t, idx: **v_ast_expr_list_t) -> bool
+{
+    tag = v_ast_base_get_visitor_method_tag((arg: *v_ast_base_t));
+
+    if (tag != expr_call_q)  v_return(false);
+
+    etmp = v_ast_expr_call_get_fun_expr(arg);
+
+    tag = v_ast_base_get_visitor_method_tag((etmp: *v_ast_base_t));
+
+    if (tag != expr_identifier_q)  v_return(false);
+
+    qname = v_ast_expr_identifier_get_name_q(etmp);
+
+    if (qname != q_op_postfix_index)  v_return(false);
+
+    if (agg  ||  idx)
+    {
+        lst = v_ast_expr_call_get_arg_list(arg);
+
+        if (agg)  *agg := v_list_get_item(lst, 1);
+
+        if (idx)
+        {
+            op = v_list_get_item(lst, 0);
+
+            void_obj = v_ast_generic_get_object(op);
+
+            obj = *(void_obj: *v_ast_operator_unary_t);
+
+            *idx := (&obj[2] : *v_ast_expr_list_t);
+        }
+    }
+
+    v_return(true);
+}
+
+//---------------------------------------------------------------------
+op_prefix_new_intrinsic: (vis: *voidc_visitor_t, aux: *void,
+                          self: *v_ast_base_t) -> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    type = v_list_get_item(args, 0);
+
+    value: &*v_ast_expr_t := 0;
+
+    if (v_list_get_size(args) > 1)  value := v_list_get_item(args, 1);
+
+    //-----------------------------------------------------------------
+    N: &int := 0;
+
+    {   ast: &*v_ast_expr_t := type;
+
+        while(check_index(ast, &ast, 0))  ++N;
+    }
+
+    agg: &*v_ast_expr_t := type;
+
+    idx = v_malloc(*v_ast_expr_list_t, N);
+    defer v_free(idx);
+
+    {   idx_i: &**v_ast_expr_list_t := idx + (N-1);
+
+        while(check_index(agg, &agg, idx_i--)) ;
+    }
 
     ttag = v_get_result_type();
     vtag = v_get_result_value();
 
-    arg = v_list_get_item(args, 1);
 
     v_set_result_type(INVIOLABLE_TAG);
     v_set_result_value(0);
 
-    v_ast_accept_visitor((arg: v_ast_base_ptr), vis);
+    v_ast_accept_visitor((agg: v_ast_base_ptr), vis);
 
-    t0 = v_get_result_type();
-    v0 = v_get_result_value();
+    root_t = (v_get_result_value() : *v_type_t);
+
+    item_t: &*v_type_t := root_t;
+
+    length: &uint64_t := 1;
+
+    for (i: &int := N-1; i > 0; --i)
+    {
+        idx_list = idx[i];
+
+        idx0 = v_list_get_item(idx_list, 0);        //- Just one!
+
+        v_set_result_type(UNREFERENCE_TAG);
+        v_set_result_value(0);
+
+        v_ast_accept_visitor((idx0: *v_ast_base_t), vis);
+
+        idx_v = v_get_result_value();
+
+        n = (LLVMConstIntGetZExtValue(idx_v) : uint64_t);
+
+        item_t := v_array_type(item_t, n);
+
+        length *= n;
+    }
 
 
+    align_v: &LLVMValueRef := v_undef();
+    size_v:  &LLVMValueRef := v_undef();
+
+    alloc_t: &*v_type_t := v_undef();
+
+
+    _size_t = v_find_type("size_t");
+
+    size_t_ = v_type_get_llvm_type(_size_t);
+
+    _void_ptr = v_pointer_type(v_find_type("void"), 0);
+
+    int_ = v_type_get_llvm_type(v_find_type("int"));
+
+    n0 = LLVMConstInt(int_, 0, 0);
+    n1 = LLVMConstInt(int_, 1, 0);
+
+    idx_v: &LLVMValueRef := 0;              //- Sic!
+
+    builder = v_target_get_builder();
+
+    if (N > 0)      //- array?
+    {
+        idx_list = idx[0];
+
+        idx_count = v_list_get_size(idx_list);
+
+        if (idx_count)
+        {
+            idx0 = v_list_get_item(idx_list, 0);        //- Just one!
+
+            v_set_result_type(UNREFERENCE_TAG);
+            v_set_result_value(0);
+
+            v_ast_accept_visitor((idx0: *v_ast_base_t), vis);
+
+            idx_v := v_get_result_value();
+
+            idx_v := LLVMBuildZExtOrBitCast(builder, idx_v, size_t_, "");
+        }
+        else    //- No indices!
+        {
+            //- assert(value != 0);
+
+            v_args = v_ast_expr_call_get_arg_list(value);
+
+            v_count = v_list_get_size(v_args);
+
+            idx_v := LLVMConstInt(size_t_, v_count, 0);
+        }
+
+        {   typ: &(*v_type_t)[2] :=
+            {
+                _size_t,
+
+                v_array_type(item_t, 0),
+            };
+
+            alloc_t := v_struct_type(typ, 2, false);
+        }
+
+        align_v := LLVMAlignOf(v_type_get_llvm_type(alloc_t));
+
+        {   val: &LLVMValueRef[3] := {n0, n1, idx_v };
+
+            alloc_t_ = v_type_get_llvm_type(alloc_t);
+
+            void_ptr_ = v_type_get_llvm_type(_void_ptr);
+
+            void_ptr_0 = LLVMConstNull(void_ptr_);
+
+            size_v := LLVMBuildGEP2(builder, alloc_t_, void_ptr_0, val, 3, "");
+
+            size_v := LLVMBuildPtrToInt(builder, size_v, size_t_, "");
+        }
+    }
+    else        //- "Single"...
+    {
+        alloc_t := item_t;
+
+        item_t_ = v_type_get_llvm_type(item_t);
+
+        align_v := LLVMAlignOf(item_t_);
+        size_v  := LLVMSizeOf(item_t_);
+    }
+
+    {   z1 = LLVMConstInt(size_t_, 1, 0);
+
+        align_m1 = LLVMBuildSub(builder, align_v, z1, "");
+
+        size_v := LLVMBuildAdd(builder, size_v, align_m1, "");
+
+        align_neg = LLVMBuildNeg(builder, align_v, "");
+
+        size_v := LLVMBuildAnd(builder, size_v, align_neg, "");
+    }
+
+    if (!v_find_symbol_type("aligned_alloc"))       //- ?
+    {
+        typ: &(*v_type_t)[2] := { _size_t, _size_t };
+
+        v_export_symbol("aligned_alloc", v_function_type(_void_ptr, typ, 2, false), 0);
+    }
+
+    expr: &v_ast_expr_t := {};
+
+    v_ast_make_expr_compiled(&expr, _size_t, align_v);
+
+    list: &v_ast_expr_list_t := {};
+
+    v_make_list(&list, &expr, 1);
+
+    v_ast_make_expr_compiled(&expr, _size_t, size_v);
+
+    v_list_append(&list, &list, &expr);
+
+    v_ast_make_expr_identifier(&expr, "aligned_alloc");
+
+    v_ast_make_expr_call(&expr, &expr, &list);
+
+    v_set_result_type(UNREFERENCE_TAG);
+    v_set_result_value(0);
+
+    v_ast_accept_visitor((&expr: *v_ast_base_t), vis);
+
+    v: &LLVMValueRef := v_get_result_value();
+
+    if (N > 0)      //- array?
+    {
+        val: &LLVMValueRef[3] := {n0, n0, n0};
+
+        alloc_t_ = v_type_get_llvm_type(alloc_t);
+
+        zz_v = LLVMBuildGEP2(builder, alloc_t_, v, val, 2, "");     //- v!
+
+        LLVMBuildStore(builder, idx_v, zz_v);
+
+        val[1] := n1;
+
+        v := LLVMBuildGEP2(builder, alloc_t_, v, val, 3, "");       //- v!
+    }
+
+    t = v_pointer_type(item_t, 0);
+
+
+    //-----------------------------------------------------------------
+    if (v_type_is_special(root_t, q_initialize))
+    {
+        stmt: &v_ast_stmt_t := {};
+
+        make_special_intrinsic_call(&stmt, q_initialize, root_t, v, length, idx_v);
+
+        v_set_result_type(INVIOLABLE_TAG);
+        v_set_result_value(0);
+
+        v_ast_accept_visitor((&stmt: *v_ast_base_t), vis);
+    }
+
+    //-----------------------------------------------------------------
+    if (value)
+    block
+    {
+        v_args = v_ast_expr_call_get_arg_list(value);
+
+        v_count = v_list_get_size(v_args);
+
+        if (v_count == 0) v_break();
+
+        if (N > 0)      //- array?
+        {
+            item_t := v_array_type(item_t, v_count);
+        }
+        else
+        {
+            item_t := v_array_type(item_t, 1);              //- Sic!
+        }
+
+        item_t := v_reference_type(item_t, 0);
+
+        v_set_result_type(item_t);
+
+        if (v_type_is_special(root_t, q_initialize))
+        {
+            v_set_result_value(v);
+
+            v_ast_accept_visitor((value: *v_ast_base_t), vis);
+        }
+        else
+        {
+            v_set_result_value(0);
+
+            v_ast_accept_visitor((value: *v_ast_base_t), vis);
+
+            r = v_get_result_value();
+
+            LLVMBuildStore(builder, r, v);
+        }
+    }
+
+    //-----------------------------------------------------------------
     v_set_result_type(ttag);
     v_set_result_value(vtag);
 
-    op_postfix_dot_helper(vis, self, t0, v0);
+    v_adopt_result(t, v);
 }
-
-
-
-
-
-
-
-
-
 
 
 
@@ -94,15 +450,15 @@ op_prefix_new_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 {
     any: &v_std_any_t[4] := {};
 
-    any_new          = any[0];
-    any_new_array    = any[1];
-    any_delete       = any[2];
-    any_delete_array = any[3];
+    any_new          = &any[0];
+    any_new_array    = &any[1];
+    any_delete       = &any[2];
+    any_delete_array = &any[3];
 
-    v_std_any_set_pointer(&any_new,          &op_prefix_new);
-    v_std_any_set_pointer(&any_new_array,    &op_prefix_new_array);
-    v_std_any_set_pointer(&any_delete,       &op_prefix_delete);
-    v_std_any_set_pointer(&any_delete_array, &op_prefix_delete_array);
+    v_std_any_set_pointer(any_new,          &op_prefix_new);
+    v_std_any_set_pointer(any_new_array,    &op_prefix_new_array);
+    v_std_any_set_pointer(any_delete,       &op_prefix_delete);
+    v_std_any_set_pointer(any_delete_array, &op_prefix_delete_array);
 
     gr0: &v_peg_grammar_t := {};    gr0 = &gr0;
 
@@ -116,12 +472,22 @@ op_prefix_new_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
         op_prefix_delete       = any_delete;
         op_prefix_delete_array = any_delete_array;
 
+    actions:
+        mk_expr_new = mk_expr_new_grammar_action;
+
     parsers:
-        prefix += "new"    !ident_cont  { op_prefix_new }
-                / "new"    _'['_']'     { op_prefix_new_array }
-                / "delete" !ident_cont  { op_prefix_delete }
-                / "delete" _'['_']'_    { op_prefix_delete_array }
+
+        prefix += "delete" !ident_cont  { op_prefix_delete }
+                / "delete" _'['_']'     { op_prefix_delete_array }
                 ;
+
+        prim += "new" !ident_cont _ t:expr _'{'_ l:expr_list _ (','_)? '}'  { mk_expr_new(t, l) }
+              / "new" !ident_cont _ t:expr                                  { mk_expr_new(t, 0) }
+              ;
+
+        spec_ident =+ '('_ "new" _ '_' _')'             { mk_spec_ident_prefix(op_prefix_new) }
+                   /  '('_ "new" _'['_']'_ '_' _')'     { mk_spec_ident_prefix(op_prefix_new_array) }
+                   ;
     }
 
     v_peg_set_grammar(gr0);
@@ -129,9 +495,58 @@ op_prefix_new_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 
 
 //=====================================================================
+{   v_add_intrinsic("v.op_prefix_new", op_prefix_new_intrinsic, 0);
+}
 
 
+//=====================================================================
+M: &int := 100;
 
+A: &*void := v_undef();
+
+//{   v_debug_print_module(2);
+//
+//    voidc_verify_jit_module_optimized(true);
+//}
+{
+      A := new int[M][17][6] {{{ 1, 2, 3, 4, 5, 6 } } };
+//    A := new int[][17][6] {{{ 1, 2, 3, 4, 5, 6 } }, {}, {} };
+
+
+    printf("A: %p\n", A);
+
+
+//  delete[] (A: *int[17][6]);
+}
+
+
+//---------------------------------------------------------------------
+{   v_debug_print_module(2);
+
+    voidc_verify_jit_module_optimized(true);
+}
+{   ss: &v_std_string_t[3] := {};
+
+    v_std_string_set(&ss[0], "a--------------------------------------------------------------------------------------");
+    v_std_string_set(&ss[1], "b--------------------------------------------------------------------------------------");
+    v_std_string_set(&ss[2], "c--------------------------------------------------------------------------------------");
+
+    a = new v_std_string_t[7][2] {{}, {}, {ss[2], ss[1]}};
+
+    A := a;
+
+
+    printf("A: %p\n", A);
+
+    printf("a[2][0]: %s\n", v_std_string_get(&a[2][0]));
+    printf("a[2][1]: %s\n", v_std_string_get(&a[2][1]));
+
+    b = new v_std_string_t { ss[0] };
+
+    printf("b: %s\n", v_std_string_get(b));
+
+
+}
 
 
 
