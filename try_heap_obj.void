@@ -28,6 +28,11 @@
     v_add_symbol("q_op_postfix_index", q_ref, q("v.op_postfix_index"));
 
     v_add_symbol("free_q", q_ref, q("free"));
+
+    v_add_symbol("q_op_prefix_new",          q_ref, q("v.op_prefix_new"));
+    v_add_symbol("q_op_prefix_new_array",    q_ref, q("v.op_prefix_new_array"));
+    v_add_symbol("q_op_prefix_delete",       q_ref, q("v.op_prefix_delete"));
+    v_add_symbol("q_op_prefix_delete_array", q_ref, q("v.op_prefix_delete_array"));
 }
 
 //=====================================================================
@@ -225,11 +230,18 @@ op_prefix_new_intrinsic: (vis: *voidc_visitor_t, aux: *void,
 
     v_ast_accept_visitor((agg: v_ast_base_ptr), vis);
 
-    root_t = (v_get_result_value() : *v_type_t);
+    item_t: &*v_type_t := (v_get_result_value() : *v_type_t);
 
-    item_t: &*v_type_t := root_t;
+    root_t: &*v_type_t := item_t;
 
     length: &uint64_t := 1;
+
+    while(v_type_is_array(root_t))
+    {
+        length *= v_type_array_get_length(root_t);
+
+        root_t := v_type_array_get_element_type(root_t);
+    }
 
     for (i: &int := N-1; i > 0; --i)
     {
@@ -251,27 +263,13 @@ op_prefix_new_intrinsic: (vis: *voidc_visitor_t, aux: *void,
         length *= n;
     }
 
+    idx_v: &LLVMValueRef := 0;              //- Sic!
 
-    align_v: &LLVMValueRef := v_undef();
-    size_v:  &LLVMValueRef := v_undef();
-
-    alloc_t: &*v_type_t := v_undef();
-
+    builder = v_target_get_builder();
 
     _size_t = v_find_type("size_t");
 
     size_t_ = v_type_get_llvm_type(_size_t);
-
-    _void_ptr = v_pointer_type(v_find_type("void"), 0);
-
-    int_ = v_type_get_llvm_type(v_find_type("int"));
-
-    n0 = LLVMConstInt(int_, 0, 0);
-    n1 = LLVMConstInt(int_, 1, 0);
-
-    idx_v: &LLVMValueRef := 0;              //- Sic!
-
-    builder = v_target_get_builder();
 
     if (N > 0)      //- array?
     {
@@ -302,113 +300,195 @@ op_prefix_new_intrinsic: (vis: *voidc_visitor_t, aux: *void,
 
             idx_v := LLVMConstInt(size_t_, v_count, 0);
         }
+    }
 
-        {   typ: &(*v_type_t)[2] :=
+    v: &LLVMValueRef := v_undef();
+
+    quark: &v_quark_t := q_op_prefix_new;
+
+    if (N > 0)  quark := q_op_prefix_new_array;
+
+    void_fun: &*void := 0;
+    void_aux: &*void := 0;
+
+    ft: &v_type_ptr   := 0;
+    fv: &LLVMValueRef := 0;
+
+    if (v_util_lookup_function_dict(vis, root_t, quark, void_fun, void_aux, ft, fv))
+    {
+        //- Got overloading!
+
+        v_set_result_type(v_pointer_type(root_t, 0));
+        v_set_result_value(0);
+
+        if (N > 0)      //- array?
+        {
+            intrinsic_array_t = (*voidc_visitor_t, *void, *v_ast_base_t, size_t, LLVMValueRef) -> void;
+
+            if (fun = (void_fun: *intrinsic_array_t))
             {
-                _size_t,
+                fun(vis, void_aux, self, length, idx_v);
+            }
+            else
+            {
+                expr: &v_ast_expr_t[2] := {};
 
-                v_array_type(item_t, 0),
-            };
+                v_ast_make_expr_integer(&expr[0], length);
 
-            alloc_t := v_struct_type(typ, 2, false);
+                v_ast_make_expr_compiled(&expr[1], _size_t, idx_v);
+
+                arg_ptr: &v_ast_expr_ptr[2] := { &expr[0], &expr[1] };
+
+                voidc_llvm_build_call_helper(vis, self, ft, fv, arg_ptr, 2);
+            }
+        }
+        else            //- single
+        {
+            intrinsic_single_t = (*voidc_visitor_t, *void, *v_ast_base_t, size_t) -> void;
+
+            if (fun = (void_fun: *intrinsic_single_t))
+            {
+                fun(vis, void_aux, self, length);
+            }
+            else
+            {
+                expr: &v_ast_expr_t := {};
+
+                v_ast_make_expr_integer(&expr, length);
+
+                arg_ptr: &v_ast_expr_ptr := &expr;
+
+                voidc_llvm_build_call_helper(vis, self, ft, fv, &arg_ptr, 1);
+            }
         }
 
-        align_v := LLVMAlignOf(v_type_get_llvm_type(alloc_t));
+        v := v_get_result_value();
+    }
+    else
+    {
+        //- Default treatment...
 
-        {   val: &LLVMValueRef[3] := {n0, n1, idx_v };
+        align_v: &LLVMValueRef := v_undef();
+        size_v:  &LLVMValueRef := v_undef();
+
+        alloc_t: &*v_type_t := v_undef();
+
+
+        _void_ptr = v_pointer_type(v_find_type("void"), 0);
+
+        int_ = v_type_get_llvm_type(v_find_type("int"));
+
+        n0 = LLVMConstInt(int_, 0, 0);
+        n1 = LLVMConstInt(int_, 1, 0);
+
+        if (N > 0)      //- array?
+        {
+            {   typ: &(*v_type_t)[2] :=
+                {
+                    _size_t,
+
+                    v_array_type(item_t, 0),
+                };
+
+                alloc_t := v_struct_type(typ, 2, false);
+            }
+
+            align_v := LLVMAlignOf(v_type_get_llvm_type(alloc_t));
+
+            {   val: &LLVMValueRef[3] := {n0, n1, idx_v };
+
+                alloc_t_ = v_type_get_llvm_type(alloc_t);
+
+                void_ptr_ = v_type_get_llvm_type(_void_ptr);
+
+                void_ptr_0 = LLVMConstNull(void_ptr_);
+
+                size_v := LLVMBuildGEP2(builder, alloc_t_, void_ptr_0, val, 3, "");
+
+                size_v := LLVMBuildPtrToInt(builder, size_v, size_t_, "");
+            }
+        }
+        else        //- "Single"...
+        {
+            alloc_t := item_t;
+
+            item_t_ = v_type_get_llvm_type(item_t);
+
+            align_v := LLVMAlignOf(item_t_);
+            size_v  := LLVMSizeOf(item_t_);
+        }
+
+        {   z1 = LLVMConstInt(size_t_, 1, 0);
+
+            align_m1 = LLVMBuildSub(builder, align_v, z1, "");
+
+            size_v := LLVMBuildAdd(builder, size_v, align_m1, "");
+
+            align_neg = LLVMBuildNeg(builder, align_v, "");
+
+            size_v := LLVMBuildAnd(builder, size_v, align_neg, "");
+        }
+
+        if (!v_find_symbol_type("aligned_alloc"))       //- ?
+        {
+            typ: &(*v_type_t)[2] := { _size_t, _size_t };
+
+            v_export_symbol("aligned_alloc", v_function_type(_void_ptr, typ, 2, false), 0);
+        }
+
+        expr: &v_ast_expr_t := {};
+
+        v_ast_make_expr_compiled(&expr, _size_t, align_v);
+
+        list: &v_ast_expr_list_t := {};
+
+        v_make_list(&list, &expr, 1);
+
+        v_ast_make_expr_compiled(&expr, _size_t, size_v);
+
+        v_list_append(&list, &list, &expr);
+
+        v_ast_make_expr_identifier(&expr, "aligned_alloc");
+
+        v_ast_make_expr_call(&expr, &expr, &list);
+
+        v_set_result_type(UNREFERENCE_TAG);
+        v_set_result_value(0);
+
+        v_ast_accept_visitor((&expr: *v_ast_base_t), vis);
+
+        v := v_get_result_value();
+
+        if (N > 0)      //- array?
+        {
+            val: &LLVMValueRef[3] := {n0, n0, n0};
 
             alloc_t_ = v_type_get_llvm_type(alloc_t);
 
-            void_ptr_ = v_type_get_llvm_type(_void_ptr);
+            zz_v = LLVMBuildGEP2(builder, alloc_t_, v, val, 2, "");     //- v!
 
-            void_ptr_0 = LLVMConstNull(void_ptr_);
+            LLVMBuildStore(builder, idx_v, zz_v);
 
-            size_v := LLVMBuildGEP2(builder, alloc_t_, void_ptr_0, val, 3, "");
+            val[1] := n1;
 
-            size_v := LLVMBuildPtrToInt(builder, size_v, size_t_, "");
+            v := LLVMBuildGEP2(builder, alloc_t_, v, val, 3, "");       //- v!
         }
-    }
-    else        //- "Single"...
-    {
-        alloc_t := item_t;
 
-        item_t_ = v_type_get_llvm_type(item_t);
+        //-------------------------------------------------------------
+        if (v_type_is_special(root_t, q_initialize))
+        {
+            stmt: &v_ast_stmt_t := {};
 
-        align_v := LLVMAlignOf(item_t_);
-        size_v  := LLVMSizeOf(item_t_);
-    }
+            make_special_intrinsic_call(&stmt, q_initialize, root_t, v, length, idx_v);
 
-    {   z1 = LLVMConstInt(size_t_, 1, 0);
+            v_set_result_type(INVIOLABLE_TAG);
+            v_set_result_value(0);
 
-        align_m1 = LLVMBuildSub(builder, align_v, z1, "");
-
-        size_v := LLVMBuildAdd(builder, size_v, align_m1, "");
-
-        align_neg = LLVMBuildNeg(builder, align_v, "");
-
-        size_v := LLVMBuildAnd(builder, size_v, align_neg, "");
-    }
-
-    if (!v_find_symbol_type("aligned_alloc"))       //- ?
-    {
-        typ: &(*v_type_t)[2] := { _size_t, _size_t };
-
-        v_export_symbol("aligned_alloc", v_function_type(_void_ptr, typ, 2, false), 0);
-    }
-
-    expr: &v_ast_expr_t := {};
-
-    v_ast_make_expr_compiled(&expr, _size_t, align_v);
-
-    list: &v_ast_expr_list_t := {};
-
-    v_make_list(&list, &expr, 1);
-
-    v_ast_make_expr_compiled(&expr, _size_t, size_v);
-
-    v_list_append(&list, &list, &expr);
-
-    v_ast_make_expr_identifier(&expr, "aligned_alloc");
-
-    v_ast_make_expr_call(&expr, &expr, &list);
-
-    v_set_result_type(UNREFERENCE_TAG);
-    v_set_result_value(0);
-
-    v_ast_accept_visitor((&expr: *v_ast_base_t), vis);
-
-    v: &LLVMValueRef := v_get_result_value();
-
-    if (N > 0)      //- array?
-    {
-        val: &LLVMValueRef[3] := {n0, n0, n0};
-
-        alloc_t_ = v_type_get_llvm_type(alloc_t);
-
-        zz_v = LLVMBuildGEP2(builder, alloc_t_, v, val, 2, "");     //- v!
-
-        LLVMBuildStore(builder, idx_v, zz_v);
-
-        val[1] := n1;
-
-        v := LLVMBuildGEP2(builder, alloc_t_, v, val, 3, "");       //- v!
+            v_ast_accept_visitor((&stmt: *v_ast_base_t), vis);
+        }
     }
 
     t = v_pointer_type(item_t, 0);
-
-
-    //-----------------------------------------------------------------
-    if (v_type_is_special(root_t, q_initialize))
-    {
-        stmt: &v_ast_stmt_t := {};
-
-        make_special_intrinsic_call(&stmt, q_initialize, root_t, v, length, idx_v);
-
-        v_set_result_type(INVIOLABLE_TAG);
-        v_set_result_value(0);
-
-        v_ast_accept_visitor((&stmt: *v_ast_base_t), vis);
-    }
 
     //-----------------------------------------------------------------
     if (value)
@@ -470,13 +550,61 @@ op_prefix_delete_intrinsic: (vis: *voidc_visitor_t, aux: *void,
     t = v_get_result_type();
     v = v_get_result_value();
 
-    item_t = v_type_refptr_get_element_type(t);         //- Sic!
+    root_t: &*v_type_t := v_type_refptr_get_element_type(t);        //- Sic!
+
+    length: &uint64_t := 1;
+
+    while(v_type_is_array(root_t))
+    {
+        length *= v_type_array_get_length(root_t);
+
+        root_t := v_type_array_get_element_type(root_t);
+    }
+
+    quark = q_op_prefix_delete;
+
+    void_fun: &*void := 0;
+    void_aux: &*void := 0;
+
+    ft: &v_type_ptr   := 0;
+    fv: &LLVMValueRef := 0;
+
+    if (v_util_lookup_function_dict(vis, root_t, quark, void_fun, void_aux, ft, fv))
+    {
+        //- Got overloading!
+
+        v_set_result_type(v_pointer_type(root_t, 0));
+        v_set_result_value(0);
+
+        intrinsic_single_t = (*voidc_visitor_t, *void, *v_ast_base_t, LLVMValueRef, size_t) -> void;
+
+        if (fun = (void_fun: *intrinsic_single_t))
+        {
+            fun(vis, void_aux, self, v, length);
+        }
+        else
+        {
+            expr: &v_ast_expr_t[2] := {};
+
+            v_ast_make_expr_compiled(&expr[0], v_pointer_type(root_t, 0), v);
+
+            v_ast_make_expr_integer(&expr[1], length);
+
+            arg_ptr: &v_ast_expr_ptr[2] := { &expr[0], &expr[1] };
+
+            voidc_llvm_build_call_helper(vis, self, ft, fv, arg_ptr, 2);
+        }
+
+        v_return();
+    }
+
+    //- Default treatment...
 
     stmt: &v_ast_stmt_t := {};
 
-    if (v_type_is_special(item_t, q_terminate))
+    if (v_type_is_special(root_t, q_terminate))
     {
-        make_special_intrinsic_call(&stmt, q_terminate, item_t, v, 1, 0);       //- v?
+        make_special_intrinsic_call(&stmt, q_terminate, root_t, v, length, 0);      //- v?
 
         v_set_result_type(INVIOLABLE_TAG);          //- ?..
         v_set_result_value(0);                      //- ?..
@@ -525,6 +653,56 @@ op_prefix_delete_array_intrinsic: (vis: *voidc_visitor_t, aux: *void,
     v = v_get_result_value();
 
     item_t = v_type_refptr_get_element_type(t);         //- Sic!
+
+    root_t: &*v_type_t := item_t;
+
+    length: &uint64_t := 1;
+
+    while(v_type_is_array(root_t))
+    {
+        length *= v_type_array_get_length(root_t);
+
+        root_t := v_type_array_get_element_type(root_t);
+    }
+
+    quark = q_op_prefix_delete_array;
+
+    void_fun: &*void := 0;
+    void_aux: &*void := 0;
+
+    ft: &v_type_ptr   := 0;
+    fv: &LLVMValueRef := 0;
+
+    if (v_util_lookup_function_dict(vis, root_t, quark, void_fun, void_aux, ft, fv))
+    {
+        //- Got overloading!
+
+        v_set_result_type(v_pointer_type(root_t, 0));
+        v_set_result_value(0);
+
+        intrinsic_single_t = (*voidc_visitor_t, *void, *v_ast_base_t, LLVMValueRef, size_t) -> void;
+
+        if (fun = (void_fun: *intrinsic_single_t))
+        {
+            fun(vis, void_aux, self, v, length);
+        }
+        else
+        {
+            expr: &v_ast_expr_t[2] := {};
+
+            v_ast_make_expr_compiled(&expr[0], v_pointer_type(root_t, 0), v);
+
+            v_ast_make_expr_integer(&expr[1], length);
+
+            arg_ptr: &v_ast_expr_ptr[2] := { &expr[0], &expr[1] };
+
+            voidc_llvm_build_call_helper(vis, self, ft, fv, arg_ptr, 2);
+        }
+
+        v_return();
+    }
+
+    //- Default treatment...
 
     alloc_t: &*v_type_t := v_undef();
 
