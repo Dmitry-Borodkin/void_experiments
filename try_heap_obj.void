@@ -573,7 +573,7 @@ op_prefix_delete_intrinsic: (vis: *voidc_visitor_t, aux: *void,
     {
         //- Got overloading!
 
-        v_set_result_type(v_pointer_type(root_t, 0));
+        v_set_result_type(INVIOLABLE_TAG);
         v_set_result_value(0);
 
         intrinsic_single_t = (*voidc_visitor_t, *void, *v_ast_base_t, LLVMValueRef, size_t) -> void;
@@ -677,7 +677,7 @@ op_prefix_delete_array_intrinsic: (vis: *voidc_visitor_t, aux: *void,
     {
         //- Got overloading!
 
-        v_set_result_type(v_pointer_type(root_t, 0));
+        v_set_result_type(INVIOLABLE_TAG);
         v_set_result_value(0);
 
         intrinsic_single_t = (*voidc_visitor_t, *void, *v_ast_base_t, LLVMValueRef, size_t) -> void;
@@ -789,8 +789,68 @@ op_prefix_delete_array_intrinsic: (vis: *voidc_visitor_t, aux: *void,
 }
 
 
+//=====================================================================
+compute_key_quark_type_ft = (vis: *voidc_visitor_t, aux: *void,
+                             ft: *v_type_t,
+                             iq: &intptr_t, t: &*v_type_t
+                            ) -> void;
 
+struct voidc_compute_key_quark_type_ctx_t
+{
+    fun: *compute_key_quark_type_ft;
+    aux: *void;
+};
 
+compute_key_quark_type: (vis: *voidc_visitor_t, aux: *void,
+                         ft: *v_type_t,
+                         iq: &intptr_t, t: &*v_type_t
+                        ) -> void
+{
+    if (iq > 0)
+    {
+        found: &bool := true;       //- Sic!
+
+        block
+        {
+            if (iq == q_op_prefix_new)          v_break();
+            if (iq == q_op_prefix_new_array)    v_break();
+
+            found := false;
+        }
+
+        if (found)
+        {
+            type = v_type_function_get_return_type(ft);
+
+            t := v_type_refptr_get_element_type(type);
+
+            v_return();
+        }
+
+        found := true;      //- Sic!
+
+        block
+        {
+            if (iq == q_op_prefix_delete)       v_break();
+            if (iq == q_op_prefix_delete_array) v_break();
+
+            found := false;
+        }
+
+        if (found)
+        {
+            type = v_type_function_get_param_types(ft)[0];
+
+            t := v_type_refptr_get_element_type(type);
+
+            v_return();
+        }
+    }
+
+    ctx = *(aux: *voidc_compute_key_quark_type_ctx_t);
+
+    ctx.fun(vis, ctx.aux, ft, iq, t);
+}
 
 
 //=====================================================================
@@ -845,16 +905,30 @@ op_prefix_delete_array_intrinsic: (vis: *voidc_visitor_t, aux: *void,
 {   v_add_intrinsic("v.op_prefix_new",          op_prefix_new_intrinsic,          0);
     v_add_intrinsic("v.op_prefix_delete",       op_prefix_delete_intrinsic,       0);
     v_add_intrinsic("v.op_prefix_delete_array", op_prefix_delete_array_intrinsic, 0);
+
+    q = v_quark_from_string("voidc.compute_key_quark_type");
+
+    ctx = *v_malloc(voidc_compute_key_quark_type_ctx_t);
+
+    vis = v_get_compiler();
+
+    ctx.fun := (voidc_visitor_get_intrinsic(vis, q, &ctx.aux) : *compute_key_quark_type_ft);
+
+    voidc_visitor_set_intrinsic(vis, vis, q, compute_key_quark_type, &ctx);
+
+    free: (*void) -> void;
+
+    v_add_local_cleaner(free, &ctx);
 }
 
 
 //=====================================================================
 M: &int := 100;
 
-{   v_debug_print_module(2);
-
-    voidc_verify_jit_module_optimized(true);
-}
+//{   v_debug_print_module(2);
+//
+//    voidc_verify_jit_module_optimized(true);
+//}
 {
     a = new int[M][17][6] { {}, { {}, {}, { 1, 2, 3, 4, 5, 6 } } };
 //  a = new int[][17][6]  { {}, { {}, {}, { 1, 2, 3, 4, 5, 6 } }, {}, {} };
@@ -871,10 +945,10 @@ M: &int := 100;
 
 
 //---------------------------------------------------------------------
-{   v_debug_print_module(2);
-
-    voidc_verify_jit_module_optimized(true);
-}
+//{   v_debug_print_module(2);
+//
+//    voidc_verify_jit_module_optimized(true);
+//}
 {   ss: &v_std_string_t[3] := {};
 
     v_std_string_set(&ss[0], "a--------------------------------------------------------------------------------------");
@@ -883,6 +957,7 @@ M: &int := 100;
 
     a = new v_std_string_t[7][2] {{}, {}, {ss[2], ss[1]}};
 
+    printf("\n");
 
     printf("a[2][0]: %s\n", v_std_string_get(&a[2][0]));
     printf("a[2][1]: %s\n", v_std_string_get(&a[2][1]));
@@ -898,20 +973,150 @@ M: &int := 100;
 
 
 //---------------------------------------------------------------------
-{   v_debug_print_module(2);
-
-    voidc_verify_jit_module_optimized(true);
-}
+//{   v_debug_print_module(2);
+//
+//    voidc_verify_jit_module_optimized(true);
+//}
 {
     str3 = new (v_std_string_t[3]);
 
     v_std_string_set(&str3[0][1], "zzz");
+
+    printf("\n");
 
     printf("str3[0][1]: %s\n", v_std_string_get(&str3[0][1]));
 
     delete str3;
 }
 
+
+//=====================================================================
+{   v_debug_print_module(2);
+
+    voidc_verify_jit_module_optimized(true);
+}
+
+//---------------------------------------------------------------------
+struct some_t
+{
+    x: int;
+};
+
+(v_initialize(_)): (data: *some_t, count: size_t) -> void
+{
+    printf("v_initialize(%p: *some_t, %zd)\n", data, count);
+}
+
+(v_terminate(_)): (data: *some_t, count: size_t) -> void
+{
+    printf("v_terminate(%p: *some_t, %zd)\n", data, count);
+}
+
+(v_copy(_)): (dst: *some_t, src: *const some_t, count: size_t) -> void
+{
+    printf("v_copy(%p: *some_t, %p, %zd)\n", dst, src, count);
+
+    for (i: &size_t := 0; i < count; ++i)    dst[i].x := src[i].x;
+}
+
+
+(new _): (fixed: size_t) -> *some_t
+{
+    ret = v_malloc(some_t, fixed);
+
+    printf("new (some_t[%zd]): %p\n", fixed, ret);
+
+    v_initialize(ret, fixed);
+
+    v_return(ret);
+}
+
+(delete _): (data: *some_t, fixed: size_t) -> void
+{
+    v_terminate(data, fixed);
+
+    printf("delete (some_t[%zd]): %p\n", fixed, data);
+
+    v_free(data);
+}
+
+//---------------------------------------------------------------------
+{   v_debug_print_module(2);
+
+    voidc_verify_jit_module_optimized(true);
+}
+{
+    a = *new (some_t[7]) {{{1}, {2}, {3}}};
+
+    printf("a[0].x: %d\n", a[0].x);
+    printf("a[1].x: %d\n", a[1].x);
+    printf("a[2].x: %d\n", a[2].x);
+
+    delete &a;
+
+    b = *new some_t {{77}};
+
+    printf("b.x: %d\n", b.x);
+
+    delete &b;
+}
+
+
+//---------------------------------------------------------------------
+(new[] _): (fixed: size_t, dynamic: size_t) -> *some_t
+{
+    alloc_t = struct { num: size_t; data: some_t[0]; };
+
+    size = (&(0: *alloc_t)~>data[fixed*dynamic] : size_t);
+
+    aligned_alloc: (align: size_t, size: size_t) -> *void;
+
+    void_data = aligned_alloc(alloc_t.align, size);
+
+    data = (void_data : *alloc_t);
+
+    data~>num := dynamic;
+
+    ret = &data~>data[0];
+
+    printf("new[] (some_t[%zd])[%zd]: %p\n", fixed, dynamic, ret);
+
+    v_initialize(ret, fixed*dynamic);
+
+    v_return(ret);
+}
+
+(delete[] _): (data: *some_t, fixed: size_t) -> void
+{
+    alloc_t = struct { num: size_t; data: some_t[0]; };
+
+    shift = (&(0: *alloc_t)~>data[0] : size_t);
+
+    alloc_p = ((data: *char) - shift : *alloc_t);
+
+    dynamic = alloc_p~>num;
+
+    v_terminate(data, fixed*dynamic);
+
+    printf("delete[] (some_t[%zd])[%zd]: %p\n", fixed, dynamic, data);
+
+    v_free(alloc_p);
+}
+
+//---------------------------------------------------------------------
+{   v_debug_print_module(2);
+
+    voidc_verify_jit_module_optimized(true);
+}
+{
+    a = new some_t[M][7] {{}, {{1}, {2}, {3}}};
+
+    printf("a[1][0].x: %d\n", a[1][0].x);
+    printf("a[1][1].x: %d\n", a[1][1].x);
+    printf("a[1][2].x: %d\n", a[1][2].x);
+
+    delete[] a;
+}
 
 
 
