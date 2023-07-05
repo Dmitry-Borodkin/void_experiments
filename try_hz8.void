@@ -49,3 +49,26 @@ print_position_intrinsic: (*voidc_visitor_t, *void, self: *v_ast_base_t) -> void
 }
 
 
+//---------------------------------------------------------------------
+{ v_debug_print_module(1); }
+{
+    a: &v_std_any_t := {};
+
+    v_std_any_set_value(&a, -7i128);
+
+    v = v_std_any_get_value(int(128), &a);
+
+    printf("v: %d\n", (v: int));
+
+    b: &v_std_any_t := a;
+
+    u = v_std_any_get_value(int(128), &b);
+
+//    b: &v_std_any_t[1] := { a };
+//
+//    u = v_std_any_get_value(int(128), &b[0]);
+
+    printf("u: %d\n", (u: int));
+}
+
+

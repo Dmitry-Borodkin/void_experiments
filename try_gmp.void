@@ -103,11 +103,13 @@ my_compile_stmt: (vis: *voidc_visitor_t, void_aux: *void, self: *v_ast_base_t) -
 my_stmt_hook: &compile_stmt_hook_t := v_undef();
 
 //---------------------------------------------------------------------
-{   vis = voidc_compiler;
+{   vis = v_get_compiler();
 
     stmt_q = v_quark_from_string("stmt");
 
-    my_stmt_hook.fun := voidc_visitor_get_void_method(vis, stmt_q, &my_stmt_hook.aux);
+    void_fun = voidc_visitor_get_void_method(vis, stmt_q, &my_stmt_hook.aux);
+
+    my_stmt_hook.fun := (void_fun : *((*voidc_visitor_t, *void, *v_ast_base_t) -> void));
 
     voidc_visitor_set_void_method(vis, vis, stmt_q, my_compile_stmt, &my_stmt_hook);
 }
@@ -411,7 +413,7 @@ mpz_binary_intrinsic: (vis: *voidc_visitor_t, aux: *void,
 }
 
 //---------------------------------------------------------------------
-{   vis = voidc_compiler;
+{   vis = v_get_compiler();
 
     q = v_quark_from_string;
 
@@ -608,7 +610,7 @@ mpz_binary_right_intrinsic: (vis: *voidc_visitor_t, aux: *void,
     v_util_function_dict_set(mpz_ref, q("v.op_infix_or.right"),  q("mpz.right_or"));
     v_util_function_dict_set(mpz_ref, q("v.op_infix_xor.right"), q("mpz.right_xor"));
 
-    vis = voidc_compiler;
+    vis = v_get_compiler();
 
     voidc_visitor_set_intrinsic(vis, vis, q("mpz.right_add"), mpz_binary_right_intrinsic, (q_op_infix_add: *void));
     voidc_visitor_set_intrinsic(vis, vis, q("mpz.right_sub"), mpz_binary_right_intrinsic, (q_op_infix_sub: *void));

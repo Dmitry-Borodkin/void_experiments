@@ -1115,7 +1115,15 @@ struct some_t
     printf("a[1][1].x: %d\n", a[1][1].x);
     printf("a[1][2].x: %d\n", a[1][2].x);
 
+    b: &some_t := a[1][2];
+
+    c: &some_t[7] := a[1];
+
     delete[] a;
+
+    printf("b.x: %d\n", b.x);
+
+    printf("c[2].x: %d\n", c[2].x);
 }
 
 
