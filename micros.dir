@@ -39,7 +39,9 @@ try_dll3.void                                                  │try_dll3.void
 try_inlining.void                                              │try_inlining.void
                                                                │
 ───────────────────────────────────────────────────────────────│
-try_introspect3.void    ... "cairo_" functions ...             │try_introspect3.void
+try_introspect3.void    ... "cairo_" functions ...             │try_introspect3.void | sort
+                                                               │
+try_cairo_api.void                                             │try_cairo_api.void
                                                                │
 ───────────────────────────────────────────────────────────────│
 try_inline.void                                                │try_inline.void

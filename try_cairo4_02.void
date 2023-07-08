@@ -240,6 +240,9 @@ random_star: (cr: *cairo_t, w: int, h: int) -> void
     surface.write_to_png("try_cairo4_02.png");
 }
 
+//---------------------------------------------------------------------
+{   cairo_debug_reset_static_data();
+}
 
 //---------------------------------------------------------------------
 system: (*const char) -> int;

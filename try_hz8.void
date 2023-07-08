@@ -72,3 +72,64 @@ print_position_intrinsic: (*voidc_visitor_t, *void, self: *v_ast_base_t) -> void
 }
 
 
+//---------------------------------------------------------------------
+{ v_debug_print_module(1); }
+{
+    l: &v_util_list_t := {};
+
+    a: &v_std_any_t := {};
+
+//  v_std_any_set_value(&a, 777'777'777u256);           //- WTF?
+    v_std_any_set_pointer(&a, &777'777'777u256);
+
+    v_make_list(&l, &a, 1);
+
+    v_std_any_set_pointer(&a, &l);
+
+    v_list_append(&l, &l, &a, 1);
+
+    v = v_std_any_get_value(uint(256), v_list_get_item(&l, 0));
+
+    printf("v: %d\n", (v: int));
+
+    printf("%d\n", (777'777'777u256 : int));
+}
+
+
+//---------------------------------------------------------------------
+{ v_debug_print_module(1); }
+{
+    m: &v_util_map_t := {};
+
+    v_make_map(&m);
+
+    a: &v_std_any_t := {};
+
+    s: &v_std_string_t := {};
+
+    Q = v_quark_from_string("????????????????????????????????????????????????????");
+
+    printf("Q: %d\n", Q);
+
+    for (q: &v_quark_t := 1; q < Q; ++q)
+    {
+        v_std_string_set(&s, v_quark_to_string(q));
+
+        v_std_any_set_pointer(&a, &s);
+
+        v_map_insert(&m, &m, q, &a);
+    }
+
+    printf("m size: %zd\n", v_map_get_size(&m));
+
+    for (q: &v_quark_t := 1; q < Q; ++q)
+    {
+        pa = v_map_find(&m, q);
+
+        ps = v_std_any_get_pointer(v_std_string_t, pa);
+
+        printf("%d - [%s]\n", q, v_std_string_get(ps));
+    }
+}
+
+
