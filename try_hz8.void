@@ -3,6 +3,8 @@
     v_import("level-02");
     v_import("level-03");
 
+    v_import("llvm-c/Core.void");
+
     v_import("printf.void");
 }
 
@@ -50,7 +52,7 @@ print_position_intrinsic: (*voidc_visitor_t, *void, self: *v_ast_base_t) -> void
 
 
 //---------------------------------------------------------------------
-{ v_debug_print_module(1); }
+//{ v_debug_print_module(1); }
 {
     a: &v_std_any_t := {};
 
@@ -73,14 +75,14 @@ print_position_intrinsic: (*voidc_visitor_t, *void, self: *v_ast_base_t) -> void
 
 
 //---------------------------------------------------------------------
-{ v_debug_print_module(1); }
+//{ v_debug_print_module(1); }
 {
     l: &v_util_list_t := {};
 
     a: &v_std_any_t := {};
 
-//  v_std_any_set_value(&a, 777'777'777u256);           //- WTF?
-    v_std_any_set_pointer(&a, &777'777'777u256);
+//  v_std_any_set_value(&a, 777'888'999'777'888'999u256);           //- WTF?
+    v_std_any_set_pointer(&a, &777'888'999'777'888'999u256);
 
     v_make_list(&l, &a, 1);
 
@@ -90,14 +92,14 @@ print_position_intrinsic: (*voidc_visitor_t, *void, self: *v_ast_base_t) -> void
 
     v = v_std_any_get_value(uint(256), v_list_get_item(&l, 0));
 
-    printf("v: %d\n", (v: int));
+    printf("v: %zd\n", (v: size_t));
 
-    printf("%d\n", (777'777'777u256 : int));
+    printf("%zd\n", (777'888'999'777'888'999u256 : size_t));
 }
 
 
 //---------------------------------------------------------------------
-{ v_debug_print_module(1); }
+//{ v_debug_print_module(1); }
 {
     m: &v_util_map_t := {};
 
@@ -128,8 +130,57 @@ print_position_intrinsic: (*voidc_visitor_t, *void, self: *v_ast_base_t) -> void
 
         ps = v_std_any_get_pointer(v_std_string_t, pa);
 
-        printf("%d - [%s]\n", q, v_std_string_get(ps));
+//      printf("%d - [%s]\n", q, v_std_string_get(ps));
+
+        strcmp: (*const char, *const char) -> int;
+
+        if (qs = v_quark_to_string(q), ss = v_std_string_get(ps), strcmp(qs, ss) != 0)
+        {
+            printf("[%s] != [%s]\n", qs, ss);
+        }
     }
 }
+
+
+//---------------------------------------------------------------------
+{
+    w = v_type_integer_get_width(intptr_t);
+
+    v_add_type("uintptr_t", v_uint_type(w));
+
+    v_add_type("uintptr2_t", v_uint_type(2*w));
+
+    v_add_constant("uintptr_w", unsigned, LLVMConstInt(v_type_get_llvm_type(unsigned), w, 0));
+}
+
+alwaysinline
+pack: (lsb: uintptr_t, msb: uintptr_t) -> uintptr2_t
+{
+    v_return(lsb | ((msb : uintptr2_t) << uintptr_w));
+}
+
+alwaysinline
+unpack: (val: uintptr2_t) -> uintptr_t[2]
+{
+    lsb = (val: uintptr_t);
+
+    msb = (val >> uintptr_w : uintptr_t);
+
+    v_return({lsb, msb});
+}
+
+
+{   v_debug_print_module(2);
+
+    voidc_verify_jit_module_optimized(true);
+}
+{
+    u = pack(777, 888);
+
+    v = unpack(u);
+
+    printf("(%zd, %zd)\n", v[0], v[1]);
+}
+
 
 

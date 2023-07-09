@@ -1,369 +1,370 @@
-cairo_append_path:                              ((*v_struct("struct._cairo"), *v_struct("struct.cairo_path")) -> void);
-cairo_arc_negative:                             ((*v_struct("struct._cairo"), float(64), float(64), float(64), float(64), float(64)) -> void);
-cairo_arc:                                      ((*v_struct("struct._cairo"), float(64), float(64), float(64), float(64), float(64)) -> void);
-cairo_clip_extents:                             ((*v_struct("struct._cairo"), *float(64), *float(64), *float(64), *float(64)) -> void);
-cairo_clip_preserve:                            ((*v_struct("struct._cairo")) -> void);
-cairo_clip:                                     ((*v_struct("struct._cairo")) -> void);
-cairo_close_path:                               ((*v_struct("struct._cairo")) -> void);
-cairo_copy_clip_rectangle_list:                 ((*v_struct("struct._cairo")) -> *v_struct("struct._cairo_rectangle_list"));
-cairo_copy_page:                                ((*v_struct("struct._cairo")) -> void);
-cairo_copy_path_flat:                           ((*v_struct("struct._cairo")) -> *v_struct("struct.cairo_path"));
-cairo_copy_path:                                ((*v_struct("struct._cairo")) -> *v_struct("struct.cairo_path"));
-cairo_curve_to:                                 ((*v_struct("struct._cairo"), float(64), float(64), float(64), float(64), float(64), float(64)) -> void);
-cairo_destroy:                                  ((*v_struct("struct._cairo")) -> void);
-cairo_device_to_user_distance:                  ((*v_struct("struct._cairo"), *float(64), *float(64)) -> void);
-cairo_device_to_user:                           ((*v_struct("struct._cairo"), *float(64), *float(64)) -> void);
-cairo_fill_extents:                             ((*v_struct("struct._cairo"), *float(64), *float(64), *float(64), *float(64)) -> void);
-cairo_fill_preserve:                            ((*v_struct("struct._cairo")) -> void);
-cairo_fill:                                     ((*v_struct("struct._cairo")) -> void);
-cairo_font_extents:                             ((*v_struct("struct._cairo"), *v_struct("struct.anon_struct3")) -> void);
-cairo_get_antialias:                            ((*v_struct("struct._cairo")) -> int(32));
-cairo_get_current_point:                        ((*v_struct("struct._cairo"), *float(64), *float(64)) -> void);
-cairo_get_dash_count:                           ((*v_struct("struct._cairo")) -> int(32));
-cairo_get_dash:                                 ((*v_struct("struct._cairo"), *float(64), *float(64)) -> void);
-cairo_get_fill_rule:                            ((*v_struct("struct._cairo")) -> int(32));
-cairo_get_font_face:                            ((*v_struct("struct._cairo")) -> *v_struct("struct._cairo_font_face"));
-cairo_get_font_matrix:                          ((*v_struct("struct._cairo"), *v_struct("struct._cairo_matrix")) -> void);
-cairo_get_font_options:                         ((*v_struct("struct._cairo"), *v_struct("struct._cairo_font_options")) -> void);
-cairo_get_group_target:                         ((*v_struct("struct._cairo")) -> *v_struct("struct._cairo_surface"));
-cairo_get_line_cap:                             ((*v_struct("struct._cairo")) -> int(32));
-cairo_get_line_join:                            ((*v_struct("struct._cairo")) -> int(32));
-cairo_get_line_width:                           ((*v_struct("struct._cairo")) -> float(64));
-cairo_get_matrix:                               ((*v_struct("struct._cairo"), *v_struct("struct._cairo_matrix")) -> void);
-cairo_get_miter_limit:                          ((*v_struct("struct._cairo")) -> float(64));
-cairo_get_operator:                             ((*v_struct("struct._cairo")) -> int(32));
-cairo_get_reference_count:                      ((*v_struct("struct._cairo")) -> uint(32));
-cairo_get_scaled_font:                          ((*v_struct("struct._cairo")) -> *v_struct("struct._cairo_scaled_font"));
-cairo_get_source:                               ((*v_struct("struct._cairo")) -> *v_struct("struct._cairo_pattern"));
-cairo_get_target:                               ((*v_struct("struct._cairo")) -> *v_struct("struct._cairo_surface"));
-cairo_get_tolerance:                            ((*v_struct("struct._cairo")) -> float(64));
-cairo_get_user_data:                            ((*v_struct("struct._cairo"), *v_struct("struct._cairo_user_data_key")) -> *void);
-cairo_glyph_extents:                            ((*v_struct("struct._cairo"), *v_struct("struct.anon_struct0"), int(32), *v_struct("struct.anon_struct2")) -> void);
-cairo_glyph_path:                               ((*v_struct("struct._cairo"), *v_struct("struct.anon_struct0"), int(32)) -> void);
-cairo_has_current_point:                        ((*v_struct("struct._cairo")) -> int(32));
-cairo_identity_matrix:                          ((*v_struct("struct._cairo")) -> void);
-cairo_in_clip:                                  ((*v_struct("struct._cairo"), float(64), float(64)) -> int(32));
-cairo_in_fill:                                  ((*v_struct("struct._cairo"), float(64), float(64)) -> int(32));
-cairo_in_stroke:                                ((*v_struct("struct._cairo"), float(64), float(64)) -> int(32));
-cairo_line_to:                                  ((*v_struct("struct._cairo"), float(64), float(64)) -> void);
-cairo_mask_surface:                             ((*v_struct("struct._cairo"), *v_struct("struct._cairo_surface"), float(64), float(64)) -> void);
-cairo_mask:                                     ((*v_struct("struct._cairo"), *v_struct("struct._cairo_pattern")) -> void);
-cairo_move_to:                                  ((*v_struct("struct._cairo"), float(64), float(64)) -> void);
-cairo_new_path:                                 ((*v_struct("struct._cairo")) -> void);
-cairo_new_sub_path:                             ((*v_struct("struct._cairo")) -> void);
-cairo_paint:                                    ((*v_struct("struct._cairo")) -> void);
-cairo_paint_with_alpha:                         ((*v_struct("struct._cairo"), float(64)) -> void);
-cairo_path_extents:                             ((*v_struct("struct._cairo"), *float(64), *float(64), *float(64), *float(64)) -> void);
-cairo_pop_group_to_source:                      ((*v_struct("struct._cairo")) -> void);
-cairo_pop_group:                                ((*v_struct("struct._cairo")) -> *v_struct("struct._cairo_pattern"));
-cairo_push_group:                               ((*v_struct("struct._cairo")) -> void);
-cairo_push_group_with_content:                  ((*v_struct("struct._cairo"), int(32)) -> void);
-cairo_rectangle:                                ((*v_struct("struct._cairo"), float(64), float(64), float(64), float(64)) -> void);
-cairo_reference:                                ((*v_struct("struct._cairo")) -> *v_struct("struct._cairo"));
-cairo_rel_curve_to:                             ((*v_struct("struct._cairo"), float(64), float(64), float(64), float(64), float(64), float(64)) -> void);
-cairo_rel_line_to:                              ((*v_struct("struct._cairo"), float(64), float(64)) -> void);
-cairo_rel_move_to:                              ((*v_struct("struct._cairo"), float(64), float(64)) -> void);
-cairo_reset_clip:                               ((*v_struct("struct._cairo")) -> void);
-cairo_restore:                                  ((*v_struct("struct._cairo")) -> void);
-cairo_rotate:                                   ((*v_struct("struct._cairo"), float(64)) -> void);
-cairo_save:                                     ((*v_struct("struct._cairo")) -> void);
-cairo_scale:                                    ((*v_struct("struct._cairo"), float(64), float(64)) -> void);
-cairo_select_font_face:                         ((*v_struct("struct._cairo"), *int(8), int(32), int(32)) -> void);
-cairo_set_antialias:                            ((*v_struct("struct._cairo"), int(32)) -> void);
-cairo_set_dash:                                 ((*v_struct("struct._cairo"), *float(64), int(32), float(64)) -> void);
-cairo_set_fill_rule:                            ((*v_struct("struct._cairo"), int(32)) -> void);
-cairo_set_font_face:                            ((*v_struct("struct._cairo"), *v_struct("struct._cairo_font_face")) -> void);
-cairo_set_font_matrix:                          ((*v_struct("struct._cairo"), *v_struct("struct._cairo_matrix")) -> void);
-cairo_set_font_options:                         ((*v_struct("struct._cairo"), *v_struct("struct._cairo_font_options")) -> void);
-cairo_set_font_size:                            ((*v_struct("struct._cairo"), float(64)) -> void);
-cairo_set_line_cap:                             ((*v_struct("struct._cairo"), int(32)) -> void);
-cairo_set_line_join:                            ((*v_struct("struct._cairo"), int(32)) -> void);
-cairo_set_line_width:                           ((*v_struct("struct._cairo"), float(64)) -> void);
-cairo_set_matrix:                               ((*v_struct("struct._cairo"), *v_struct("struct._cairo_matrix")) -> void);
-cairo_set_miter_limit:                          ((*v_struct("struct._cairo"), float(64)) -> void);
-cairo_set_operator:                             ((*v_struct("struct._cairo"), int(32)) -> void);
-cairo_set_scaled_font:                          ((*v_struct("struct._cairo"), *v_struct("struct._cairo_scaled_font")) -> void);
-cairo_set_source_rgba:                          ((*v_struct("struct._cairo"), float(64), float(64), float(64), float(64)) -> void);
-cairo_set_source_rgb:                           ((*v_struct("struct._cairo"), float(64), float(64), float(64)) -> void);
-cairo_set_source_surface:                       ((*v_struct("struct._cairo"), *v_struct("struct._cairo_surface"), float(64), float(64)) -> void);
-cairo_set_source:                               ((*v_struct("struct._cairo"), *v_struct("struct._cairo_pattern")) -> void);
-cairo_set_tolerance:                            ((*v_struct("struct._cairo"), float(64)) -> void);
-cairo_set_user_data:                            ((*v_struct("struct._cairo"), *v_struct("struct._cairo_user_data_key"), *void, *(() -> void)) -> int(32));
-cairo_show_glyphs:                              ((*v_struct("struct._cairo"), *v_struct("struct.anon_struct0"), int(32)) -> void);
-cairo_show_page:                                ((*v_struct("struct._cairo")) -> void);
-cairo_show_text_glyphs:                         ((*v_struct("struct._cairo"), *int(8), int(32), *v_struct("struct.anon_struct0"), int(32), *v_struct("struct.anon_struct1"), int(32), int(32)) -> void);
-cairo_show_text:                                ((*v_struct("struct._cairo"), *int(8)) -> void);
-cairo_status:                                   ((*v_struct("struct._cairo")) -> int(32));
-cairo_stroke_extents:                           ((*v_struct("struct._cairo"), *float(64), *float(64), *float(64), *float(64)) -> void);
-cairo_stroke_preserve:                          ((*v_struct("struct._cairo")) -> void);
-cairo_stroke:                                   ((*v_struct("struct._cairo")) -> void);
-cairo_tag_begin:                                ((*v_struct("struct._cairo"), *int(8), *int(8)) -> void);
-cairo_tag_end:                                  ((*v_struct("struct._cairo"), *int(8)) -> void);
-cairo_text_extents:                             ((*v_struct("struct._cairo"), *int(8), *v_struct("struct.anon_struct2")) -> void);
-cairo_text_path:                                ((*v_struct("struct._cairo"), *int(8)) -> void);
-cairo_transform:                                ((*v_struct("struct._cairo"), *v_struct("struct._cairo_matrix")) -> void);
-cairo_translate:                                ((*v_struct("struct._cairo"), float(64), float(64)) -> void);
-cairo_user_to_device_distance:                  ((*v_struct("struct._cairo"), *float(64), *float(64)) -> void);
-cairo_user_to_device:                           ((*v_struct("struct._cairo"), *float(64), *float(64)) -> void);
-
-cairo_device_acquire:                           ((*v_struct("struct._cairo_device")) -> int(32));
-cairo_device_destroy:                           ((*v_struct("struct._cairo_device")) -> void);
-cairo_device_finish:                            ((*v_struct("struct._cairo_device")) -> void);
-cairo_device_flush:                             ((*v_struct("struct._cairo_device")) -> void);
-cairo_device_get_reference_count:               ((*v_struct("struct._cairo_device")) -> uint(32));
-cairo_device_get_type:                          ((*v_struct("struct._cairo_device")) -> int(32));
-cairo_device_get_user_data:                     ((*v_struct("struct._cairo_device"), *v_struct("struct._cairo_user_data_key")) -> *void);
-cairo_device_observer_elapsed:                  ((*v_struct("struct._cairo_device")) -> float(64));
-cairo_device_observer_fill_elapsed:             ((*v_struct("struct._cairo_device")) -> float(64));
-cairo_device_observer_glyphs_elapsed:           ((*v_struct("struct._cairo_device")) -> float(64));
-cairo_device_observer_mask_elapsed:             ((*v_struct("struct._cairo_device")) -> float(64));
-cairo_device_observer_paint_elapsed:            ((*v_struct("struct._cairo_device")) -> float(64));
-cairo_device_observer_print:                    ((*v_struct("struct._cairo_device"), *((*void, *uint(8), uint(32)) -> int(32)), *void) -> int(32));
-cairo_device_observer_stroke_elapsed:           ((*v_struct("struct._cairo_device")) -> float(64));
-cairo_device_reference:                         ((*v_struct("struct._cairo_device")) -> *v_struct("struct._cairo_device"));
-cairo_device_release:                           ((*v_struct("struct._cairo_device")) -> void);
-cairo_device_set_user_data:                     ((*v_struct("struct._cairo_device"), *v_struct("struct._cairo_user_data_key"), *void, *(() -> void)) -> int(32));
-cairo_device_status:                            ((*v_struct("struct._cairo_device")) -> int(32));
-
-cairo_font_face_destroy:                        ((*v_struct("struct._cairo_font_face")) -> void);
-cairo_font_face_get_reference_count:            ((*v_struct("struct._cairo_font_face")) -> uint(32));
-cairo_font_face_get_type:                       ((*v_struct("struct._cairo_font_face")) -> int(32));
-cairo_font_face_get_user_data:                  ((*v_struct("struct._cairo_font_face"), *v_struct("struct._cairo_user_data_key")) -> *void);
-cairo_font_face_reference:                      ((*v_struct("struct._cairo_font_face")) -> *v_struct("struct._cairo_font_face"));
-cairo_font_face_set_user_data:                  ((*v_struct("struct._cairo_font_face"), *v_struct("struct._cairo_user_data_key"), *void, *(() -> void)) -> int(32));
-cairo_font_face_status:                         ((*v_struct("struct._cairo_font_face")) -> int(32));
-
-cairo_font_options_copy:                        ((*v_struct("struct._cairo_font_options")) -> *v_struct("struct._cairo_font_options"));
-
-cairo_font_options_create:                      (() -> *v_struct("struct._cairo_font_options"));
-
-cairo_font_options_destroy:                     ((*v_struct("struct._cairo_font_options")) -> void);
-cairo_font_options_equal:                       ((*v_struct("struct._cairo_font_options"), *v_struct("struct._cairo_font_options")) -> int(32));
-cairo_font_options_get_antialias:               ((*v_struct("struct._cairo_font_options")) -> int(32));
-cairo_font_options_get_hint_metrics:            ((*v_struct("struct._cairo_font_options")) -> int(32));
-cairo_font_options_get_hint_style:              ((*v_struct("struct._cairo_font_options")) -> int(32));
-cairo_font_options_get_subpixel_order:          ((*v_struct("struct._cairo_font_options")) -> int(32));
-cairo_font_options_get_variations:              ((*v_struct("struct._cairo_font_options")) -> *int(8));
-cairo_font_options_hash:                        ((*v_struct("struct._cairo_font_options")) -> uint(64));
-cairo_font_options_merge:                       ((*v_struct("struct._cairo_font_options"), *v_struct("struct._cairo_font_options")) -> void);
-cairo_font_options_set_antialias:               ((*v_struct("struct._cairo_font_options"), int(32)) -> void);
-cairo_font_options_set_hint_metrics:            ((*v_struct("struct._cairo_font_options"), int(32)) -> void);
-cairo_font_options_set_hint_style:              ((*v_struct("struct._cairo_font_options"), int(32)) -> void);
-cairo_font_options_set_subpixel_order:          ((*v_struct("struct._cairo_font_options"), int(32)) -> void);
-cairo_font_options_set_variations:              ((*v_struct("struct._cairo_font_options"), *int(8)) -> void);
-cairo_font_options_status:                      ((*v_struct("struct._cairo_font_options")) -> int(32));
-
-cairo_format_stride_for_width:                  ((int(32), int(32)) -> int(32));
-
-cairo_glyph_allocate:                           ((int(32)) -> *v_struct("struct.anon_struct0"));
-
-cairo_glyph_free:                               ((*v_struct("struct.anon_struct0")) -> void);
-
-cairo_image_surface_create_for_data:            ((*uint(8), int(32), int(32), int(32), int(32)) -> *v_struct("struct._cairo_surface"));
-cairo_image_surface_create_from_png:            ((*int(8)) -> *v_struct("struct._cairo_surface"));
-cairo_image_surface_create_from_png_stream:     ((*((*void, *uint(8), uint(32)) -> int(32)), *void) -> *v_struct("struct._cairo_surface"));
-cairo_image_surface_create:                     ((int(32), int(32), int(32)) -> *v_struct("struct._cairo_surface"));
-
-cairo_create:                                   ((*v_struct("struct._cairo_surface")) -> *v_struct("struct._cairo"));
-cairo_image_surface_get_data:                   ((*v_struct("struct._cairo_surface")) -> *uint(8));
-cairo_image_surface_get_format:                 ((*v_struct("struct._cairo_surface")) -> int(32));
-cairo_image_surface_get_height:                 ((*v_struct("struct._cairo_surface")) -> int(32));
-cairo_image_surface_get_stride:                 ((*v_struct("struct._cairo_surface")) -> int(32));
-cairo_image_surface_get_width:                  ((*v_struct("struct._cairo_surface")) -> int(32));
-
-cairo_matrix_init_identity:                     ((*v_struct("struct._cairo_matrix")) -> void);
-cairo_matrix_init_rotate:                       ((*v_struct("struct._cairo_matrix"), float(64)) -> void);
-cairo_matrix_init_scale:                        ((*v_struct("struct._cairo_matrix"), float(64), float(64)) -> void);
-cairo_matrix_init_translate:                    ((*v_struct("struct._cairo_matrix"), float(64), float(64)) -> void);
-cairo_matrix_init:                              ((*v_struct("struct._cairo_matrix"), float(64), float(64), float(64), float(64), float(64), float(64)) -> void);
-cairo_matrix_invert:                            ((*v_struct("struct._cairo_matrix")) -> int(32));
-cairo_matrix_multiply:                          ((*v_struct("struct._cairo_matrix"), *v_struct("struct._cairo_matrix"), *v_struct("struct._cairo_matrix")) -> void);
-cairo_matrix_rotate:                            ((*v_struct("struct._cairo_matrix"), float(64)) -> void);
-cairo_matrix_scale:                             ((*v_struct("struct._cairo_matrix"), float(64), float(64)) -> void);
-cairo_matrix_transform_distance:                ((*v_struct("struct._cairo_matrix"), *float(64), *float(64)) -> void);
-cairo_matrix_transform_point:                   ((*v_struct("struct._cairo_matrix"), *float(64), *float(64)) -> void);
-cairo_matrix_translate:                         ((*v_struct("struct._cairo_matrix"), float(64), float(64)) -> void);
-
-cairo_mesh_pattern_begin_patch:                 ((*v_struct("struct._cairo_pattern")) -> void);
-cairo_mesh_pattern_curve_to:                    ((*v_struct("struct._cairo_pattern"), float(64), float(64), float(64), float(64), float(64), float(64)) -> void);
-cairo_mesh_pattern_end_patch:                   ((*v_struct("struct._cairo_pattern")) -> void);
-cairo_mesh_pattern_get_control_point:           ((*v_struct("struct._cairo_pattern"), uint(32), uint(32), *float(64), *float(64)) -> int(32));
-cairo_mesh_pattern_get_corner_color_rgba:       ((*v_struct("struct._cairo_pattern"), uint(32), uint(32), *float(64), *float(64), *float(64), *float(64)) -> int(32));
-cairo_mesh_pattern_get_patch_count:             ((*v_struct("struct._cairo_pattern"), *uint(32)) -> int(32));
-cairo_mesh_pattern_get_path:                    ((*v_struct("struct._cairo_pattern"), uint(32)) -> *v_struct("struct.cairo_path"));
-cairo_mesh_pattern_line_to:                     ((*v_struct("struct._cairo_pattern"), float(64), float(64)) -> void);
-cairo_mesh_pattern_move_to:                     ((*v_struct("struct._cairo_pattern"), float(64), float(64)) -> void);
-cairo_mesh_pattern_set_control_point:           ((*v_struct("struct._cairo_pattern"), uint(32), float(64), float(64)) -> void);
-cairo_mesh_pattern_set_corner_color_rgba:       ((*v_struct("struct._cairo_pattern"), uint(32), float(64), float(64), float(64), float(64)) -> void);
-cairo_mesh_pattern_set_corner_color_rgb:        ((*v_struct("struct._cairo_pattern"), uint(32), float(64), float(64), float(64)) -> void);
-
-cairo_path_destroy:                             ((*v_struct("struct.cairo_path")) -> void);
-
-cairo_pattern_add_color_stop_rgba:              ((*v_struct("struct._cairo_pattern"), float(64), float(64), float(64), float(64), float(64)) -> void);
-cairo_pattern_add_color_stop_rgb:               ((*v_struct("struct._cairo_pattern"), float(64), float(64), float(64), float(64)) -> void);
-
-cairo_pattern_create_for_surface:               ((*v_struct("struct._cairo_surface")) -> *v_struct("struct._cairo_pattern"));
-
-cairo_pattern_create_linear:                    ((float(64), float(64), float(64), float(64)) -> *v_struct("struct._cairo_pattern"));
-cairo_pattern_create_mesh:                      (() -> *v_struct("struct._cairo_pattern"));
-cairo_pattern_create_radial:                    ((float(64), float(64), float(64), float(64), float(64), float(64)) -> *v_struct("struct._cairo_pattern"));
-cairo_pattern_create_raster_source:             ((*void, int(32), int(32), int(32)) -> *v_struct("struct._cairo_pattern"));
-cairo_pattern_create_rgba:                      ((float(64), float(64), float(64), float(64)) -> *v_struct("struct._cairo_pattern"));
-cairo_pattern_create_rgb:                       ((float(64), float(64), float(64)) -> *v_struct("struct._cairo_pattern"));
-
-cairo_pattern_destroy:                          ((*v_struct("struct._cairo_pattern")) -> void);
-cairo_pattern_get_color_stop_count:             ((*v_struct("struct._cairo_pattern"), *int(32)) -> int(32));
-cairo_pattern_get_color_stop_rgba:              ((*v_struct("struct._cairo_pattern"), int(32), *float(64), *float(64), *float(64), *float(64), *float(64)) -> int(32));
-cairo_pattern_get_extend:                       ((*v_struct("struct._cairo_pattern")) -> int(32));
-cairo_pattern_get_filter:                       ((*v_struct("struct._cairo_pattern")) -> int(32));
-cairo_pattern_get_linear_points:                ((*v_struct("struct._cairo_pattern"), *float(64), *float(64), *float(64), *float(64)) -> int(32));
-cairo_pattern_get_matrix:                       ((*v_struct("struct._cairo_pattern"), *v_struct("struct._cairo_matrix")) -> void);
-cairo_pattern_get_radial_circles:               ((*v_struct("struct._cairo_pattern"), *float(64), *float(64), *float(64), *float(64), *float(64), *float(64)) -> int(32));
-cairo_pattern_get_reference_count:              ((*v_struct("struct._cairo_pattern")) -> uint(32));
-cairo_pattern_get_rgba:                         ((*v_struct("struct._cairo_pattern"), *float(64), *float(64), *float(64), *float(64)) -> int(32));
-cairo_pattern_get_surface:                      ((*v_struct("struct._cairo_pattern"), **v_struct("struct._cairo_surface")) -> int(32));
-cairo_pattern_get_type:                         ((*v_struct("struct._cairo_pattern")) -> int(32));
-cairo_pattern_get_user_data:                    ((*v_struct("struct._cairo_pattern"), *v_struct("struct._cairo_user_data_key")) -> *void);
-cairo_pattern_reference:                        ((*v_struct("struct._cairo_pattern")) -> *v_struct("struct._cairo_pattern"));
-cairo_pattern_set_extend:                       ((*v_struct("struct._cairo_pattern"), int(32)) -> void);
-cairo_pattern_set_filter:                       ((*v_struct("struct._cairo_pattern"), int(32)) -> void);
-cairo_pattern_set_matrix:                       ((*v_struct("struct._cairo_pattern"), *v_struct("struct._cairo_matrix")) -> void);
-cairo_pattern_set_user_data:                    ((*v_struct("struct._cairo_pattern"), *v_struct("struct._cairo_user_data_key"), *void, *(() -> void)) -> int(32));
-cairo_pattern_status:                           ((*v_struct("struct._cairo_pattern")) -> int(32));
-
-cairo_raster_source_pattern_get_acquire:        ((*v_struct("struct._cairo_pattern"), **((*v_struct("struct._cairo_pattern"), *void, *v_struct("struct._cairo_surface"), *v_struct("struct._cairo_rectangle_int")) -> *v_struct("struct._cairo_surface")), **((*v_struct("struct._cairo_pattern"), *void, *v_struct("struct._cairo_surface")) -> void)) -> void);
-cairo_raster_source_pattern_get_callback_data:  ((*v_struct("struct._cairo_pattern")) -> *void);
-cairo_raster_source_pattern_get_copy:           ((*v_struct("struct._cairo_pattern")) -> *((*v_struct("struct._cairo_pattern"), *void, *v_struct("struct._cairo_pattern")) -> int(32)));
-cairo_raster_source_pattern_get_finish:         ((*v_struct("struct._cairo_pattern")) -> *((*v_struct("struct._cairo_pattern"), *void) -> void));
-cairo_raster_source_pattern_get_snapshot:       ((*v_struct("struct._cairo_pattern")) -> *((*v_struct("struct._cairo_pattern"), *void) -> int(32)));
-cairo_raster_source_pattern_set_acquire:        ((*v_struct("struct._cairo_pattern"), *((*v_struct("struct._cairo_pattern"), *void, *v_struct("struct._cairo_surface"), *v_struct("struct._cairo_rectangle_int")) -> *v_struct("struct._cairo_surface")), *((*v_struct("struct._cairo_pattern"), *void, *v_struct("struct._cairo_surface")) -> void)) -> void);
-cairo_raster_source_pattern_set_callback_data:  ((*v_struct("struct._cairo_pattern"), *void) -> void);
-cairo_raster_source_pattern_set_copy:           ((*v_struct("struct._cairo_pattern"), *((*v_struct("struct._cairo_pattern"), *void, *v_struct("struct._cairo_pattern")) -> int(32))) -> void);
-cairo_raster_source_pattern_set_finish:         ((*v_struct("struct._cairo_pattern"), *((*v_struct("struct._cairo_pattern"), *void) -> void)) -> void);
-cairo_raster_source_pattern_set_snapshot:       ((*v_struct("struct._cairo_pattern"), *((*v_struct("struct._cairo_pattern"), *void) -> int(32))) -> void);
-
-cairo_recording_surface_create:                 ((int(32), *v_struct("struct._cairo_rectangle")) -> *v_struct("struct._cairo_surface"));
-
-cairo_recording_surface_get_extents:            ((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_rectangle")) -> int(32));
-cairo_recording_surface_ink_extents:            ((*v_struct("struct._cairo_surface"), *float(64), *float(64), *float(64), *float(64)) -> void);
-
-cairo_rectangle_list_destroy:                   ((*v_struct("struct._cairo_rectangle_list")) -> void);
-
-cairo_region_contains_point:                    ((*v_struct("struct._cairo_region"), int(32), int(32)) -> int(32));
-cairo_region_contains_rectangle:                ((*v_struct("struct._cairo_region"), *v_struct("struct._cairo_rectangle_int")) -> int(32));
-cairo_region_copy:                              ((*v_struct("struct._cairo_region")) -> *v_struct("struct._cairo_region"));
-
-cairo_region_create_rectangles:                 ((*v_struct("struct._cairo_rectangle_int"), int(32)) -> *v_struct("struct._cairo_region"));
-cairo_region_create_rectangle:                  ((*v_struct("struct._cairo_rectangle_int")) -> *v_struct("struct._cairo_region"));
-
-cairo_region_create:                            (() -> *v_struct("struct._cairo_region"));
-
-cairo_region_destroy:                           ((*v_struct("struct._cairo_region")) -> void);
-cairo_region_equal:                             ((*v_struct("struct._cairo_region"), *v_struct("struct._cairo_region")) -> int(32));
-cairo_region_get_extents:                       ((*v_struct("struct._cairo_region"), *v_struct("struct._cairo_rectangle_int")) -> void);
-cairo_region_get_rectangle:                     ((*v_struct("struct._cairo_region"), int(32), *v_struct("struct._cairo_rectangle_int")) -> void);
-cairo_region_intersect_rectangle:               ((*v_struct("struct._cairo_region"), *v_struct("struct._cairo_rectangle_int")) -> int(32));
-cairo_region_intersect:                         ((*v_struct("struct._cairo_region"), *v_struct("struct._cairo_region")) -> int(32));
-cairo_region_is_empty:                          ((*v_struct("struct._cairo_region")) -> int(32));
-cairo_region_num_rectangles:                    ((*v_struct("struct._cairo_region")) -> int(32));
-cairo_region_reference:                         ((*v_struct("struct._cairo_region")) -> *v_struct("struct._cairo_region"));
-cairo_region_status:                            ((*v_struct("struct._cairo_region")) -> int(32));
-cairo_region_subtract_rectangle:                ((*v_struct("struct._cairo_region"), *v_struct("struct._cairo_rectangle_int")) -> int(32));
-cairo_region_subtract:                          ((*v_struct("struct._cairo_region"), *v_struct("struct._cairo_region")) -> int(32));
-cairo_region_translate:                         ((*v_struct("struct._cairo_region"), int(32), int(32)) -> void);
-cairo_region_union_rectangle:                   ((*v_struct("struct._cairo_region"), *v_struct("struct._cairo_rectangle_int")) -> int(32));
-cairo_region_union:                             ((*v_struct("struct._cairo_region"), *v_struct("struct._cairo_region")) -> int(32));
-cairo_region_xor_rectangle:                     ((*v_struct("struct._cairo_region"), *v_struct("struct._cairo_rectangle_int")) -> int(32));
-cairo_region_xor:                               ((*v_struct("struct._cairo_region"), *v_struct("struct._cairo_region")) -> int(32));
-
-cairo_scaled_font_create:                       ((*v_struct("struct._cairo_font_face"), *v_struct("struct._cairo_matrix"), *v_struct("struct._cairo_matrix"), *v_struct("struct._cairo_font_options")) -> *v_struct("struct._cairo_scaled_font"));
-
-cairo_scaled_font_destroy:                      ((*v_struct("struct._cairo_scaled_font")) -> void);
-cairo_scaled_font_extents:                      ((*v_struct("struct._cairo_scaled_font"), *v_struct("struct.anon_struct3")) -> void);
-cairo_scaled_font_get_ctm:                      ((*v_struct("struct._cairo_scaled_font"), *v_struct("struct._cairo_matrix")) -> void);
-cairo_scaled_font_get_font_face:                ((*v_struct("struct._cairo_scaled_font")) -> *v_struct("struct._cairo_font_face"));
-cairo_scaled_font_get_font_matrix:              ((*v_struct("struct._cairo_scaled_font"), *v_struct("struct._cairo_matrix")) -> void);
-cairo_scaled_font_get_font_options:             ((*v_struct("struct._cairo_scaled_font"), *v_struct("struct._cairo_font_options")) -> void);
-cairo_scaled_font_get_reference_count:          ((*v_struct("struct._cairo_scaled_font")) -> uint(32));
-cairo_scaled_font_get_scale_matrix:             ((*v_struct("struct._cairo_scaled_font"), *v_struct("struct._cairo_matrix")) -> void);
-cairo_scaled_font_get_type:                     ((*v_struct("struct._cairo_scaled_font")) -> int(32));
-cairo_scaled_font_get_user_data:                ((*v_struct("struct._cairo_scaled_font"), *v_struct("struct._cairo_user_data_key")) -> *void);
-cairo_scaled_font_glyph_extents:                ((*v_struct("struct._cairo_scaled_font"), *v_struct("struct.anon_struct0"), int(32), *v_struct("struct.anon_struct2")) -> void);
-cairo_scaled_font_reference:                    ((*v_struct("struct._cairo_scaled_font")) -> *v_struct("struct._cairo_scaled_font"));
-cairo_scaled_font_set_user_data:                ((*v_struct("struct._cairo_scaled_font"), *v_struct("struct._cairo_user_data_key"), *void, *(() -> void)) -> int(32));
-cairo_scaled_font_status:                       ((*v_struct("struct._cairo_scaled_font")) -> int(32));
-cairo_scaled_font_text_extents:                 ((*v_struct("struct._cairo_scaled_font"), *int(8), *v_struct("struct.anon_struct2")) -> void);
-cairo_scaled_font_text_to_glyphs:               ((*v_struct("struct._cairo_scaled_font"), float(64), float(64), *int(8), int(32), **v_struct("struct.anon_struct0"), *int(32), **v_struct("struct.anon_struct1"), *int(32), *int(32)) -> int(32));
-
-cairo_status_to_string:                         ((int(32)) -> *int(8));
-
-cairo_surface_copy_page:                        ((*v_struct("struct._cairo_surface")) -> void);
-cairo_surface_create_for_rectangle:             ((*v_struct("struct._cairo_surface"), float(64), float(64), float(64), float(64)) -> *v_struct("struct._cairo_surface"));
-cairo_surface_create_observer:                  ((*v_struct("struct._cairo_surface"), int(32)) -> *v_struct("struct._cairo_surface"));
-cairo_surface_create_similar_image:             ((*v_struct("struct._cairo_surface"), int(32), int(32), int(32)) -> *v_struct("struct._cairo_surface"));
-cairo_surface_create_similar:                   ((*v_struct("struct._cairo_surface"), int(32), int(32), int(32)) -> *v_struct("struct._cairo_surface"));
-cairo_surface_destroy:                          ((*v_struct("struct._cairo_surface")) -> void);
-cairo_surface_finish:                           ((*v_struct("struct._cairo_surface")) -> void);
-cairo_surface_flush:                            ((*v_struct("struct._cairo_surface")) -> void);
-cairo_surface_get_content:                      ((*v_struct("struct._cairo_surface")) -> int(32));
-cairo_surface_get_device_offset:                ((*v_struct("struct._cairo_surface"), *float(64), *float(64)) -> void);
-cairo_surface_get_device_scale:                 ((*v_struct("struct._cairo_surface"), *float(64), *float(64)) -> void);
-cairo_surface_get_device:                       ((*v_struct("struct._cairo_surface")) -> *v_struct("struct._cairo_device"));
-cairo_surface_get_fallback_resolution:          ((*v_struct("struct._cairo_surface"), *float(64), *float(64)) -> void);
-cairo_surface_get_font_options:                 ((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_font_options")) -> void);
-cairo_surface_get_mime_data:                    ((*v_struct("struct._cairo_surface"), *int(8), **uint(8), *uint(64)) -> void);
-cairo_surface_get_reference_count:              ((*v_struct("struct._cairo_surface")) -> uint(32));
-cairo_surface_get_type:                         ((*v_struct("struct._cairo_surface")) -> int(32));
-cairo_surface_get_user_data:                    ((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_user_data_key")) -> *void);
-cairo_surface_has_show_text_glyphs:             ((*v_struct("struct._cairo_surface")) -> int(32));
-cairo_surface_map_to_image:                     ((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_rectangle_int")) -> *v_struct("struct._cairo_surface"));
-cairo_surface_mark_dirty_rectangle:             ((*v_struct("struct._cairo_surface"), int(32), int(32), int(32), int(32)) -> void);
-cairo_surface_mark_dirty:                       ((*v_struct("struct._cairo_surface")) -> void);
-cairo_surface_observer_add_fill_callback:       ((*v_struct("struct._cairo_surface"), *((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_surface"), *void) -> void), *void) -> int(32));
-cairo_surface_observer_add_finish_callback:     ((*v_struct("struct._cairo_surface"), *((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_surface"), *void) -> void), *void) -> int(32));
-cairo_surface_observer_add_flush_callback:      ((*v_struct("struct._cairo_surface"), *((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_surface"), *void) -> void), *void) -> int(32));
-cairo_surface_observer_add_glyphs_callback:     ((*v_struct("struct._cairo_surface"), *((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_surface"), *void) -> void), *void) -> int(32));
-cairo_surface_observer_add_mask_callback:       ((*v_struct("struct._cairo_surface"), *((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_surface"), *void) -> void), *void) -> int(32));
-cairo_surface_observer_add_paint_callback:      ((*v_struct("struct._cairo_surface"), *((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_surface"), *void) -> void), *void) -> int(32));
-cairo_surface_observer_add_stroke_callback:     ((*v_struct("struct._cairo_surface"), *((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_surface"), *void) -> void), *void) -> int(32));
-cairo_surface_observer_elapsed:                 ((*v_struct("struct._cairo_surface")) -> float(64));
-cairo_surface_observer_print:                   ((*v_struct("struct._cairo_surface"), *((*void, *uint(8), uint(32)) -> int(32)), *void) -> int(32));
-cairo_surface_reference:                        ((*v_struct("struct._cairo_surface")) -> *v_struct("struct._cairo_surface"));
-cairo_surface_set_device_offset:                ((*v_struct("struct._cairo_surface"), float(64), float(64)) -> void);
-cairo_surface_set_device_scale:                 ((*v_struct("struct._cairo_surface"), float(64), float(64)) -> void);
-cairo_surface_set_fallback_resolution:          ((*v_struct("struct._cairo_surface"), float(64), float(64)) -> void);
-cairo_surface_set_mime_data:                    ((*v_struct("struct._cairo_surface"), *int(8), *uint(8), uint(64), *(() -> void), *void) -> int(32));
-cairo_surface_set_user_data:                    ((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_user_data_key"), *void, *(() -> void)) -> int(32));
-cairo_surface_show_page:                        ((*v_struct("struct._cairo_surface")) -> void);
-cairo_surface_status:                           ((*v_struct("struct._cairo_surface")) -> int(32));
-cairo_surface_supports_mime_type:               ((*v_struct("struct._cairo_surface"), *int(8)) -> int(32));
-cairo_surface_unmap_image:                      ((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_surface")) -> void);
-cairo_surface_write_to_png_stream:              ((*v_struct("struct._cairo_surface"), *((*void, *uint(8), uint(32)) -> int(32)), *void) -> int(32));
-cairo_surface_write_to_png:                     ((*v_struct("struct._cairo_surface"), *int(8)) -> int(32));
-
-cairo_text_cluster_allocate:                    ((int(32)) -> *v_struct("struct.anon_struct1"));
-
-cairo_text_cluster_free:                        ((*v_struct("struct.anon_struct1")) -> void);
-
-cairo_toy_font_face_create:                     ((*int(8), int(32), int(32)) -> *v_struct("struct._cairo_font_face"));
-
-cairo_toy_font_face_get_family:                 ((*v_struct("struct._cairo_font_face")) -> *int(8));
-cairo_toy_font_face_get_slant:                  ((*v_struct("struct._cairo_font_face")) -> int(32));
-cairo_toy_font_face_get_weight:                 ((*v_struct("struct._cairo_font_face")) -> int(32));
-
-cairo_user_font_face_create:                    (() -> *v_struct("struct._cairo_font_face"));
-
-cairo_user_font_face_get_init_func:             ((*v_struct("struct._cairo_font_face")) -> *((*v_struct("struct._cairo_scaled_font"), *v_struct("struct._cairo"), *v_struct("struct.anon_struct3")) -> int(32)));
-cairo_user_font_face_get_render_glyph_func:     ((*v_struct("struct._cairo_font_face")) -> *((*v_struct("struct._cairo_scaled_font"), uint(64), *v_struct("struct._cairo"), *v_struct("struct.anon_struct2")) -> int(32)));
-cairo_user_font_face_get_text_to_glyphs_func:   ((*v_struct("struct._cairo_font_face")) -> *((*v_struct("struct._cairo_scaled_font"), *int(8), int(32), **v_struct("struct.anon_struct0"), *int(32), **v_struct("struct.anon_struct1"), *int(32), *int(32)) -> int(32)));
-cairo_user_font_face_get_unicode_to_glyph_func: ((*v_struct("struct._cairo_font_face")) -> *((*v_struct("struct._cairo_scaled_font"), uint(64), *uint(64)) -> int(32)));
-cairo_user_font_face_set_init_func:             ((*v_struct("struct._cairo_font_face"), *((*v_struct("struct._cairo_scaled_font"), *v_struct("struct._cairo"), *v_struct("struct.anon_struct3")) -> int(32))) -> void);
-cairo_user_font_face_set_render_glyph_func:     ((*v_struct("struct._cairo_font_face"), *((*v_struct("struct._cairo_scaled_font"), uint(64), *v_struct("struct._cairo"), *v_struct("struct.anon_struct2")) -> int(32))) -> void);
-cairo_user_font_face_set_text_to_glyphs_func:   ((*v_struct("struct._cairo_font_face"), *((*v_struct("struct._cairo_scaled_font"), *int(8), int(32), **v_struct("struct.anon_struct0"), *int(32), **v_struct("struct.anon_struct1"), *int(32), *int(32)) -> int(32))) -> void);
-cairo_user_font_face_set_unicode_to_glyph_func: ((*v_struct("struct._cairo_font_face"), *((*v_struct("struct._cairo_scaled_font"), uint(64), *uint(64)) -> int(32))) -> void);
-
-cairo_debug_reset_static_data:                  (() -> void);
-
-cairo_version:                                  (() -> int(32));
-cairo_version_string:                           (() -> *int(8));
+cairo_append_path:                              //- ((*v_struct("struct._cairo"), *v_struct("struct.cairo_path")) -> void);
+cairo_arc_negative:                             //- ((*v_struct("struct._cairo"), float(64), float(64), float(64), float(64), float(64)) -> void);
+cairo_arc:                                      //- ((*v_struct("struct._cairo"), float(64), float(64), float(64), float(64), float(64)) -> void);
+cairo_clip_extents:                             //- ((*v_struct("struct._cairo"), *float(64), *float(64), *float(64), *float(64)) -> void);
+cairo_clip_preserve:                            //- ((*v_struct("struct._cairo")) -> void);
+cairo_clip:                                     //- ((*v_struct("struct._cairo")) -> void);
+cairo_close_path:                               //- ((*v_struct("struct._cairo")) -> void);
+cairo_copy_clip_rectangle_list:                 //- ((*v_struct("struct._cairo")) -> *v_struct("struct._cairo_rectangle_list"));
+cairo_copy_page:                                //- ((*v_struct("struct._cairo")) -> void);
+cairo_copy_path_flat:                           //- ((*v_struct("struct._cairo")) -> *v_struct("struct.cairo_path"));
+cairo_copy_path:                                //- ((*v_struct("struct._cairo")) -> *v_struct("struct.cairo_path"));
+cairo_curve_to:                                 //- ((*v_struct("struct._cairo"), float(64), float(64), float(64), float(64), float(64), float(64)) -> void);
+cairo_destroy:                                  //- ((*v_struct("struct._cairo")) -> void);
+cairo_device_to_user_distance:                  //- ((*v_struct("struct._cairo"), *float(64), *float(64)) -> void);
+cairo_device_to_user:                           //- ((*v_struct("struct._cairo"), *float(64), *float(64)) -> void);
+cairo_fill_extents:                             //- ((*v_struct("struct._cairo"), *float(64), *float(64), *float(64), *float(64)) -> void);
+cairo_fill_preserve:                            //- ((*v_struct("struct._cairo")) -> void);
+cairo_fill:                                     //- ((*v_struct("struct._cairo")) -> void);
+cairo_font_extents:                             //- ((*v_struct("struct._cairo"), *v_struct("struct.anon_struct3")) -> void);
+cairo_get_antialias:                            //- ((*v_struct("struct._cairo")) -> int(32));
+cairo_get_current_point:                        //- ((*v_struct("struct._cairo"), *float(64), *float(64)) -> void);
+cairo_get_dash_count:                           //- ((*v_struct("struct._cairo")) -> int(32));
+cairo_get_dash:                                 //- ((*v_struct("struct._cairo"), *float(64), *float(64)) -> void);
+cairo_get_fill_rule:                            //- ((*v_struct("struct._cairo")) -> int(32));
+cairo_get_font_face:                            //- ((*v_struct("struct._cairo")) -> *v_struct("struct._cairo_font_face"));
+cairo_get_font_matrix:                          //- ((*v_struct("struct._cairo"), *v_struct("struct._cairo_matrix")) -> void);
+cairo_get_font_options:                         //- ((*v_struct("struct._cairo"), *v_struct("struct._cairo_font_options")) -> void);
+cairo_get_group_target:                         //- ((*v_struct("struct._cairo")) -> *v_struct("struct._cairo_surface"));
+cairo_get_line_cap:                             //- ((*v_struct("struct._cairo")) -> int(32));
+cairo_get_line_join:                            //- ((*v_struct("struct._cairo")) -> int(32));
+cairo_get_line_width:                           //- ((*v_struct("struct._cairo")) -> float(64));
+cairo_get_matrix:                               //- ((*v_struct("struct._cairo"), *v_struct("struct._cairo_matrix")) -> void);
+cairo_get_miter_limit:                          //- ((*v_struct("struct._cairo")) -> float(64));
+cairo_get_operator:                             //- ((*v_struct("struct._cairo")) -> int(32));
+cairo_get_reference_count:                      //- ((*v_struct("struct._cairo")) -> uint(32));
+cairo_get_scaled_font:                          //- ((*v_struct("struct._cairo")) -> *v_struct("struct._cairo_scaled_font"));
+cairo_get_source:                               //- ((*v_struct("struct._cairo")) -> *v_struct("struct._cairo_pattern"));
+cairo_get_target:                               //- ((*v_struct("struct._cairo")) -> *v_struct("struct._cairo_surface"));
+cairo_get_tolerance:                            //- ((*v_struct("struct._cairo")) -> float(64));
+cairo_get_user_data:                            //- ((*v_struct("struct._cairo"), *v_struct("struct._cairo_user_data_key")) -> *void);
+cairo_glyph_extents:                            //- ((*v_struct("struct._cairo"), *v_struct("struct.anon_struct0"), int(32), *v_struct("struct.anon_struct2")) -> void);
+cairo_glyph_path:                               //- ((*v_struct("struct._cairo"), *v_struct("struct.anon_struct0"), int(32)) -> void);
+cairo_has_current_point:                        //- ((*v_struct("struct._cairo")) -> int(32));
+cairo_identity_matrix:                          //- ((*v_struct("struct._cairo")) -> void);
+cairo_in_clip:                                  //- ((*v_struct("struct._cairo"), float(64), float(64)) -> int(32));
+cairo_in_fill:                                  //- ((*v_struct("struct._cairo"), float(64), float(64)) -> int(32));
+cairo_in_stroke:                                //- ((*v_struct("struct._cairo"), float(64), float(64)) -> int(32));
+cairo_line_to:                                  //- ((*v_struct("struct._cairo"), float(64), float(64)) -> void);
+cairo_mask_surface:                             //- ((*v_struct("struct._cairo"), *v_struct("struct._cairo_surface"), float(64), float(64)) -> void);
+cairo_mask:                                     //- ((*v_struct("struct._cairo"), *v_struct("struct._cairo_pattern")) -> void);
+cairo_move_to:                                  //- ((*v_struct("struct._cairo"), float(64), float(64)) -> void);
+cairo_new_path:                                 //- ((*v_struct("struct._cairo")) -> void);
+cairo_new_sub_path:                             //- ((*v_struct("struct._cairo")) -> void);
+cairo_paint:                                    //- ((*v_struct("struct._cairo")) -> void);
+cairo_paint_with_alpha:                         //- ((*v_struct("struct._cairo"), float(64)) -> void);
+cairo_path_extents:                             //- ((*v_struct("struct._cairo"), *float(64), *float(64), *float(64), *float(64)) -> void);
+cairo_pop_group_to_source:                      //- ((*v_struct("struct._cairo")) -> void);
+cairo_pop_group:                                //- ((*v_struct("struct._cairo")) -> *v_struct("struct._cairo_pattern"));
+cairo_push_group:                               //- ((*v_struct("struct._cairo")) -> void);
+cairo_push_group_with_content:                  //- ((*v_struct("struct._cairo"), int(32)) -> void);
+cairo_rectangle:                                //- ((*v_struct("struct._cairo"), float(64), float(64), float(64), float(64)) -> void);
+cairo_reference:                                //- ((*v_struct("struct._cairo")) -> *v_struct("struct._cairo"));
+cairo_rel_curve_to:                             //- ((*v_struct("struct._cairo"), float(64), float(64), float(64), float(64), float(64), float(64)) -> void);
+cairo_rel_line_to:                              //- ((*v_struct("struct._cairo"), float(64), float(64)) -> void);
+cairo_rel_move_to:                              //- ((*v_struct("struct._cairo"), float(64), float(64)) -> void);
+cairo_reset_clip:                               //- ((*v_struct("struct._cairo")) -> void);
+cairo_restore:                                  //- ((*v_struct("struct._cairo")) -> void);
+cairo_rotate:                                   //- ((*v_struct("struct._cairo"), float(64)) -> void);
+cairo_save:                                     //- ((*v_struct("struct._cairo")) -> void);
+cairo_scale:                                    //- ((*v_struct("struct._cairo"), float(64), float(64)) -> void);
+cairo_select_font_face:                         //- ((*v_struct("struct._cairo"), *int(8), int(32), int(32)) -> void);
+cairo_set_antialias:                            //- ((*v_struct("struct._cairo"), int(32)) -> void);
+cairo_set_dash:                                 //- ((*v_struct("struct._cairo"), *float(64), int(32), float(64)) -> void);
+cairo_set_fill_rule:                            //- ((*v_struct("struct._cairo"), int(32)) -> void);
+cairo_set_font_face:                            //- ((*v_struct("struct._cairo"), *v_struct("struct._cairo_font_face")) -> void);
+cairo_set_font_matrix:                          //- ((*v_struct("struct._cairo"), *v_struct("struct._cairo_matrix")) -> void);
+cairo_set_font_options:                         //- ((*v_struct("struct._cairo"), *v_struct("struct._cairo_font_options")) -> void);
+cairo_set_font_size:                            //- ((*v_struct("struct._cairo"), float(64)) -> void);
+cairo_set_line_cap:                             //- ((*v_struct("struct._cairo"), int(32)) -> void);
+cairo_set_line_join:                            //- ((*v_struct("struct._cairo"), int(32)) -> void);
+cairo_set_line_width:                           //- ((*v_struct("struct._cairo"), float(64)) -> void);
+cairo_set_matrix:                               //- ((*v_struct("struct._cairo"), *v_struct("struct._cairo_matrix")) -> void);
+cairo_set_miter_limit:                          //- ((*v_struct("struct._cairo"), float(64)) -> void);
+cairo_set_operator:                             //- ((*v_struct("struct._cairo"), int(32)) -> void);
+cairo_set_scaled_font:                          //- ((*v_struct("struct._cairo"), *v_struct("struct._cairo_scaled_font")) -> void);
+cairo_set_source_rgba:                          //- ((*v_struct("struct._cairo"), float(64), float(64), float(64), float(64)) -> void);
+cairo_set_source_rgb:                           //- ((*v_struct("struct._cairo"), float(64), float(64), float(64)) -> void);
+cairo_set_source_surface:                       //- ((*v_struct("struct._cairo"), *v_struct("struct._cairo_surface"), float(64), float(64)) -> void);
+cairo_set_source:                               //- ((*v_struct("struct._cairo"), *v_struct("struct._cairo_pattern")) -> void);
+cairo_set_tolerance:                            //- ((*v_struct("struct._cairo"), float(64)) -> void);
+cairo_set_user_data:                            //- ((*v_struct("struct._cairo"), *v_struct("struct._cairo_user_data_key"), *void, *(() -> void)) -> int(32));
+cairo_show_glyphs:                              //- ((*v_struct("struct._cairo"), *v_struct("struct.anon_struct0"), int(32)) -> void);
+cairo_show_page:                                //- ((*v_struct("struct._cairo")) -> void);
+cairo_show_text_glyphs:                         //- ((*v_struct("struct._cairo"), *int(8), int(32), *v_struct("struct.anon_struct0"), int(32), *v_struct("struct.anon_struct1"), int(32), int(32)) -> void);
+cairo_show_text:                                //- ((*v_struct("struct._cairo"), *int(8)) -> void);
+cairo_status:                                   //- ((*v_struct("struct._cairo")) -> int(32));
+cairo_stroke_extents:                           //- ((*v_struct("struct._cairo"), *float(64), *float(64), *float(64), *float(64)) -> void);
+cairo_stroke_preserve:                          //- ((*v_struct("struct._cairo")) -> void);
+cairo_stroke:                                   //- ((*v_struct("struct._cairo")) -> void);
+cairo_tag_begin:                                //- ((*v_struct("struct._cairo"), *int(8), *int(8)) -> void);
+cairo_tag_end:                                  //- ((*v_struct("struct._cairo"), *int(8)) -> void);
+cairo_text_extents:                             //- ((*v_struct("struct._cairo"), *int(8), *v_struct("struct.anon_struct2")) -> void);
+cairo_text_path:                                //- ((*v_struct("struct._cairo"), *int(8)) -> void);
+cairo_transform:                                //- ((*v_struct("struct._cairo"), *v_struct("struct._cairo_matrix")) -> void);
+cairo_translate:                                //- ((*v_struct("struct._cairo"), float(64), float(64)) -> void);
+cairo_user_to_device_distance:                  //- ((*v_struct("struct._cairo"), *float(64), *float(64)) -> void);
+cairo_user_to_device:                           //- ((*v_struct("struct._cairo"), *float(64), *float(64)) -> void);
+                                                //-
+cairo_device_acquire:                           //- ((*v_struct("struct._cairo_device")) -> int(32));
+cairo_device_destroy:                           //- ((*v_struct("struct._cairo_device")) -> void);
+cairo_device_finish:                            //- ((*v_struct("struct._cairo_device")) -> void);
+cairo_device_flush:                             //- ((*v_struct("struct._cairo_device")) -> void);
+cairo_device_get_reference_count:               //- ((*v_struct("struct._cairo_device")) -> uint(32));
+cairo_device_get_type:                          //- ((*v_struct("struct._cairo_device")) -> int(32));
+cairo_device_get_user_data:                     //- ((*v_struct("struct._cairo_device"), *v_struct("struct._cairo_user_data_key")) -> *void);
+cairo_device_observer_elapsed:                  //- ((*v_struct("struct._cairo_device")) -> float(64));
+cairo_device_observer_fill_elapsed:             //- ((*v_struct("struct._cairo_device")) -> float(64));
+cairo_device_observer_glyphs_elapsed:           //- ((*v_struct("struct._cairo_device")) -> float(64));
+cairo_device_observer_mask_elapsed:             //- ((*v_struct("struct._cairo_device")) -> float(64));
+cairo_device_observer_paint_elapsed:            //- ((*v_struct("struct._cairo_device")) -> float(64));
+cairo_device_observer_print:                    //- ((*v_struct("struct._cairo_device"), *((*void, *uint(8), uint(32)) -> int(32)), *void) -> int(32));
+cairo_device_observer_stroke_elapsed:           //- ((*v_struct("struct._cairo_device")) -> float(64));
+cairo_device_reference:                         //- ((*v_struct("struct._cairo_device")) -> *v_struct("struct._cairo_device"));
+cairo_device_release:                           //- ((*v_struct("struct._cairo_device")) -> void);
+cairo_device_set_user_data:                     //- ((*v_struct("struct._cairo_device"), *v_struct("struct._cairo_user_data_key"), *void, *(() -> void)) -> int(32));
+cairo_device_status:                            //- ((*v_struct("struct._cairo_device")) -> int(32));
+                                                //-
+cairo_font_face_destroy:                        //- ((*v_struct("struct._cairo_font_face")) -> void);
+cairo_font_face_get_reference_count:            //- ((*v_struct("struct._cairo_font_face")) -> uint(32));
+cairo_font_face_get_type:                       //- ((*v_struct("struct._cairo_font_face")) -> int(32));
+cairo_font_face_get_user_data:                  //- ((*v_struct("struct._cairo_font_face"), *v_struct("struct._cairo_user_data_key")) -> *void);
+cairo_font_face_reference:                      //- ((*v_struct("struct._cairo_font_face")) -> *v_struct("struct._cairo_font_face"));
+cairo_font_face_set_user_data:                  //- ((*v_struct("struct._cairo_font_face"), *v_struct("struct._cairo_user_data_key"), *void, *(() -> void)) -> int(32));
+cairo_font_face_status:                         //- ((*v_struct("struct._cairo_font_face")) -> int(32));
+                                                //-
+cairo_scaled_font_create:                       //- ((*v_struct("struct._cairo_font_face"), *v_struct("struct._cairo_matrix"), *v_struct("struct._cairo_matrix"), *v_struct("struct._cairo_font_options")) -> *v_struct("struct._cairo_scaled_font"));
+                                                //-
+cairo_font_options_create:                      //- (() -> *v_struct("struct._cairo_font_options"));
+                                                //-
+cairo_font_options_copy:                        //- ((*v_struct("struct._cairo_font_options")) -> *v_struct("struct._cairo_font_options"));
+                                                //-
+cairo_font_options_destroy:                     //- ((*v_struct("struct._cairo_font_options")) -> void);
+cairo_font_options_equal:                       //- ((*v_struct("struct._cairo_font_options"), *v_struct("struct._cairo_font_options")) -> int(32));
+cairo_font_options_get_antialias:               //- ((*v_struct("struct._cairo_font_options")) -> int(32));
+cairo_font_options_get_hint_metrics:            //- ((*v_struct("struct._cairo_font_options")) -> int(32));
+cairo_font_options_get_hint_style:              //- ((*v_struct("struct._cairo_font_options")) -> int(32));
+cairo_font_options_get_subpixel_order:          //- ((*v_struct("struct._cairo_font_options")) -> int(32));
+cairo_font_options_get_variations:              //- ((*v_struct("struct._cairo_font_options")) -> *int(8));
+cairo_font_options_hash:                        //- ((*v_struct("struct._cairo_font_options")) -> uint(64));
+cairo_font_options_merge:                       //- ((*v_struct("struct._cairo_font_options"), *v_struct("struct._cairo_font_options")) -> void);
+cairo_font_options_set_antialias:               //- ((*v_struct("struct._cairo_font_options"), int(32)) -> void);
+cairo_font_options_set_hint_metrics:            //- ((*v_struct("struct._cairo_font_options"), int(32)) -> void);
+cairo_font_options_set_hint_style:              //- ((*v_struct("struct._cairo_font_options"), int(32)) -> void);
+cairo_font_options_set_subpixel_order:          //- ((*v_struct("struct._cairo_font_options"), int(32)) -> void);
+cairo_font_options_set_variations:              //- ((*v_struct("struct._cairo_font_options"), *int(8)) -> void);
+cairo_font_options_status:                      //- ((*v_struct("struct._cairo_font_options")) -> int(32));
+                                                //-
+cairo_format_stride_for_width:                  //- ((int(32), int(32)) -> int(32));
+                                                //-
+cairo_glyph_allocate:                           //- ((int(32)) -> *v_struct("struct.anon_struct0"));
+                                                //-
+cairo_glyph_free:                               //- ((*v_struct("struct.anon_struct0")) -> void);
+                                                //-
+cairo_image_surface_create_for_data:            //- ((*uint(8), int(32), int(32), int(32), int(32)) -> *v_struct("struct._cairo_surface"));
+cairo_image_surface_create_from_png:            //- ((*int(8)) -> *v_struct("struct._cairo_surface"));
+cairo_image_surface_create_from_png_stream:     //- ((*((*void, *uint(8), uint(32)) -> int(32)), *void) -> *v_struct("struct._cairo_surface"));
+cairo_image_surface_create:                     //- ((int(32), int(32), int(32)) -> *v_struct("struct._cairo_surface"));
+                                                //-
+cairo_create:                                   //- ((*v_struct("struct._cairo_surface")) -> *v_struct("struct._cairo"));
+                                                //-
+cairo_image_surface_get_data:                   //- ((*v_struct("struct._cairo_surface")) -> *uint(8));
+cairo_image_surface_get_format:                 //- ((*v_struct("struct._cairo_surface")) -> int(32));
+cairo_image_surface_get_height:                 //- ((*v_struct("struct._cairo_surface")) -> int(32));
+cairo_image_surface_get_stride:                 //- ((*v_struct("struct._cairo_surface")) -> int(32));
+cairo_image_surface_get_width:                  //- ((*v_struct("struct._cairo_surface")) -> int(32));
+                                                //-
+cairo_recording_surface_get_extents:            //- ((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_rectangle")) -> int(32));
+cairo_recording_surface_ink_extents:            //- ((*v_struct("struct._cairo_surface"), *float(64), *float(64), *float(64), *float(64)) -> void);
+                                                //-
+cairo_pattern_create_for_surface:               //- ((*v_struct("struct._cairo_surface")) -> *v_struct("struct._cairo_pattern"));
+                                                //-
+cairo_surface_copy_page:                        //- ((*v_struct("struct._cairo_surface")) -> void);
+cairo_surface_create_for_rectangle:             //- ((*v_struct("struct._cairo_surface"), float(64), float(64), float(64), float(64)) -> *v_struct("struct._cairo_surface"));
+cairo_surface_create_observer:                  //- ((*v_struct("struct._cairo_surface"), int(32)) -> *v_struct("struct._cairo_surface"));
+cairo_surface_create_similar_image:             //- ((*v_struct("struct._cairo_surface"), int(32), int(32), int(32)) -> *v_struct("struct._cairo_surface"));
+cairo_surface_create_similar:                   //- ((*v_struct("struct._cairo_surface"), int(32), int(32), int(32)) -> *v_struct("struct._cairo_surface"));
+cairo_surface_destroy:                          //- ((*v_struct("struct._cairo_surface")) -> void);
+cairo_surface_finish:                           //- ((*v_struct("struct._cairo_surface")) -> void);
+cairo_surface_flush:                            //- ((*v_struct("struct._cairo_surface")) -> void);
+cairo_surface_get_content:                      //- ((*v_struct("struct._cairo_surface")) -> int(32));
+cairo_surface_get_device_offset:                //- ((*v_struct("struct._cairo_surface"), *float(64), *float(64)) -> void);
+cairo_surface_get_device_scale:                 //- ((*v_struct("struct._cairo_surface"), *float(64), *float(64)) -> void);
+cairo_surface_get_device:                       //- ((*v_struct("struct._cairo_surface")) -> *v_struct("struct._cairo_device"));
+cairo_surface_get_fallback_resolution:          //- ((*v_struct("struct._cairo_surface"), *float(64), *float(64)) -> void);
+cairo_surface_get_font_options:                 //- ((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_font_options")) -> void);
+cairo_surface_get_mime_data:                    //- ((*v_struct("struct._cairo_surface"), *int(8), **uint(8), *uint(64)) -> void);
+cairo_surface_get_reference_count:              //- ((*v_struct("struct._cairo_surface")) -> uint(32));
+cairo_surface_get_type:                         //- ((*v_struct("struct._cairo_surface")) -> int(32));
+cairo_surface_get_user_data:                    //- ((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_user_data_key")) -> *void);
+cairo_surface_has_show_text_glyphs:             //- ((*v_struct("struct._cairo_surface")) -> int(32));
+cairo_surface_map_to_image:                     //- ((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_rectangle_int")) -> *v_struct("struct._cairo_surface"));
+cairo_surface_mark_dirty_rectangle:             //- ((*v_struct("struct._cairo_surface"), int(32), int(32), int(32), int(32)) -> void);
+cairo_surface_mark_dirty:                       //- ((*v_struct("struct._cairo_surface")) -> void);
+cairo_surface_observer_add_fill_callback:       //- ((*v_struct("struct._cairo_surface"), *((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_surface"), *void) -> void), *void) -> int(32));
+cairo_surface_observer_add_finish_callback:     //- ((*v_struct("struct._cairo_surface"), *((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_surface"), *void) -> void), *void) -> int(32));
+cairo_surface_observer_add_flush_callback:      //- ((*v_struct("struct._cairo_surface"), *((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_surface"), *void) -> void), *void) -> int(32));
+cairo_surface_observer_add_glyphs_callback:     //- ((*v_struct("struct._cairo_surface"), *((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_surface"), *void) -> void), *void) -> int(32));
+cairo_surface_observer_add_mask_callback:       //- ((*v_struct("struct._cairo_surface"), *((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_surface"), *void) -> void), *void) -> int(32));
+cairo_surface_observer_add_paint_callback:      //- ((*v_struct("struct._cairo_surface"), *((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_surface"), *void) -> void), *void) -> int(32));
+cairo_surface_observer_add_stroke_callback:     //- ((*v_struct("struct._cairo_surface"), *((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_surface"), *void) -> void), *void) -> int(32));
+cairo_surface_observer_elapsed:                 //- ((*v_struct("struct._cairo_surface")) -> float(64));
+cairo_surface_observer_print:                   //- ((*v_struct("struct._cairo_surface"), *((*void, *uint(8), uint(32)) -> int(32)), *void) -> int(32));
+cairo_surface_reference:                        //- ((*v_struct("struct._cairo_surface")) -> *v_struct("struct._cairo_surface"));
+cairo_surface_set_device_offset:                //- ((*v_struct("struct._cairo_surface"), float(64), float(64)) -> void);
+cairo_surface_set_device_scale:                 //- ((*v_struct("struct._cairo_surface"), float(64), float(64)) -> void);
+cairo_surface_set_fallback_resolution:          //- ((*v_struct("struct._cairo_surface"), float(64), float(64)) -> void);
+cairo_surface_set_mime_data:                    //- ((*v_struct("struct._cairo_surface"), *int(8), *uint(8), uint(64), *(() -> void), *void) -> int(32));
+cairo_surface_set_user_data:                    //- ((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_user_data_key"), *void, *(() -> void)) -> int(32));
+cairo_surface_show_page:                        //- ((*v_struct("struct._cairo_surface")) -> void);
+cairo_surface_status:                           //- ((*v_struct("struct._cairo_surface")) -> int(32));
+cairo_surface_supports_mime_type:               //- ((*v_struct("struct._cairo_surface"), *int(8)) -> int(32));
+cairo_surface_unmap_image:                      //- ((*v_struct("struct._cairo_surface"), *v_struct("struct._cairo_surface")) -> void);
+cairo_surface_write_to_png_stream:              //- ((*v_struct("struct._cairo_surface"), *((*void, *uint(8), uint(32)) -> int(32)), *void) -> int(32));
+cairo_surface_write_to_png:                     //- ((*v_struct("struct._cairo_surface"), *int(8)) -> int(32));
+                                                //-
+cairo_matrix_init_identity:                     //- ((*v_struct("struct._cairo_matrix")) -> void);
+cairo_matrix_init_rotate:                       //- ((*v_struct("struct._cairo_matrix"), float(64)) -> void);
+cairo_matrix_init_scale:                        //- ((*v_struct("struct._cairo_matrix"), float(64), float(64)) -> void);
+cairo_matrix_init_translate:                    //- ((*v_struct("struct._cairo_matrix"), float(64), float(64)) -> void);
+cairo_matrix_init:                              //- ((*v_struct("struct._cairo_matrix"), float(64), float(64), float(64), float(64), float(64), float(64)) -> void);
+cairo_matrix_invert:                            //- ((*v_struct("struct._cairo_matrix")) -> int(32));
+cairo_matrix_multiply:                          //- ((*v_struct("struct._cairo_matrix"), *v_struct("struct._cairo_matrix"), *v_struct("struct._cairo_matrix")) -> void);
+cairo_matrix_rotate:                            //- ((*v_struct("struct._cairo_matrix"), float(64)) -> void);
+cairo_matrix_scale:                             //- ((*v_struct("struct._cairo_matrix"), float(64), float(64)) -> void);
+cairo_matrix_transform_distance:                //- ((*v_struct("struct._cairo_matrix"), *float(64), *float(64)) -> void);
+cairo_matrix_transform_point:                   //- ((*v_struct("struct._cairo_matrix"), *float(64), *float(64)) -> void);
+cairo_matrix_translate:                         //- ((*v_struct("struct._cairo_matrix"), float(64), float(64)) -> void);
+                                                //-
+cairo_mesh_pattern_begin_patch:                 //- ((*v_struct("struct._cairo_pattern")) -> void);
+cairo_mesh_pattern_curve_to:                    //- ((*v_struct("struct._cairo_pattern"), float(64), float(64), float(64), float(64), float(64), float(64)) -> void);
+cairo_mesh_pattern_end_patch:                   //- ((*v_struct("struct._cairo_pattern")) -> void);
+cairo_mesh_pattern_get_control_point:           //- ((*v_struct("struct._cairo_pattern"), uint(32), uint(32), *float(64), *float(64)) -> int(32));
+cairo_mesh_pattern_get_corner_color_rgba:       //- ((*v_struct("struct._cairo_pattern"), uint(32), uint(32), *float(64), *float(64), *float(64), *float(64)) -> int(32));
+cairo_mesh_pattern_get_patch_count:             //- ((*v_struct("struct._cairo_pattern"), *uint(32)) -> int(32));
+cairo_mesh_pattern_get_path:                    //- ((*v_struct("struct._cairo_pattern"), uint(32)) -> *v_struct("struct.cairo_path"));
+cairo_mesh_pattern_line_to:                     //- ((*v_struct("struct._cairo_pattern"), float(64), float(64)) -> void);
+cairo_mesh_pattern_move_to:                     //- ((*v_struct("struct._cairo_pattern"), float(64), float(64)) -> void);
+cairo_mesh_pattern_set_control_point:           //- ((*v_struct("struct._cairo_pattern"), uint(32), float(64), float(64)) -> void);
+cairo_mesh_pattern_set_corner_color_rgba:       //- ((*v_struct("struct._cairo_pattern"), uint(32), float(64), float(64), float(64), float(64)) -> void);
+cairo_mesh_pattern_set_corner_color_rgb:        //- ((*v_struct("struct._cairo_pattern"), uint(32), float(64), float(64), float(64)) -> void);
+                                                //-
+cairo_pattern_add_color_stop_rgba:              //- ((*v_struct("struct._cairo_pattern"), float(64), float(64), float(64), float(64), float(64)) -> void);
+cairo_pattern_add_color_stop_rgb:               //- ((*v_struct("struct._cairo_pattern"), float(64), float(64), float(64), float(64)) -> void);
+                                                //-
+cairo_pattern_destroy:                          //- ((*v_struct("struct._cairo_pattern")) -> void);
+cairo_pattern_get_color_stop_count:             //- ((*v_struct("struct._cairo_pattern"), *int(32)) -> int(32));
+cairo_pattern_get_color_stop_rgba:              //- ((*v_struct("struct._cairo_pattern"), int(32), *float(64), *float(64), *float(64), *float(64), *float(64)) -> int(32));
+cairo_pattern_get_extend:                       //- ((*v_struct("struct._cairo_pattern")) -> int(32));
+cairo_pattern_get_filter:                       //- ((*v_struct("struct._cairo_pattern")) -> int(32));
+cairo_pattern_get_linear_points:                //- ((*v_struct("struct._cairo_pattern"), *float(64), *float(64), *float(64), *float(64)) -> int(32));
+cairo_pattern_get_matrix:                       //- ((*v_struct("struct._cairo_pattern"), *v_struct("struct._cairo_matrix")) -> void);
+cairo_pattern_get_radial_circles:               //- ((*v_struct("struct._cairo_pattern"), *float(64), *float(64), *float(64), *float(64), *float(64), *float(64)) -> int(32));
+cairo_pattern_get_reference_count:              //- ((*v_struct("struct._cairo_pattern")) -> uint(32));
+cairo_pattern_get_rgba:                         //- ((*v_struct("struct._cairo_pattern"), *float(64), *float(64), *float(64), *float(64)) -> int(32));
+cairo_pattern_get_surface:                      //- ((*v_struct("struct._cairo_pattern"), **v_struct("struct._cairo_surface")) -> int(32));
+cairo_pattern_get_type:                         //- ((*v_struct("struct._cairo_pattern")) -> int(32));
+cairo_pattern_get_user_data:                    //- ((*v_struct("struct._cairo_pattern"), *v_struct("struct._cairo_user_data_key")) -> *void);
+cairo_pattern_reference:                        //- ((*v_struct("struct._cairo_pattern")) -> *v_struct("struct._cairo_pattern"));
+cairo_pattern_set_extend:                       //- ((*v_struct("struct._cairo_pattern"), int(32)) -> void);
+cairo_pattern_set_filter:                       //- ((*v_struct("struct._cairo_pattern"), int(32)) -> void);
+cairo_pattern_set_matrix:                       //- ((*v_struct("struct._cairo_pattern"), *v_struct("struct._cairo_matrix")) -> void);
+cairo_pattern_set_user_data:                    //- ((*v_struct("struct._cairo_pattern"), *v_struct("struct._cairo_user_data_key"), *void, *(() -> void)) -> int(32));
+cairo_pattern_status:                           //- ((*v_struct("struct._cairo_pattern")) -> int(32));
+                                                //-
+cairo_raster_source_pattern_get_acquire:        //- ((*v_struct("struct._cairo_pattern"), **((*v_struct("struct._cairo_pattern"), *void, *v_struct("struct._cairo_surface"), *v_struct("struct._cairo_rectangle_int")) -> *v_struct("struct._cairo_surface")), **((*v_struct("struct._cairo_pattern"), *void, *v_struct("struct._cairo_surface")) -> void)) -> void);
+cairo_raster_source_pattern_get_callback_data:  //- ((*v_struct("struct._cairo_pattern")) -> *void);
+cairo_raster_source_pattern_get_copy:           //- ((*v_struct("struct._cairo_pattern")) -> *((*v_struct("struct._cairo_pattern"), *void, *v_struct("struct._cairo_pattern")) -> int(32)));
+cairo_raster_source_pattern_get_finish:         //- ((*v_struct("struct._cairo_pattern")) -> *((*v_struct("struct._cairo_pattern"), *void) -> void));
+cairo_raster_source_pattern_get_snapshot:       //- ((*v_struct("struct._cairo_pattern")) -> *((*v_struct("struct._cairo_pattern"), *void) -> int(32)));
+cairo_raster_source_pattern_set_acquire:        //- ((*v_struct("struct._cairo_pattern"), *((*v_struct("struct._cairo_pattern"), *void, *v_struct("struct._cairo_surface"), *v_struct("struct._cairo_rectangle_int")) -> *v_struct("struct._cairo_surface")), *((*v_struct("struct._cairo_pattern"), *void, *v_struct("struct._cairo_surface")) -> void)) -> void);
+cairo_raster_source_pattern_set_callback_data:  //- ((*v_struct("struct._cairo_pattern"), *void) -> void);
+cairo_raster_source_pattern_set_copy:           //- ((*v_struct("struct._cairo_pattern"), *((*v_struct("struct._cairo_pattern"), *void, *v_struct("struct._cairo_pattern")) -> int(32))) -> void);
+cairo_raster_source_pattern_set_finish:         //- ((*v_struct("struct._cairo_pattern"), *((*v_struct("struct._cairo_pattern"), *void) -> void)) -> void);
+cairo_raster_source_pattern_set_snapshot:       //- ((*v_struct("struct._cairo_pattern"), *((*v_struct("struct._cairo_pattern"), *void) -> int(32))) -> void);
+                                                //-
+cairo_path_destroy:                             //- ((*v_struct("struct.cairo_path")) -> void);
+                                                //-
+cairo_pattern_create_linear:                    //- ((float(64), float(64), float(64), float(64)) -> *v_struct("struct._cairo_pattern"));
+cairo_pattern_create_mesh:                      //- (() -> *v_struct("struct._cairo_pattern"));
+cairo_pattern_create_radial:                    //- ((float(64), float(64), float(64), float(64), float(64), float(64)) -> *v_struct("struct._cairo_pattern"));
+cairo_pattern_create_raster_source:             //- ((*void, int(32), int(32), int(32)) -> *v_struct("struct._cairo_pattern"));
+cairo_pattern_create_rgba:                      //- ((float(64), float(64), float(64), float(64)) -> *v_struct("struct._cairo_pattern"));
+cairo_pattern_create_rgb:                       //- ((float(64), float(64), float(64)) -> *v_struct("struct._cairo_pattern"));
+                                                //-
+cairo_recording_surface_create:                 //- ((int(32), *v_struct("struct._cairo_rectangle")) -> *v_struct("struct._cairo_surface"));
+                                                //-
+cairo_rectangle_list_destroy:                   //- ((*v_struct("struct._cairo_rectangle_list")) -> void);
+                                                //-
+cairo_region_create_rectangles:                 //- ((*v_struct("struct._cairo_rectangle_int"), int(32)) -> *v_struct("struct._cairo_region"));
+cairo_region_create_rectangle:                  //- ((*v_struct("struct._cairo_rectangle_int")) -> *v_struct("struct._cairo_region"));
+                                                //-
+cairo_region_create:                            //- (() -> *v_struct("struct._cairo_region"));
+                                                //-
+cairo_region_contains_point:                    //- ((*v_struct("struct._cairo_region"), int(32), int(32)) -> int(32));
+cairo_region_contains_rectangle:                //- ((*v_struct("struct._cairo_region"), *v_struct("struct._cairo_rectangle_int")) -> int(32));
+cairo_region_copy:                              //- ((*v_struct("struct._cairo_region")) -> *v_struct("struct._cairo_region"));
+                                                //-
+cairo_region_destroy:                           //- ((*v_struct("struct._cairo_region")) -> void);
+cairo_region_equal:                             //- ((*v_struct("struct._cairo_region"), *v_struct("struct._cairo_region")) -> int(32));
+cairo_region_get_extents:                       //- ((*v_struct("struct._cairo_region"), *v_struct("struct._cairo_rectangle_int")) -> void);
+cairo_region_get_rectangle:                     //- ((*v_struct("struct._cairo_region"), int(32), *v_struct("struct._cairo_rectangle_int")) -> void);
+cairo_region_intersect_rectangle:               //- ((*v_struct("struct._cairo_region"), *v_struct("struct._cairo_rectangle_int")) -> int(32));
+cairo_region_intersect:                         //- ((*v_struct("struct._cairo_region"), *v_struct("struct._cairo_region")) -> int(32));
+cairo_region_is_empty:                          //- ((*v_struct("struct._cairo_region")) -> int(32));
+cairo_region_num_rectangles:                    //- ((*v_struct("struct._cairo_region")) -> int(32));
+cairo_region_reference:                         //- ((*v_struct("struct._cairo_region")) -> *v_struct("struct._cairo_region"));
+cairo_region_status:                            //- ((*v_struct("struct._cairo_region")) -> int(32));
+cairo_region_subtract_rectangle:                //- ((*v_struct("struct._cairo_region"), *v_struct("struct._cairo_rectangle_int")) -> int(32));
+cairo_region_subtract:                          //- ((*v_struct("struct._cairo_region"), *v_struct("struct._cairo_region")) -> int(32));
+cairo_region_translate:                         //- ((*v_struct("struct._cairo_region"), int(32), int(32)) -> void);
+cairo_region_union_rectangle:                   //- ((*v_struct("struct._cairo_region"), *v_struct("struct._cairo_rectangle_int")) -> int(32));
+cairo_region_union:                             //- ((*v_struct("struct._cairo_region"), *v_struct("struct._cairo_region")) -> int(32));
+cairo_region_xor_rectangle:                     //- ((*v_struct("struct._cairo_region"), *v_struct("struct._cairo_rectangle_int")) -> int(32));
+cairo_region_xor:                               //- ((*v_struct("struct._cairo_region"), *v_struct("struct._cairo_region")) -> int(32));
+                                                //-
+cairo_scaled_font_destroy:                      //- ((*v_struct("struct._cairo_scaled_font")) -> void);
+cairo_scaled_font_extents:                      //- ((*v_struct("struct._cairo_scaled_font"), *v_struct("struct.anon_struct3")) -> void);
+cairo_scaled_font_get_ctm:                      //- ((*v_struct("struct._cairo_scaled_font"), *v_struct("struct._cairo_matrix")) -> void);
+cairo_scaled_font_get_font_face:                //- ((*v_struct("struct._cairo_scaled_font")) -> *v_struct("struct._cairo_font_face"));
+cairo_scaled_font_get_font_matrix:              //- ((*v_struct("struct._cairo_scaled_font"), *v_struct("struct._cairo_matrix")) -> void);
+cairo_scaled_font_get_font_options:             //- ((*v_struct("struct._cairo_scaled_font"), *v_struct("struct._cairo_font_options")) -> void);
+cairo_scaled_font_get_reference_count:          //- ((*v_struct("struct._cairo_scaled_font")) -> uint(32));
+cairo_scaled_font_get_scale_matrix:             //- ((*v_struct("struct._cairo_scaled_font"), *v_struct("struct._cairo_matrix")) -> void);
+cairo_scaled_font_get_type:                     //- ((*v_struct("struct._cairo_scaled_font")) -> int(32));
+cairo_scaled_font_get_user_data:                //- ((*v_struct("struct._cairo_scaled_font"), *v_struct("struct._cairo_user_data_key")) -> *void);
+cairo_scaled_font_glyph_extents:                //- ((*v_struct("struct._cairo_scaled_font"), *v_struct("struct.anon_struct0"), int(32), *v_struct("struct.anon_struct2")) -> void);
+cairo_scaled_font_reference:                    //- ((*v_struct("struct._cairo_scaled_font")) -> *v_struct("struct._cairo_scaled_font"));
+cairo_scaled_font_set_user_data:                //- ((*v_struct("struct._cairo_scaled_font"), *v_struct("struct._cairo_user_data_key"), *void, *(() -> void)) -> int(32));
+cairo_scaled_font_status:                       //- ((*v_struct("struct._cairo_scaled_font")) -> int(32));
+cairo_scaled_font_text_extents:                 //- ((*v_struct("struct._cairo_scaled_font"), *int(8), *v_struct("struct.anon_struct2")) -> void);
+cairo_scaled_font_text_to_glyphs:               //- ((*v_struct("struct._cairo_scaled_font"), float(64), float(64), *int(8), int(32), **v_struct("struct.anon_struct0"), *int(32), **v_struct("struct.anon_struct1"), *int(32), *int(32)) -> int(32));
+                                                //-
+cairo_status_to_string:                         //- ((int(32)) -> *int(8));
+                                                //-
+cairo_text_cluster_allocate:                    //- ((int(32)) -> *v_struct("struct.anon_struct1"));
+                                                //-
+cairo_text_cluster_free:                        //- ((*v_struct("struct.anon_struct1")) -> void);
+                                                //-
+cairo_toy_font_face_create:                     //- ((*int(8), int(32), int(32)) -> *v_struct("struct._cairo_font_face"));
+                                                //-
+cairo_toy_font_face_get_family:                 //- ((*v_struct("struct._cairo_font_face")) -> *int(8));
+cairo_toy_font_face_get_slant:                  //- ((*v_struct("struct._cairo_font_face")) -> int(32));
+cairo_toy_font_face_get_weight:                 //- ((*v_struct("struct._cairo_font_face")) -> int(32));
+                                                //-
+cairo_user_font_face_create:                    //- (() -> *v_struct("struct._cairo_font_face"));
+                                                //-
+cairo_user_font_face_get_init_func:             //- ((*v_struct("struct._cairo_font_face")) -> *((*v_struct("struct._cairo_scaled_font"), *v_struct("struct._cairo"), *v_struct("struct.anon_struct3")) -> int(32)));
+cairo_user_font_face_get_render_glyph_func:     //- ((*v_struct("struct._cairo_font_face")) -> *((*v_struct("struct._cairo_scaled_font"), uint(64), *v_struct("struct._cairo"), *v_struct("struct.anon_struct2")) -> int(32)));
+cairo_user_font_face_get_text_to_glyphs_func:   //- ((*v_struct("struct._cairo_font_face")) -> *((*v_struct("struct._cairo_scaled_font"), *int(8), int(32), **v_struct("struct.anon_struct0"), *int(32), **v_struct("struct.anon_struct1"), *int(32), *int(32)) -> int(32)));
+cairo_user_font_face_get_unicode_to_glyph_func: //- ((*v_struct("struct._cairo_font_face")) -> *((*v_struct("struct._cairo_scaled_font"), uint(64), *uint(64)) -> int(32)));
+cairo_user_font_face_set_init_func:             //- ((*v_struct("struct._cairo_font_face"), *((*v_struct("struct._cairo_scaled_font"), *v_struct("struct._cairo"), *v_struct("struct.anon_struct3")) -> int(32))) -> void);
+cairo_user_font_face_set_render_glyph_func:     //- ((*v_struct("struct._cairo_font_face"), *((*v_struct("struct._cairo_scaled_font"), uint(64), *v_struct("struct._cairo"), *v_struct("struct.anon_struct2")) -> int(32))) -> void);
+cairo_user_font_face_set_text_to_glyphs_func:   //- ((*v_struct("struct._cairo_font_face"), *((*v_struct("struct._cairo_scaled_font"), *int(8), int(32), **v_struct("struct.anon_struct0"), *int(32), **v_struct("struct.anon_struct1"), *int(32), *int(32)) -> int(32))) -> void);
+cairo_user_font_face_set_unicode_to_glyph_func: //- ((*v_struct("struct._cairo_font_face"), *((*v_struct("struct._cairo_scaled_font"), uint(64), *uint(64)) -> int(32))) -> void);
+                                                //-
+cairo_debug_reset_static_data:                  //- (() -> void);
+                                                //-
+cairo_version:                                  //- (() -> int(32));
+cairo_version_string:                           //- (() -> *int(8));
 
