@@ -183,4 +183,100 @@ unpack: (val: uintptr2_t) -> uintptr_t[2]
 }
 
 
+//---------------------------------------------------------------------
+print_constant_value_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> void
+{
+    call = (self: *v_ast_expr_t);
+
+    args = v_ast_expr_call_get_arg_list(call);
+
+    arg0 = v_list_get_item(args, 0);
+
+    name = v_ast_expr_string_get_string(arg0);
+
+    val = v_find_constant_value(name);
+
+    s = LLVMPrintValueToString(val);
+
+    printf("%s: %s\n", name, s);
+
+    LLVMDisposeMessage(s);
+
+    n = LLVMGetNumOperands(val);
+
+    for (i: &unsigned := 0; i < n; ++i)
+    {
+        s = LLVMPrintValueToString(LLVMGetOperand(val, i));
+
+        printf("#%d: %s\n", i, s);
+
+        LLVMDisposeMessage(s);
+    }
+}
+
+{   v_add_intrinsic("print_constant_value", print_constant_value_intrinsic, 0);
+}
+
+
+//---------------------------------------------------------------------
+{   v_debug_print_module(2);
+
+    voidc_verify_jit_module_optimized(false);
+}
+
+some_array: &int[77] := v_undef();
+
+qwe: (*int)[2] = { &some_array[13], &some_array[53] };
+
+asd: int[2] = { 17, 23 };
+
+zxc = 29;
+
+//qaz = qwe[1] - qwe[0];
+
+foo: () -> void
+{
+    *qwe[0] := 13;
+    *qwe[1] := 53;
+
+//  printf("%zd\n", qaz);
+
+    printf("%zd\n", qwe[1]-qwe[0]);
+
+//  print_constant_value("qwe");
+    print_constant_value("asd");
+    print_constant_value("zxc");
+//  print_constant_value("qaz");
+
+}
+
+
+{
+    print_constant_value("zxc");
+    print_constant_value("asd");
+//  print_constant_value("qwe");
+
+    foo();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
