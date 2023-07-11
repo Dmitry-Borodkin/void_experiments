@@ -234,6 +234,8 @@ zxc = 29;
 
 //qaz = qwe[1] - qwe[0];
 
+wsx = "Hello World!";
+
 foo: () -> void
 {
     *qwe[0] := 13;
@@ -247,11 +249,14 @@ foo: () -> void
     print_constant_value("asd");
     print_constant_value("zxc");
 //  print_constant_value("qaz");
+    print_constant_value("wsx");
 
 }
 
 
 {
+    print_constant_value("wsx");
+//  print_constant_value("qaz");
     print_constant_value("zxc");
     print_constant_value("asd");
 //  print_constant_value("qwe");

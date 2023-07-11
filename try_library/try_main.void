@@ -55,7 +55,16 @@ main: (argc: int, argv: **const char) -> int
 
     printf("\n");
 
-    v_assert(2 * 2 == 5  &&  "Hello!");
+    v = big_vec + 7;
+
+    for (i: &int := 0; i < 4; ++i)
+    {
+        printf("v[%d]: %d\n", i, (v[i]: int));
+    }
+
+    printf("\n");
+
+//  v_assert(2 * 2 == 5  &&  "Hello!");
 
     v_return(0);
 }
