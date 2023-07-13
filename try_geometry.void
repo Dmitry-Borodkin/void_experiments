@@ -103,7 +103,7 @@ struct Vector
 };
 
 //---------------------------------------------------------------------
-(_<<__): (s: &v_std_string_ptr, v: &Vector) -> &v_std_string_ptr
+(_<<__): (s: &v_std_string_ptr, v: Vector) -> &v_std_string_ptr
 {
     n = 1 + snprintf(0, 0, "(%g, %g)", v.x, v.y);
 
@@ -116,79 +116,79 @@ struct Vector
 
 //---------------------------------------------------------------------
 alwaysinline
-(_+_): (a: &Vector, b: &Vector) -> Vector
+(_+_): (a: Vector, b: Vector) -> Vector
 {
     v_return({ a.x+b.x, a.y+b.y });
 }
 
 alwaysinline
-(_-_): (a: &Vector, b: &Vector) -> Vector
+(_-_): (a: Vector, b: Vector) -> Vector
 {
     v_return({ a.x-b.x, a.y-b.y });
 }
 
 alwaysinline
-(+_): (a: &Vector) -> Vector
+(+_): (a: Vector) -> Vector
 {
     v_return(a);
 }
 
 alwaysinline
-(-_): (a: &Vector) -> Vector
+(-_): (a: Vector) -> Vector
 {
     v_return({ -a.x, -a.y });
 }
 
 alwaysinline
-(_*_): (a: &Vector, k: double) -> Vector
+(_*_): (a: Vector, k: double) -> Vector
 {
     v_return({ a.x*k, a.y*k });
 }
 
 alwaysinline
-(_*__): (k: double, a: &Vector) -> Vector
+(_*__): (k: double, a: Vector) -> Vector
 {
     v_return({ k*a.x, k*a.y });
 }
 
 alwaysinline
-(_/_): (a: &Vector, k: double) -> Vector
+(_/_): (a: Vector, k: double) -> Vector
 {
     v_return({ a.x/k, a.y/k });
 }
 
-(_==_): (a: &Vector, b: &Vector) -> bool
+(_==_): (a: Vector, b: Vector) -> bool
 {
     v_return( is_equal(a.x, b.x)  &&  is_equal(a.y, b.y) );
 }
 
 alwaysinline
-(_!=_): (a: &Vector, b: &Vector) -> bool
+(_!=_): (a: Vector, b: Vector) -> bool
 {
     v_return( !(a == b) );
 }
 
 //---------------------------------------------------------------------
-Vector_zero:     &Vector := {0, 0};
-Vector_unit_x:   &Vector := {1, 0};
-Vector_unit_y:   &Vector := {0, 1};
-Vector_infinity: &Vector := {infinity, infinity};
+Vector_zero:     Vector = {0, 0};
+Vector_unit_x:   Vector = {1, 0};
+Vector_unit_y:   Vector = {0, 1};
+Vector_infinity: Vector = {infinity, infinity};
 
 //---------------------------------------------------------------------
 alwaysinline
-(_.dot()): (a: &Vector, b: &Vector) -> double
+(_.dot()): (a: Vector, b: Vector) -> double
 {
     v_return( a.x*b.x + a.y*b.y );
 }
 
 alwaysinline
-(_.crs()): (a: &Vector, b: &Vector) -> double
+(_.crs()): (a: Vector, b: Vector) -> double
 {
     v_return( a.x*b.y - a.y*b.x );
 }
 
 alwaysinline
-(_.is_finite()): (a: &Vector) -> bool
+(_.is_finite()): (a: Vector) -> bool
 {
     v_return( is_finite(a.x)  &&  is_finite(a.y) );
 }
@@ -205,7 +205,7 @@ struct Point
 };
 
 //---------------------------------------------------------------------
-(_<<__): (s: &v_std_string_ptr, p: &Point) -> &v_std_string_ptr
+(_<<__): (s: &v_std_string_ptr, p: Point) -> &v_std_string_ptr
 {
     n = 1 + snprintf(0, 0, "(%g, %g, %g)", p.x, p.y, p.w);
 
@@ -218,13 +218,13 @@ struct Point
 
 //---------------------------------------------------------------------
 alwaysinline
-(_+_): (p: &Point, v: &Vector) -> Point
+(_+_): (p: Point, v: Vector) -> Point
 {
     v_return({ p.x + p.w*v.x, p.y + p.w*v.y, p.w });
 }
 
 alwaysinline
-(_-_): (a: &Point, b: &Point) -> Vector
+(_-_): (a: Point, b: Point) -> Vector
 {
     v_return({ a.x/a.w - b.x/b.w, a.y/a.w - b.y/b.w });
 }
@@ -279,11 +279,11 @@ alwaysinline
 }
 
 //---------------------------------------------------------------------
-Point_zero:   &Point := {0, 0, 1};
-Point_unit_x: &Point := {1, 0, 1};
-Point_unit_y: &Point := {0, 1, 1};
-Point_inf_x:  &Point := {1, 0, 0};
-Point_inf_y:  &Point := {0, 1, 0};
+Point_zero:   Point = {0, 0, 1};
+Point_unit_x: Point = {1, 0, 1};
+Point_unit_y: Point = {0, 1, 1};
+Point_inf_x:  Point = {1, 0, 0};
+Point_inf_y:  Point = {0, 1, 0};
 
 
 //=====================================================================
@@ -297,7 +297,7 @@ struct Line
 };
 
 //---------------------------------------------------------------------
-(_<<__): (s: &v_std_string_ptr, l: &Line) -> &v_std_string_ptr
+(_<<__): (s: &v_std_string_ptr, l: Line) -> &v_std_string_ptr
 {
     n = 1 + snprintf(0, 0, "(%g, %g, %g)", l.cx, l.cy, l.cw);
 
@@ -310,7 +310,7 @@ struct Line
 
 //---------------------------------------------------------------------
 alwaysinline
-(_+_): (l: &Line, v: &Vector) -> Line
+(_+_): (l: Line, v: Vector) -> Line
 {
     v_return({ l.cx, l.cy, l.cw - l.cx*v.x - l.cy*v.y });
 }
@@ -365,9 +365,9 @@ alwaysinline
 }
 
 //---------------------------------------------------------------------
-Line_infinity: &Line := {0, 0, 1};
-Line_abscissa: &Line := {0, 1, 0};
-Line_ordinate: &Line := {1, 0, 0};
+Line_infinity: Line = {0, 0, 1};
+Line_abscissa: Line = {0, 1, 0};
+Line_ordinate: Line = {1, 0, 0};
 
 
 //=====================================================================
@@ -381,13 +381,13 @@ incident: (l: &Line, p: &Point) -> bool
 
 //---------------------------------------------------------------------
 alwaysinline
-(_&_): (a: &Point, b: &Point) -> Line
+(_&_): (a: Point, b: Point) -> Line
 {
     v_return({a.y*b.w - a.w*b.y, a.w*b.x - a.x*b.w, a.x*b.y - a.y*b.x});
 }
 
 alwaysinline
-(_&_): (a: &Line, b: &Line) -> Point
+(_&_): (a: Line, b: Line) -> Point
 {
     v_return({a.cy*b.cw - a.cw*b.cy, a.cw*b.cx - a.cx*b.cw, a.cx*b.cy - a.cy*b.cx});
 }
@@ -402,7 +402,7 @@ struct Transform
 };
 
 //---------------------------------------------------------------------
-(_<<__): (s: &v_std_string_ptr, t: &Transform) -> &v_std_string_ptr
+(_<<__): (s: &v_std_string_ptr, t: Transform) -> &v_std_string_ptr
 {
     t = t[0];
 
@@ -571,7 +571,7 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 }
 
 //---------------------------------------------------------------------
-(_.transform()): (v: &Vector, t: &Transform) -> Vector
+(_.transform()): (v: Vector, t: Transform) -> Vector
 {
     t = t[0];
 
@@ -582,7 +582,7 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
     v_return({ x/w, y/w });
 }
 
-(_.transform()): (p: &Point, t: &Transform) -> Point
+(_.transform()): (p: Point, t: Transform) -> Point
 {
     t = t[0];
 
@@ -593,7 +593,7 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
     v_return({ x, y, w });
 }
 
-(_.transform()): (l: &Line, t: &Transform) -> Line
+(_.transform()): (l: Line, t: Transform) -> Line
 {
     t = t[0];
 
@@ -613,7 +613,7 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 }
 
 //---------------------------------------------------------------------
-(_+_): (t: &Transform, v: &Vector) -> Transform
+(_+_): (t: Transform, v: Vector) -> Transform
 {
     t = t[0];
 
@@ -635,7 +635,7 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 }
 
 //---------------------------------------------------------------------
-(_*_): (a: &Transform, b: &Transform) -> Transform
+(_*_): (a: Transform, b: Transform) -> Transform
 {
     a = a[0];
     b = b[0];
@@ -657,7 +657,7 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
                 wx, wy, ww }});
 }
 
-(_*__): (k: double, t: &Transform) -> Transform
+(_*__): (k: double, t: Transform) -> Transform
 {
     t = t[0];
 
@@ -679,7 +679,7 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 }
 
 //---------------------------------------------------------------------
-(~_): (t: &Transform) -> Transform
+(~_): (t: Transform) -> Transform
 {
     t = t[0];
 
@@ -708,25 +708,25 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 }
 
 //---------------------------------------------------------------------
-(_/_): (a: &Transform, b: &Transform) -> Transform
+(_/_): (a: Transform, b: Transform) -> Transform
 {
     v_return(a * (~b));
 }
 
 //---------------------------------------------------------------------
 alwaysinline
-(_.scaled()): (t: &Transform, k: double) -> Transform
+(_.scaled()): (t: Transform, k: double) -> Transform
 {
     v_return(k * t);
 }
 
 alwaysinline
-(_.shifted()): (t: &Transform, v: &Vector) -> Transform
+(_.shifted()): (t: Transform, v: Vector) -> Transform
 {
     v_return(t + v);
 }
 
-(_.rotated()): (t: &Transform, d: double) -> Transform
+(_.rotated()): (t: Transform, d: double) -> Transform
 {
     a = d * (M_PI/180);
 
@@ -816,9 +816,9 @@ Transform_map2_mirror: (i1: &Point, i2: &Point,
 }
 
 //---------------------------------------------------------------------
-Transform_identity: &Transform := {{ 1, 0, 0,  0, 1, 0,  0, 0, 1 }};
-Transform_flip_x:   &Transform := {{-1, 0, 0,  0, 1, 0,  0, 0, 1 }};
-Transform_flip_y:   &Transform := {{ 1, 0, 0,  0,-1, 0,  0, 0, 1 }};
+Transform_identity: Transform = {{ 1, 0, 0,  0, 1, 0,  0, 0, 1 }};
+Transform_flip_x:   Transform = {{-1, 0, 0,  0, 1, 0,  0, 0, 1 }};
+Transform_flip_y:   Transform = {{ 1, 0, 0,  0,-1, 0,  0, 0, 1 }};
 
 
 
@@ -832,7 +832,7 @@ Transform_flip_y:   &Transform := {{ 1, 0, 0,  0,-1, 0,  0, 0, 1 }};
     v_initialize(sstr);
     defer v_terminate(sstr);
 
-    v: &Vector := {1, 2};
+    v: Vector = {1, 2};
 
     sstr << v + 2*v;
 
@@ -862,7 +862,7 @@ Transform_flip_y:   &Transform := {{ 1, 0, 0,  0,-1, 0,  0, 0, 1 }};
 
 
     //-----------------------------------------------------------------
-    t: &Transform := {{ 0, -1, 0,  1, 0, 0,  0, 0, 1 }};
+    t: Transform = {{ 0, -1, 0,  1, 0, 0,  0, 0, 1 }};
 
     v = t(Vector_unit_x);
 //  v = Vector_unit_x.transform(t);

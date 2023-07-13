@@ -109,6 +109,7 @@ sprintf: (str: *char, format: *const char, ...) -> int;
 
     //-----------------------------------------------------------------
     mb: &LLVMMemoryBufferRef := 0;
+    defer LLVMDisposeMemoryBuffer(mb);
 
     LLVMCreateMemoryBufferWithContentsOfFile(tmp, &mb, 0);
 

@@ -2,6 +2,7 @@
 
 $HOME_BIN/incdirs.clang $@ \
 $(llvm-config --cxxflags) \
+$(pkg-config gtk4 -cflags) \
 
 
 echo ../voidc >>micros.incdirs
