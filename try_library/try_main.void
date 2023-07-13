@@ -20,7 +20,7 @@ test_fun: (n: int, ...) -> void
 
     for (i: &int := 0; i < n; ++i)
     {
-        v = va_arg(ap, int);
+        v = va_arg(ap, int(64));        //- WTF?
 
         printf("%d: %d\n", i, v);
     }
@@ -51,7 +51,7 @@ main: (argc: int, argv: **const char) -> int
 
     printf("\n");
 
-    test_fun(5, 44, 33, 22, 11, 0);
+    test_fun(5, -44, -33, -22, -11, 0);
 
     printf("\n");
 
@@ -64,7 +64,7 @@ main: (argc: int, argv: **const char) -> int
 
     printf("\n");
 
-//  v_assert(2 * 2 == 5  &&  "Hello!");
+    v_assert(2 * 2 == 5  &&  "Hello!");
 
     v_return(0);
 }

@@ -168,11 +168,11 @@ emit_module: (filename: *const char) -> void
     LLVMRunPassManager(pass_manager, module);
 
     //----------------------------------------------------------
-//    msg = LLVMPrintModuleToString(module);
-//
-//    printf("\n%s\n", msg);
-//
-//    LLVMDisposeMessage(msg);
+    msg = LLVMPrintModuleToString(module);
+
+    printf("\n%s\n", msg);
+
+    LLVMDisposeMessage(msg);
 
     //----------------------------------------------------------
     LLVMTargetMachineEmitToFile(target_machine, module, filename, LLVMObjectFile, 0);

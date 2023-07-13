@@ -56,15 +56,18 @@ print_position_intrinsic: (*voidc_visitor_t, *void, self: *v_ast_base_t) -> void
 {
     a: &v_std_any_t := {};
 
-    v_std_any_set_value(&a, -7i128);
+//  v_std_any_set_value(&a, -7i128);
+    v_std_any_set_pointer(&a, &-7i128);
 
-    v = v_std_any_get_value(int(128), &a);
+//  v = v_std_any_get_value(int(128), &a);
+    v = *v_std_any_get_pointer(int(128), &a);
 
     printf("v: %d\n", (v: int));
 
     b: &v_std_any_t := a;
 
-    u = v_std_any_get_value(int(128), &b);
+//  u = v_std_any_get_value(int(128), &b);
+    u = *v_std_any_get_pointer(int(128), &b);
 
 //    b: &v_std_any_t[1] := { a };
 //
@@ -90,7 +93,8 @@ print_position_intrinsic: (*voidc_visitor_t, *void, self: *v_ast_base_t) -> void
 
     v_list_append(&l, &l, &a, 1);
 
-    v = v_std_any_get_value(uint(256), v_list_get_item(&l, 0));
+//  v = v_std_any_get_value(uint(256), v_list_get_item(&l, 0));
+    v = *v_std_any_get_pointer(uint(256), v_list_get_item(&l, 0));
 
     printf("v: %zd\n", (v: size_t));
 
