@@ -1,9 +1,6 @@
 {   voidc_guard_target("try_imports.void  must be imported into the voidc target only!");
 
-    v_import("level-00");
-    v_import("level-01");
-    v_import("level-02");
-    v_import("level-03");
+    v_import("mainline.void");
 
     v_import("llvm-c/Core.void");
     v_import("llvm-c/TargetMachine.void");
@@ -12,9 +9,7 @@
     v_import("printf.void");
 }
 
-{   v_enable_level_01();
-    v_enable_level_02();
-    v_enable_level_03();
+{   v_enable_mainline();
 }
 
 
@@ -69,28 +64,18 @@ make_header: (name: *const char) -> void
     {
         v_target_set_global_ctx(vctx);
 
-        v_import("level-00");
-        v_import("level-01");
-        v_import("level-02");
-        v_import("level-03");
+        v_import("mainline.void");
 
-        v_enable_level_01();
-        v_enable_level_02();
-        v_enable_level_03();
+        v_enable_mainline();
 
         v_target_set_global_ctx(gctx);
     }
     else
     {
-        v_import("level-00");
-        v_import("level-01");
-        v_import("level-02");
-        v_import("level-03");
+        v_import("mainline.void");
     }
 
-    v_enable_level_01();
-    v_enable_level_02();
-    v_enable_level_03();
+    v_enable_mainline();
 
     v_set_export_flag(true);
 }
@@ -102,14 +87,9 @@ make_module: (modname: *const char) -> void
 {
     voidc_guard_target("make_module  must be called from the voidc target only!");
 
-    v_import("level-00");
-    v_import("level-01");
-    v_import("level-02");
-    v_import("level-03");
+    v_import("mainline.void");
 
-    v_enable_level_01();
-    v_enable_level_02();
-    v_enable_level_03();
+    v_enable_mainline();
 
     //----------------------------------------------------------
     filename = v_target_local_ctx_get_filename(v_target_get_voidc_local_ctx());
@@ -128,9 +108,7 @@ make_module: (modname: *const char) -> void
     collect_defines();
 
     //----------------------------------------------------------
-    v_enable_level_01();
-    v_enable_level_02();
-    v_enable_level_03();
+    v_enable_mainline();
 
     //----------------------------------------------------------
     module = LLVMModuleCreateWithNameInContext(modname, v_target_get_llvm_ctx());
@@ -168,11 +146,7 @@ emit_module: (filename: *const char) -> void
     LLVMRunPassManager(pass_manager, module);
 
     //----------------------------------------------------------
-    msg = LLVMPrintModuleToString(module);
-
-    printf("\n%s\n", msg);
-
-    LLVMDisposeMessage(msg);
+    v_verify_module(module);
 
     //----------------------------------------------------------
     LLVMTargetMachineEmitToFile(target_machine, module, filename, LLVMObjectFile, 0);
