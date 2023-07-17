@@ -31,15 +31,6 @@
 }
 
 //---------------------------------------------------------------------
-private
-source_str =
-"""
-#include <stdarg.h>
-
-int my_va_list_size = sizeof(va_list) / sizeof(void*);
-""";
-
-//---------------------------------------------------------------------
 {   struct FILE;
 
     v_popen: (command: *const char, prop: *const char) -> *FILE;
@@ -49,8 +40,6 @@ int my_va_list_size = sizeof(va_list) / sizeof(void*);
     fprintf: (stream: *FILE, format: *const char, ...) -> int;
 
     fscanf: (stream: *FILE, format: *const char, ...) -> int;
-
-//  fputs: (buf: *char, stream: *FILE) -> int;
 
     sprintf: (str: *char, format: *const char, ...) -> int;
 
@@ -83,6 +72,13 @@ int my_va_list_size = sizeof(va_list) / sizeof(void*);
         defer v_pclose(p);
 
         fprintf(p, "clang -x c -c -o %s", buffer);
+
+        source_str =
+        """
+        #include <stdarg.h>
+
+        int my_va_list_size = sizeof(va_list) / sizeof(void*);
+        """;
 
         fprintf(p, " - <<HEREDOC\n%s\nHEREDOC\n", source_str);
     }

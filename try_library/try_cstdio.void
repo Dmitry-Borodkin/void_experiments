@@ -31,28 +31,6 @@
 }
 
 //---------------------------------------------------------------------
-private
-source_str =
-"""
-#include <stdio.h>
-
-unsigned my_fpos_t_size = sizeof(fpos_t)/sizeof(void *);
-
-int      my__IOFBF       = _IOFBF      ;
-int      my__IOLBF       = _IOLBF      ;
-int      my__IONBF       = _IONBF      ;
-size_t   my_BUFSIZ       = BUFSIZ      ;
-int      my_EOF          = EOF         ;
-unsigned my_FOPEN_MAX    = FOPEN_MAX   ;
-unsigned my_FILENAME_MAX = FILENAME_MAX;
-unsigned my_L_tmpnam     = L_tmpnam    ;
-int      my_SEEK_CUR     = SEEK_CUR    ;
-int      my_SEEK_END     = SEEK_END    ;
-int      my_SEEK_SET     = SEEK_SET    ;
-unsigned my_TMP_MAX      = TMP_MAX     ;
-""";
-
-//---------------------------------------------------------------------
 {   struct FILE;
 
     v_popen: (command: *const char, prop: *const char) -> *FILE;
@@ -62,8 +40,6 @@ unsigned my_TMP_MAX      = TMP_MAX     ;
     fprintf: (stream: *FILE, format: *const char, ...) -> int;
 
     fscanf: (stream: *FILE, format: *const char, ...) -> int;
-
-//  fputs: (buf: *char, stream: *FILE) -> int;
 
     sprintf: (str: *char, format: *const char, ...) -> int;
 
@@ -96,6 +72,26 @@ unsigned my_TMP_MAX      = TMP_MAX     ;
         defer v_pclose(p);
 
         fprintf(p, "clang -x c -c -o %s", buffer);
+
+        source_str =
+        """
+        #include <stdio.h>
+
+        unsigned my_fpos_t_size = sizeof(fpos_t)/sizeof(void *);
+
+        int      my__IOFBF       = _IOFBF      ;
+        int      my__IOLBF       = _IOLBF      ;
+        int      my__IONBF       = _IONBF      ;
+        size_t   my_BUFSIZ       = BUFSIZ      ;
+        int      my_EOF          = EOF         ;
+        unsigned my_FOPEN_MAX    = FOPEN_MAX   ;
+        unsigned my_FILENAME_MAX = FILENAME_MAX;
+        unsigned my_L_tmpnam     = L_tmpnam    ;
+        int      my_SEEK_CUR     = SEEK_CUR    ;
+        int      my_SEEK_END     = SEEK_END    ;
+        int      my_SEEK_SET     = SEEK_SET    ;
+        unsigned my_TMP_MAX      = TMP_MAX     ;
+        """;
 
         fprintf(p, " - <<HEREDOC\n%s\nHEREDOC\n", source_str);
     }

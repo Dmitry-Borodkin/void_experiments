@@ -4,7 +4,6 @@
 
     v_import("llvm-c/Core.void");
     v_import("llvm-c/TargetMachine.void");
-    v_import("llvm-c/Transform/PassManagerBuilder.void");
 
     v_import("printf.void");
 }

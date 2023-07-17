@@ -19,6 +19,9 @@ try_ctors.void                                                 │try_ctors.void
 ───────────────────────────────────────────────────────────────│
 try_library/                                                   │try_library/micros.dir
                                                                │
+try_string2.void                                               │try_string2.void
+                                                               │
+                                                               │
 ───────────────────────────────────────────────────────────────│
 try_hz8.void                                                   │try_hz8.void
                                                                │

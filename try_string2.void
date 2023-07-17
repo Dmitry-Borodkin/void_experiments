@@ -1,0 +1,330 @@
+{   v_import("mainline.void");
+
+    v_import("llvm-c/Core.void");
+    v_import("llvm-c/Target.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_mainline();
+}
+
+
+//---------------------------------------------------------------------
+v_is_big_endian_intrinsic: (*voidc_visitor_t, *void, *v_ast_base_t) -> void
+{
+    ret_v: &LLVMValueRef := v_undef();
+
+    llvm_ctx = v_target_get_llvm_ctx();
+
+    if (tl = v_target_get_data_layout())
+    {
+        ret = (LLVMByteOrder(tl) == LLVMBigEndian);
+
+        i1_ = LLVMInt1TypeInContext(llvm_ctx);
+
+        ret_v := LLVMConstInt(i1_, ret, 0);
+    }
+    else
+    {
+        i16_ = LLVMInt16TypeInContext(llvm_ctx);
+
+        one_v = LLVMConstInt(i16_, 1, 0);
+
+        i8_ = LLVMInt8TypeInContext(llvm_ctx);
+
+        v2xi8_ = LLVMVectorType(i8_, 2);
+
+        vec_one_v = LLVMConstBitCast(one_v, v2xi8_);
+
+        i32_ = LLVMInt32TypeInContext(llvm_ctx);
+
+        res_v = LLVMConstExtractElement(vec_one_v, LLVMConstNull(i32_));
+
+        ret_v := LLVMConstICmp(LLVMIntEQ, res_v, LLVMConstNull(i8_));
+    }
+
+    v_set_result_type(v_uint_type(1));      //- "bool"
+    v_set_result_value(ret_v);
+}
+
+{   v_add_intrinsic("v_is_big_endian", v_is_big_endian_intrinsic, 0);
+}
+
+
+//---------------------------------------------------------------------
+{
+    sz = intptr_t[3].size;
+
+    b_cap: &int := v_undef();
+    b_len: &int := v_undef();
+    b_ptr: &int := v_undef();
+
+    l_len: &int := v_undef();
+    l_str: &int := v_undef();
+
+    if (v_is_big_endian())
+    {
+        b_cap := 2;
+        b_len := 1;
+        b_ptr := 0;
+
+        l_len := 1;
+        l_str := 0;
+    }
+    else
+    {
+        b_cap := 0;
+        b_len := 1;
+        b_ptr := 2;
+
+        l_len := 0;
+        l_str := 1;
+    }
+
+    b_typ: &(*v_type_t)[3] := v_undef();
+
+    b_typ[b_cap] := size_t;
+    b_typ[b_len] := size_t;
+    b_typ[b_ptr] := v_pointer_type(char, 0);
+
+    l_typ: &(*v_type_t)[2] := v_undef();
+
+    l_typ[l_len] := v_uint_type(8);
+    l_typ[l_str] := v_array_type(char, sz-1);
+
+    b_struct = v_struct_type(b_typ, 3, false);
+    l_struct = v_struct_type(l_typ, 2, false);
+
+    v_add_type("b_struct_type", b_struct);
+    v_add_type("l_struct_type", l_struct);
+
+    int_ = v_type_get_llvm_type(int);
+
+    v_add_constant("b_cap_field_number", int, LLVMConstInt(int_, b_cap, 0));
+    v_add_constant("b_len_field_number", int, LLVMConstInt(int_, b_len, 0));
+    v_add_constant("b_ptr_field_number", int, LLVMConstInt(int_, b_ptr, 0));
+
+    v_add_constant("l_len_field_number", int, LLVMConstInt(int_, l_len, 0));
+    v_add_constant("l_str_field_number", int, LLVMConstInt(int_, l_str, 0));
+}
+
+
+//=====================================================================
+union string_t
+{
+    short: l_struct_type;
+    long:  b_struct_type;
+
+    raw:   intptr_t[3];
+};
+
+//---------------------------------------------------------------------
+alwaysinline
+(_.is_long): (self: &const string_t) -> bool
+{
+    v_return((self.long[b_cap_field_number] & 1 : bool));
+}
+
+inlinehint
+(_.size): (self: &const string_t) -> size_t
+{
+    if (self.is_long)   v_return(self.long[b_len_field_number]);
+    else                v_return(self.short[l_len_field_number] >> 1);
+}
+
+inlinehint
+(_.capacity): (self: &const string_t) -> size_t
+{
+    if (self.is_long)   v_return(self.long[b_cap_field_number] >> 1);
+    else                v_return(string_t.size - 2);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(v_initialize(_)): (dst: *string_t, count: size_t) -> void
+{
+    memset: (*void, int, size_t) -> *void;
+
+    memset(dst, 0, count*string_t.size);
+}
+
+inlinehint
+(v_terminate(_)): (dst: *string_t, count: size_t) -> void
+{
+    for (i: &size_t := 0; i < count; ++i)
+    {
+        d_i = dst[i];
+
+        if (d_i.is_long) v_free(d_i.long[b_ptr_field_number]);
+    }
+}
+
+inlinehint
+(v_copy(_)): (dst: *string_t, src: *const string_t, count: size_t) -> void
+{
+    for (i: &size_t := 0; i < count; ++i)
+    {
+        d_i = dst[i];
+        s_i = src[i];
+
+        if (d_i.is_long) v_free(d_i.long[b_ptr_field_number]);
+
+        d_i.raw := s_i.raw;
+
+        if (s_i.is_long)
+        {
+            s_sz = s_i.size;
+
+            strndup: (*const char, size_t) -> *char;
+
+            d_i.long[b_ptr_field_number] := strndup(s_i.long[b_ptr_field_number], s_sz);
+            d_i.long[b_cap_field_number] := s_sz;
+        }
+    }
+}
+
+inlinehint
+(v_move(_)): (dst: *string_t, src: *string_t, count: size_t) -> void
+{
+    v_terminate(dst, count);
+
+    memcpy: (*void, *const void, size_t) -> *void;
+    memset: (*void, int, size_t) -> *void;
+
+    memcpy(dst, src, count*string_t.size);
+    memset(src, 0, count*string_t.size);
+}
+
+inlinehint
+(v_transfer(_)): (dst: *string_t, src: *const string_t, count: size_t) -> void = derive;
+
+
+//---------------------------------------------------------------------
+inlinehint
+(_.data): (str: &string_t) -> *char
+{
+    if (str.is_long)  v_return(str.long[b_ptr_field_number]);
+    else              v_return(str.short[l_str_field_number]);
+}
+
+inlinehint
+(_.set()): (str: &string_t, s: *const char) -> void
+{
+    strlen: (*const char) -> size_t;
+
+    len = strlen(s);
+
+    if (len > str.capacity)
+    {
+        if (str.is_long) v_free(str.long[b_ptr_field_number]);
+
+        str.long[b_ptr_field_number] := v_malloc(char, len+1);
+        str.long[b_cap_field_number] := (len << 1) | 1;
+    }
+
+    if (str.is_long)
+    {
+        str.long[b_len_field_number] := len;
+    }
+    else
+    {
+        str.short[l_len_field_number] := ((len << 1) : uint(8));
+    }
+
+    memcpy: (*void, *const void, size_t) -> *void;
+
+    memcpy(str.data, s, len+1);
+}
+
+inlinehint
+(_.append()): (str: &string_t, s: *const char) -> void
+{
+    strlen: (*const char) -> size_t;
+
+    len = strlen(s);
+
+    sz = str.size;
+
+    sz_len = sz + len;
+
+    memcpy: (*void, *const void, size_t) -> *void;
+
+    if (sz_len > str.capacity)
+    {
+        if (str.is_long)
+        {
+            realloc: (*void, size_t) -> *void;
+
+            str.long[b_ptr_field_number] := (realloc(str.long[b_ptr_field_number], sz_len+1) : *char);
+        }
+        else
+        {
+            d = v_malloc(char, sz_len+1);
+
+            memcpy(d, str.data, sz);
+
+            str.long[b_ptr_field_number] := d;
+        }
+
+        str.long[b_cap_field_number] := (sz_len << 1) | 1;
+    }
+
+    memcpy(str.data+sz, s, len+1);
+
+    if (str.is_long)
+    {
+        str.long[b_len_field_number] := sz_len;
+    }
+    else
+    {
+        str.short[l_len_field_number] := ((sz_len << 1) : uint(8));
+    }
+}
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------
+//{   v_debug_print_module(2);
+//
+//    voidc_verify_jit_module_optimized(true);
+//}
+{
+    s: &string_t := {};
+
+    s.set("qwerty_________1");
+
+    printf("d: %s, s: %zd, c: %zd\n", s.data, s.size, s.capacity);
+
+    s.set("qwerty_______________________________________________________________________________________2");
+
+    printf("d: %s, s: %zd, c: %zd\n", s.data, s.size, s.capacity);
+
+    s.set("qwerty___________________3");
+
+    printf("d: %s, s: %zd, c: %zd\n", s.data, s.size, s.capacity);
+
+    s.set("qwerty_____4");
+
+    printf("d: %s, s: %zd, c: %zd\n", s.data, s.size, s.capacity);
+
+    s.append("asdfgh_____5");
+
+    printf("d: %s, s: %zd, c: %zd\n", s.data, s.size, s.capacity);
+}
+
+
+
+
+
+//---------------------------------------------------------------------
+
+
+

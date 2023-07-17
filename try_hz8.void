@@ -4,6 +4,7 @@
     v_import("level-03");
 
     v_import("llvm-c/Core.void");
+    v_import("llvm-c/Target.void");
 
     v_import("printf.void");
 }
@@ -269,15 +270,62 @@ foo: () -> void
 }
 
 
+//---------------------------------------------------------------------
+{   s = "í ½í¸­";
+
+    strlen: (*const char) -> size_t;
+
+    printf("%s: %d\n", s, (strlen(s): int));
+}
 
 
+//---------------------------------------------------------------------
+v_is_big_endian_intrinsic: (*voidc_visitor_t, *void, *v_ast_base_t) -> void
+{
+    ret_v: &LLVMValueRef := v_undef();
 
+    llvm_ctx = v_target_get_llvm_ctx();
 
+    if (tl = v_target_get_data_layout())
+    {
+        ret = (LLVMByteOrder(tl) == LLVMBigEndian);
 
+        i1_ = LLVMInt1TypeInContext(llvm_ctx);
 
+        ret_v := LLVMConstInt(i1_, ret, 0);
+    }
+    else
+    {
+        i16_ = LLVMInt16TypeInContext(llvm_ctx);
 
+        one_v = LLVMConstInt(i16_, 1, 0);
 
+        i8_ = LLVMInt8TypeInContext(llvm_ctx);
 
+        v2xi8_ = LLVMVectorType(i8_, 2);
+
+        vec_one_v = LLVMConstBitCast(one_v, v2xi8_);
+
+        i32_ = LLVMInt32TypeInContext(llvm_ctx);
+
+        res_v = LLVMConstExtractElement(vec_one_v, LLVMConstNull(i32_));
+
+        ret_v := LLVMConstICmp(LLVMIntEQ, res_v, LLVMConstNull(i8_));
+    }
+
+    v_set_result_type(v_uint_type(1));      //- "bool"
+    v_set_result_value(ret_v);
+}
+
+{   v_add_intrinsic("v_is_big_endian", v_is_big_endian_intrinsic, 0);
+}
+
+//---------------------------------------------------------------------
+le = !v_is_big_endian();            //- Sic!!!
+
+{
+    printf("le: %d\n", (le:int));
+}
 
 
 
