@@ -11,48 +11,6 @@
 
 
 //---------------------------------------------------------------------
-v_is_big_endian_intrinsic: (*voidc_visitor_t, *void, *v_ast_base_t) -> void
-{
-    ret_v: &LLVMValueRef := v_undef();
-
-    llvm_ctx = v_target_get_llvm_ctx();
-
-    if (tl = v_target_get_data_layout())
-    {
-        ret = (LLVMByteOrder(tl) == LLVMBigEndian);
-
-        i1_ = LLVMInt1TypeInContext(llvm_ctx);
-
-        ret_v := LLVMConstInt(i1_, ret, 0);
-    }
-    else
-    {
-        i16_ = LLVMInt16TypeInContext(llvm_ctx);
-
-        one_v = LLVMConstInt(i16_, 1, 0);
-
-        i8_ = LLVMInt8TypeInContext(llvm_ctx);
-
-        v2xi8_ = LLVMVectorType(i8_, 2);
-
-        vec_one_v = LLVMConstBitCast(one_v, v2xi8_);
-
-        i32_ = LLVMInt32TypeInContext(llvm_ctx);
-
-        res_v = LLVMConstExtractElement(vec_one_v, LLVMConstNull(i32_));
-
-        ret_v := LLVMConstICmp(LLVMIntEQ, res_v, LLVMConstNull(i8_));
-    }
-
-    v_set_result_type(v_uint_type(1));      //- "bool"
-    v_set_result_value(ret_v);
-}
-
-{   v_add_intrinsic("v_is_big_endian", v_is_big_endian_intrinsic, 0);
-}
-
-
-//---------------------------------------------------------------------
 {
     sz = intptr_t[3].size;
 
@@ -63,23 +21,27 @@ v_is_big_endian_intrinsic: (*voidc_visitor_t, *void, *v_ast_base_t) -> void
     l_len: &int := v_undef();
     l_str: &int := v_undef();
 
-    if (v_is_big_endian())
+    switch(LLVMByteOrder(v_target_get_data_layout()))       //- Sic!!!
     {
-        b_cap := 2;
-        b_len := 1;
-        b_ptr := 0;
+    case LLVMLittleEndian:
 
-        l_len := 1;
-        l_str := 0;
-    }
-    else
-    {
         b_cap := 0;
         b_len := 1;
         b_ptr := 2;
 
         l_len := 0;
         l_str := 1;
+
+        v_break();
+
+    case LLVMBigEndian:
+
+        b_cap := 2;
+        b_len := 1;
+        b_ptr := 0;
+
+        l_len := 1;
+        l_str := 0;
     }
 
     b_typ: &(*v_type_t)[3] := v_undef();
@@ -140,12 +102,18 @@ inlinehint
     else                v_return(string_t.size - 2);
 }
 
+
+//---------------------------------------------------------------------
+memcpy: (*void, *const void, size_t) -> *void;
+memset: (*void, int, size_t) -> *void;
+
+realloc: (*void, size_t) -> *void;
+
+
 //---------------------------------------------------------------------
 alwaysinline
 (v_initialize(_)): (dst: *string_t, count: size_t) -> void
 {
-    memset: (*void, int, size_t) -> *void;
-
     memset(dst, 0, count*string_t.size);
 }
 
@@ -176,10 +144,12 @@ inlinehint
         {
             s_sz = s_i.size;
 
-            strndup: (*const char, size_t) -> *char;
+            p = v_malloc(char, s_sz+1);
 
-            d_i.long[b_ptr_field_number] := strndup(s_i.long[b_ptr_field_number], s_sz);
-            d_i.long[b_cap_field_number] := s_sz;
+            memcpy(p, s_i.long[b_ptr_field_number], s_sz+1);
+
+            d_i.long[b_ptr_field_number] := p;
+            d_i.long[b_cap_field_number] := (s_sz << 1) | 1;
         }
     }
 }
@@ -189,11 +159,10 @@ inlinehint
 {
     v_terminate(dst, count);
 
-    memcpy: (*void, *const void, size_t) -> *void;
-    memset: (*void, int, size_t) -> *void;
+    sz = count * string_t.size;
 
-    memcpy(dst, src, count*string_t.size);
-    memset(src, 0, count*string_t.size);
+    memcpy(dst, src, sz);
+    memset(src,   0, sz);
 }
 
 inlinehint
@@ -232,8 +201,6 @@ inlinehint
         str.short[l_len_field_number] := ((len << 1) : uint(8));
     }
 
-    memcpy: (*void, *const void, size_t) -> *void;
-
     memcpy(str.data, s, len+1);
 }
 
@@ -248,14 +215,10 @@ inlinehint
 
     sz_len = sz + len;
 
-    memcpy: (*void, *const void, size_t) -> *void;
-
     if (sz_len > str.capacity)
     {
         if (str.is_long)
         {
-            realloc: (*void, size_t) -> *void;
-
             str.long[b_ptr_field_number] := (realloc(str.long[b_ptr_field_number], sz_len+1) : *char);
         }
         else
@@ -286,9 +249,13 @@ inlinehint
 
 
 
+//---------------------------------------------------------------------
+pr_string: (s: string_t) -> void
+{
+    s = *v_get_object_pointer(s);
 
-
-
+    printf("d: %s, s: %zd, c: %zd\n", s.data, s.size, s.capacity);
+}
 
 
 //---------------------------------------------------------------------
@@ -301,25 +268,59 @@ inlinehint
 
     s.set("qwerty_________1");
 
-    printf("d: %s, s: %zd, c: %zd\n", s.data, s.size, s.capacity);
+    pr_string(s);
 
     s.set("qwerty_______________________________________________________________________________________2");
 
-    printf("d: %s, s: %zd, c: %zd\n", s.data, s.size, s.capacity);
+    pr_string(s);
 
     s.set("qwerty___________________3");
 
-    printf("d: %s, s: %zd, c: %zd\n", s.data, s.size, s.capacity);
+    pr_string(s);
 
     s.set("qwerty_____4");
 
-    printf("d: %s, s: %zd, c: %zd\n", s.data, s.size, s.capacity);
+    pr_string(s);
 
     s.append("asdfgh_____5");
 
-    printf("d: %s, s: %zd, c: %zd\n", s.data, s.size, s.capacity);
+    pr_string(s);
 }
 
+
+//---------------------------------------------------------------------
+alwaysinline
+(_:=_): (str: &string_t, val: string_t) -> &string_t
+{
+    v_copy(&str, v_get_object_pointer(val));
+
+    v_return(str);
+}
+
+//---------------------------------------------------------------------
+//{   v_debug_print_module(2);
+//
+//    voidc_verify_jit_module_optimized(true);
+//}
+{   s: &string_t[2] := {};
+
+    s[0].set("1");
+    s[1].set("0");
+
+    pr_string(s[1]);
+
+    for (i: &int := 0; i < 9; ++i)
+    {
+        t: &string_t := s[1];
+
+        t.append(s[0].data);
+
+        s[0] := s[1];
+        s[1] := t;
+
+        pr_string(t);
+    }
+}
 
 
 
