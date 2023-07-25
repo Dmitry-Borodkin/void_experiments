@@ -30,24 +30,21 @@ collect_defines: () -> void
 
     while (optind < voidc_argc)
     {
-        c: &int := v_undef();
-
-        if ((c := getopt(voidc_argc, voidc_argv, "D:")) != -1)
-        {
-            //- Option argument
-
-            switch (c)
-            {
-            case 'D':
-                v_export_constant(optarg, v_find_type("void"), 0);
-                v_break();
-
-            default:
-                v_break();
-            }
-        }
+        c = getopt(voidc_argc, voidc_argv, "D:");
 
         if (c == -1)  v_break();
+
+        //- Option argument
+
+        switch (c)
+        {
+        case 'D':
+            v_export_constant(optarg, v_find_type("void"), 0);
+            v_break();
+
+        default:
+            v_break();
+        }
     }
 }
 

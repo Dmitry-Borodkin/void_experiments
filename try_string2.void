@@ -14,69 +14,69 @@
 {
     sz = intptr_t[3].size;
 
-    b_cap: &int := v_undef();
-    b_len: &int := v_undef();
-    b_ptr: &int := v_undef();
+    l_cap: &int := v_undef();       //- long, capacity (flag "is_long")
+    l_len: &int := v_undef();       //- long, length
+    l_ptr: &int := v_undef();       //- long, pointer to data
 
-    l_len: &int := v_undef();
-    l_str: &int := v_undef();
+    s_len: &int := v_undef();       //- short, length (flag "is_long")
+    s_str: &int := v_undef();       //- short, data
 
     switch(LLVMByteOrder(v_target_get_data_layout()))       //- Sic!!!
     {
     case LLVMLittleEndian:
 
-        b_cap := 0;
-        b_len := 1;
-        b_ptr := 2;
+        l_cap := 0;         //- "is_long" in the first byte
+        l_len := 1;
+        l_ptr := 2;
 
-        l_len := 0;
-        l_str := 1;
+        s_len := 0;         //- "is_long" in the first byte
+        s_str := 1;
 
         v_break();
 
     case LLVMBigEndian:
 
-        b_cap := 2;
-        b_len := 1;
-        b_ptr := 0;
-
+        l_ptr := 0;
         l_len := 1;
-        l_str := 0;
+        l_cap := 2;         //- "is_long" in the last byte
+
+        s_str := 0;
+        s_len := 1;         //- "is_long" in the last byte
     }
 
-    b_typ: &(*v_type_t)[3] := v_undef();
+    l_typ: &(*v_type_t)[3] := v_undef();
 
-    b_typ[b_cap] := size_t;
-    b_typ[b_len] := size_t;
-    b_typ[b_ptr] := v_pointer_type(char, 0);
+    l_typ[l_cap] := size_t;
+    l_typ[l_len] := size_t;
+    l_typ[l_ptr] := v_pointer_type(char, 0);
 
-    l_typ: &(*v_type_t)[2] := v_undef();
+    s_typ: &(*v_type_t)[2] := v_undef();
 
-    l_typ[l_len] := v_uint_type(8);
-    l_typ[l_str] := v_array_type(char, sz-1);
+    s_typ[s_len] := v_uint_type(8);
+    s_typ[s_str] := v_array_type(char, sz-1);
 
-    b_struct = v_struct_type(b_typ, 3, false);
-    l_struct = v_struct_type(l_typ, 2, false);
+    l_struct = v_struct_type(l_typ, 3, false);
+    s_struct = v_struct_type(s_typ, 2, false);
 
-    v_add_type("b_struct_type", b_struct);
     v_add_type("l_struct_type", l_struct);
+    v_add_type("s_struct_type", s_struct);
 
     int_ = v_type_get_llvm_type(int);
 
-    v_add_constant("b_cap_field_number", int, LLVMConstInt(int_, b_cap, 0));
-    v_add_constant("b_len_field_number", int, LLVMConstInt(int_, b_len, 0));
-    v_add_constant("b_ptr_field_number", int, LLVMConstInt(int_, b_ptr, 0));
-
+    v_add_constant("l_cap_field_number", int, LLVMConstInt(int_, l_cap, 0));
     v_add_constant("l_len_field_number", int, LLVMConstInt(int_, l_len, 0));
-    v_add_constant("l_str_field_number", int, LLVMConstInt(int_, l_str, 0));
+    v_add_constant("l_ptr_field_number", int, LLVMConstInt(int_, l_ptr, 0));
+
+    v_add_constant("s_len_field_number", int, LLVMConstInt(int_, s_len, 0));
+    v_add_constant("s_str_field_number", int, LLVMConstInt(int_, s_str, 0));
 }
 
 
 //=====================================================================
 union string_t
 {
-    short: l_struct_type;
-    long:  b_struct_type;
+    short: s_struct_type;
+    long:  l_struct_type;
 
     raw:   intptr_t[3];
 };
@@ -85,20 +85,20 @@ union string_t
 alwaysinline
 (_.is_long): (self: &const string_t) -> bool
 {
-    v_return((self.long[b_cap_field_number] & 1 : bool));
+    v_return((self.long[l_cap_field_number] & 1 : bool));
 }
 
 inlinehint
 (_.size): (self: &const string_t) -> size_t
 {
-    if (self.is_long)   v_return(self.long[b_len_field_number]);
-    else                v_return(self.short[l_len_field_number] >> 1);
+    if (self.is_long)   v_return(self.long[l_len_field_number]);
+    else                v_return(self.short[s_len_field_number] >> 1);
 }
 
 inlinehint
 (_.capacity): (self: &const string_t) -> size_t
 {
-    if (self.is_long)   v_return(self.long[b_cap_field_number] >> 1);
+    if (self.is_long)   v_return(self.long[l_cap_field_number] >> 1);
     else                v_return(string_t.size - 2);
 }
 
@@ -124,7 +124,7 @@ inlinehint
     {
         d_i = dst[i];
 
-        if (d_i.is_long) v_free(d_i.long[b_ptr_field_number]);
+        if (d_i.is_long) v_free(d_i.long[l_ptr_field_number]);
     }
 }
 
@@ -136,7 +136,7 @@ inlinehint
         d_i = dst[i];
         s_i = src[i];
 
-        if (d_i.is_long) v_free(d_i.long[b_ptr_field_number]);
+        if (d_i.is_long) v_free(d_i.long[l_ptr_field_number]);
 
         d_i.raw := s_i.raw;
 
@@ -146,10 +146,10 @@ inlinehint
 
             p = v_malloc(char, s_sz+1);
 
-            memcpy(p, s_i.long[b_ptr_field_number], s_sz+1);
+            memcpy(p, s_i.long[l_ptr_field_number], s_sz+1);
 
-            d_i.long[b_ptr_field_number] := p;
-            d_i.long[b_cap_field_number] := (s_sz << 1) | 1;
+            d_i.long[l_ptr_field_number] := p;
+            d_i.long[l_cap_field_number] := (s_sz << 1) | 1;
         }
     }
 }
@@ -173,8 +173,8 @@ inlinehint
 inlinehint
 (_.data): (str: &string_t) -> *char
 {
-    if (str.is_long)  v_return(str.long[b_ptr_field_number]);
-    else              v_return(str.short[l_str_field_number]);
+    if (str.is_long)  v_return(str.long[l_ptr_field_number]);
+    else              v_return(str.short[s_str_field_number]);
 }
 
 inlinehint
@@ -186,19 +186,19 @@ inlinehint
 
     if (len > str.capacity)
     {
-        if (str.is_long) v_free(str.long[b_ptr_field_number]);
+        if (str.is_long) v_free(str.long[l_ptr_field_number]);
 
-        str.long[b_ptr_field_number] := v_malloc(char, len+1);
-        str.long[b_cap_field_number] := (len << 1) | 1;
+        str.long[l_ptr_field_number] := v_malloc(char, len+1);
+        str.long[l_cap_field_number] := (len << 1) | 1;
     }
 
     if (str.is_long)
     {
-        str.long[b_len_field_number] := len;
+        str.long[l_len_field_number] := len;
     }
     else
     {
-        str.short[l_len_field_number] := ((len << 1) : uint(8));
+        str.short[s_len_field_number] := ((len << 1) : uint(8));
     }
 
     memcpy(str.data, s, len+1);
@@ -219,7 +219,7 @@ inlinehint
     {
         if (str.is_long)
         {
-            str.long[b_ptr_field_number] := (realloc(str.long[b_ptr_field_number], sz_len+1) : *char);
+            str.long[l_ptr_field_number] := (realloc(str.long[l_ptr_field_number], sz_len+1) : *char);
         }
         else
         {
@@ -227,21 +227,21 @@ inlinehint
 
             memcpy(d, str.data, sz);
 
-            str.long[b_ptr_field_number] := d;
+            str.long[l_ptr_field_number] := d;
         }
 
-        str.long[b_cap_field_number] := (sz_len << 1) | 1;
+        str.long[l_cap_field_number] := (sz_len << 1) | 1;
     }
 
     memcpy(str.data+sz, s, len+1);
 
     if (str.is_long)
     {
-        str.long[b_len_field_number] := sz_len;
+        str.long[l_len_field_number] := sz_len;
     }
     else
     {
-        str.short[l_len_field_number] := ((sz_len << 1) : uint(8));
+        str.short[s_len_field_number] := ((sz_len << 1) : uint(8));
     }
 }
 
