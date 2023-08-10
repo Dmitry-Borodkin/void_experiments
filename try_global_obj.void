@@ -1,0 +1,136 @@
+{   v_import("mainline.void");
+
+    v_import("llvm-c/Core.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_mainline();
+}
+
+
+//=====================================================================
+{   q_ref = v_reference_type(v_quark_t, 0);
+
+    q = v_quark_ptr_from_string;
+
+    v_add_symbol("q_initialize", q_ref, q("v_initialize"));
+    v_add_symbol("q_terminate",  q_ref, q("v_terminate"));
+    v_add_symbol("q_transfer",   q_ref, q("v_transfer"));
+}
+
+
+//---------------------------------------------------------------------
+private
+struct obtain_special_result_value_global_ctx_t
+{
+    name: *const char;
+
+    init: LLVMBasicBlockRef;
+    term: LLVMBasicBlockRef;
+};
+
+//---------------------------------------------------------------------
+private
+obtain_special_result_value_global: (vis: *voidc_visitor_t, aux: *void, t: *v_type_t) -> LLVMValueRef
+{
+    //- assert(v_type_is_special(t, q_initialize));
+
+    ctx = *(aux: *obtain_special_result_value_global_ctx_t);
+
+    raw_name = v_check_alias(ctx.name);
+
+    module = v_get_module();
+
+    //- assert(module);
+
+    v: &LLVMValueRef := LLVMGetNamedGlobal(module, raw_name);
+
+    if (!v) v := LLVMAddGlobal(module, v_type_get_llvm_type(t), raw_name);
+
+    //--------------------------------------------------------------
+    stmt: &v_ast_stmt_t := {};
+
+    v_save_builder_ip();
+
+    builder = v_target_get_builder();
+
+    LLVMPositionBuilderAtEnd(builder, ctx.init);
+
+    voidc_make_special_intrinsic_call(&stmt, q_initialize, t, v, 0);
+
+    v_ast_accept_visitor((&stmt: *v_ast_base_t), vis);
+
+    if (b = LLVMGetInsertBlock(builder), ctx.init != b)   ctx.init := b;
+
+    //--------------------------------------------------------------
+    if (v_type_is_special(t, q_terminate))
+    {
+        instr = LLVMGetFirstInstruction(ctx.term);
+
+        LLVMPositionBuilder(builder, ctx.term, instr);
+
+        voidc_make_special_intrinsic_call(&stmt, q_terminate, t, v, 0);
+
+        v_ast_accept_visitor((&stmt: *v_ast_base_t), vis);
+
+        //- assert(ctx.term == LLVMGetInsertBlock(builder));            //- Sic!
+    }
+
+    v_restore_builder_ip();
+
+    v_return(v);
+}
+
+
+//---------------------------------------------------------------------
+//- voidc_obtain_special_result_value ...
+//---------------------------------------------------------------------
+private
+struct my_obtain_special_result_value_ctx_t
+{
+    global_flag: bool;
+    global_ctx:  obtain_special_result_value_global_ctx_t;
+
+    fun: *((vis: *voidc_visitor_t, *void, t: *v_type_t) -> LLVMValueRef);
+    aux: *void;
+};
+
+//---------------------------------------------------------------------
+private
+my_obtain_special_result_value_helper: (vis: *voidc_visitor_t, aux: *void, t: *v_type_t) -> LLVMValueRef
+{
+    //- assert(v_type_is_special(t, q_initialize));
+
+    ctx = *(aux: *my_obtain_special_result_value_ctx_t);
+
+//  ttag = v_get_result_type();
+    vtag = v_get_result_value();
+
+    switch((vtag: intptr_t))
+    {
+    case -2:        //- GLOBAL_VTAG
+
+        ctx.global_flag := true;
+
+        v_return(obtain_special_result_value_global(vis, &ctx.global_ctx, t));
+
+    default:
+
+        v_return(ctx.fun(vis, ctx.aux, t));
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

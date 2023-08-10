@@ -1,7 +1,4 @@
-{   v_import("level-00");
-    v_import("level-01");
-    v_import("level-02");
-    v_import("level-03");
+{   v_import("mainline.void");
 
     v_import("llvm-c/Core.void");
     v_import("llvm-c/Target.void");
@@ -9,9 +6,7 @@
     v_import("printf.void");
 }
 
-{   v_enable_level_01();
-    v_enable_level_02();
-    v_enable_level_03();
+{   v_enable_mainline();
 }
 
 
@@ -231,13 +226,13 @@ print_constant_value_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base
 
 some_array: &int[77] := v_undef();
 
-qwe: (*int)[2] = { &some_array[13], &some_array[53] };
+qwe: (*int)[] = { &some_array[13], &some_array[53] };
 
 asd: int[2] = { 17, 23 };
 
 zxc = 29;
 
-//qaz = qwe[1] - qwe[0];
+qaz = qwe[1] - qwe[0];
 
 wsx = "Hello World!";
 
@@ -250,7 +245,7 @@ foo: () -> void
 
     printf("%zd\n", qwe[1]-qwe[0]);
 
-//  print_constant_value("qwe");
+    print_constant_value("qwe");
     print_constant_value("asd");
     print_constant_value("zxc");
 //  print_constant_value("qaz");

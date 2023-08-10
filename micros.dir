@@ -1,6 +1,9 @@
                          ****  ?  ****                         │*
                                                                │
                                                                │
+try_global_obj.void                                            │try_global_obj.void
+                                                               │
+                                                               │
 try_heap_obj.void                                              │try_heap_obj.void
                                                                │
 try_objects2.void                                              │try_objects2.void
