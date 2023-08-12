@@ -173,36 +173,38 @@ try_ctors_ctor: () -> void
 }
 
 private
-try_ctors_ctor_0: () -> void
-{
-    printf("try_ctors_ctor_0\n");
-}
-
-private
 try_ctors_dtor: () -> void
 {
     printf("try_ctors_dtor\n");
 }
 
-private
-try_ctors_dtor_0: () -> void
-{
-    printf("try_ctors_dtor_0\n");
-}
+private try_ctors_ctor_0: () -> void { printf("try_ctors_ctor_0\n"); }
+private try_ctors_dtor_0: () -> void { printf("try_ctors_dtor_0\n"); }
+
+private try_ctors_ctor_1: () -> void { printf("try_ctors_ctor_1\n"); }
+private try_ctors_dtor_1: () -> void { printf("try_ctors_dtor_1\n"); }
+
+private try_ctors_ctor_2: () -> void { printf("try_ctors_ctor_2\n"); }
+private try_ctors_dtor_2: () -> void { printf("try_ctors_dtor_2\n"); }
+
 
 private
 llvm_global_cdtors_item_t = v_struct({int(32), *(() -> void), *void});
 
 my_llvm_global_ctors: &llvm_global_cdtors_item_t[] :=
 {
-    {65535, try_ctors_ctor, 0},
-    {65534, try_ctors_ctor_0, 0},
+    {65536, try_ctors_ctor, 0},
+    {65537, try_ctors_ctor_0, 0},
+    {65538, try_ctors_ctor_1, 0},
+    {65539, try_ctors_ctor_2, 0},
 };
 
 my_llvm_global_dtors: &llvm_global_cdtors_item_t[] :=
 {
-    {65535, try_ctors_dtor, 0},
-    {65534, try_ctors_dtor_0, 0},
+    {65536, try_ctors_dtor, 0},
+    {65537, try_ctors_dtor_0, 0},
+    {65538, try_ctors_dtor_1, 0},
+    {65539, try_ctors_dtor_2, 0},
 };
 
 {   module = v_get_module();
@@ -216,6 +218,27 @@ my_llvm_global_dtors: &llvm_global_cdtors_item_t[] :=
     LLVMSetLinkage(c, LLVMAppendingLinkage);
     LLVMSetLinkage(d, LLVMAppendingLinkage);
 }
+
+
+private try_ctors_ctor_1: () -> void { printf("try_ctors_ctor_1\n"); }
+private try_ctors_dtor_1: () -> void { printf("try_ctors_dtor_1\n"); }
+
+private try_ctors_ctor_2: () -> void { printf("try_ctors_ctor_2\n"); }
+private try_ctors_dtor_2: () -> void { printf("try_ctors_dtor_2\n"); }
+
+my_llvm_global_ctors2: &llvm_global_cdtors_item_t[] :=
+{
+    {65538, try_ctors_ctor_1, 0},
+    {65539, try_ctors_ctor_2, 0},
+};
+
+my_llvm_global_dtors2: &llvm_global_cdtors_item_t[] :=
+{
+    {65538, try_ctors_dtor_1, 0},
+    {65539, try_ctors_dtor_2, 0},
+};
+
+
 
 
 //=====================================================================
