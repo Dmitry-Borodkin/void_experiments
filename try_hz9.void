@@ -1,0 +1,48 @@
+{   v_import("mainline.void");
+
+
+    v_import("printf.void");
+}
+
+{   v_enable_mainline();
+}
+
+
+//---------------------------------------------------------------------
+double = float(64);
+
+
+//---------------------------------------------------------------------
+check: (a: double, b: double, c: double) -> void
+{
+    s = a + b + c;
+
+    ss = a*a + b*b + c*c;
+
+    //- (x + s)^2 = 2*(x*x + ss)
+
+    //- x*x + 2*x*s + s*s - 2*x*x - 2*ss = 0
+
+    //- x*x - 2*s*x + (2*ss - s*s) = 0
+
+    D = 4*s*s - 4*(2*ss - s*s);
+
+    sqrt: (double) -> double;
+
+    sqrt_D = sqrt(D);
+
+    x1 = (2*s + sqrt_D)/2;
+    x2 = (2*s - sqrt_D)/2;
+
+    printf("check(%g, %g, %g): (%g, %g)\n", a, b, c, x1, x2);
+}
+
+
+
+//---------------------------------------------------------------------
+{
+    check(-1, 2, 2);
+}
+
+
+
