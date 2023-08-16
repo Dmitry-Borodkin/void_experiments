@@ -692,6 +692,14 @@ struct my_finish_module_globals_ctx_t
 
 //---------------------------------------------------------------------
 private
+cdtors: &(*const char)[2] :=
+{
+    "llvm.global_ctors",
+    "llvm.global_dtors"
+};
+
+//---------------------------------------------------------------------
+private
 my_finish_module_globals: (void_ctx: *void, module: LLVMModuleRef) -> void
 {
     ctx = *(void_ctx: *my_finish_module_globals_ctx_t);
@@ -712,93 +720,96 @@ my_finish_module_globals: (void_ctx: *void, module: LLVMModuleRef) -> void
     };
 
     elt_t = v_struct_type(typ, 3, false);
-    tab_t = v_array_type(elt_t, 1);
 
     elt_t_ = v_type_get_llvm_type(elt_t);
-    tab_t_ = v_type_get_llvm_type(tab_t);
 
     int32_t_  = v_type_get_llvm_type(int32_t);
     void_ptr_ = v_type_get_llvm_type(void_ptr);
 
     val: &LLVMValueRef[3] :=
     {
-        LLVMConstInt(int32_t_, 65536, 0),
+        LLVMConstInt(int32_t_, 101, 0),
         v_undef(),
         LLVMConstNull(void_ptr_),
     };
 
     //--------------------------------------------------------------
-    f_init = LLVMGetBasicBlockParent(global_ctx.init);
+    bbtab: &LLVMBasicBlockRef[2] := { global_ctx.init, global_ctx.term };
 
-    bbc_init = LLVMCountBasicBlocks(f_init);
-
-    if (bbc_init > 1  ||  LLVMGetFirstInstruction(global_ctx.init))
+    for (i: &int := 0; i < 2; ++i)
     {
-        //- Got initializations...
+        bb = bbtab[i];
 
-        if (!LLVMGetBasicBlockTerminator(global_ctx.init))
+        fv = LLVMGetBasicBlockParent(bb);
+
+        count = LLVMCountBasicBlocks(fv);
+
+        if (count > 1  ||  LLVMGetFirstInstruction(bb))
         {
-            builder = v_target_get_builder();
+            //- Got initializations/terminations...
 
-            LLVMPositionBuilderAtEnd(builder, global_ctx.init);
+            if (!LLVMGetBasicBlockTerminator(bb))
+            {
+                builder = v_target_get_builder();
 
-            LLVMBuildRetVoid(builder);
+                LLVMPositionBuilderAtEnd(builder, bb);
+
+                LLVMBuildRetVoid(builder);
+            }
+
+            val[1] := fv;
+
+            elt_v = LLVMConstStruct(val, 3, 0);
+
+            cdname = cdtors[i];
+
+            N: &unsigned := 1;
+
+            ev: &*LLVMValueRef := v_undef();
+
+            if (cdt = LLVMGetNamedGlobal(module, cdname))
+            {
+                cdt0 = LLVMGetOperand(cdt, 0);
+
+                n = LLVMGetNumOperands(cdt0);
+
+                N += n;
+
+                ev := v_malloc(LLVMValueRef, N);
+
+                for (j: &int := 0; j < n; ++j)
+                {
+                    ev[j] := LLVMGetOperand(cdt0, j);
+                }
+
+                LLVMDeleteGlobal(cdt);
+            }
+            else
+            {
+                ev := v_malloc(LLVMValueRef, 1);
+            }
+
+            ev[N-1] := elt_v;
+
+            tab_t = v_array_type(elt_t, N);
+            tab_t_ = v_type_get_llvm_type(tab_t);
+
+            tab_v = LLVMConstArray(elt_t_, ev, N);
+
+            cdtors_g = LLVMAddGlobal(module, tab_t_, cdname);
+
+            LLVMSetLinkage(cdtors_g, LLVMAppendingLinkage);
+
+            LLVMSetInitializer(cdtors_g, tab_v);
+
+            v_free(ev);
         }
-
-        val[1] := f_init;
-
-        val[1] := LLVMConstStruct(val, 3, 0);
-
-        tab_v = LLVMConstArray(elt_t_, &val[1], 1);
-
-        ctors_g = LLVMAddGlobal(module, tab_t_, "llvm.global_ctors");
-
-        LLVMSetLinkage(ctors_g, LLVMAppendingLinkage);
-
-        LLVMSetInitializer(ctors_g, tab_v);
-    }
-    else
-    {
-        //- Remove empty initializations...
-
-        LLVMDeleteFunction(f_init);
-    }
-
-    //--------------------------------------------------------------
-    f_term = LLVMGetBasicBlockParent(global_ctx.term);
-
-    bbc_term = LLVMCountBasicBlocks(f_term);
-
-    if (bbc_term > 1  ||  LLVMGetFirstInstruction(global_ctx.term))
-    {
-        //- Got terminations...
-
-        if (!LLVMGetBasicBlockTerminator(global_ctx.term))
+        else
         {
-            builder = v_target_get_builder();
+            //- Remove empty initializations/terminations...
 
-            LLVMPositionBuilderAtEnd(builder, global_ctx.term);
-
-            LLVMBuildRetVoid(builder);
+            LLVMDeleteFunction(fv);
         }
-
-        val[1] := f_term;
-
-        val[1] := LLVMConstStruct(val, 3, 0);
-
-        tab_v = LLVMConstArray(elt_t_, &val[1], 1);
-
-        dtors_g = LLVMAddGlobal(module, tab_t_, "llvm.global_dtors");
-
-        LLVMSetLinkage(dtors_g, LLVMAppendingLinkage);
-
-        LLVMSetInitializer(dtors_g, tab_v);
-    }
-    else
-    {
-        //- Remove empty terminations...
-
-        LLVMDeleteFunction(f_term);
     }
 
     //--------------------------------------------------------------
@@ -839,13 +850,6 @@ compare: (void_lhs: *const void, void_rhs: *const void) -> int
 }
 
 //---------------------------------------------------------------------
-private
-cdtors: &(*const char)[2] :=
-{
-    "llvm.global_ctors",
-    "llvm.global_dtors"
-};
-
 private
 prefs: &(*const char)[2] :=
 {
@@ -998,9 +1002,11 @@ voidc_enable_global_objects_compiler: () -> void
 
 
 //=====================================================================
+{ voidc_verify_jit_module_optimized(true); }
 { v_debug_print_module(99); }
 
 //---------------------------------------------------------------------
+private alwaysinline
 foo: (s: *const char) -> int
 {
     printf("foo(%s)\n", s);
@@ -1013,6 +1019,7 @@ qwe: &int := foo("qwe");
 asd = foo("asd");
 
 
+private
 bar: (s: *const char) -> v_std_string_t
 {
     ret = v_get_return_value();

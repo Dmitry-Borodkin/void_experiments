@@ -5,7 +5,7 @@
     v_import("llvm-c/Core.void");
     v_import("llvm-c/TargetMachine.void");
 
-    v_import("printf.void");
+//  v_import("printf.void");
 }
 
 {   v_enable_mainline();
@@ -126,6 +126,9 @@ emit_module: (filename: *const char) -> void
     v_finish_module(module);
 
     //----------------------------------------------------------
+    v_verify_module(module);
+
+    //----------------------------------------------------------
     target_machine = voidc_target_machine;          //- Sic!
     pass_manager   = voidc_pass_manager;            //- Sic!
 
@@ -142,7 +145,7 @@ emit_module: (filename: *const char) -> void
     LLVMRunPassManager(pass_manager, module);
 
     //----------------------------------------------------------
-    v_verify_module(module);
+//  v_verify_module(module);
 
     //----------------------------------------------------------
     LLVMTargetMachineEmitToFile(target_machine, module, filename, LLVMObjectFile, 0);

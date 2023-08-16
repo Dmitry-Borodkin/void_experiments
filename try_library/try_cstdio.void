@@ -169,9 +169,9 @@
 //---------------------------------------------------------------------
 struct FILE;
 
-stdin:  *FILE;
-stdout: *FILE;
-stderr: *FILE;
+stdin:  &*FILE;
+stdout: &*FILE;
+stderr: &*FILE;
 
 struct fpos_t { (*void)[fpos_t_size]; };
 

@@ -22,7 +22,7 @@ test_fun: (n: int, ...) -> void
     {
         v = va_arg(ap, int(64));        //- WTF?
 
-        printf("%d: %d\n", i, v);
+        fprintf(stdout, "%d: %d\n", i, v);
     }
 
     va_end(ap);

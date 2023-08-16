@@ -45,4 +45,7 @@ check: (a: double, b: double, c: double) -> void
 }
 
 
+{
+    printf("%zd\n", v_std_string_t.size);
+}
 
