@@ -124,10 +124,11 @@
 //---------------------------------------------------------------------
 struct va_list { (*void)[va_list_size]; };
 
+
 //---------------------------------------------------------------------
 {   va_list_ref = v_reference_type(v_find_type("va_list"), 0);
 
-    _void = v_find_type("void");
+    _void = v_void_type();
 
     typ: &(*v_type_t)[2] := { va_list_ref, va_list_ref };
 

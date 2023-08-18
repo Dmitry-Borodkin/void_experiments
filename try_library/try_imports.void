@@ -39,7 +39,7 @@ collect_defines: () -> void
         switch (c)
         {
         case 'D':
-            v_export_constant(optarg, v_find_type("void"), 0);
+            v_export_constant(optarg, v_void_type(), 0);
             v_break();
 
         default:
