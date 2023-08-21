@@ -3,6 +3,8 @@
 //---------------------------------------------------------------------
 {   make_module("try_main"); }
 //---------------------------------------------------------------------
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(999); }
 {
     v_import("try_cstdarg.void");
     v_import("try_cassert.void");
@@ -34,6 +36,18 @@ d: &data_t := {};
 
 qwe: &int := printf("Превед!\n");
 
+
+//---------------------------------------------------------------------
+//m: &int := v_undef();
+//
+//test_bar: (v: int) -> &int
+//{
+//    m := v;
+//
+//    v_return(m);
+//}
+//
+//bar = test_bar(42);
 
 
 //---------------------------------------------------------------------
@@ -71,9 +85,14 @@ main: (argc: int, argv: **const char) -> int
 
     printf("\n");
 
-    printf("zzzz.v: %d\n", zzzz.v);
+    printf("zzzz.v: %d\n", v_get_object_pointer(zzzz)~>v);
+//  printf("zzzz.v: %d\n", zzzz.v);
 
     printf("\n");
+
+//    printf("bar: %d\n", bar);
+//
+//    printf("\n");
 
     v_assert(2 * 2 == 5  &&  "Hello!");
 

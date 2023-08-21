@@ -20,10 +20,15 @@
     printf("term s: %p, n: %d\n", s, (n: int));
 }
 
-(v_transfer(_)):   (d: *data_t, s: *const data_t, n: size_t) -> void
+(v_copy(_)): (d: *data_t, s: *const data_t, n: size_t) -> void
 {
-    printf("trans d: %p, s: %p, n: %d\n", d, s, (n: int));
+    printf("copy d: %p, s: %p, n: %d\n", d, s, (n: int));
+
+    for (i: &size_t := 0; i < n; ++i)   d[i].v := s[i].v;
 }
+
+(v_transfer(_)): (d: *data_t, s: *const data_t, n: size_t) -> void = derive;
+
 
 //---------------------------------------------------------------------
 (v_initialize(_)): (*data2_t, size_t) -> void = derive;
@@ -42,7 +47,7 @@ zzzz_init: (s: *const char) -> data_t
     printf("zzzz_init: %s\n", s);
 }
 
-zzzz: &data_t := zzzz_init("Кагдила?");
+zzzz: data_t = zzzz_init("Кагдила?");
 
 
 
