@@ -1,8 +1,12 @@
                          ****  ?  ****                         │*
                                                                │
                                                                │
-try_global_obj.void                                            │try_global_obj.void
                                                                │
+try_introspect5.void    ... type properties ...                │try_introspect5.void
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_global_obj.void                                            │try_global_obj.void
                                                                │
 try_heap_obj.void                                              │try_heap_obj.void
                                                                │

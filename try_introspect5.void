@@ -1,0 +1,224 @@
+{   v_import("mainline.void");
+
+    v_import("llvm-c/Core.void");
+    v_import("llvm-c/Target.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_mainline();
+}
+
+
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(99); }
+
+//====================================================================-
+FILE = v_struct("FILE");
+
+v_popen: (command: *const char, prop: *const char) -> *FILE;
+
+v_pclose: (*FILE) -> int;
+
+fprintf: (stream: *FILE, format: *const char, ...) -> int;
+
+fscanf: (stream: *FILE, format: *const char, ...) -> int;
+
+fputs: (buf: *char, stream: *FILE) -> int;
+
+sprintf: (str: *char, format: *const char, ...) -> int;
+
+system: (cmd: *const char) -> int;
+
+
+//---------------------------------------------------------------------
+v_find_file_for_import: (*v_std_string_t, *const char, *const char) -> void;
+
+voidc_include_path: &v_std_string_t := {};
+
+{   v_find_file_for_import(&voidc_include_path, "", "level-00");
+
+    strrchr: (*const char, int) -> *char;
+
+    *strrchr(v_std_string_get(&voidc_include_path), '/') := 0;
+
+//  printf("voidc_include_path: %s\n", v_std_string_get(&voidc_include_path));
+}
+
+//---------------------------------------------------------------------
+my_source: &char[] :=
+"""
+#include "voidc_target.h"
+
+extern "C" typedef void (*type_ft)(void *aux, const v_type_t *type);
+
+class MyTypesHack : public voidc_types_ctx_t
+{
+public:
+
+    void
+    types_iter(type_ft fun, void *aux)
+    {
+        fun(aux, _void_type.get());
+        fun(aux, _f16_type.get());
+        fun(aux, _f32_type.get());
+        fun(aux, _f64_type.get());
+        fun(aux, _f128_type.get());
+
+        for (auto &it : int_types)          fun(aux, it.second.get());
+        for (auto &it : uint_types)         fun(aux, it.second.get());
+        for (auto &it : function_types)     fun(aux, it.second.get());
+        for (auto &it : pointer_types)      fun(aux, it.second.get());
+        for (auto &it : reference_types)    fun(aux, it.second.get());
+        for (auto &it : named_struct_types) fun(aux, it.second.get());
+
+        for (auto &it : anon_struct_types)
+        {
+            auto st = it.second.get();
+
+            if (st->name()) continue;
+
+            fun(aux, st);
+        }
+
+        for (auto &it : array_types)        fun(aux, it.second.get());
+        for (auto &it : vector_types)       fun(aux, it.second.get());
+        for (auto &it : svector_types)      fun(aux, it.second.get());
+    }
+
+};
+
+extern "C"
+{
+
+void
+types_iter(type_ft fun, void *aux)
+{
+    auto *gctx = voidc_global_ctx_t::target;
+
+    auto *hctx = static_cast<MyTypesHack*>(static_cast<voidc_types_ctx_t*>(gctx));
+
+    hctx->types_iter(fun, aux);
+}
+
+typedef void (*prop_ft)(void *aux, v_quark_t, const std::any *);
+
+void
+type_props_iter(prop_ft fun, void *aux, const v_type_t *t)
+{
+    for (auto &it : t->properties)
+    {
+        fun(aux, it.first, &it.second);
+    }
+}
+
+}
+
+""";
+
+
+//---------------------------------------------------------------------
+buffer: &*char := 0;
+
+{   buflen = 1024;
+
+    buffer := v_malloc(char, buflen);
+
+    {   p = v_popen("mktemp", "r");
+        defer v_pclose(p);
+
+        fscanf(p, "%500s", buffer);
+    }
+
+    if (v_find_constant("_WIN32", 0, 0))
+    {
+        cmd = buffer + 512;
+
+        sprintf(cmd, "cygpath -m %s", buffer);
+
+        p = v_popen(cmd, "r");
+        defer v_pclose(p);
+
+        fscanf(p, "%1000s", buffer);
+    }
+
+    //-----------------------------------------------------------------
+    {   p = v_popen("bash", "w");
+        defer v_pclose(p);
+
+        fprintf(p, "clang -x c++ -c -fPIC");
+
+        if (v_find_constant("NDEBUG", 0, 0))  fprintf(p, " -O3 -DNDEBUG");
+
+        fprintf(p, " $(llvm-config --cxxflags) -std=c++17");
+
+        fprintf(p, " -I%s", v_std_string_get(&voidc_include_path));
+
+        if (v_find_constant("_WIN32", 0, 0))
+        {
+            fprintf(p, " -IC:/Tools/include -frtti -fcxx-exceptions");
+        }
+
+        fprintf(p, " -o %s", buffer);
+
+        fprintf(p, " - <<HEREDOC\n%s\nHEREDOC\n", my_source);
+    }
+
+    //-----------------------------------------------------------------
+    mb: &LLVMMemoryBufferRef := 0;
+    defer LLVMDisposeMemoryBuffer(mb);
+
+    LLVMCreateMemoryBufferWithContentsOfFile(buffer, &mb, 0);
+
+    voidc_add_local_object_file_to_jit(mb);
+}
+
+
+//---------------------------------------------------------------------
+{   p = v_popen("bash", "w");
+    defer v_pclose(p);
+
+    fprintf(p, "rm %s\n", buffer);
+
+    v_free(buffer);
+}
+
+
+//====================================================================-
+type_ft = (*void, *const v_type_t) -> void;
+
+types_iter: (*type_ft, *void) -> void;
+
+prop_ft = (*void, v_quark_t, *const v_std_any_t) -> void;
+
+type_props_iter: (*prop_ft, *void, *const v_type_t) -> void;
+
+
+//---------------------------------------------------------------------
+type_prop_fun: (*void, q: v_quark_t, a: *const v_std_any_t) -> void
+{
+    printf("    %s\n", v_quark_to_string(q));
+
+}
+
+
+//---------------------------------------------------------------------
+type_fun: (*void, t: *const v_type_t) -> void
+{
+    sstr: &v_std_string_t := {};
+
+    voidc_internal_std_string_append_type(&sstr, t);
+
+    printf("%s\n", v_std_string_get(&sstr));
+
+    type_props_iter(type_prop_fun, 0, t);
+}
+
+
+//=====================================================================
+{
+    types_iter(type_fun, 0);
+}
+
+
+
