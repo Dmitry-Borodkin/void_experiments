@@ -1,7 +1,6 @@
 {   v_import("mainline.void");
 
     v_import("llvm-c/Core.void");
-    v_import("llvm-c/Target.void");
 
     v_import("printf.void");
 }
@@ -118,11 +117,8 @@ type_props_iter(prop_ft fun, void *aux, const v_type_t *t)
 
 
 //---------------------------------------------------------------------
-buffer: &*char := 0;
-
-{   buflen = 1024;
-
-    buffer := v_malloc(char, buflen);
+{   buffer = v_malloc(char, 1024);
+    defer v_free(buffer);
 
     {   p = v_popen("mktemp", "r");
         defer v_pclose(p);
@@ -171,20 +167,17 @@ buffer: &*char := 0;
     LLVMCreateMemoryBufferWithContentsOfFile(buffer, &mb, 0);
 
     voidc_add_local_object_file_to_jit(mb);
+
+    //-----------------------------------------------------------------
+    {   p = v_popen("bash", "w");
+        defer v_pclose(p);
+
+        fprintf(p, "rm %s\n", buffer);
+    }
 }
 
 
-//---------------------------------------------------------------------
-{   p = v_popen("bash", "w");
-    defer v_pclose(p);
-
-    fprintf(p, "rm %s\n", buffer);
-
-    v_free(buffer);
-}
-
-
-//====================================================================-
+//=====================================================================
 type_ft = (*void, *const v_type_t) -> void;
 
 types_iter: (*type_ft, *void) -> void;

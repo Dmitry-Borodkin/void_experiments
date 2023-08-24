@@ -97,6 +97,11 @@ main: (argc: int, argv: **const char) -> int
     v_assert(2 * 2 == 5  &&  "Hello!");
 
     v_return(0);
+
+
+    p: &*char := 0;
+
+    p += qwe;
 }
 
 
