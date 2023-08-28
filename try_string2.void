@@ -165,9 +165,6 @@ inlinehint
     memset(src,   0, sz);
 }
 
-inlinehint
-(v_transfer(_)): (dst: *string_t, src: *const string_t, count: size_t) -> void = derive;
-
 
 //---------------------------------------------------------------------
 inlinehint
