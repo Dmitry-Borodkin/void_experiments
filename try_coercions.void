@@ -10,6 +10,236 @@
 
 
 //====================================================================-
+//- Maps:       //- Kinda, "applicative" order
+//-
+//-   - inj = injective+
+//-
+//-   - prj = projective+
+//-
+//-   - inj_prj = inj prj
+//-
+//-   - transitive = (inj | prj | inj_prj)
+//-
+//-   - single
+//-
+//-   - ts = transitive single
+//-
+//-   - st = single transitive
+//-
+//-   - tst = transitive single transitive
+//-
+//-   - full = (single | transitive | ts | st | tst)
+//-
+//-
+//-   full? == injective* projective* (single injective* projective*)?
+//-
+//-         == (injective* projective* single)? injective* projective*
+//-
+
+
+//====================================================================-
+export v_coe_injective:  int = 0;
+export v_coe_projective: int = 1;
+export v_coe_single:     int = 2;
+
+//---------------------------------------------------------------------
+{   q_ref = v_reference_type(v_quark_t, 0);
+
+    q = v_quark_ptr_from_string;
+
+    v_add_symbol("inj_dir_q", q_ref, q("v.coe_inj_dir"));
+    v_add_symbol("inj_rev_q", q_ref, q("v.coe_inj_rev"));
+
+    v_add_symbol("prj_dir_q", q_ref, q("v.coe_prj_dir"));
+    v_add_symbol("prj_rev_q", q_ref, q("v.coe_prj_rev"));
+
+    v_add_symbol("inj_prj_dir_q", q_ref, q("v.coe_inj_prj_dir"));
+    v_add_symbol("inj_prj_rev_q", q_ref, q("v.coe_inj_prj_rev"));
+
+    v_add_symbol("trans_dir_q", q_ref, q("v.coe_transitive_dir"));
+    v_add_symbol("trans_rev_q", q_ref, q("v.coe_transitive_rev"));
+
+    v_add_symbol("single_dir_q", q_ref, q("v.coe_single_dir"));
+    v_add_symbol("single_rev_q", q_ref, q("v.coe_single_rev"));
+
+    v_add_symbol("trsn_dir_q", q_ref, q("v.coe_trsn_dir"));
+    v_add_symbol("trsn_rev_q", q_ref, q("v.coe_trsn_rev"));
+
+    v_add_symbol("sntr_dir_q", q_ref, q("v.coe_sntr_dir"));
+    v_add_symbol("sntr_rev_q", q_ref, q("v.coe_sntr_rev"));
+
+    v_add_symbol("trsntr_dir_q", q_ref, q("v.coe_trsntr_dir"));
+    v_add_symbol("trsntr_rev_q", q_ref, q("v.coe_trsntr_rev"));
+
+    v_add_symbol("full_dir_q", q_ref, q("v.coe_full_dir"));
+    v_add_symbol("full_rev_q", q_ref, q("v.coe_full_rev"));
+
+}
+
+//---------------------------------------------------------------------
+struct coe_chain_item_t
+{
+    quark: v_quark_t;
+    type:  *v_type_t;
+};
+
+mk_chain_item: (q: v_quark_t, t: *v_type_t) -> v_std_any_t
+{
+    item: &coe_chain_item_t := { q, t };
+
+    ret = v_get_return_value();
+
+    v_std_any_set_pointer(&ret, (&item : *intptr_t[2]));
+}
+
+get_chain_item: (any: *const v_std_any_t) -> &const coe_chain_item_t
+{
+    v_return(*(v_std_any_get_pointer(intptr_t[2], any) : *coe_chain_item_t));
+}
+
+
+//---------------------------------------------------------------------
+set_coe_map: (t0: *v_type_t, qmap: v_quark_t, t1: *v_type_t, any: *v_std_any_t) -> void
+{
+    amap: &*v_std_any_t := v_type_get_property(t0, qmap);
+
+    if (!amap)
+    {
+        map: &v_util_map_t := {};
+
+        v_make_map(&map);
+
+        list: &v_util_list_t := {};
+
+        v_make_list_nil(&list);
+
+        a: &v_std_any_t := {};
+
+        v_std_any_set_pointer(&a, &list);
+
+        v_map_insert(&map, &map, 0, &a);
+
+        v_std_any_set_pointer(&a, &map);
+
+        v_type_set_property(t0, qmap, &a);
+
+        amap := v_type_get_property(t0, qmap);
+    }
+
+    map = v_std_any_get_pointer(v_util_map_t, amap);
+
+    v_map_insert(map, map, (t1: intptr_t), any);
+}
+
+get_coe_map: (t0: *v_type_t, qmap: v_quark_t, t1: *v_type_t) -> *v_std_any_t
+{
+    amap = v_type_get_property(t0, qmap);
+
+    if (!amap)  v_return(0);
+
+    map = v_std_any_get_pointer(v_util_map_t, amap);
+
+    v_return(v_map_find(map, (t1: intptr_t)));
+}
+
+
+//---------------------------------------------------------------------
+set_coe_map_list: (t0: *v_type_t, qmap: v_quark_t, t1: *v_type_t, any: *v_std_any_t) -> void
+{
+    if (get_coe_map(t0, qmap, t1))  v_return();     //- Sic!
+
+    set_coe_map(t0, qmap, t1, any);
+
+    list = v_std_any_get_pointer(v_util_list_t, get_coe_map(t0, qmap, 0));
+
+    a: &v_std_any_t := {};
+
+    v_std_any_set_value(&a, (t1: intptr_t));
+
+    v_list_append(list, list, &a);
+}
+
+
+
+
+
+//---------------------------------------------------------------------
+export
+v_add_coercion: (kind: int, quark: v_quark_t, from: *v_type_t, to: *v_type_t) -> void
+{
+    switch(kind)
+    {
+    case v_coe_single:
+      {
+        any: &v_std_any_t := mk_chain_item(quark, to);
+
+        set_coe_map(from, single_dir_q, to,   &any);
+        set_coe_map(to,   single_rev_q, from, &any);
+
+        tr_dl = v_std_any_get_pointer(v_util_list_t, get_coe_map(to, trans_dir_q, 0));
+
+        tr_dl_sz: &size_t := 0;
+
+        if (tr_dl)  tr_dl_sz := v_list_get_size(tr_dl);
+
+        tr_rl = v_std_any_get_pointer(v_util_list_t, get_coe_map(from, trans_rev_q, 0));
+
+        tr_rl_sz: &size_t := 0;
+
+        if (tr_rl)  tr_rl_sz := v_list_get_size(tr_rl);
+
+        for (i: &size_t := 0; i < tr_dl_sz; ++i)
+        {
+
+
+
+
+
+
+        }
+
+
+
+        //- ...
+
+        v_break();
+      }
+
+    case v_coe_projective:
+      {
+
+        //- ...
+
+        v_break();
+      }
+
+    case v_coe_injective:
+      {
+
+        //- ...
+
+        v_break();
+      }
+    }
+}
+
+
+
+//---------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //---------------------------------------------------------------------
 
