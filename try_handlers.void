@@ -1,0 +1,253 @@
+{   v_import("mainline.void");
+
+    v_import("llvm-c/Core.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_mainline();
+}
+
+
+//=====================================================================
+handle_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    arg0 = v_list_get_item(args, 0);
+
+    efun: &v_ast_expr_t := {};
+    expr: &v_ast_expr_t := {};
+
+    list: &v_ast_expr_list_t := {};
+
+
+    v_make_list(&list, arg0);
+
+    v_ast_make_expr_integer(&expr, 0);
+
+    v_list_append(&list, &list, &expr);
+    v_list_append(&list, &list, &expr);
+
+    v_ast_make_expr_identifier(&expr, "v_getelementptr");
+
+    v_ast_make_expr_call(&expr, &expr, &list);
+
+    v_make_list(&list, &expr);
+
+    v_ast_make_expr_identifier(&expr, "v_load");
+
+    v_ast_make_expr_call(&efun, &expr, &list);
+
+
+
+    v_make_list(&list, arg0);
+
+    v_ast_make_expr_integer(&expr, 0);
+
+    v_list_append(&list, &list, &expr);
+
+    v_ast_make_expr_integer(&expr, 1);
+
+    v_list_append(&list, &list, &expr);
+
+    v_ast_make_expr_identifier(&expr, "v_getelementptr");
+
+    v_ast_make_expr_call(&expr, &expr, &list);
+
+    v_make_list(&list, &expr);
+
+    v_ast_make_expr_identifier(&expr, "v_load");
+
+    v_ast_make_expr_call(&expr, &expr, &list);
+
+
+    v_make_list(&list, &expr);
+
+    for (i: &int := 1, sz = v_list_get_size(args); i < sz; ++i)
+    {
+        argi = v_list_get_item(args, i);
+
+        v_list_append(&list, &list, argi);
+    }
+
+    v_ast_make_expr_call(&expr, &efun, &list);
+
+
+    v_ast_accept_visitor((&expr: *v_ast_base_t), vis);
+}
+
+//---------------------------------------------------------------------
+{
+    v_add_intrinsic("v_handle", handle_intrinsic, 0);
+}
+
+
+//---------------------------------------------------------------------
+struct example_handler_t
+{
+    fun: *((*const char, int) -> void);
+
+    str: *const char;
+};
+
+//---------------------------------------------------------------------
+example_handler_fun: (str: *const char, num: int) -> void
+{
+    printf("example_handler_fun: %s, %d\n", str, num);
+}
+
+//---------------------------------------------------------------------
+handler: &example_handler_t := { example_handler_fun, "hello" };
+
+
+//---------------------------------------------------------------------
+{
+    v_handle(&handler, 77);
+    v_handle(&handler, 88);
+    v_handle(&handler, 99);
+}
+
+
+//=====================================================================
+(_()): (h: &example_handler_t, num: int) -> void
+{
+    h.fun(h.str, num);
+}
+
+//---------------------------------------------------------------------
+{
+    handler(777);
+    handler(888);
+    handler(999);
+}
+
+
+//=====================================================================
+handle2_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    arg0 = v_list_get_item(args, 0);
+
+
+    ttag = v_get_result_type();
+    vtag = v_get_result_value();
+
+    v_set_result_type(UNREFERENCE_TAG);
+    v_set_result_value(0);
+
+    v_ast_accept_visitor((arg0: *v_ast_base_t), vis);
+
+    ht = v_get_result_type();
+    hv = v_get_result_value();
+
+    het  = v_type_refptr_get_element_type(ht);
+    het_ = v_type_get_llvm_type(het);
+
+    hts = v_type_struct_get_element_types(het);
+
+    hft  = hts[0];
+    hft_ = v_type_get_llvm_type(hft);
+
+    hat  = hts[1];
+    hat_ = v_type_get_llvm_type(hat);
+
+
+    arg_count = (v_list_get_size(args) : unsigned);
+
+    val_count: &unsigned := arg_count;
+
+    if (val_count < 2)  val_count := 2;
+
+    val = v_malloc(LLVMValueRef, val_count);
+    defer v_free(val);
+
+    int_ = v_type_get_llvm_type(v_find_type("int"));
+
+    n0 = LLVMConstInt(int_, 0, 0);
+    n1 = LLVMConstInt(int_, 1, 0);
+
+    builder = v_target_get_builder();
+
+    val[0] := n0;
+    val[1] := n0;
+
+    hfun = LLVMBuildGEP2(builder, het_, hv, val, 2, "");
+
+    hfun = LLVMBuildLoad2(builder, hft_, hfun, "");
+
+    val[1] := n1;
+
+    harg = LLVMBuildGEP2(builder, het_, hv, val, 2, "");
+
+    harg = LLVMBuildLoad2(builder, hat_, harg, "");
+
+
+    ft = v_type_refptr_get_element_type(hft);
+
+    par_count = v_type_function_get_param_count(ft);
+    par_types = v_type_function_get_param_types(ft);
+
+    v_set_result_type(par_types[0]);
+    v_set_result_value(0);
+
+    v_adopt_result(hat, harg);
+
+    val[0] := v_get_result_value();
+
+    for (i: &int := 1; i < arg_count; ++i)
+    {
+        if (i < par_count)  v_set_result_type(par_types[i]);
+        else                v_set_result_type(UNREFERENCE_TAG);
+
+        v_set_result_value(0);
+
+        argi = v_list_get_item(args, i);
+
+        v_ast_accept_visitor((argi: *v_ast_base_t), vis);
+
+        val[i] := v_get_result_value();
+    }
+
+    ft_ = v_type_get_llvm_type(ft);
+
+    vr = LLVMBuildCall2(builder, ft_, hfun, val, arg_count, "");
+
+    tr = v_type_function_get_return_type(ft);
+
+    v_set_result_type(ttag);
+    v_set_result_value(vtag);
+
+    v_adopt_result(tr, vr);
+}
+
+//---------------------------------------------------------------------
+{
+    v_add_intrinsic("v_handle2", handle2_intrinsic, 0);
+}
+
+//---------------------------------------------------------------------
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(99); }
+{
+    v_handle2(&handler, 7777);
+    v_handle2(&handler, 8888);
+    v_handle2(&handler, 9999);
+}
+
+
+//=====================================================================
+v_handler_type: (ft: *v_type_t) -> *v_type_t
+{
+    typ: &(*v_type_t)[2] := { v_pointer_type(ft, 0), v_type_function_get_param_types(ft)[0] };
+
+    v_return( v_struct_type(typ, 2, false) );
+}
+
+
+
+
+
+
+

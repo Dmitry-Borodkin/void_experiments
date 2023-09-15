@@ -12,28 +12,21 @@
 //====================================================================-
 //- Maps:       //- Kinda, "applicative" order
 //-
-//-   - inj = injective+
+//-   - injective       ("atomic")
 //-
-//-   - prj = projective+
+//-   - projective      ("atomic")
 //-
-//-   - inj_prj = inj prj
+//-   - single          ("atomic")
 //-
-//-   - transitive = (inj | prj | inj_prj)
+//-   - transitive == (injective+ | projective+ | injective+ projective+)
 //-
-//-   - single
+//-   - trsn = transitive single
 //-
-//-   - ts = transitive single
+//-   - sntr = single transitive
 //-
-//-   - st = single transitive
+//-   - trsntr = transitive single transitive
 //-
-//-   - tst = transitive single transitive
-//-
-//-   - full = (single | transitive | ts | st | tst)
-//-
-//-
-//-   full? == injective* projective* (single injective* projective*)?
-//-
-//-         == (injective* projective* single)? injective* projective*
+//-   - full = (single | transitive | trsn | sntr | trsntr)
 //-
 
 
@@ -46,15 +39,6 @@ export v_coe_single:     int = 2;
 {   q_ref = v_reference_type(v_quark_t, 0);
 
     q = v_quark_ptr_from_string;
-
-    v_add_symbol("inj_dir_q", q_ref, q("v.coe_inj_dir"));
-    v_add_symbol("inj_rev_q", q_ref, q("v.coe_inj_rev"));
-
-    v_add_symbol("prj_dir_q", q_ref, q("v.coe_prj_dir"));
-    v_add_symbol("prj_rev_q", q_ref, q("v.coe_prj_rev"));
-
-    v_add_symbol("inj_prj_dir_q", q_ref, q("v.coe_inj_prj_dir"));
-    v_add_symbol("inj_prj_rev_q", q_ref, q("v.coe_inj_prj_rev"));
 
     v_add_symbol("trans_dir_q", q_ref, q("v.coe_transitive_dir"));
     v_add_symbol("trans_rev_q", q_ref, q("v.coe_transitive_rev"));
@@ -71,9 +55,7 @@ export v_coe_single:     int = 2;
     v_add_symbol("trsntr_dir_q", q_ref, q("v.coe_trsntr_dir"));
     v_add_symbol("trsntr_rev_q", q_ref, q("v.coe_trsntr_rev"));
 
-    v_add_symbol("full_dir_q", q_ref, q("v.coe_full_dir"));
-    v_add_symbol("full_rev_q", q_ref, q("v.coe_full_rev"));
-
+    v_add_symbol("full_dir_q", q_ref, q("v.coe_full_dir"));     //- Sic!
 }
 
 //---------------------------------------------------------------------
@@ -144,13 +126,25 @@ get_coe_map: (t0: *v_type_t, qmap: v_quark_t, t1: *v_type_t) -> *v_std_any_t
 
 
 //---------------------------------------------------------------------
+get_coe_map_list: (t0: *v_type_t, qmap: v_quark_t, t1: *v_type_t) -> *v_util_list_t
+{
+    v_return(v_std_any_get_pointer(v_util_list_t, get_coe_map(t0, qmap, t1)));
+}
+
+get_coe_list_item: (l: *v_util_list_t, i: size_t) -> *v_type_t
+{
+    v_return((v_std_any_get_value(intptr_t, v_list_get_item(l, i)) : *v_type_t));
+}
+
+
+//---------------------------------------------------------------------
 set_coe_map_list: (t0: *v_type_t, qmap: v_quark_t, t1: *v_type_t, any: *v_std_any_t) -> void
 {
     if (get_coe_map(t0, qmap, t1))  v_return();     //- Sic!
 
     set_coe_map(t0, qmap, t1, any);
 
-    list = v_std_any_get_pointer(v_util_list_t, get_coe_map(t0, qmap, 0));
+    list = get_coe_map_list(t0, qmap, 0);
 
     a: &v_std_any_t := {};
 
@@ -160,63 +154,303 @@ set_coe_map_list: (t0: *v_type_t, qmap: v_quark_t, t1: *v_type_t, any: *v_std_an
 }
 
 
+//---------------------------------------------------------------------
+set_coe_map_full: (t0: *v_type_t, t1: *v_type_t, any: *v_std_any_t) -> void
+{
+    qmap = full_dir_q;
 
+    if (get_coe_map(t0, qmap, t1))  v_return();     //- Sic!
+
+    set_coe_map(t0, qmap, t1, any);
+
+    list = get_coe_map_list(t0, qmap, 0);
+
+    la = v_std_any_get_pointer(v_util_list_t, any);
+
+    la_sz = v_list_get_size(la);
+
+    i0: &size_t := 0;
+    i1: &size_t := v_list_get_size(list);
+
+    while (i0 < i1)
+    {
+        //- assert(0 <= i0 < i1 <= v_list_get_size(list));
+
+        i = i0 + (i1-i0)/2;         //- ?..
+
+        //- assert(0 <= i0 <= i < i1 <= v_list_get_size(list));
+
+        ti = get_coe_list_item(list, i);
+
+        li = get_coe_map_list(t0, qmap, ti);
+
+        sz: &size_t := la_sz;
+
+        if (si = v_list_get_size(li), sz > si)  sz := si;
+
+        f: &int := 0;
+
+        for (j: &size_t := 0; j < sz; ++j)
+        {
+            taj = get_chain_item(v_list_get_item(la, j)).type;
+            tij = get_chain_item(v_list_get_item(li, j)).type;
+
+            if (taj == tij) v_continue();
+
+            if (taj < tij)  { f := -1; }
+            else            { f := +1; }
+
+            v_break();
+        }
+
+        if (f == 0)
+        {
+            if (la_sz == sz)  f := -1;
+            else              f := +1;
+        }
+
+        if (f < 0)  i1 := i;
+        else        i0 := i + 1;
+
+        //- assert(0 <= i0 <= i1 <= v_list_get_size(list));
+    }
+
+    //- assert(0 <= i0 == i1 <= v_list_get_size(list));
+
+    a: &v_std_any_t := {};
+
+    v_std_any_set_value(&a, (t1: intptr_t));
+
+    v_list_insert(list, list, i0, &a);
+}
+
+
+//---------------------------------------------------------------------
+add_coe_list: (l: *v_util_list_t,
+               from: *v_type_t,  to: *v_type_t,
+               dir_q: v_quark_t, rev_q: v_quark_t
+               ) -> void
+{
+    a: &v_std_any_t := {};
+
+    v_std_any_set_pointer(&a, l);
+
+    set_coe_map_list(from, dir_q, to,   &a);
+    set_coe_map_list(to,   rev_q, from, &a);
+
+    set_coe_map_full(from, to, &a);
+}
+
+//---------------------------------------------------------------------
+add_coe_list_dir: (l0: *v_util_list_t, dq: v_quark_t,
+                   from: *v_type_t,  to: *v_type_t,
+                   dir_q: v_quark_t, rev_q: v_quark_t
+                   ) -> void
+{
+    dl = get_coe_map_list(to, dq, 0);
+
+    if (!dl)  v_return();
+
+    l1: &v_util_list_t := {};
+
+    dl_sz = v_list_get_size(dl);
+
+    for (j: &size_t := 0; j < dl_sz; ++j)
+    {
+        tdj = get_coe_list_item(dl, j);
+
+        ldj = get_coe_map_list(to, dq, tdj);
+
+        v_list_concat(&l1, l0, ldj);
+
+        add_coe_list(&l1, from, tdj, dir_q, rev_q);
+    }
+}
+
+//---------------------------------------------------------------------
+add_coe_list_rev: (l0: *v_util_list_t, rq: v_quark_t,
+                   from: *v_type_t,  to: *v_type_t,
+                   dir_q: v_quark_t, rev_q: v_quark_t
+                   ) -> void
+{
+    rl = get_coe_map_list(from, rq, 0);
+
+    if (!rl)  v_return();
+
+    l1: &v_util_list_t := {};
+
+    rl_sz = v_list_get_size(rl);
+
+    for (j: &size_t := 0; j < rl_sz; ++j)
+    {
+        trj = get_coe_list_item(rl, j);
+
+        lrj = get_coe_map_list(from, rq, trj);
+
+        v_list_concat(&l1, lrj, l0);
+
+        add_coe_list(&l1, trj, to, dir_q, rev_q);
+    }
+}
 
 
 //---------------------------------------------------------------------
 export
 v_add_coercion: (kind: int, quark: v_quark_t, from: *v_type_t, to: *v_type_t) -> void
 {
+    any: &v_std_any_t := mk_chain_item(quark, to);
+
     switch(kind)
     {
     case v_coe_single:
       {
-        any: &v_std_any_t := mk_chain_item(quark, to);
-
-        set_coe_map(from, single_dir_q, to,   &any);
-        set_coe_map(to,   single_rev_q, from, &any);
-
-        tr_dl = v_std_any_get_pointer(v_util_list_t, get_coe_map(to, trans_dir_q, 0));
+        tr_dl = get_coe_map_list(to, trans_dir_q, 0);
 
         tr_dl_sz: &size_t := 0;
 
         if (tr_dl)  tr_dl_sz := v_list_get_size(tr_dl);
 
-        tr_rl = v_std_any_get_pointer(v_util_list_t, get_coe_map(from, trans_rev_q, 0));
+        tr_rl = get_coe_map_list(from, trans_rev_q, 0);
 
         tr_rl_sz: &size_t := 0;
 
         if (tr_rl)  tr_rl_sz := v_list_get_size(tr_rl);
 
-        for (i: &size_t := 0; i < tr_dl_sz; ++i)
+        l0: &v_util_list_t := {};
+
+        for (i: &size_t := 0; i <= tr_dl_sz; ++i)
         {
+            tdi: &*v_type_t := v_undef();
 
+            if (i < tr_dl_sz)
+            {
+                tdi := get_coe_list_item(tr_dl, i);
 
+                ldi = get_coe_map_list(to, trans_dir_q, tdi);
 
+                v_list_insert(&l0, ldi, 0, &any);
 
+                add_coe_list(&l0, from, tdi, trsn_dir_q, trsn_rev_q);
+            }
+            else
+            {
+                v_make_list(&l0, &any);
 
+                add_coe_list(&l0, from, to, single_dir_q, single_rev_q);
 
+                if (tr_rl_sz == 0)  v_break();
+            }
+
+            l1: &v_util_list_t := {};
+
+            for (j: &size_t := 0; j < tr_rl_sz; ++j)
+            {
+                trj = get_coe_list_item(tr_rl, j);
+
+                lrj = get_coe_map_list(from, trans_rev_q, trj);
+
+                v_list_concat(&l1, lrj, &l0);
+
+                if (i < tr_dl_sz)
+                {
+                    add_coe_list(&l1, trj, tdi, trsntr_dir_q, trsntr_rev_q);
+                }
+                else
+                {
+                    add_coe_list(&l1, trj, to, sntr_dir_q, sntr_rev_q);
+                }
+            }
         }
-
-
-
-        //- ...
 
         v_break();
       }
 
     case v_coe_projective:
       {
+        tr_dl = get_coe_map_list(to, trans_dir_q, 0);
 
-        //- ...
+        tr_dl_sz: &size_t := 0;
+
+        if (tr_dl)  tr_dl_sz := v_list_get_size(tr_dl);
+
+        l0: &v_util_list_t := {};
+
+        for (i: &size_t := 0; i <= tr_dl_sz; ++i)
+        {
+            tdi: &*v_type_t := v_undef();
+
+            if (i < tr_dl_sz)
+            {
+                tdi := get_coe_list_item(tr_dl, i);
+
+                ldi = get_coe_map_list(to, trans_dir_q, tdi);
+
+                v_list_insert(&l0, ldi, 0, &any);
+            }
+            else
+            {
+                tdi := to;
+
+                v_make_list(&l0, &any);
+            }
+
+            add_coe_list(&l0, from, tdi, trans_dir_q, trans_rev_q);
+
+            add_coe_list_rev(&l0, single_rev_q, from, tdi, trsn_dir_q,   trsn_rev_q);
+            add_coe_list_rev(&l0, sntr_rev_q,   from, tdi, trsntr_dir_q, trsntr_rev_q);
+
+            if (i < tr_dl_sz) v_continue();
+
+            add_coe_list_dir(&l0, single_dir_q, from, to, sntr_dir_q,   sntr_rev_q);
+            add_coe_list_dir(&l0, sntr_dir_q,   from, to, sntr_dir_q,   sntr_rev_q);
+            add_coe_list_dir(&l0, trsn_dir_q,   from, to, trsn_dir_q,   trsn_rev_q);
+            add_coe_list_dir(&l0, trsntr_dir_q, from, to, trsntr_dir_q, trsntr_rev_q);
+        }
 
         v_break();
       }
 
     case v_coe_injective:
       {
+        tr_rl = get_coe_map_list(from, trans_rev_q, 0);
 
-        //- ...
+        tr_rl_sz: &size_t := 0;
+
+        if (tr_rl)  tr_rl_sz := v_list_get_size(tr_rl);
+
+        l0: &v_util_list_t := {};
+
+        for (i: &size_t := 0; i <= tr_rl_sz; ++i)
+        {
+            tri: &*v_type_t := v_undef();
+
+            if (i < tr_rl_sz)
+            {
+                tri := get_coe_list_item(tr_rl, i);
+
+                lri = get_coe_map_list(from, trans_rev_q, tri);
+
+                v_list_append(&l0, lri, &any);
+            }
+            else
+            {
+                tri := from;
+
+                v_make_list(&l0, &any);
+            }
+
+            add_coe_list(&l0, tri, to, trans_dir_q, trans_rev_q);
+
+            add_coe_list_dir(&l0, single_dir_q, tri, to, sntr_dir_q,   sntr_rev_q);
+            add_coe_list_dir(&l0, trsn_dir_q,   tri, to, trsntr_dir_q, trsntr_rev_q);
+
+            if (i < tr_rl_sz) v_continue();
+
+            add_coe_list_rev(&l0, single_rev_q, from, to, trsn_dir_q,   trsn_rev_q);
+            add_coe_list_rev(&l0, trsn_rev_q,   from, to, trsn_dir_q,   trsn_rev_q);
+            add_coe_list_rev(&l0, sntr_rev_q,   from, to, trsntr_dir_q, trsntr_rev_q);
+            add_coe_list_rev(&l0, trsntr_rev_q, from, to, trsntr_dir_q, trsntr_rev_q);
+        }
 
         v_break();
       }
@@ -242,4 +476,138 @@ v_add_coercion: (kind: int, quark: v_quark_t, from: *v_type_t, to: *v_type_t) ->
 
 
 //---------------------------------------------------------------------
+print_chain: (t0: *v_type_t, quark: v_quark_t, t1: *v_type_t) -> void
+{
+    l = get_coe_map_list(t0, quark, t1);
+
+    if (!l)
+    {
+        printf("---\n");
+
+        v_return();
+    }
+
+    s = v_list_get_size(l);
+
+    for (i: &size_t := 0; i < s; ++i)
+    {
+        item = get_chain_item(v_list_get_item(l, i));
+
+        printf("%s, ", v_quark_to_string(item.quark));
+    }
+
+    printf("\n");
+}
+
+//---------------------------------------------------------------------
+print_chain_list: (t0: *v_type_t, quark: v_quark_t) -> void
+{
+    f_dl = get_coe_map_list(t0, quark, 0);
+
+    if (!f_dl) v_return();
+
+    f_dl_sz = v_list_get_size(f_dl);
+
+    for (i: &size_t := 0; i < f_dl_sz; ++i)
+    {
+        tdi = get_coe_list_item(f_dl, i);
+
+        print_chain(t0, quark, tdi);
+    }
+}
+
+
+//---------------------------------------------------------------------
+struct A {};
+struct B {};
+struct C {};
+struct D {};
+struct E {};
+struct F {};
+
+//---------------------------------------------------------------------
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(99); }
+{
+    q = v_quark_from_string;
+
+
+    v_add_coercion(v_coe_single, q("DsC"), D, C);
+
+    v_add_coercion(v_coe_projective, q("EpD"), E, D);
+    v_add_coercion(v_coe_projective, q("FpE"), F, E);
+
+    v_add_coercion(v_coe_injective, q("CiB"), C, B);
+    v_add_coercion(v_coe_injective, q("BiA"), B, A);
+
+
+    print_chain_list(F, full_dir_q);
+    printf("\n");
+
+    print_chain_list(E, full_dir_q);
+    printf("\n");
+
+    print_chain_list(D, full_dir_q);
+    printf("\n");
+
+    print_chain_list(C, full_dir_q);
+    printf("\n");
+
+    print_chain_list(B, full_dir_q);
+    printf("\n");
+
+    print_chain_list(A, trsntr_rev_q);
+    printf("\n");
+
+}
+
+
+//---------------------------------------------------------------------
+{
+    v_import("../../programming/llvm-c/clang-plugin/try_decl_nodes2.void");
+}
+
+{
+    t = v_find_symbol_type("clang_decl");
+
+    n = v_type_array_get_length(v_type_refptr_get_element_type(t));
+
+    printf("n: %d\n", n);
+
+    s: &v_std_string_t := {};
+
+    for (i: &uint64_t := 0; i < n; ++i)
+    {
+        v_std_string_set(&s, "clang.");
+
+        v_std_string_append(&s, clang_decl[i][0]);
+        v_std_string_append(&s, "Decl");
+
+        t0 = v_struct_type_named(v_std_string_get(&s));
+
+        v_std_string_set(&s, "clang.");
+
+        v_std_string_append(&s, clang_decl[i][1]);
+
+        t1 = v_struct_type_named(v_std_string_get(&s));
+
+        v_std_string_set(&s, clang_decl[i][0]);
+
+        v_std_string_append(&s, "-");
+        v_std_string_append(&s, clang_decl[i][1]);
+
+        q = v_quark_from_string(v_std_string_get(&s));
+
+        v_add_coercion(v_coe_projective, q, t0, t1);
+    }
+
+    print_chain_list(v_struct_type_named("clang.Decl"), trans_rev_q);
+}
+
+
+
+
+
+
+
 
