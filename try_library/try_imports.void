@@ -4,8 +4,9 @@
 
     v_import("llvm-c/Core.void");
     v_import("llvm-c/TargetMachine.void");
+    v_import("llvm-c/Transform/PassBuilder.void");
 
-//  v_import("printf.void");
+    v_import("printf.void");
 }
 
 {   v_enable_mainline();
@@ -130,7 +131,6 @@ emit_module: (filename: *const char) -> void
 
     //----------------------------------------------------------
     target_machine = voidc_target_machine;          //- Sic!
-    pass_manager   = voidc_pass_manager;            //- Sic!
 
     //----------------------------------------------------------
     dl = LLVMCreateTargetDataLayout(target_machine);
@@ -142,7 +142,22 @@ emit_module: (filename: *const char) -> void
     LLVMDisposeMessage(tr);
     LLVMDisposeTargetData(dl);
 
-    LLVMRunPassManager(pass_manager, module);
+    //----------------------------------------------------------
+    {   opts = LLVMCreatePassBuilderOptions();
+
+        err = LLVMRunPasses(module, "default<O3>,always-inline", target_machine, opts);
+
+        if (err)
+        {
+            msg = LLVMGetErrorMessage(err);
+
+            printf("LLVMRunPasses: %s\n", msg);
+
+            LLVMDisposeErrorMessage(msg);
+        }
+
+        LLVMDisposePassBuilderOptions(opts);
+    }
 
     //----------------------------------------------------------
 //  v_verify_module(module);
