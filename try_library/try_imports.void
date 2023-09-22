@@ -145,7 +145,7 @@ emit_module: (filename: *const char) -> void
     //----------------------------------------------------------
     {   opts = LLVMCreatePassBuilderOptions();
 
-        err = LLVMRunPasses(module, "default<O3>,always-inline", target_machine, opts);
+        err = LLVMRunPasses(module, "default<O3>", target_machine, opts);
 
         if (err)
         {
