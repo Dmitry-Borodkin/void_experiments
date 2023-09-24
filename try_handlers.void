@@ -245,6 +245,37 @@ v_handler_type: (ft: *v_type_t) -> *v_type_t
     v_return( v_struct_type(typ, 2, false) );
 }
 
+//---------------------------------------------------------------------
+v_hnd_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+{
+    args = v_ast_expr_call_get_arg_list((self: v_ast_expr_ptr));
+
+    ast0 = v_list_get_item(args, 0);
+
+
+    v_set_result_type(INVIOLABLE_TAG);
+    v_set_result_value(0);
+
+    v_ast_accept_visitor((ast0: *v_ast_base_t), vis);
+
+    ft = (v_get_result_value() : *v_type_t);
+
+
+    ht = v_handler_type(ft);
+
+    v_set_result_type(v_static_type_t);
+    v_set_result_value((ht: LLVMValueRef));
+}
+
+//---------------------------------------------------------------------
+{
+    v_add_intrinsic("v_hnd", v_hnd_intrinsic, 0);
+}
+
+
+
+
+
 
 
 
