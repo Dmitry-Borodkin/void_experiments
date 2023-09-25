@@ -160,7 +160,7 @@ struct va_list { (*void)[va_list_size]; };
 }
 
 //---------------------------------------------------------------------
-v_internal_va_arg_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> void
+v_internal_va_arg_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) -> void
 {
     call = (self: *v_ast_expr_t);
 
