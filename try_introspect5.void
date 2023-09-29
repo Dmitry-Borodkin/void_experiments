@@ -15,29 +15,29 @@
 //====================================================================-
 FILE = v_struct("FILE");
 
-v_popen: (command: *const char, prop: *const char) -> *FILE;
+v_popen: (command: *const char, prop: *const char) ~> *FILE;
 
-v_pclose: (*FILE) -> int;
+v_pclose: (*FILE) ~> int;
 
-fprintf: (stream: *FILE, format: *const char, ...) -> int;
+fprintf: (stream: *FILE, format: *const char, ...) ~> int;
 
-fscanf: (stream: *FILE, format: *const char, ...) -> int;
+fscanf: (stream: *FILE, format: *const char, ...) ~> int;
 
-fputs: (buf: *char, stream: *FILE) -> int;
+fputs: (buf: *char, stream: *FILE) ~> int;
 
-sprintf: (str: *char, format: *const char, ...) -> int;
+sprintf: (str: *char, format: *const char, ...) ~> int;
 
-system: (cmd: *const char) -> int;
+system: (cmd: *const char) ~> int;
 
 
 //---------------------------------------------------------------------
-v_find_file_for_import: (*v_std_string_t, *const char, *const char) -> void;
+v_find_file_for_import: (*v_std_string_t, *const char, *const char) ~> void;
 
 voidc_include_path: &v_std_string_t := {};
 
 {   v_find_file_for_import(&voidc_include_path, "", "level-00");
 
-    strrchr: (*const char, int) -> *char;
+    strrchr: (*const char, int) ~> *char;
 
     *strrchr(v_std_string_get(&voidc_include_path), '/') := 0;
 
@@ -178,17 +178,17 @@ type_props_iter(prop_ft fun, void *aux, const v_type_t *t)
 
 
 //=====================================================================
-type_ft = (*void, *const v_type_t) -> void;
+type_ft = (*void, *const v_type_t) ~> void;
 
-types_iter: (*type_ft, *void) -> void;
+types_iter: (*type_ft, *void) ~> void;
 
-prop_ft = (*void, v_quark_t, *const v_std_any_t) -> void;
+prop_ft = (*void, v_quark_t, *const v_std_any_t) ~> void;
 
-type_props_iter: (*prop_ft, *void, *const v_type_t) -> void;
+type_props_iter: (*prop_ft, *void, *const v_type_t) ~> void;
 
 
 //---------------------------------------------------------------------
-type_prop_fun: (*void, q: v_quark_t, a: *const v_std_any_t) -> void
+type_prop_fun: (*void, q: v_quark_t, a: *const v_std_any_t) ~> void
 {
     printf("    %s\n", v_quark_to_string(q));
 
@@ -196,7 +196,7 @@ type_prop_fun: (*void, q: v_quark_t, a: *const v_std_any_t) -> void
 
 
 //---------------------------------------------------------------------
-type_fun: (*void, t: *const v_type_t) -> void
+type_fun: (*void, t: *const v_type_t) ~> void
 {
     sstr: &v_std_string_t := {};
 

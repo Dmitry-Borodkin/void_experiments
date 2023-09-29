@@ -10,7 +10,7 @@
 
 
 //=====================================================================
-handle_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> void
+handle_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
 
@@ -86,13 +86,13 @@ handle_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> void
 //---------------------------------------------------------------------
 struct example_handler_t
 {
-    fun: *((*const char, int) -> void);
+    fun: *((*const char, int) ~> void);
 
     str: *const char;
 };
 
 //---------------------------------------------------------------------
-example_handler_fun: (str: *const char, num: int) -> void
+example_handler_fun: (str: *const char, num: int) ~> void
 {
     printf("example_handler_fun: %s, %d\n", str, num);
 }
@@ -110,7 +110,7 @@ handler: &example_handler_t := { example_handler_fun, "hello" };
 
 
 //=====================================================================
-(_()): (h: &example_handler_t, num: int) -> void
+(_()): (h: &example_handler_t, num: int) ~> void
 {
     h.fun(h.str, num);
 }
@@ -124,7 +124,7 @@ handler: &example_handler_t := { example_handler_fun, "hello" };
 
 
 //=====================================================================
-handle2_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> void
+handle2_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
 
@@ -238,7 +238,7 @@ handle2_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> void
 
 
 //=====================================================================
-v_handler_type: (ft: *v_type_t) -> *v_type_t
+v_handler_type: (ft: *v_type_t) ~> *v_type_t
 {
     typ: &(*v_type_t)[2] := { v_pointer_type(ft, 0), v_type_function_get_param_types(ft)[0] };
 
@@ -246,7 +246,7 @@ v_handler_type: (ft: *v_type_t) -> *v_type_t
 }
 
 //---------------------------------------------------------------------
-v_hnd_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+v_hnd_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     args = v_ast_expr_call_get_arg_list((self: v_ast_expr_ptr));
 
@@ -273,12 +273,35 @@ v_hnd_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> voi
 }
 
 
+//=====================================================================
+//{ v_debug_print_module(1); }
+{
+    a: &v_std_any_t := {};
 
+    v: intptr_t[2] = { 7, 8 };
 
+    v_std_any_set_pointer(&a, &v);
 
+    v_add_property("qwe", &a);
+}
 
+{   a = v_get_property("qwe");
 
+    r = *v_std_any_get_pointer(intptr_t[2], a);
 
+    printf("r: (%zd, %zd)\n", r[0], r[1]);
+
+    r[0] *= 11;
+    r[1] *= 111;
+
+}
+
+{   a = v_get_property("qwe");
+
+    r = *v_std_any_get_pointer(intptr_t[2], a);
+
+    printf("r: (%zd, %zd)\n", r[0], r[1]);
+}
 
 
 

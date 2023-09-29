@@ -65,7 +65,7 @@ struct coe_chain_item_t
     type:  *v_type_t;
 };
 
-mk_chain_item: (q: v_quark_t, t: *v_type_t) -> v_std_any_t
+mk_chain_item: (q: v_quark_t, t: *v_type_t) ~> v_std_any_t
 {
     item: &coe_chain_item_t := { q, t };
 
@@ -74,14 +74,14 @@ mk_chain_item: (q: v_quark_t, t: *v_type_t) -> v_std_any_t
     v_std_any_set_pointer(&ret, (&item : *intptr_t[2]));
 }
 
-get_chain_item: (any: *const v_std_any_t) -> &const coe_chain_item_t
+get_chain_item: (any: *const v_std_any_t) ~> &const coe_chain_item_t
 {
     v_return(*(v_std_any_get_pointer(intptr_t[2], any) : *coe_chain_item_t));
 }
 
 
 //---------------------------------------------------------------------
-set_coe_map: (t0: *v_type_t, qmap: v_quark_t, t1: *v_type_t, any: *v_std_any_t) -> void
+set_coe_map: (t0: *v_type_t, qmap: v_quark_t, t1: *v_type_t, any: *v_std_any_t) ~> void
 {
     amap: &*v_std_any_t := v_type_get_property(t0, qmap);
 
@@ -113,7 +113,7 @@ set_coe_map: (t0: *v_type_t, qmap: v_quark_t, t1: *v_type_t, any: *v_std_any_t) 
     v_map_insert(map, map, (t1: intptr_t), any);
 }
 
-get_coe_map: (t0: *v_type_t, qmap: v_quark_t, t1: *v_type_t) -> *v_std_any_t
+get_coe_map: (t0: *v_type_t, qmap: v_quark_t, t1: *v_type_t) ~> *v_std_any_t
 {
     amap = v_type_get_property(t0, qmap);
 
@@ -126,19 +126,19 @@ get_coe_map: (t0: *v_type_t, qmap: v_quark_t, t1: *v_type_t) -> *v_std_any_t
 
 
 //---------------------------------------------------------------------
-get_coe_map_list: (t0: *v_type_t, qmap: v_quark_t, t1: *v_type_t) -> *v_util_list_t
+get_coe_map_list: (t0: *v_type_t, qmap: v_quark_t, t1: *v_type_t) ~> *v_util_list_t
 {
     v_return(v_std_any_get_pointer(v_util_list_t, get_coe_map(t0, qmap, t1)));
 }
 
-get_coe_list_item: (l: *v_util_list_t, i: size_t) -> *v_type_t
+get_coe_list_item: (l: *v_util_list_t, i: size_t) ~> *v_type_t
 {
     v_return((v_std_any_get_value(intptr_t, v_list_get_item(l, i)) : *v_type_t));
 }
 
 
 //---------------------------------------------------------------------
-set_coe_map_list: (t0: *v_type_t, qmap: v_quark_t, t1: *v_type_t, any: *v_std_any_t) -> void
+set_coe_map_list: (t0: *v_type_t, qmap: v_quark_t, t1: *v_type_t, any: *v_std_any_t) ~> void
 {
     if (get_coe_map(t0, qmap, t1))  v_return();     //- Sic!
 
@@ -155,7 +155,7 @@ set_coe_map_list: (t0: *v_type_t, qmap: v_quark_t, t1: *v_type_t, any: *v_std_an
 
 
 //---------------------------------------------------------------------
-set_coe_map_full: (t0: *v_type_t, t1: *v_type_t, any: *v_std_any_t) -> void
+set_coe_map_full: (t0: *v_type_t, t1: *v_type_t, any: *v_std_any_t) ~> void
 {
     qmap = full_dir_q;
 
@@ -229,7 +229,7 @@ set_coe_map_full: (t0: *v_type_t, t1: *v_type_t, any: *v_std_any_t) -> void
 add_coe_list: (l: *v_util_list_t,
                from: *v_type_t,  to: *v_type_t,
                dir_q: v_quark_t, rev_q: v_quark_t
-               ) -> void
+               ) ~> void
 {
     a: &v_std_any_t := {};
 
@@ -245,7 +245,7 @@ add_coe_list: (l: *v_util_list_t,
 add_coe_list_dir: (l0: *v_util_list_t, dq: v_quark_t,
                    from: *v_type_t,  to: *v_type_t,
                    dir_q: v_quark_t, rev_q: v_quark_t
-                   ) -> void
+                   ) ~> void
 {
     dl = get_coe_map_list(to, dq, 0);
 
@@ -271,7 +271,7 @@ add_coe_list_dir: (l0: *v_util_list_t, dq: v_quark_t,
 add_coe_list_rev: (l0: *v_util_list_t, rq: v_quark_t,
                    from: *v_type_t,  to: *v_type_t,
                    dir_q: v_quark_t, rev_q: v_quark_t
-                   ) -> void
+                   ) ~> void
 {
     rl = get_coe_map_list(from, rq, 0);
 
@@ -296,7 +296,7 @@ add_coe_list_rev: (l0: *v_util_list_t, rq: v_quark_t,
 
 //---------------------------------------------------------------------
 export
-v_add_coercion: (kind: int, quark: v_quark_t, from: *v_type_t, to: *v_type_t) -> void
+v_add_coercion: (kind: int, quark: v_quark_t, from: *v_type_t, to: *v_type_t) ~> void
 {
     any: &v_std_any_t := mk_chain_item(quark, to);
 
@@ -476,7 +476,7 @@ v_add_coercion: (kind: int, quark: v_quark_t, from: *v_type_t, to: *v_type_t) ->
 
 
 //---------------------------------------------------------------------
-print_chain: (t0: *v_type_t, quark: v_quark_t, t1: *v_type_t) -> void
+print_chain: (t0: *v_type_t, quark: v_quark_t, t1: *v_type_t) ~> void
 {
     l = get_coe_map_list(t0, quark, t1);
 
@@ -500,7 +500,7 @@ print_chain: (t0: *v_type_t, quark: v_quark_t, t1: *v_type_t) -> void
 }
 
 //---------------------------------------------------------------------
-print_chain_list: (t0: *v_type_t, quark: v_quark_t) -> void
+print_chain_list: (t0: *v_type_t, quark: v_quark_t) ~> void
 {
     f_dl = get_coe_map_list(t0, quark, 0);
 
@@ -572,11 +572,11 @@ struct F {};
 
     n = v_type_array_get_length(v_type_refptr_get_element_type(t));
 
-    printf("n: %d\n", n);
+    printf("n: %zu\n", n);
 
     s: &v_std_string_t := {};
 
-    for (i: &uint64_t := 0; i < n; ++i)
+    for (i: &int := 0; i < n; ++i)
     {
         v_std_string_set(&s, "clang.");
 
