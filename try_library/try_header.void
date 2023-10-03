@@ -10,7 +10,7 @@
 
 //---------------------------------------------------------------------
 alwaysinline
-(_.inc): (i: &int) -> void
+(_.inc): (i: &int) ~> void
 {
     ++i;
 }
@@ -22,9 +22,9 @@ struct data_t
     v: int;
 };
 
-(v_initialize(_)): (*data_t, size_t) -> void;
-(v_terminate(_)):  (*data_t, size_t) -> void;
-(v_copy(_)):       (*data_t, *const data_t, size_t) -> void;
+(v_initialize(_)): (*data_t, size_t) ~> void;
+(v_terminate(_)):  (*data_t, size_t) ~> void;
+(v_copy(_)):       (*data_t, *const data_t, size_t) ~> void;
 
 
 //---------------------------------------------------------------------
@@ -33,9 +33,9 @@ struct data2_t
     vv: data_t[2];
 };
 
-(v_initialize(_)): (*data2_t, size_t) -> void;
-(v_terminate(_)):  (*data2_t, size_t) -> void;
-(v_copy(_)):       (*data_t, *const data2_t, size_t) -> void;
+(v_initialize(_)): (*data2_t, size_t) ~> void;
+(v_terminate(_)):  (*data2_t, size_t) ~> void;
+(v_copy(_)):       (*data_t, *const data2_t, size_t) ~> void;
 
 
 //---------------------------------------------------------------------

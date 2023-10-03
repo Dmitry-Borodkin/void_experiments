@@ -24,7 +24,7 @@
     v_set_export_flag(false);
 
     //-----------------------------------------------------------------
-    LLVMDisposeMemoryBuffer: (LLVMMemoryBufferRef) -> void;
+    LLVMDisposeMemoryBuffer: (LLVMMemoryBufferRef) ~> void;
 
     LLVMDisposeMemoryBuffer(voidc_get_unit_buffer());
     voidc_set_unit_buffer(0);
@@ -33,15 +33,15 @@
 //---------------------------------------------------------------------
 {   struct FILE;
 
-    v_popen: (command: *const char, prop: *const char) -> *FILE;
+    v_popen: (command: *const char, prop: *const char) ~> *FILE;
 
-    v_pclose: (*FILE) -> int;
+    v_pclose: (*FILE) ~> int;
 
-    fprintf: (stream: *FILE, format: *const char, ...) -> int;
+    fprintf: (stream: *FILE, format: *const char, ...) ~> int;
 
-    fscanf: (stream: *FILE, format: *const char, ...) -> int;
+    fscanf: (stream: *FILE, format: *const char, ...) ~> int;
 
-    sprintf: (str: *char, format: *const char, ...) -> int;
+    sprintf: (str: *char, format: *const char, ...) ~> int;
 
     //-----------------------------------------------------------------
     buflen = 1024;
@@ -189,50 +189,50 @@ SEEK_SET     = my_SEEK_SET;
 TMP_MAX      = my_TMP_MAX;
 
 //---------------------------------------------------------------------
-remove:    (filename: *const char) -> int;
-rename:    (old_p: *const char, new_p: *const char) -> int;
-tmpfile:   () -> *FILE;
-tmpnam:    (s: *char) -> *char;
-fclose:    (stream: *FILE) -> int;
-fflush:    (stream: *FILE) -> int;
-fopen:     (filename: *const char, mode: *const char) -> *FILE;
-freopen:   (filename: *const char, mode: *const char, stream: *FILE) -> *FILE;
-setbuf:    (stream: *FILE, buf: *char) -> void;
-setvbuf:   (stream: *FILE, buf: *char, mode: int, size: size_t) -> int;
-fprintf:   (stream: *FILE, format: *const char, ...) -> int;
-fscanf:    (stream: *FILE, format: *const char, ...) -> int;
-printf:    (format: *const char, ...) -> int;
-scanf:     (format: *const char, ...) -> int;
-snprintf:  (s: *char, n: size_t, format: *const char, ...) -> int;
-sprintf:   (s: *char, format: *const char, ...) -> int;
-sscanf:    (s: *const char, format: *const char, ...) -> int;
-vfprintf:  (stream: *FILE, format: *const char, arg: va_list) -> int;
-vfscanf:   (stream: *FILE, format: *const char, arg: va_list) -> int;
-vprintf:   (format: *const char, arg: va_list) -> int;
-vscanf:    (format: *const char, arg: va_list) -> int;
-vsnprintf: (s: *char, n: size_t, format: *const char, arg: va_list) -> int;
-vsprintf:  (s: *char, format: *const char, arg: va_list) -> int;
-vsscanf:   (s: *const char, format: *const char, arg: va_list) -> int;
-fgetc:     (stream: *FILE) -> int;
-fgets:     (s: *char, n: int, stream: *FILE) -> *char;
-fputc:     (c: int, stream: *FILE) -> int;
-fputs:     (s: *const char, stream: *FILE) -> int;
-getc:      (stream: *FILE) -> int;
-getchar:   () -> int;
-putc:      (c: int, stream: *FILE) -> int;
-putchar:   (c: int) -> int;
-puts:      (s: *const char) -> int;
-ungetc:    (c: int, stream: *FILE) -> int;
-fread:     (ptr: *void, size: size_t, nmemb: size_t, stream: *FILE) -> size_t;
-fwrite:    (ptr: *const void, size: size_t, nmemb: size_t, stream: *FILE) -> size_t;
-fgetpos:   (stream: *FILE, pos: *fpos_t) -> int;
-fseek:     (stream: *FILE, offset: long, whence: int) -> int;
-fsetpos:   (stream: *FILE, pos: *const fpos_t) -> int;
-ftell:     (stream: *FILE) -> long;
-rewind:    (stream: *FILE) -> void;
-clearerr:  (stream: *FILE) -> void;
-feof:      (stream: *FILE) -> int;
-ferror:    (stream: *FILE) -> int;
-perror:    (s: *const char) -> void;
+remove:    (filename: *const char) ~> int;
+rename:    (old_p: *const char, new_p: *const char) ~> int;
+tmpfile:   () ~> *FILE;
+tmpnam:    (s: *char) ~> *char;
+fclose:    (stream: *FILE) ~> int;
+fflush:    (stream: *FILE) ~> int;
+fopen:     (filename: *const char, mode: *const char) ~> *FILE;
+freopen:   (filename: *const char, mode: *const char, stream: *FILE) ~> *FILE;
+setbuf:    (stream: *FILE, buf: *char) ~> void;
+setvbuf:   (stream: *FILE, buf: *char, mode: int, size: size_t) ~> int;
+fprintf:   (stream: *FILE, format: *const char, ...) ~> int;
+fscanf:    (stream: *FILE, format: *const char, ...) ~> int;
+printf:    (format: *const char, ...) ~> int;
+scanf:     (format: *const char, ...) ~> int;
+snprintf:  (s: *char, n: size_t, format: *const char, ...) ~> int;
+sprintf:   (s: *char, format: *const char, ...) ~> int;
+sscanf:    (s: *const char, format: *const char, ...) ~> int;
+vfprintf:  (stream: *FILE, format: *const char, arg: va_list) ~> int;
+vfscanf:   (stream: *FILE, format: *const char, arg: va_list) ~> int;
+vprintf:   (format: *const char, arg: va_list) ~> int;
+vscanf:    (format: *const char, arg: va_list) ~> int;
+vsnprintf: (s: *char, n: size_t, format: *const char, arg: va_list) ~> int;
+vsprintf:  (s: *char, format: *const char, arg: va_list) ~> int;
+vsscanf:   (s: *const char, format: *const char, arg: va_list) ~> int;
+fgetc:     (stream: *FILE) ~> int;
+fgets:     (s: *char, n: int, stream: *FILE) ~> *char;
+fputc:     (c: int, stream: *FILE) ~> int;
+fputs:     (s: *const char, stream: *FILE) ~> int;
+getc:      (stream: *FILE) ~> int;
+getchar:   () ~> int;
+putc:      (c: int, stream: *FILE) ~> int;
+putchar:   (c: int) ~> int;
+puts:      (s: *const char) ~> int;
+ungetc:    (c: int, stream: *FILE) ~> int;
+fread:     (ptr: *void, size: size_t, nmemb: size_t, stream: *FILE) ~> size_t;
+fwrite:    (ptr: *const void, size: size_t, nmemb: size_t, stream: *FILE) ~> size_t;
+fgetpos:   (stream: *FILE, pos: *fpos_t) ~> int;
+fseek:     (stream: *FILE, offset: long, whence: int) ~> int;
+fsetpos:   (stream: *FILE, pos: *const fpos_t) ~> int;
+ftell:     (stream: *FILE) ~> long;
+rewind:    (stream: *FILE) ~> void;
+clearerr:  (stream: *FILE) ~> void;
+feof:      (stream: *FILE) ~> int;
+ferror:    (stream: *FILE) ~> int;
+perror:    (s: *const char) ~> void;
 
 

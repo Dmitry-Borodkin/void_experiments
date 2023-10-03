@@ -83,20 +83,20 @@ union string_t
 
 //---------------------------------------------------------------------
 alwaysinline
-(_.is_long): (self: &const string_t) -> bool
+(_.is_long): (self: &const string_t) ~> bool
 {
     v_return((self.long[l_cap] & 1 : bool));
 }
 
 inlinehint
-(_.size): (self: &const string_t) -> size_t
+(_.size): (self: &const string_t) ~> size_t
 {
     if (self.is_long)   v_return(self.long[l_len]);
     else                v_return(self.short[s_len] >> 1);
 }
 
 inlinehint
-(_.capacity): (self: &const string_t) -> size_t
+(_.capacity): (self: &const string_t) ~> size_t
 {
     if (self.is_long)   v_return(self.long[l_cap] >> 1);
     else                v_return(string_t.size - 2);
@@ -104,21 +104,21 @@ inlinehint
 
 
 //---------------------------------------------------------------------
-memcpy: (*void, *const void, size_t) -> *void;
-memset: (*void, int, size_t) -> *void;
+memcpy: (*void, *const void, size_t) ~> *void;
+memset: (*void, int, size_t) ~> *void;
 
-realloc: (*void, size_t) -> *void;
+realloc: (*void, size_t) ~> *void;
 
 
 //---------------------------------------------------------------------
 alwaysinline
-(v_initialize(_)): (dst: *string_t, count: size_t) -> void
+(v_initialize(_)): (dst: *string_t, count: size_t) ~> void
 {
     memset(dst, 0, count*string_t.size);
 }
 
 inlinehint
-(v_terminate(_)): (dst: *string_t, count: size_t) -> void
+(v_terminate(_)): (dst: *string_t, count: size_t) ~> void
 {
     for (i: &size_t := 0; i < count; ++i)
     {
@@ -129,7 +129,7 @@ inlinehint
 }
 
 inlinehint
-(v_copy(_)): (dst: *string_t, src: *const string_t, count: size_t) -> void
+(v_copy(_)): (dst: *string_t, src: *const string_t, count: size_t) ~> void
 {
     for (i: &size_t := 0; i < count; ++i)
     {
@@ -155,7 +155,7 @@ inlinehint
 }
 
 inlinehint
-(v_move(_)): (dst: *string_t, src: *string_t, count: size_t) -> void
+(v_move(_)): (dst: *string_t, src: *string_t, count: size_t) ~> void
 {
     v_terminate(dst, count);
 
@@ -168,16 +168,16 @@ inlinehint
 
 //---------------------------------------------------------------------
 inlinehint
-(_.data): (str: &string_t) -> *char
+(_.data): (str: &string_t) ~> *char
 {
     if (str.is_long)  v_return(str.long[l_ptr]);
     else              v_return(str.short[s_str]);
 }
 
 inlinehint
-(_.set()): (str: &string_t, s: *const char) -> void
+(_.set()): (str: &string_t, s: *const char) ~> void
 {
-    strlen: (*const char) -> size_t;
+    strlen: (*const char) ~> size_t;
 
     len = strlen(s);
 
@@ -202,9 +202,9 @@ inlinehint
 }
 
 inlinehint
-(_.append()): (str: &string_t, s: *const char) -> void
+(_.append()): (str: &string_t, s: *const char) ~> void
 {
-    strlen: (*const char) -> size_t;
+    strlen: (*const char) ~> size_t;
 
     len = strlen(s);
 
@@ -247,7 +247,7 @@ inlinehint
 
 
 //---------------------------------------------------------------------
-pr_string: (s: string_t) -> void
+pr_string: (s: string_t) ~> void
 {
     s = *v_get_object_pointer(s);
 
@@ -287,7 +287,7 @@ pr_string: (s: string_t) -> void
 
 //---------------------------------------------------------------------
 alwaysinline
-(_:=_): (str: &string_t, val: string_t) -> &string_t
+(_:=_): (str: &string_t, val: string_t) ~> &string_t
 {
     v_copy(&str, v_get_object_pointer(val));
 

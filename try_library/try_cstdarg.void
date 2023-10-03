@@ -24,7 +24,7 @@
     v_set_export_flag(false);
 
     //-----------------------------------------------------------------
-    LLVMDisposeMemoryBuffer: (LLVMMemoryBufferRef) -> void;
+    LLVMDisposeMemoryBuffer: (LLVMMemoryBufferRef) ~> void;
 
     LLVMDisposeMemoryBuffer(voidc_get_unit_buffer());
     voidc_set_unit_buffer(0);
@@ -33,15 +33,15 @@
 //---------------------------------------------------------------------
 {   struct FILE;
 
-    v_popen: (command: *const char, prop: *const char) -> *FILE;
+    v_popen: (command: *const char, prop: *const char) ~> *FILE;
 
-    v_pclose: (*FILE) -> int;
+    v_pclose: (*FILE) ~> int;
 
-    fprintf: (stream: *FILE, format: *const char, ...) -> int;
+    fprintf: (stream: *FILE, format: *const char, ...) ~> int;
 
-    fscanf: (stream: *FILE, format: *const char, ...) -> int;
+    fscanf: (stream: *FILE, format: *const char, ...) ~> int;
 
-    sprintf: (str: *char, format: *const char, ...) -> int;
+    sprintf: (str: *char, format: *const char, ...) ~> int;
 
     //-----------------------------------------------------------------
     buflen = 1024;
@@ -160,7 +160,7 @@ struct va_list { (*void)[va_list_size]; };
 }
 
 //---------------------------------------------------------------------
-v_internal_va_arg_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) -> void
+v_internal_va_arg_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     call = (self: *v_ast_expr_t);
 

@@ -8,19 +8,19 @@
 }
 
 //---------------------------------------------------------------------
-(v_initialize(_)): (s: *data_t, n: size_t) -> void
+(v_initialize(_)): (s: *data_t, n: size_t) ~> void
 {
     printf("init s: %p, n: %d\n", s, (n: int));
 
     for (i: &size_t := 0; i < n; ++i)   s[i].v := (i: int);
 }
 
-(v_terminate(_)): (s: *data_t, n: size_t) -> void
+(v_terminate(_)): (s: *data_t, n: size_t) ~> void
 {
     printf("term s: %p, n: %d\n", s, (n: int));
 }
 
-(v_copy(_)): (d: *data_t, s: *const data_t, n: size_t) -> void
+(v_copy(_)): (d: *data_t, s: *const data_t, n: size_t) ~> void
 {
     printf("copy d: %p, s: %p, n: %d\n", d, s, (n: int));
 
@@ -29,14 +29,14 @@
 
 
 //---------------------------------------------------------------------
-(v_initialize(_)): (*data2_t, size_t) -> void = derive;
-(v_terminate(_)):  (*data2_t, size_t) -> void = derive;
-(v_copy(_)):       (*data2_t, *const data2_t, size_t) -> void = derive;
+(v_initialize(_)): (*data2_t, size_t) ~> void = derive;
+(v_terminate(_)):  (*data2_t, size_t) ~> void = derive;
+(v_copy(_)):       (*data2_t, *const data2_t, size_t) ~> void = derive;
 
 
 //---------------------------------------------------------------------
 private alwaysinline
-zzzz_init: (s: *const char) -> data_t
+zzzz_init: (s: *const char) ~> data_t
 {
     ret = v_get_return_value();
 

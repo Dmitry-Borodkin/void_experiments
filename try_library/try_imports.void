@@ -19,12 +19,12 @@
 
 //---------------------------------------------------------------------
 private
-collect_defines: () -> void
+collect_defines: () ~> void
 {
     optind: &int;
     optarg: &*char;
 
-    getopt: (argc: int, argv: **char, optstring: *const char) -> int;
+    getopt: (argc: int, argv: **char, optstring: *const char) ~> int;
 
     voidc_argc: &int;
     voidc_argv: &**char;
@@ -52,7 +52,7 @@ collect_defines: () -> void
 
 //---------------------------------------------------------------------
 export
-make_header: (name: *const char) -> void
+make_header: (name: *const char) ~> void
 {
     gctx = v_target_get_global_ctx();
     vctx = v_target_get_voidc_global_ctx();
@@ -80,7 +80,7 @@ make_header: (name: *const char) -> void
 
 //---------------------------------------------------------------------
 export
-make_module: (modname: *const char) -> void
+make_module: (modname: *const char) ~> void
 {
     voidc_guard_target("make_module  must be called from the voidc target only!");
 
@@ -110,7 +110,7 @@ make_module: (modname: *const char) -> void
     //----------------------------------------------------------
     module = LLVMModuleCreateWithNameInContext(modname, v_target_get_llvm_ctx());
 
-    strlen: (*const char) -> size_t;
+    strlen: (*const char) ~> size_t;
 
     LLVMSetSourceFileName(module, filename, strlen(filename));
 
@@ -120,7 +120,7 @@ make_module: (modname: *const char) -> void
 
 //---------------------------------------------------------------------
 export
-emit_module: (filename: *const char) -> void
+emit_module: (filename: *const char) ~> void
 {
     module = v_get_module();
 

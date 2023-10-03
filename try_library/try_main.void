@@ -14,7 +14,7 @@
 
 
 //---------------------------------------------------------------------
-test_fun: (n: int, ...) -> void
+test_fun: (n: int, ...) ~> void
 {
     ap: &va_list := v_undef();
 
@@ -40,7 +40,7 @@ qwe: &int := printf("Превед!\n");
 //---------------------------------------------------------------------
 //m: &int := v_undef();
 //
-//test_bar: (v: int) -> &int
+//test_bar: (v: int) ~> &int
 //{
 //    m := v;
 //
@@ -53,7 +53,7 @@ qwe: &int := printf("Превед!\n");
 //---------------------------------------------------------------------
 //- As is...
 //---------------------------------------------------------------------
-main: (argc: int, argv: **const char) -> int
+main: (argc: int, argv: **const char) ~> int
 {
     a = EOF;
 
@@ -85,7 +85,7 @@ main: (argc: int, argv: **const char) -> int
 
     printf("\n");
 
-    printf("zzzz.v: %d\n", v_get_object_pointer(zzzz)~>v);
+    printf("zzzz.v: %d\n", v_get_object_pointer(zzzz)->v);
 //  printf("zzzz.v: %d\n", zzzz.v);
 
     printf("\n");

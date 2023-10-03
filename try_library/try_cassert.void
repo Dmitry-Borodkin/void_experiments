@@ -25,7 +25,7 @@
     v_set_export_flag(false);
 
     //-----------------------------------------------------------------
-    LLVMDisposeMemoryBuffer: (LLVMMemoryBufferRef) -> void;
+    LLVMDisposeMemoryBuffer: (LLVMMemoryBufferRef) ~> void;
 
     LLVMDisposeMemoryBuffer(voidc_get_unit_buffer());
     voidc_set_unit_buffer(0);
@@ -37,7 +37,7 @@
 }
 
 //---------------------------------------------------------------------
-v_assert_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> void
+v_assert_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) ~> void
 {
     if (v_find_constant("NDEBUG", 0, 0))   v_return();
 
@@ -126,6 +126,6 @@ v_assert_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> void
 }
 
 //---------------------------------------------------------------------
-__assert_fail: (__assertion: *const char, __file: *const char, __line: unsigned, _function: *const char) -> void;
+__assert_fail: (__assertion: *const char, __file: *const char, __line: unsigned, _function: *const char) ~> void;
 
 
