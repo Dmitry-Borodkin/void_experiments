@@ -14,7 +14,7 @@
 
 
 //---------------------------------------------------------------------
-append_string_repr: (str: v_std_string_ptr, s: *const char) -> void
+append_string_repr: (str: v_std_string_ptr, s: *const char) ~> void
 {
     if (!s)
     {
@@ -54,7 +54,7 @@ append_string_repr: (str: v_std_string_ptr, s: *const char) -> void
 }
 
 //---------------------------------------------------------------------
-append_char32_repr: (str: v_std_string_ptr, c: char32_t) -> void
+append_char32_repr: (str: v_std_string_ptr, c: char32_t) ~> void
 {
     v_std_string_append(str, "\'");
 
@@ -71,6 +71,17 @@ append_char32_repr: (str: v_std_string_ptr, c: char32_t) -> void
     }
 
     v_std_string_append(str, "\'");
+}
+
+
+//---------------------------------------------------------------------
+my_accept_visitor: (ast: *v_ast_base_t, vis: *voidc_visitor_t) ~> void
+{
+    q = v_ast_base_get_visitor_method_tag(ast);
+
+//  printf("q: %s\n", v_quark_to_string(q));
+
+    if (q)  v_ast_accept_visitor(ast, vis);
 }
 
 
@@ -122,13 +133,13 @@ struct ctx_t
 
 
 //---------------------------------------------------------------------
-print_indent: (ctx: &ctx_t) -> void
+print_indent: (ctx: &ctx_t) ~> void
 {
     for (i: &int := 0; i < ctx.indent; ++i)  v_std_string_append(ctx.sstr, "  ");
 }
 
 //---------------------------------------------------------------------
-print_generic_list: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+print_generic_list: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     ctx = *(aux: *ctx_t);
 
@@ -157,7 +168,7 @@ print_generic_list: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> 
             v_continue();
         }
 
-        v_ast_accept_visitor(item, vis);
+        my_accept_visitor(item, vis);
     }
 
     ctx.indent -= 1;
@@ -169,7 +180,7 @@ print_generic_list: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> 
 //---------------------------------------------------------------------
 //- expr_identifier
 //---------------------------------------------------------------------
-print_expr_identifier: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+print_expr_identifier: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     ctx = *(aux: *ctx_t);
 
@@ -185,7 +196,7 @@ print_expr_identifier: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) 
 //---------------------------------------------------------------------
 //- expr_integer
 //---------------------------------------------------------------------
-print_expr_integer: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+print_expr_integer: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     ctx = *(aux: *ctx_t);
 
@@ -201,7 +212,7 @@ print_expr_integer: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> 
 //---------------------------------------------------------------------
 //- expr_char
 //---------------------------------------------------------------------
-print_expr_char: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+print_expr_char: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     ctx = *(aux: *ctx_t);
 
@@ -217,7 +228,7 @@ print_expr_char: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> voi
 //---------------------------------------------------------------------
 //- expr_string
 //---------------------------------------------------------------------
-print_expr_string: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+print_expr_string: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     ctx = *(aux: *ctx_t);
 
@@ -234,7 +245,7 @@ print_expr_string: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> v
 //---------------------------------------------------------------------
 //- expr_call
 //---------------------------------------------------------------------
-print_expr_call: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+print_expr_call: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     ctx = *(aux: *ctx_t);
 
@@ -242,9 +253,9 @@ print_expr_call: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> voi
 
     ctx.indent += 1;
 
-    v_ast_accept_visitor((v_ast_expr_call_get_fun_expr((self: *v_ast_expr_t)): *v_ast_base_t), vis);
+    my_accept_visitor((v_ast_expr_call_get_fun_expr((self: *v_ast_expr_t)): *v_ast_base_t), vis);
 
-    v_ast_accept_visitor((v_ast_expr_call_get_arg_list((self: *v_ast_expr_t)): *v_ast_base_t), vis);
+    my_accept_visitor((v_ast_expr_call_get_arg_list((self: *v_ast_expr_t)): *v_ast_base_t), vis);
 
     ctx.indent -= 1;
 
@@ -254,7 +265,7 @@ print_expr_call: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> voi
 //---------------------------------------------------------------------
 //- expr_list
 //---------------------------------------------------------------------
-print_expr_list: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+print_expr_list: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     ctx = *(aux: *ctx_t);
 
@@ -275,7 +286,7 @@ print_expr_list: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> voi
             v_continue();
         }
 
-        v_ast_accept_visitor((item: v_ast_base_ptr), vis);
+        my_accept_visitor((item: v_ast_base_ptr), vis);
     }
 
     ctx.indent -= 1;
@@ -287,7 +298,7 @@ print_expr_list: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> voi
 //---------------------------------------------------------------------
 //- expr_struct
 //---------------------------------------------------------------------
-print_expr_struct: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+print_expr_struct: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     ctx = *(aux: *ctx_t);
 
@@ -304,9 +315,9 @@ print_expr_struct: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> v
 
     ctx.indent += 1;
 
-    v_ast_accept_visitor((name: *v_ast_base_t), vis);
+    my_accept_visitor((name: *v_ast_base_t), vis);
 
-    v_ast_accept_visitor((body: *v_ast_base_t), vis);
+    my_accept_visitor((body: *v_ast_base_t), vis);
 
     print_indent(ctx);  v_std_string_append_number(ctx.sstr, packed);  v_std_string_append(ctx.sstr, "\n");
     print_indent(ctx);  v_std_string_append_number(ctx.sstr, export);  v_std_string_append(ctx.sstr, "\n");
@@ -320,7 +331,7 @@ print_expr_struct: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> v
 //---------------------------------------------------------------------
 //- stmt
 //---------------------------------------------------------------------
-print_stmt: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+print_stmt: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     ctx = *(aux: *ctx_t);
 
@@ -339,7 +350,7 @@ print_stmt: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
     }
     else
     {
-        v_ast_accept_visitor((expr: *v_ast_base_t), vis);
+        my_accept_visitor((expr: *v_ast_base_t), vis);
     }
 
     ctx.indent -= 1;
@@ -350,7 +361,7 @@ print_stmt: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
 //---------------------------------------------------------------------
 //- stmt_list
 //---------------------------------------------------------------------
-print_stmt_list: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+print_stmt_list: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     ctx = *(aux: *ctx_t);
 
@@ -371,7 +382,7 @@ print_stmt_list: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> voi
             v_continue();
         }
 
-        v_ast_accept_visitor((item: v_ast_base_ptr), vis);
+        my_accept_visitor((item: v_ast_base_ptr), vis);
     }
 
     ctx.indent -= 1;
@@ -383,7 +394,7 @@ print_stmt_list: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> voi
 //---------------------------------------------------------------------
 //- stmt_if_then_else
 //---------------------------------------------------------------------
-print_stmt_if_then_else: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+print_stmt_if_then_else: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     ctx = *(aux: *ctx_t);
 
@@ -399,9 +410,9 @@ print_stmt_if_then_else: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t
 
     ctx.indent += 1;
 
-    v_ast_accept_visitor((condition: v_ast_base_ptr), vis);
+    my_accept_visitor((condition: v_ast_base_ptr), vis);
 
-    v_ast_accept_visitor((stmt_then: v_ast_base_ptr), vis);
+    my_accept_visitor((stmt_then: v_ast_base_ptr), vis);
 
     if (v_empty(stmt_else))
     {
@@ -409,7 +420,7 @@ print_stmt_if_then_else: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t
     }
     else
     {
-        v_ast_accept_visitor((stmt_else: v_ast_base_ptr), vis);
+        my_accept_visitor((stmt_else: v_ast_base_ptr), vis);
     }
 
     ctx.indent -= 1;
@@ -421,7 +432,7 @@ print_stmt_if_then_else: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t
 //---------------------------------------------------------------------
 //- stmt_block
 //---------------------------------------------------------------------
-print_stmt_block: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+print_stmt_block: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     ctx = *(aux: *ctx_t);
 
@@ -438,7 +449,7 @@ print_stmt_block: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> vo
 
     print_indent(ctx);  v_std_string_append_number(ctx.sstr, flag);  v_std_string_append(ctx.sstr, "\n");
 
-    v_ast_accept_visitor((list: v_ast_base_ptr), vis);
+    my_accept_visitor((list: v_ast_base_ptr), vis);
 
     ctx.indent -= 1;
 
@@ -449,7 +460,7 @@ print_stmt_block: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> vo
 //---------------------------------------------------------------------
 //- stmt_loop
 //---------------------------------------------------------------------
-print_stmt_loop: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+print_stmt_loop: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     ctx = *(aux: *ctx_t);
 
@@ -463,7 +474,7 @@ print_stmt_loop: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> voi
 
     ctx.indent += 1;
 
-    v_ast_accept_visitor((stmt: v_ast_base_ptr), vis);
+    my_accept_visitor((stmt: v_ast_base_ptr), vis);
 
     ctx.indent -= 1;
 
@@ -474,7 +485,7 @@ print_stmt_loop: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> voi
 //---------------------------------------------------------------------
 //- stmt_switch
 //---------------------------------------------------------------------
-print_stmt_switch: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+print_stmt_switch: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     ctx = *(aux: *ctx_t);
 
@@ -489,8 +500,8 @@ print_stmt_switch: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> v
 
     ctx.indent += 1;
 
-    v_ast_accept_visitor((expr: v_ast_base_ptr), vis);
-    v_ast_accept_visitor((list: v_ast_base_ptr), vis);
+    my_accept_visitor((expr: v_ast_base_ptr), vis);
+    my_accept_visitor((list: v_ast_base_ptr), vis);
 
     ctx.indent -= 1;
 
@@ -500,7 +511,7 @@ print_stmt_switch: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> v
 //---------------------------------------------------------------------
 //- case_block
 //---------------------------------------------------------------------
-print_case_block: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+print_case_block: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     ctx = *(aux: *ctx_t);
 
@@ -515,8 +526,8 @@ print_case_block: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> vo
 
     ctx.indent += 1;
 
-    v_ast_accept_visitor((tags: v_ast_base_ptr), vis);
-    v_ast_accept_visitor((list: v_ast_base_ptr), vis);
+    my_accept_visitor((tags: v_ast_base_ptr), vis);
+    my_accept_visitor((list: v_ast_base_ptr), vis);
 
     ctx.indent -= 1;
 
@@ -526,7 +537,7 @@ print_case_block: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> vo
 //---------------------------------------------------------------------
 //- stmt_defer
 //---------------------------------------------------------------------
-print_stmt_defer: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+print_stmt_defer: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     ctx = *(aux: *ctx_t);
 
@@ -540,7 +551,7 @@ print_stmt_defer: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> vo
 
     ctx.indent += 1;
 
-    v_ast_accept_visitor((stmt: v_ast_base_ptr), vis);
+    my_accept_visitor((stmt: v_ast_base_ptr), vis);
 
     ctx.indent -= 1;
 
@@ -551,7 +562,7 @@ print_stmt_defer: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> vo
 //---------------------------------------------------------------------
 //- operator_unary
 //---------------------------------------------------------------------
-print_operator_unary: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+print_operator_unary: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     ctx = *(aux: *ctx_t);
 
@@ -579,7 +590,7 @@ print_operator_unary: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -
 
     ctx.indent += 1;
 
-    v_ast_accept_visitor(pay, vis);
+    my_accept_visitor(pay, vis);
 
     ctx.indent -= 1;
 
@@ -589,7 +600,7 @@ print_operator_unary: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -
 //---------------------------------------------------------------------
 //- operator_binary
 //---------------------------------------------------------------------
-print_operator_binary: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+print_operator_binary: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     ctx = *(aux: *ctx_t);
 
@@ -617,7 +628,7 @@ print_operator_binary: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) 
 
     ctx.indent += 1;
 
-    v_ast_accept_visitor(pay, vis);
+    my_accept_visitor(pay, vis);
 
     ctx.indent -= 1;
 
@@ -636,7 +647,7 @@ print_operator_binary: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) 
 //---------------------------------------------------------------------
 print_visitor: &voidc_visitor_t := v_undef();
 
-print_visitor_cleaner: (*void) -> void
+print_visitor_cleaner: (*void) ~> void
 {
     v_terminate(&print_visitor);
 }
@@ -648,7 +659,7 @@ ctx: &ctx_t := 0;
 
 
 //---------------------------------------------------------------------
-mk_test_stmt_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) -> void
+mk_test_stmt_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
 {
     stmt = v_std_any_get_pointer(v_ast_stmt_t, any);
 
@@ -828,7 +839,7 @@ $print_ast
                                ast: *v_ast_expr_ptr,
                                t0:  v_type_ptr, v0:  LLVMValueRef,
                                t1: &v_type_ptr, v1: &LLVMValueRef
-                              ) -> void;
+                              ) ~> void;
 
             if (fun = (void_fun: *intrinsic_p12_t))
             {
@@ -889,7 +900,7 @@ $print_ast
                                    ast: *v_ast_expr_ptr,
                                    t0: v_type_ptr, v0: LLVMValueRef,
                                    t1: v_type_ptr, v1: LLVMValueRef
-                                  ) -> void;
+                                  ) ~> void;
 
                 if (fun = (void_fun: *intrinsic_p22_t))
                 {
@@ -1112,14 +1123,15 @@ $print_ast
     struct test
     {
         x: int;
-        y: *((f: *const char, ...) -> int);
+        y: *((f: *const char, ...) ~> int);
     };
 }
 
 $print_ast
 {
-    (_/__): (int, int) -> int;      //- ?!?!?!?!?!?!?!?!?!?!?!?!?!?!?!?
+    (_/__): (int, int) ~> int;      //- ?!?!?!?!?!?!?!?!?!?!?!?!?!?!?!?
 }
+
 
 }
 
