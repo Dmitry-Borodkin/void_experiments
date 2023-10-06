@@ -51,25 +51,25 @@ double = float(64);
 
 
 //---------------------------------------------------------------------
-rand: () -> int;
+rand: () ~> int;
 
 RAND_MAX = 2147483647;      //- ?
 
-my_rand: () -> double
+my_rand: () ~> double
 {
     v_return( (rand(): double) / RAND_MAX );
 }
 
 
 //---------------------------------------------------------------------
-sin: (double) -> double;
-cos: (double) -> double;
+sin: (double) ~> double;
+cos: (double) ~> double;
 
 M_PI = 3.14159265358979323846264338327950288419716939937510582;
 
 
 //---------------------------------------------------------------------
-random_triangle: (cr: *cairo_t, w: int, h: int) -> void
+random_triangle: (cr: *cairo_t, w: int, h: int) ~> void
 {
     t = 2 * my_rand();
 
@@ -109,7 +109,7 @@ random_triangle: (cr: *cairo_t, w: int, h: int) -> void
 }
 
 //---------------------------------------------------------------------
-nod: (N: int, M: int) -> int
+nod: (N: int, M: int) ~> int
 {
     n: &int := N;
     m: &int := M;
@@ -127,7 +127,7 @@ nod: (N: int, M: int) -> int
 }
 
 //---------------------------------------------------------------------
-random_star: (cr: *cairo_t, w: int, h: int) -> void
+random_star: (cr: *cairo_t, w: int, h: int) ~> void
 {
     r = my_rand();
 
@@ -245,7 +245,7 @@ random_star: (cr: *cairo_t, w: int, h: int) -> void
 }
 
 //---------------------------------------------------------------------
-system: (*const char) -> int;
+system: (*const char) ~> int;
 
 
 {   system("display try_cairo4_02.png");

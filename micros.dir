@@ -4,6 +4,8 @@
                                                                │
 try_coercions.void                                             │try_coercions.void
                                                                │
+try_introspect6.void    ... constants ...                      │try_introspect6.void | LC_ALL=C sort
+                                                               │
 try_introspect5.void    ... type properties ...                │try_introspect5.void
                                                                │
 try_handlers.void                                              │try_handlers.void

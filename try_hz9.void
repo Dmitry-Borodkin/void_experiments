@@ -1,5 +1,6 @@
 {   v_import("mainline.void");
 
+    v_import("llvm-c/Core.void");
 
     v_import("printf.void");
 }
@@ -13,7 +14,7 @@ double = float(64);
 
 
 //---------------------------------------------------------------------
-check: (a: double, b: double, c: double) -> void
+check: (a: double, b: double, c: double) ~> void
 {
     s = a + b + c;
 
@@ -27,7 +28,7 @@ check: (a: double, b: double, c: double) -> void
 
     D = 4*s*s - 4*(2*ss - s*s);
 
-    sqrt: (double) -> double;
+    sqrt: (double) ~> double;
 
     sqrt_D = sqrt(D);
 
@@ -48,4 +49,113 @@ check: (a: double, b: double, c: double) -> void
 {
     printf("%zd\n", v_std_string_t.size);
 }
+
+
+//=====================================================================
+private
+check_parent: (v: LLVMValueRef) ~> bool
+{
+    if (gv = LLVMIsAGlobalValue(v))
+    {
+        if (LLVMGetGlobalParent(gv))  v_return(true);
+    }
+
+    for (n = LLVMGetNumOperands(v), i: &int := 0; i < n; ++i)
+    {
+        if (check_parent(LLVMGetOperand(v, i)))  v_return(true);
+    }
+
+    v_return(false);
+}
+
+//---------------------------------------------------------------------
+check_parent_intrinsic: (*void, *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    t  = v_find_type("int");
+    t_ = v_type_get_llvm_type(t);
+
+    v_set_result_type(t);
+    v_set_result_value(LLVMConstInt(t_, 777, 0));
+
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    arg0 = v_list_get_item(args, 0);
+
+    name_q = v_ast_expr_identifier_get_name_q(arg0);
+
+    name = v_quark_to_string(name_q);
+
+    v = v_find_constant_value_q(name_q);
+
+    if (!v)
+    {
+        printf("%s: not found\n", name);
+
+        v_return();
+    }
+
+    {   s = LLVMPrintValueToString(v);
+
+        printf("%s = %s\n", name, s);
+
+        LLVMDisposeMessage(s);
+    }
+
+    s: &*const char := "false";
+
+    if (check_parent(v)) s := "true";
+
+    printf("check_parent(%s): %s\n", name, s);
+}
+
+{   v_add_intrinsic("check_parent", check_parent_intrinsic, 0);
+}
+
+
+//---------------------------------------------------------------------
+qwe: &int[7] := v_undef();
+
+
+{ v_debug_print_module(2); }
+//---------------------------------------------------------------------
+a = 8;
+
+a_ = check_parent(a);
+
+b = printf;
+
+b_ = check_parent(b);
+
+c: &int[2] := {};
+
+c_ = check_parent(c);
+
+d = c[1];
+
+d_ = check_parent(d);
+
+e: (*int)[] = { &d, &c[-7], &qwe[9] };
+
+e_ = check_parent(e);
+
+f: &(*int)[3] := e;
+
+g = (0: *int)[-3];
+
+g_ = check_parent(g);
+
+h = b("(&g: int) = %d\n", (&g: int));
+
+h_ = check_parent(h);
+
+
+
+//---------------------------------------------------------------------
+{   b("&d: %p\n", &d);
+
+    b("&c[1]: %p\n", &c[1]);
+
+}
+
+
 
