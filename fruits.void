@@ -1,17 +1,14 @@
-{   v_import("level-00");
-    v_import("level-01");
-    v_import("level-02");
+{   v_import("mainline.void");
 
     v_import("printf.void");
 }
 
-{   v_enable_level_01();
-    v_enable_level_02();
+{   v_enable_mainline();
 }
 
 
 //=====================================================================
-check: (a: long, b: long, c: long) -> bool
+check: (a: long, b: long, c: long) ~> bool
 {
     ab = a + b;     if (ab == 0)  v_return(false);
     ac = a + c;     if (ac == 0)  v_return(false);
@@ -41,15 +38,15 @@ check: (a: long, b: long, c: long) -> bool
 
 
 //=====================================================================
-bigint_t = int(1024);
+num_t = int(1024);
 
-A: bigint_t = 154476802108746166441951315019919837485664325669565431700026634898253202035277999;
-B: bigint_t =  36875131794129999827197811565225474825492979968971970996283137471637224634055579;
-C: bigint_t =   4373612677928697257861252602371390152816537558161613618621437993378423467772036;
+A: num_t = 154476802108746166441951315019919837485664325669565431700026634898253202035277999;
+B: num_t =  36875131794129999827197811565225474825492979968971970996283137471637224634055579;
+C: num_t =   4373612677928697257861252602371390152816537558161613618621437993378423467772036;
 
 
 //---------------------------------------------------------------------
-check_bigint: (a: &bigint_t, b: &bigint_t, c: &bigint_t) -> bool
+check_num: (a: &num_t, b: &num_t, c: &num_t) ~> bool
 {
     ab = a + b;     if (ab == 0)  v_return(false);
     ac = a + c;     if (ac == 0)  v_return(false);
@@ -61,8 +58,8 @@ check_bigint: (a: &bigint_t, b: &bigint_t, c: &bigint_t) -> bool
 
 //---------------------------------------------------------------------
 {
-    if (check_bigint(A, B, C))  printf("\nOK\n");
-    else                        printf("\nFail\n");
+    if (check_num(A, B, C)) printf("\nOK\n");
+    else                    printf("\nFail\n");
 }
 
 
