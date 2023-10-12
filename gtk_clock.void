@@ -19,19 +19,19 @@
     v_add_type("FILE", FILE);
 }
 
-popen: (cmd: *const char, mode: *const char) -> *FILE;
+popen: (cmd: *const char, mode: *const char) ~> *FILE;
 
-pclose: (*FILE) -> int;
+pclose: (*FILE) ~> int;
 
-fprintf: (stream: *FILE, format: *const char, ...) -> int;
+fprintf: (stream: *FILE, format: *const char, ...) ~> int;
 
-fscanf: (stream: *FILE, format: *const char, ...) -> int;
+fscanf: (stream: *FILE, format: *const char, ...) ~> int;
 
-sprintf: (str: *char, format: *const char, ...) -> int;
+sprintf: (str: *char, format: *const char, ...) ~> int;
 
-system: (cmd: *const char) -> int;
+system: (cmd: *const char) ~> int;
 
-fputs: (buf: *char, stream: *FILE) -> int;
+fputs: (buf: *char, stream: *FILE) ~> int;
 
 
 //---------------------------------------------------------------------
@@ -95,7 +95,7 @@ fputs: (buf: *char, stream: *FILE) -> int;
 }
 
 //---------------------------------------------------------------------
-my_clock: () -> float(64);
+my_clock: () ~> float(64);
 
 
 //---------------------------------------------------------------------
@@ -129,45 +129,45 @@ my_clock: () -> float(64);
 
 //{ v_debug_print_module(1); }
 //---------------------------------------------------------------------
-gtk_application_new: (id: *const char, flags: int) -> *GtkApplication;
+gtk_application_new: (id: *const char, flags: int) ~> *GtkApplication;
 
 g_signal_connect_data: (instance: *void,
                         signal: *const char,
-                        callback: *(()->void),
+                        callback: *(()~>void),
                         data: *void,
                         notify: *void,
                         flags: int
-                       ) -> long;
+                       ) ~> long;
 
-g_application_run: (app: *GtkApplication, argc: int, argv: **char) -> int;
-
-
-gtk_application_window_new: (app: *GtkApplication) -> *GtkWidget;
+g_application_run: (app: *GtkApplication, argc: int, argv: **char) ~> int;
 
 
-gtk_window_set_child: (wnd: *GtkWidget, widget: *GtkWidget) -> void;
-
-gtk_window_present: (wnd: *GtkWidget) -> void;
+gtk_application_window_new: (app: *GtkApplication) ~> *GtkWidget;
 
 
-gtk_drawing_area_new: () -> *GtkWidget;
+gtk_window_set_child: (wnd: *GtkWidget, widget: *GtkWidget) ~> void;
+
+gtk_window_present: (wnd: *GtkWidget) ~> void;
 
 
-GtkDrawingAreaDrawFunc = *((*GtkDrawingArea, *cairo_t, w: int, h: int, aux: *void) -> void);
-
-gtk_drawing_area_set_draw_func: (*GtkDrawingArea, GtkDrawingAreaDrawFunc, aux: *void, destroy: *void) -> void;
+gtk_drawing_area_new: () ~> *GtkWidget;
 
 
-gtk_widget_queue_draw: (*GtkWidget) -> void;
+GtkDrawingAreaDrawFunc = *((*GtkDrawingArea, *cairo_t, w: int, h: int, aux: *void) ~> void);
 
-g_timeout_add: (interval: unsigned, func: *((aux: *void) -> int), aux: *void) -> unsigned;
+gtk_drawing_area_set_draw_func: (*GtkDrawingArea, GtkDrawingAreaDrawFunc, aux: *void, destroy: *void) ~> void;
 
 
-g_thread_self: () -> *void;
+gtk_widget_queue_draw: (*GtkWidget) ~> void;
+
+g_timeout_add: (interval: unsigned, func: *((aux: *void) ~> int), aux: *void) ~> unsigned;
+
+
+g_thread_self: () ~> *void;
 
 
 //---------------------------------------------------------------------
-on_timeout: (aux: *void) -> int
+on_timeout: (aux: *void) ~> int
 {
     if (!aux) v_return(false);
 
@@ -180,41 +180,41 @@ on_timeout: (aux: *void) -> int
 //---------------------------------------------------------------------
 double = float(64);
 
-sin: (double) -> double;
-cos: (double) -> double;
+sin: (double) ~> double;
+cos: (double) ~> double;
 
 
 //---------------------------------------------------------------------
-cairo_paint:           (*cairo_t) -> void;
-cairo_fill:            (*cairo_t) -> void;
-cairo_fill_preserve:   (*cairo_t) -> void;
-cairo_stroke:          (*cairo_t) -> void;
-cairo_stroke_preserve: (*cairo_t) -> void;
+cairo_paint:           (*cairo_t) ~> void;
+cairo_fill:            (*cairo_t) ~> void;
+cairo_fill_preserve:   (*cairo_t) ~> void;
+cairo_stroke:          (*cairo_t) ~> void;
+cairo_stroke_preserve: (*cairo_t) ~> void;
 
-cairo_set_source_rgb:  (*cairo_t, r: double, g: double, b: double) -> void;
+cairo_set_source_rgb:  (*cairo_t, r: double, g: double, b: double) ~> void;
 
-cairo_set_source_rgba: (*cairo_t, r: double, g: double, b: double, a: double) -> void;
+cairo_set_source_rgba: (*cairo_t, r: double, g: double, b: double, a: double) ~> void;
 
-cairo_rectangle: (*cairo_t, x: double, y: double, w: double, h: double) -> void;
+cairo_rectangle: (*cairo_t, x: double, y: double, w: double, h: double) ~> void;
 
-cairo_set_line_width: (*cairo_t, w: double) -> void;
+cairo_set_line_width: (*cairo_t, w: double) ~> void;
 
-cairo_line_to: (*cairo_t, x: double, y: double) -> void;
-cairo_move_to: (*cairo_t, x: double, y: double) -> void;
+cairo_line_to: (*cairo_t, x: double, y: double) ~> void;
+cairo_move_to: (*cairo_t, x: double, y: double) ~> void;
 
-cairo_close_path: (*cairo_t) -> void;
+cairo_close_path: (*cairo_t) ~> void;
 
-cairo_scale: (*cairo_t, kx: double, ky: double) ->void;
-cairo_translate: (*cairo_t, dx: double, dy: double) ->void;
+cairo_scale: (*cairo_t, kx: double, ky: double) ~>void;
+cairo_translate: (*cairo_t, dx: double, dy: double) ~>void;
 
-cairo_save: (*cairo_t) -> void;
-cairo_restore: (*cairo_t) -> void;
+cairo_save: (*cairo_t) ~> void;
+cairo_restore: (*cairo_t) ~> void;
 
-cairo_arc: (*cairo_t, x: double, y: double, r: double, a0: double, a1: double) -> void;
+cairo_arc: (*cairo_t, x: double, y: double, r: double, a0: double, a1: double) ~> void;
 
-cairo_clip: (*cairo_t) -> void;
+cairo_clip: (*cairo_t) ~> void;
 
-cairo_set_line_cap: (*cairo_t, int) -> void;
+cairo_set_line_cap: (*cairo_t, int) ~> void;
 
 
 //---------------------------------------------------------------------
@@ -228,7 +228,7 @@ draw_cb: (drawing_area: *GtkDrawingArea,
           width: int,
           height: int,
           aux: *void
-         ) -> void
+         ) ~> void
 {
     {   k: &double := height;
 
@@ -329,7 +329,7 @@ draw_cb: (drawing_area: *GtkDrawingArea,
 
 
 //---------------------------------------------------------------------
-on_activate: (app: *GtkApplication, data: *void) -> void
+on_activate: (app: *GtkApplication, data: *void) ~> void
 {
     window = gtk_application_window_new(app);
 
@@ -350,7 +350,7 @@ on_activate: (app: *GtkApplication, data: *void) -> void
 {
     app = gtk_application_new(0, 0);
 
-    g_signal_connect_data(app, "activate", (on_activate: *(()->void)), 0, 0, 0);
+    g_signal_connect_data(app, "activate", (on_activate: *(()~>void)), 0, 0, 0);
 
     g_application_run(app, 1, &("Часики" : *char));
 }

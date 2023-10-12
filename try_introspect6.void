@@ -1,0 +1,207 @@
+{   v_import("mainline.void");
+
+    v_import("llvm-c/Core.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_mainline();
+}
+
+
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(99); }
+
+//====================================================================-
+FILE = v_struct("FILE");
+
+v_popen: (command: *const char, prop: *const char) ~> *FILE;
+
+v_pclose: (*FILE) ~> int;
+
+fprintf: (stream: *FILE, format: *const char, ...) ~> int;
+
+fscanf: (stream: *FILE, format: *const char, ...) ~> int;
+
+fputs: (buf: *char, stream: *FILE) ~> int;
+
+sprintf: (str: *char, format: *const char, ...) ~> int;
+
+system: (cmd: *const char) ~> int;
+
+
+//---------------------------------------------------------------------
+v_find_file_for_import: (*v_std_string_t, *const char, *const char) ~> void;
+
+voidc_include_path: &v_std_string_t := {};
+
+{   v_find_file_for_import(&voidc_include_path, "", "level-00");
+
+    strrchr: (*const char, int) ~> *char;
+
+    *strrchr(v_std_string_get(&voidc_include_path), '/') := 0;
+
+//  printf("voidc_include_path: %s\n", v_std_string_get(&voidc_include_path));
+}
+
+//---------------------------------------------------------------------
+my_source: &char[] :=
+"""
+#include "voidc_target.h"
+
+extern "C"
+{
+
+
+typedef void (*constant_type_ft)(void *aux, v_quark_t qname, const v_type_t *type);
+
+void
+constant_types_iter(constant_type_ft fun, void *aux)
+{
+    auto &gctx = *voidc_global_ctx_t::target;
+    auto &lctx = *gctx.local_ctx;
+
+    for (auto &it: lctx.decls.constants)
+    {
+        fun(aux, it.first, it.second);
+    }
+}
+
+
+}
+
+""";
+
+
+//---------------------------------------------------------------------
+{   buffer = v_malloc(char, 1024);
+    defer v_free(buffer);
+
+    {   p = v_popen("mktemp", "r");
+        defer v_pclose(p);
+
+        fscanf(p, "%500s", buffer);
+    }
+
+    if (v_find_constant("_WIN32", 0, 0))
+    {
+        cmd = buffer + 512;
+
+        sprintf(cmd, "cygpath -m %s", buffer);
+
+        p = v_popen(cmd, "r");
+        defer v_pclose(p);
+
+        fscanf(p, "%1000s", buffer);
+    }
+
+    //-----------------------------------------------------------------
+    {   p = v_popen("bash", "w");
+        defer v_pclose(p);
+
+        fprintf(p, "clang -x c++ -c -fPIC");
+
+        if (v_find_constant("NDEBUG", 0, 0))  fprintf(p, " -O3 -DNDEBUG");
+
+        fprintf(p, " $(llvm-config --cxxflags) -std=c++17");
+
+        fprintf(p, " -I%s", v_std_string_get(&voidc_include_path));
+
+        if (v_find_constant("_WIN32", 0, 0))
+        {
+            fprintf(p, " -IC:/Tools/include -frtti -fcxx-exceptions");
+        }
+
+        fprintf(p, " -o %s", buffer);
+
+        fprintf(p, " - <<HEREDOC\n%s\nHEREDOC\n", my_source);
+    }
+
+    //-----------------------------------------------------------------
+    mb: &LLVMMemoryBufferRef := 0;
+    defer LLVMDisposeMemoryBuffer(mb);
+
+    LLVMCreateMemoryBufferWithContentsOfFile(buffer, &mb, 0);
+
+    voidc_add_local_object_file_to_jit(mb);
+
+    //-----------------------------------------------------------------
+    {   p = v_popen("bash", "w");
+        defer v_pclose(p);
+
+        fprintf(p, "rm %s\n", buffer);
+    }
+}
+
+
+{ v_debug_print_module(99); }
+//=====================================================================
+constant_type_ft = (*void, v_quark_t, *const v_type_t) ~> void;
+
+constant_types_iter: (*constant_type_ft, *void) ~> void;
+
+
+//---------------------------------------------------------------------
+constant_type_fun: (*void, q: v_quark_t, t: *const v_type_t) ~> void
+{
+    sstr: &v_std_string_t[2] := {};
+
+    voidc_internal_std_string_append_type(sstr+0, t);
+
+    v = v_find_constant_value_q(q);
+
+    s: &*const char := 0;
+
+    if (t == v_static_type_t)
+    {
+        voidc_internal_std_string_append_type(&sstr[1], (v: *v_type_t));
+
+        s := v_std_string_get(sstr+1);
+    }
+    else
+    {
+        s := LLVMPrintValueToString(v);
+    }
+
+    printf("%s: %s := %s\n", v_quark_to_string(q), v_std_string_get(sstr+0), s);
+
+    if (t != v_static_type_t)   LLVMDisposeMessage(s);
+}
+
+
+//=====================================================================
+w: struct { int; long; } = { 7, 8 };
+
+z: int = printf("Превед!\n");
+
+ww: &int[2] := { 77, 88 };
+
+zz: &*int := &ww[1];
+
+pww = &ww[1];
+rww = ww[1];
+
+{}
+
+vpww: &*int := pww;
+vrww: &*int := &rww;
+
+
+{
+    constant_types_iter(constant_type_fun, 0);
+
+    printf("\n");
+
+    printf("z: %d\n", z);
+
+    printf("zz: %ld\n", *zz);
+
+    printf("pww: %p\n", pww);
+    printf("rww: %p\n", &rww);
+
+    printf("vpww: %p\n", vpww);
+    printf("vrww: %p\n", vrww);
+}
+
+
+

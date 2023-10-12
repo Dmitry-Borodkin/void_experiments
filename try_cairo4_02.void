@@ -248,7 +248,8 @@ random_star: (cr: *cairo_t, w: int, h: int) ~> void
 system: (*const char) ~> int;
 
 
-{   system("display try_cairo4_02.png");
+//  system("display try_cairo4_02.png");
+{   system("/opt/google/chrome/chrome try_cairo4_02.png");
 }
 
 
