@@ -36,6 +36,8 @@ try_string2.void                                               │try_string2.vo
                                                                │
 try_10001.void                                                 │try_10001.void
                                                                │
+try_armstrong.void                                             │try_armstrong.void
+                                                               │
                                                                │
 ───────────────────────────────────────────────────────────────│
 try_hz9.void                                                   │try_hz9.void
