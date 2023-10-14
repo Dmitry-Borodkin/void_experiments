@@ -7,7 +7,7 @@
 
 
 //---------------------------------------------------------------------
-//- ² ³
+//- (_²)  (_³)  ...
 
 {   q_ref = v_reference_type(v_quark_t, 0);
 
@@ -73,7 +73,7 @@ compile_op_postfix_fixpow: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base
 
     vv: &LLVMValueRef := v;
 
-    for (p: &int := (aux : int); p > 1; --p)
+    for (p: &int := (aux: int); p > 1; --p)
     {
         vv := compile_mul(t, vv, v);
     }
@@ -112,7 +112,7 @@ digits_t = int[NUMDIGITS];
 
     for (i: &int := 0; i < NUMDIGITS; ++i)
     {
-        ret[i] := n%10;
+        ret[i] := n % 10;
 
         n /= 10;
     }

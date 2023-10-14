@@ -1,0 +1,110 @@
+{   v_import("mainline.void");
+
+    v_import("llvm-c/Core.void");
+    v_import("llvm-c/TargetMachine.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_mainline();
+}
+
+
+//=====================================================================
+{   module = LLVMModuleCreateWithName("trace_module");
+
+    v_set_module(module);
+}
+
+
+//---------------------------------------------------------------------
+private
+compile_stmt_list: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    len: &size_t := 0;
+
+    module = v_get_module();
+
+    filename = LLVMGetSourceFileName(module, &len);
+
+    builder = v_target_get_builder();
+
+    cur_b = LLVMGetInsertBlock(builder);
+
+    fun = LLVMGetBasicBlockParent(cur_b);
+
+    function = LLVMGetValueName2(fun, &len);
+
+    line:   &size_t := v_undef();
+    column: &size_t := v_undef();
+
+    ps = v_std_any_get_value(size_t, v_ast_get_property(self, v_quark_from_string("pos_start")));
+    pe = v_std_any_get_value(size_t, v_ast_get_property(self, v_quark_from_string("pos_end")));
+
+    v_peg_get_line_column(ps, line, column);
+
+    printf("%s (%zd, %zd) %s: list begin\n", filename, line+1, column+1, function);
+
+
+    list = (self: *v_ast_stmt_list_t);
+
+    for (i: &int := 0, n = v_list_get_size(list); i < n; ++i)
+    {
+        stmt = v_list_get_item(list, i);
+
+        ps = v_std_any_get_value(size_t, v_ast_get_property((stmt: *v_ast_base_t), v_quark_from_string("pos_start")));
+        pe = v_std_any_get_value(size_t, v_ast_get_property((stmt: *v_ast_base_t), v_quark_from_string("pos_end")));
+
+        v_peg_get_line_column(ps, line, column);
+
+        printf("%s (%zd, %zd) %s: stmt begin\n", filename, line+1, column+1, function);
+
+        v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
+
+        v_peg_get_line_column(pe, line, column);
+
+        printf("%s (%zd, %zd) %s: stmt end\n", filename, line+1, column+1, function);
+    }
+
+
+    v_peg_get_line_column(pe, line, column);
+
+    printf("%s (%zd, %zd) %s: list end\n", filename, line+1, column+1, function);
+}
+
+
+
+//---------------------------------------------------------------------
+export
+v_enable_trace: () ~> void
+{
+    vis = v_get_compiler();
+
+    q = v_quark_from_string;
+
+    voidc_visitor_set_void_method(vis, vis, q("stmt_list"), compile_stmt_list, 0);
+}
+
+
+//=====================================================================
+{   module = v_get_module();
+
+//  v_debug_print_module(1);
+
+    v_finish_module(module);
+
+    voidc_prepare_module_for_jit(module);
+
+    //-----------------------------------------------------------------
+    LLVMTargetMachineEmitToFile(voidc_target_machine,
+                                module,
+                                "try_trace.o",
+                                LLVMObjectFile,
+                                0);
+
+    //-----------------------------------------------------------------
+    LLVMDisposeModule(module);
+    v_set_module(0);
+}
+
+

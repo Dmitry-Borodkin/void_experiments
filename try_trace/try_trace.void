@@ -1,0 +1,22 @@
+{   v_import("level-00/voidc_target.void");
+
+    v_import("llvm-c/Core.void");
+}
+
+//---------------------------------------------------------------------
+{   mb = v_assign(v_reference(v_alloca(LLVMMemoryBufferRef)), 0);
+
+    LLVMCreateMemoryBufferWithContentsOfFile("try_trace.o", v_pointer(mb), 0);
+
+    voidc_add_object_file_to_jit(mb);
+
+    LLVMDisposeMemoryBuffer(mb);
+}
+
+//---------------------------------------------------------------------
+{   ft = v_function_type(void, 0, 0, false);
+
+    v_export_symbol_type("v_enable_trace", ft);
+}
+
+

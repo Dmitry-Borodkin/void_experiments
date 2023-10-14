@@ -12,6 +12,10 @@ try_handlers.void                                              │try_handlers.v
                                                                │
                                                                │
 ───────────────────────────────────────────────────────────────│
+try_trace/                                                     │try_trace/micros.dir
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
 try_global_obj.void                                            │try_global_obj.void
                                                                │
 try_heap_obj.void                                              │try_heap_obj.void

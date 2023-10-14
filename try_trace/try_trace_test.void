@@ -1,0 +1,32 @@
+{   v_import("mainline.void");
+
+    v_import("try_trace.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_mainline();
+
+    v_enable_trace();
+}
+
+
+//---------------------------------------------------------------------
+trace_test: (n: int) ~> void
+{
+    printf("Hello trace test: %d\n", n);
+}
+
+
+//---------------------------------------------------------------------
+{
+    trace_test(1);
+    trace_test(2);
+    trace_test(3);
+    trace_test(4);
+    trace_test(5);
+    trace_test(6);
+}
+
+
+
