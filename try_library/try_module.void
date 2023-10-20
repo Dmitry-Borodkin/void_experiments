@@ -45,7 +45,7 @@ zzzz_init: (s: *const char) ~> data_t
     printf("zzzz_init: %s\n", s);
 }
 
-zzzz: data_t = zzzz_init("Кагдила?");
+zzzz: data_t = zzzz_init("Кагдила?");           //- "Weak" constant ...
 
 
 

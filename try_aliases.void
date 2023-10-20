@@ -1,14 +1,13 @@
-{   v_import("function_hack.void");
+{   v_import("mainline.void");
+
+    v_import("llvm-c/Core.void");
+
+    v_import("printf.void");
 }
 
-{   v_import("printf.void"); }
-
-
-
-{
-    void_ptr = v_pointer_type(void, 0);
-    v_add_local_symbol("void_ptr", voidc_opaque_type, void_ptr);
+{   v_enable_mainline();
 }
+
 
 
 //---------------------------------------------------------------------
@@ -16,6 +15,12 @@
 
     v_set_module(module);
 }
+
+private
+qwe: &int := 77;
+
+asd: &int[] := { 88, 99 };
+
 
 
 //---------------------------------------------------------------------
@@ -26,16 +31,37 @@
 
     int_ = v_type_get_llvm_type(int);
 
-    c = LLVMConstInt(int_, 77, 0);
+    int_ptr = v_pointer_type(int, 0);
+
+    qwe_ = LLVMGetNamedGlobal(module, "qwe");
+
+    LLVMAddAlias2(module, int_, 0, qwe_, "alias_qwe");
+
+    v_add_symbol("alias_qwe", v_reference_type(int, 0), 0);
 
 
-    void_ptr_ = v_type_get_llvm_type(void_ptr);
+    asd_ = LLVMGetNamedGlobal(module, "asd");
 
-    cp = LLVMConstIntToPtr(c, void_ptr_);
+    builder = v_target_get_builder();
 
-    LLVMAddAlias(module, void_ptr_, cp, "alias_cp");
+    val: &LLVMValueRef[] :=
+    {
+        LLVMConstInt(int_, 0, 0),
+        LLVMConstInt(int_, 1, 0),
+    };
 
-    v_add_local_symbol("alias_cp", void_ptr, 0);
+    t = v_array_type(int, 2);
+
+    t_ = v_type_get_llvm_type(t);
+
+    asd1_ = LLVMBuildGEP2(builder, t_, asd_, val, 2, "");
+
+    LLVMAddAlias2(module, int_, 0, asd1_, "alias_asd1");
+
+    v_add_symbol("alias_asd1", v_reference_type(int, 0), 0);
+
+
+
 
 }
 
@@ -46,17 +72,16 @@
 {
     module = v_get_module();
 
+    v_finish_module(module);
+
     //-----------------------------------------------------------------
     v_debug_print_module(1);
 
     voidc_prepare_module_for_jit(module);
 
     //-----------------------------------------------------------------
-    PH = v_alloca(LLVMOrcModuleHandle);
+    voidc_add_local_module_to_jit(module);
 
-    LLVMOrcAddEagerlyCompiledIR(voidc_jit, PH, module,
-                                voidc_resolver, 0
-                               );
 
     //-----------------------------------------------------------------
     v_set_module(0);
@@ -66,11 +91,10 @@
 //---------------------------------------------------------------------
 {   v_debug_print_module(1); }
 {
-    c = v_cast(alias_cp, int);
+    printf("alias_qwe: %d\n", alias_qwe);
 
-    printf("c: %d\n", c);
-
-
+    printf("alias_asd1: %d\n", alias_asd1);
 }
+
 
 
