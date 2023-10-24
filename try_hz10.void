@@ -1,0 +1,33 @@
+{   v_import("printf.void"); }
+
+{   ft = v_function_type(v_type_ptr, 0, 0, false);
+
+    v_add_symbol("v_f64_type", ft, 0);
+}
+
+{   typ0 = v_alloca(v_type_ptr, 3);
+    typ1 = v_getelementptr(typ0, 1);
+    typ2 = v_getelementptr(typ0, 2);
+
+    double = v_f64_type();
+
+    v_store(double, typ0);
+
+    ft = v_function_type(double, typ0, 1, false);
+
+    v_add_symbol("sqrt", ft, 0);
+    v_add_symbol("exp2", ft, 0);
+
+//  v_store(double, typ0);
+    v_store(double, typ1);
+    v_store(double, typ2);
+
+    ft = v_function_type(double, typ0, 3, false);
+
+    v_add_symbol("fma", ft, 0);
+}
+
+//---------------------------------------------------------------------
+{   printf("phi = %f\n", fma(fma(sqrt(5), 1, 1), exp2(-1), 0));
+}
+

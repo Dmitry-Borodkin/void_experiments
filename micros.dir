@@ -44,6 +44,8 @@ try_armstrong.void                                             │try_armstrong.
                                                                │
                                                                │
 ───────────────────────────────────────────────────────────────│
+try_hz10.void                                                  │try_hz10.void
+                                                               │
 try_hz9.void                                                   │try_hz9.void
                                                                │
 try_hz8.void                                                   │try_hz8.void
