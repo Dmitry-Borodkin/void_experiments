@@ -1,16 +1,8 @@
-{   v_import("level-00");
-    v_import("level-01");
-    v_import("level-02");
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
 
-    v_import("llvm-c/Core.void");
-}
-
-{   v_import("printf.void");
-}
-
-{   v_enable_level_01();
-    v_enable_level_02();
-}
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
 
 
 //---------------------------------------------------------------------
@@ -645,12 +637,7 @@ print_operator_binary: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) 
 
 
 //---------------------------------------------------------------------
-print_visitor: &voidc_visitor_t := v_undef();
-
-print_visitor_cleaner: (*void) ~> void
-{
-    v_terminate(&print_visitor);
-}
+print_visitor: &voidc_visitor_t := {};
 
 
 //---------------------------------------------------------------------
@@ -663,9 +650,7 @@ mk_test_stmt_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_
 {
     stmt = v_std_any_get_pointer(v_ast_stmt_t, any);
 
-    sstr = v_alloca(v_std_string_t);
-    v_initialize(sstr);
-    defer v_terminate(sstr);
+    sstr: &v_std_string_t := {};        sstr = &sstr;
 
     ctx.sstr   := sstr;
     ctx.indent := 0;
@@ -680,13 +665,9 @@ mk_test_stmt_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_
 
 //=====================================================================
 {
-    v_initialize(&print_visitor);
-
-    voidc_make_visitor(&print_visitor);
-
-    v_add_local_cleaner(print_visitor_cleaner, 0);
-
     vis = &print_visitor;
+
+    voidc_make_visitor(vis);
 
     q = v_quark_from_string;
 
@@ -711,9 +692,7 @@ mk_test_stmt_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_
     voidc_visitor_set_void_method(vis, vis, q("operator_binary"),    print_operator_binary,   &ctx);
     voidc_visitor_set_void_method(vis, vis, q("projection_payload"), print_generic_list,      &ctx);
 
-    gr0 = v_alloca(v_peg_grammar_t);
-    v_initialize(gr0);
-    defer v_terminate(gr0);
+    gr0: &v_peg_grammar_t := {};        gr0 = &gr0;
 
     v_peg_get_grammar(gr0);
 
