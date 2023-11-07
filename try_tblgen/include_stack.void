@@ -28,29 +28,23 @@ include_stack: &*include_stack_node_t := 0;
 //---------------------------------------------------------------------
 //- Include stack utility...
 //---------------------------------------------------------------------
-include_stack_push: (f: *FILE) -> void
+include_stack_push: (f: *FILE) ~> void
 {
-    node = *v_malloc(include_stack_node_t);
-
-    node.file  := f;
-    node.count := 0;
-    node.next  := include_stack;
-
-    include_stack := &node;
+    include_stack := new include_stack_node_t {{ f, 0, include_stack }};
 }
 
 //---------------------------------------------------------------------
-include_stack_pop: () -> void
+include_stack_pop: () ~> void
 {
     node = *include_stack;
 
     include_stack := node.next;
 
-    v_free(&node);
+    delete &node;
 }
 
 //---------------------------------------------------------------------
-include_stack_peek: () -> *FILE
+include_stack_peek: () ~> *FILE
 {
     node = *include_stack;
 
@@ -58,7 +52,7 @@ include_stack_peek: () -> *FILE
 }
 
 //---------------------------------------------------------------------
-include_stack_peek_ifdef_counter: () -> &int
+include_stack_peek_ifdef_counter: () ~> &int
 {
     node = *include_stack;
 
@@ -66,7 +60,7 @@ include_stack_peek_ifdef_counter: () -> &int
 }
 
 //---------------------------------------------------------------------
-include_stack_empty: () -> bool
+include_stack_empty: () ~> bool
 {
     v_return(include_stack == 0);
 }

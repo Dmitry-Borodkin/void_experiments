@@ -12,46 +12,41 @@
 
 //---------------------------------------------------------------------
 private
-defset: & *void := 0;       //- Defines set
-
-preprocessor_defset_terminate: (*void) -> void
-{
-    v_tdestroy(defset, 0);
-}
+defset: &v_util_map_t := {};
 
 private
-defset_find: (name: *const char) -> bool
+defset_find: (name: *const char) ~> bool
 {
     q = v_quark_from_string(name);
 
-    key = (q: *void);
-
-    r = v_tfind(key, &defset, 0);
+    r = v_map_find(&defset, (q: intptr_t));
 
     v_return(r != 0);
 }
 
 private
-defset_insert: (name: *const char) -> void
+defset_insert: (name: *const char) ~> void
 {
     q = v_quark_from_string(name);
 
-    key = (q: *void);
+    a: &v_std_any_t := {};
 
-    v_tsearch(key, &defset, 0);
+    v_std_any_set_value(&a, 0);
+
+    v_map_insert(&defset, &defset, (q: intptr_t), &a);
 }
 
 
 //---------------------------------------------------------------------
 export
-preprocessor_define: (name: *const char) -> void
+preprocessor_define: (name: *const char) ~> void
 {
     defset_insert(name);
 }
 
 //---------------------------------------------------------------------
 export
-preprocessor_ifdef: (name: *const char) -> bool
+preprocessor_ifdef: (name: *const char) ~> bool
 {
     v_return(defset_find(name));
 }
@@ -59,7 +54,7 @@ preprocessor_ifdef: (name: *const char) -> bool
 
 //=====================================================================
 private
-pp_define_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) -> void
+pp_define_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
 {
     name = v_std_any_get_pointer(v_std_string_t, any+0);
 
@@ -70,7 +65,7 @@ pp_define_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) 
 
 //---------------------------------------------------------------------
 private
-check_pp_ifdef_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) -> void
+check_pp_ifdef_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
 {
     counter = include_stack_peek_ifdef_counter();
 
@@ -87,7 +82,7 @@ check_pp_ifdef_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, siz
 
 //---------------------------------------------------------------------
 private
-pp_else_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) -> void
+pp_else_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
 {
     counter = include_stack_peek_ifdef_counter();
 
@@ -103,7 +98,7 @@ pp_else_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ->
 
 //---------------------------------------------------------------------
 private
-pp_endif_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) -> void
+pp_endif_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
 {
     counter = include_stack_peek_ifdef_counter();
 
@@ -122,7 +117,7 @@ pp_endif_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) -
 
 //---------------------------------------------------------------------
 private
-check_SOL_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) -> void
+check_SOL_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
 {
     pos = v_std_any_get_value(size_t, any+0);
 
@@ -136,10 +131,10 @@ check_SOL_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) 
 
 
 //---------------------------------------------------------------------
-fgetc: (*FILE) -> int;
+fgetc: (*FILE) ~> int;
 
 private
-pp_fgetc: (* void) -> int
+pp_fgetc: (* void) ~> int
 {
     loop
     {
@@ -167,8 +162,10 @@ pp_fgetc: (* void) -> int
 
 //---------------------------------------------------------------------
 export
-make_preprocessor_context: (ctx: v_peg_context_ptr) -> void
+make_preprocessor_context: (ctx: v_peg_context_ptr) ~> void
 {
+    v_make_map(&defset);
+
     grm = v_alloca(v_peg_grammar_t);
     v_initialize(grm);
     defer v_terminate(grm);
@@ -260,7 +257,7 @@ make_preprocessor_context: (ctx: v_peg_context_ptr) -> void
 //---------------------------------------------------------------------
 {   voidc_unit_end_module(); }
 
-{   v_add_cleaner(preprocessor_defset_terminate, 0); }
+
 
 
 

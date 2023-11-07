@@ -9,12 +9,10 @@
 
 //---------------------------------------------------------------------
 {
-    ctx = v_alloca(v_peg_context_t, 2);
-    v_initialize(ctx, 2);
-    defer v_terminate(ctx, 2);
+    ctx: &v_peg_context_t[2] := {};
 
-    my_ctx    = ctx + 0;
-    saved_ctx = ctx + 1;
+    my_ctx    = &ctx[0];
+    saved_ctx = &ctx[1];
 
     make_preprocessor_context(my_ctx);
 
@@ -25,9 +23,7 @@
     v_peg_set_context(my_ctx);
 
     //-----------------------------------------------------------------
-    grm = v_alloca(v_peg_grammar_t);
-    v_initialize(grm);
-    defer v_terminate(grm);
+    grm: &v_peg_grammar_t := {};    grm = &grm;
 
     v_peg_get_grammar(grm);
 
@@ -52,9 +48,7 @@
 
     include_stack_push(f);
 
-    res = v_alloca(v_std_any_t);
-    v_initialize(res);
-    defer v_terminate(res);
+    res: &v_std_any_t := {};        res = &res;
 
     loop
     {

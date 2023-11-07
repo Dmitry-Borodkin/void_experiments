@@ -163,7 +163,7 @@ constant_type_fun: (*void, q: v_quark_t, t: *const v_type_t) ~> void
         s := LLVMPrintValueToString(v);
     }
 
-    printf("%s: %s := %s\n", v_quark_to_string(q), v_std_string_get(sstr+0), s);
+    printf("%s: %s === %s\n", v_quark_to_string(q), v_std_string_get(sstr+0), s);
 
     if (t != v_static_type_t)   LLVMDisposeMessage(s);
 }
