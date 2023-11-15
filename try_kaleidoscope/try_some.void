@@ -1,0 +1,73 @@
+{   v_import("mainline.void");
+
+    v_import("llvm-c/Core.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_mainline(); }
+
+
+//---------------------------------------------------------------------
+mk_line_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
+{
+    line = v_std_any_get_pointer(v_std_string_t, any+0);
+
+    printf("%s", v_std_string_get(line));
+
+
+    pos = v_std_any_get_value(size_t, any+1);
+
+    line:   &size_t := v_undef();
+    column: &size_t := v_undef();
+
+    v_peg_get_line_column(pos, line, column);
+
+    list: &v_ast_stmt_list_t := {};
+
+    unit: &v_ast_unit_t := {};
+
+    v_ast_make_unit(&unit, &list, (line+1 : int), (column+1 : int));
+
+    v_std_any_set_pointer(ret, &unit);
+}
+
+
+//---------------------------------------------------------------------
+mk_EOF_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
+{
+    unit: &v_ast_unit_t := {};
+
+    v_std_any_set_pointer(ret, &unit);
+}
+
+
+
+
+//=====================================================================
+{
+    gr0: &v_peg_grammar_t := {};    gr0 = &gr0;
+
+    v_peg_make_grammar(gr0);
+
+    grammar gr0
+    {
+    actions:
+        mk_line = mk_line_grammar_action;
+        mk_EOF  = mk_EOF_grammar_action;
+
+    parsers:
+        shebang = ();
+
+        unit = line     { mk_line($0, $0s) }
+             / !.       { mk_EOF() }
+             ;
+
+        line = (!EOL .)* EOL;
+
+        EOL = '\n' / "\r\n" / '\r';
+    }
+
+    v_peg_set_grammar(gr0);
+
+}Hello!
