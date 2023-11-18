@@ -11,10 +11,20 @@
 //---------------------------------------------------------------------
 mk_unit_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
 {
-    num = v_std_any_get_value(int, any+0);
+    if (sstr = v_std_any_get_pointer(v_std_string_t, any+0))
+    {
+        s = v_std_string_get(sstr);
 
-    printf("%d\n", num);
+        if (s  &&  s[0])    printf("error\n");
+    }
+    else
+    {
+        num = v_std_any_get_value(int, any+0);
 
+        printf("answer = %d\n", num);
+    }
+
+    //- Make "empty" unit...
 
     pos = v_std_any_get_value(size_t, any+1);
 
@@ -35,6 +45,8 @@ mk_unit_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~>
 //---------------------------------------------------------------------
 mk_EOF_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
 {
+    //- Make "null" unit...
+
     unit: &v_ast_unit_t := {};
 
     v_std_any_set_pointer(ret, &unit);
@@ -92,21 +104,22 @@ mk_number_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) 
         mk_number = mk_number_grammar_action;
 
     parsers:
-        unit = _ <e:expr> _ ';'     { mk_unit(e, $1s) }
+        unit = _ <e:expr> _ EOL     { mk_unit(e, $1s) }
+             / _ <(!EOL .)*> EOL    { mk_unit($1, $1s) }        //- Sic!
              / _ !.                 { mk_EOF() }
              ;
 
         //----------------------------------------------------------
-        expr = l:expr _ op:[-+] _ r:prod    { mk_binop(op, l, r) }
-             / prod;
+        expr = l:expr _ op:[-+] _ r:fact    { mk_binop(op, l, r) }
+             / fact;
 
         expr is left-recursive;
 
 
-        prod = l:prod _ op:[*/%] _ r:prim   { mk_binop(op, l, r) }
+        fact = l:fact _ op:[*/%] _ r:fact   { mk_binop(op, l, r) }
              / prim;
 
-        prod is left recursive;
+        fact is left recursive;
 
         prim = '(' _ e:expr _ ')'       { e }
              / number;
@@ -115,13 +128,9 @@ mk_number_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) 
         number = [-+]? [0-9]+       { mk_number($0) };
 
         //----------------------------------------------------------
-        _ = (space / comment)*;
+        _ = [ \t]*;
 
-        space = ' ' / '\t' / EOL;
-
-        comment = "//" (!EOL .)* EOL;
-
-        EOL = '\n' / "\r\n" / '\r';
+        EOL = '\n' / "\r\n" / '\r' / ';';
     }
 
     v_peg_set_grammar(gr0);         //- Sic!!!
