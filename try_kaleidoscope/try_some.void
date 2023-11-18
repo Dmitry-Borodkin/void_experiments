@@ -9,11 +9,11 @@
 
 
 //---------------------------------------------------------------------
-mk_line_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
+mk_unit_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
 {
-    line = v_std_any_get_pointer(v_std_string_t, any+0);
+    num = v_std_any_get_value(int, any+0);
 
-    printf("%s", v_std_string_get(line));
+    printf("%d\n", num);
 
 
     pos = v_std_any_get_value(size_t, any+1);
@@ -32,7 +32,6 @@ mk_line_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~>
     v_std_any_set_pointer(ret, &unit);
 }
 
-
 //---------------------------------------------------------------------
 mk_EOF_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
 {
@@ -42,32 +41,90 @@ mk_EOF_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> 
 }
 
 
+//---------------------------------------------------------------------
+mk_binop_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
+{
+    op = v_std_any_get_value(char32_t, any+0);
+
+    lhs = v_std_any_get_value(int, any+1);
+    rhs = v_std_any_get_value(int, any+2);
+
+    num: &int := v_undef();
+
+    switch(op)
+    {
+    case '+':   num := lhs + rhs;   v_break();
+    case '-':   num := lhs - rhs;   v_break();
+    case '*':   num := lhs * rhs;   v_break();
+    case '/':   num := lhs / rhs;   v_break();
+    case '%':   num := lhs % rhs;   v_break();
+    }
+
+    v_std_any_set_value(ret, num);
+}
+
+//---------------------------------------------------------------------
+mk_number_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
+{
+    sstr = v_std_any_get_pointer(v_std_string_t, any+0);
+
+    atoi: (*const char) ~> int;
+
+    num = atoi(v_std_string_get(sstr));
+
+    v_std_any_set_value(ret, num);
+}
 
 
 //=====================================================================
 {
     gr0: &v_peg_grammar_t := {};    gr0 = &gr0;
 
-    v_peg_make_grammar(gr0);
+    v_peg_make_grammar(gr0);        //- Make new empty grammar!
 
     grammar gr0
     {
     actions:
-        mk_line = mk_line_grammar_action;
+        mk_unit = mk_unit_grammar_action;
         mk_EOF  = mk_EOF_grammar_action;
 
-    parsers:
-        shebang = ();
+        mk_binop  = mk_binop_grammar_action;
+        mk_number = mk_number_grammar_action;
 
-        unit = line     { mk_line($0, $0s) }
-             / !.       { mk_EOF() }
+    parsers:
+        unit = _ <e:expr> _ ';'     { mk_unit(e, $1s) }
+             / _ !.                 { mk_EOF() }
              ;
 
-        line = (!EOL .)* EOL;
+        //----------------------------------------------------------
+        expr = l:expr _ op:[-+] _ r:prod    { mk_binop(op, l, r) }
+             / prod;
+
+        expr is left-recursive;
+
+
+        prod = l:prod _ op:[*/%] _ r:prim   { mk_binop(op, l, r) }
+             / prim;
+
+        prod is left recursive;
+
+        prim = '(' _ e:expr _ ')'       { e }
+             / number;
+
+        //----------------------------------------------------------
+        number = [-+]? [0-9]+       { mk_number($0) };
+
+        //----------------------------------------------------------
+        _ = (space / comment)*;
+
+        space = ' ' / '\t' / EOL;
+
+        comment = "//" (!EOL .)* EOL;
 
         EOL = '\n' / "\r\n" / '\r';
     }
 
-    v_peg_set_grammar(gr0);
+    v_peg_set_grammar(gr0);         //- Sic!!!
+}
 
-}Hello!
+
