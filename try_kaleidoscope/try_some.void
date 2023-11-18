@@ -116,7 +116,7 @@ mk_number_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) 
         expr is left-recursive;
 
 
-        fact = l:fact _ op:[*/%] _ r:fact   { mk_binop(op, l, r) }
+        fact = l:fact _ op:[*/%] _ r:prim   { mk_binop(op, l, r) }
              / prim;
 
         fact is left recursive;
