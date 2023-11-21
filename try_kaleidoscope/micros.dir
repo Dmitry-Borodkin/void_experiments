@@ -1,15 +1,10 @@
                     ****  Kaleidoscope  ****                   │*
                                                                │
                                                                │
-try_some.void                                                  │try_some.void
+try_some.void       - parsing ...                              │try_some.void
                                                                │
                                                                │
-                                                               │
-                                                               │
-                                                               │
-                                                               │
-                                                               │
-                                                               │
+try_some2.void      - compilation ...                          │try_some2.void
                                                                │
                                                                │
                                                                │

@@ -1,0 +1,65 @@
+{   v_import("mainline.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_mainline(); }
+
+
+//---------------------------------------------------------------------
+my_add_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    lhs = v_list_get_item(args, 0);
+    rhs = v_list_get_item(args, 1);
+
+    expr: &v_ast_expr_t := {};
+
+    v_ast_make_expr_op_binary(&expr, v_op_infix_add, lhs, rhs);
+
+    v_ast_accept_visitor((&expr: *v_ast_base_t), vis);
+}
+
+{    v_add_intrinsic("my_add", my_add_intrinsic, 0);
+}
+
+
+//---------------------------------------------------------------------
+my_binop_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    lhs = v_list_get_item(args, 0);
+    rhs = v_list_get_item(args, 1);
+
+    op = (aux: *v_ast_expr_t);
+
+    expr: &v_ast_expr_t := {};
+
+    v_ast_make_expr_op_binary(&expr, op, lhs, rhs);
+
+    v_ast_accept_visitor((&expr: *v_ast_base_t), vis);
+}
+
+{    v_add_intrinsic("my_sub", my_binop_intrinsic, v_op_infix_sub);
+     v_add_intrinsic("my_mul", my_binop_intrinsic, v_op_infix_mul);
+     v_add_intrinsic("my_div", my_binop_intrinsic, v_op_infix_div);
+     v_add_intrinsic("my_rem", my_binop_intrinsic, v_op_infix_rem);
+}
+
+
+//---------------------------------------------------------------------
+{ voidc_verify_jit_module_optimized(true); }
+{ v_debug_print_module(99); }
+{
+    a: &int := 7;
+    b: &float(64) := 11;
+
+    c = my_add(a, my_div(b, 2));
+
+    printf("c: %g\n", c);
+}
+
+
+
