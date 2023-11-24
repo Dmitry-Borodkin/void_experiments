@@ -1,0 +1,120 @@
+{   v_import("mainline.void");
+
+    v_import("llvm-c/Support.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_mainline(); }
+
+
+//=====================================================================
+struct FILE;
+
+v_popen: (command: *const char, prop: *const char) ~> *FILE;
+
+v_pclose: (*FILE) ~> int;
+
+fscanf: (stream: *FILE, format: *const char, ...) ~> int;
+
+
+//{ v_debug_print_module(1); }
+//---------------------------------------------------------------------
+{   buffer: &*char := 0;
+    defer v_free(buffer);
+
+    libname: &*char := 0;
+
+    if (v_find_constant("_WIN32", 0, 0))
+    {
+        buffer := v_malloc(char, 1024);
+
+        {   p = v_popen("bash -c \"dlltool -I $(pkg-config --variable=libdir gmp)/libgmp.dll.a\"", "r");
+            defer v_pclose(p);
+
+            fscanf(p, "%1023s", buffer);
+        }
+
+        libname := buffer;
+    }
+    else
+    {
+        libname := "libgmp.so";
+    }
+
+    ok = LLVMLoadLibraryPermanently(libname);
+
+//  printf("ok: %d\n", ok);
+}
+
+
+//=====================================================================
+{   w = v_type_integer_get_width(long);
+
+    v_add_type("ulong", v_uint_type(w));
+}
+
+double = float(64);
+
+
+//---------------------------------------------------------------------
+struct mpz_t
+{
+    _mp_alloc: int;
+    _mp_size:  int;
+
+    _mp_d: *void;
+};
+
+
+//---------------------------------------------------------------------
+//- <x86_64-pc-linux-gnu/gmp.h>
+//---------------------------------------------------------------------
+__gmpz_init: (*mpz_t) ~> void;
+__gmpz_clear: (*mpz_t) ~> void;
+
+//---------------------------------------------------------------------
+alwaysinline
+(v_initialize(_)): (p: *mpz_t, n: size_t) ~> void
+{
+    for (i: &size_t := 0; i < n; ++i)  __gmpz_init(p+i);
+}
+
+alwaysinline
+(v_terminate(_)): (p: *mpz_t, n: size_t) ~> void
+{
+    for (i: &size_t := 0; i < n; ++i)  __gmpz_clear(p+i);
+}
+
+//---------------------------------------------------------------------
+__gmpz_set: (*mpz_t, *const mpz_t) ~> void;
+__gmpz_set_ui: (*mpz_t, ulong) ~> void;
+__gmpz_set_si: (*mpz_t, long) ~> void;
+__gmpz_set_d: (*mpz_t, double) ~> void;
+__gmpz_set_str: (*mpz_t, *const char, int) ~> int;
+
+__gmpz_swap: (*mpz_t, *mpz_t) ~> void;
+
+//---------------------------------------------------------------------
+__gmpz_init_set: (*mpz_t, *const mpz_t) ~> void;
+__gmpz_init_set_ui: (*mpz_t, ulong) ~> void;
+__gmpz_init_set_si: (*mpz_t, long) ~> void;
+__gmpz_init_set_d: (*mpz_t, double) ~> void;
+__gmpz_init_set_str: (*mpz_t, *const char, int) ~> int;
+
+//---------------------------------------------------------------------
+alwaysinline
+(v_copy(_)): (d: *mpz_t, s: *const mpz_t, n: size_t) ~> void
+{
+    for (i: &size_t := 0; i < n; ++i)  __gmpz_set(d+i, s+i);
+}
+
+
+//---------------------------------------------------------------------
+
+
+
+
+
+
+
