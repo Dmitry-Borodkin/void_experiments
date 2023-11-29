@@ -50,6 +50,8 @@ try_10001.void                                                 │try_10001.void
                                                                │
 try_armstrong.void                                             │try_armstrong.void
                                                                │
+asc_primes.void                                                │asc_primes.void
+                                                               │
                                                                │
 ───────────────────────────────────────────────────────────────│
 try_hz10.void                                                  │try_hz10.void

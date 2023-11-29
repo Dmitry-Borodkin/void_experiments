@@ -1,0 +1,64 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+double = float(64);
+
+sqrt: (double) ~> double;
+
+printf: (*const char, ...) ~> int;
+
+//---------------------------------------------------------------------
+is_prime: (n: unsigned) ~> bool
+{
+    if (n < 2)  v_return(false);
+
+    if (n%2 == 0)   v_return(n == 2);
+    if (n%3 == 0)   v_return(n == 3);
+
+    root = (sqrt(n) : unsigned);
+
+    d: &unsigned := 5;
+
+    while (d <= root)
+    {
+        if (n%d == 0)   v_return(false);    d += 2;
+        if (n%d == 0)   v_return(false);    d += 4;
+    }
+
+    v_return(true);
+}
+
+//---------------------------------------------------------------------
+queue:  &unsigned[512] := v_undef();        //- Sic!
+primes: &unsigned[100] := v_undef();        //- Sic!
+
+{   begin: &unsigned := 0;
+    end:   &unsigned := 0;
+    n:     &unsigned := 0;
+
+    for (k: &int := 1; k <= 9; ++k)  queue[end++] := k;
+
+    while (begin < end)
+    {
+        value = queue[begin++];
+
+        if (is_prime(value))  primes[n++] := value;
+
+        for (k: &int := value % 10 + 1; k <= 9; ++k)
+        {
+            queue[end++] := value * 10 + k;
+        }
+    }
+
+//  printf("end: %u\n", end);
+
+    for (k: &int := 0; k < n; ++k)
+    {
+        printf("%9u", primes[k]);
+
+        if (k%10 == 9)  printf("\n");
+        else            printf(" ");
+    }
+}
+

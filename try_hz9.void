@@ -179,15 +179,15 @@ h_ = check_parent(h);
 
 //---------------------------------------------------------------------
 {
-    num_t = uint(13);
+    num_t = uint(11);
 
     v: vec(num_t, 5) = { 2, 3, 5, 7, 11 };
 
-    u = 1.5 * v;
+    u: vec(float(64), 5)[3] = { 1.0*v, 1.5*v, 2.0*v };
 
     w: vec(float(64), 5) = { 3.0, 4.5, 7.5, 10.5, 16.5 };
 
-    f = u == w;
+    f = u[1] == w;
 
     for (i: &int := 0; i < 5; ++i)  printf("f[%d] = %d\n", i, (f[i] : int));
 
@@ -195,5 +195,62 @@ h_ = check_parent(h);
 
     for (i: &int := 0; i < 5; ++i)  printf("g[%d] = %d\n", i, (g[i] : int));
 }
+
+{
+    i: &int := 1;
+
+    j: &int[5] := { i+0, i+1, i+2, i+3, i+4 };
+
+    k: &(*int)[3] := { j+0, j+1, j+2 };
+
+    f = j[2] == 3;
+
+    printf("f: %d\n", (f: int));
+
+    g = k[2] == &j[2];
+
+    printf("g: %d\n", (g: int));
+}
+
+
+//{ v_debug_print_module(4);
+//  voidc_verify_jit_module_optimized(true); }
+//---------------------------------------------------------------------
+U = 'U';
+
+s = "Hello World";
+
+f = s[6] == U+2;
+
+ss: (*const char)[] = {"foo", s+6};
+
+tt = ss[f];
+
+{
+    printf("f: %d\n", (f: int));
+
+    printf("Hello %s!\n", tt);
+}
+
+
+//---------------------------------------------------------------------
+struct FILE;
+
+stdout: &*FILE;
+
+fprintf: (*FILE, *const char, ...) ~> int;
+
+(_.printf()) = fprintf;
+
+{
+    fprintf(stdout, "Приветики!\n");
+
+    stdout.printf("Еще %s...\n", "раз");
+
+}
+
+
+
+
 
 
