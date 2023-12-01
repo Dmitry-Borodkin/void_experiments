@@ -1,0 +1,307 @@
+{   v_import("mainline.void");
+
+    v_import("llvm-c/Support.void");
+
+    v_import("printf.void");
+
+    v_import("cairo.void");
+}
+
+{   v_enable_mainline(); }
+
+
+//---------------------------------------------------------------------
+//- ... <gtk/gtk.h>
+//---------------------------------------------------------------------
+{
+    ok = LLVMLoadLibraryPermanently("libgtk-4.so");
+
+//  printf("ok: %d\n", ok);
+}
+
+//---------------------------------------------------------------------
+struct GtkApplication;
+struct GtkWidget;
+struct GtkDrawingArea;
+
+//---------------------------------------------------------------------
+gtk_application_new: (id: *const char, flags: int) ~> *GtkApplication;
+
+g_signal_connect_data: (instance: *void,
+                        signal: *const char,
+                        callback: *(()~>void),
+                        data: *void,
+                        notify: *void,
+                        flags: int
+                       ) ~> long;
+
+g_application_run: (app: *GtkApplication, argc: int, argv: **char) ~> int;
+
+
+gtk_application_window_new: (app: *GtkApplication) ~> *GtkWidget;
+
+
+gtk_window_set_child: (wnd: *GtkWidget, widget: *GtkWidget) ~> void;
+
+gtk_window_present: (wnd: *GtkWidget) ~> void;
+
+
+gtk_drawing_area_new: () ~> *GtkWidget;
+
+
+GtkDrawingAreaDrawFunc = *((*GtkDrawingArea, *cairo_t, w: int, h: int, aux: *void) ~> void);
+
+gtk_drawing_area_set_draw_func: (*GtkDrawingArea, GtkDrawingAreaDrawFunc, aux: *void, destroy: *void) ~> void;
+
+
+gtk_widget_queue_draw: (*GtkWidget) ~> void;
+
+//g_timeout_add: (interval: unsigned, func: *((aux: *void) ~> int), aux: *void) ~> unsigned;
+
+
+//g_thread_self: () ~> *void;
+
+
+//---------------------------------------------------------------------
+draw_mandel: (drawing_area: *GtkDrawingArea,
+              cr: *cairo_t,
+              width: int,
+              height: int,
+              aux: *void
+             ) ~> void;
+
+//---------------------------------------------------------------------
+on_activate: (app: *GtkApplication, data: *void) ~> void
+{
+    window = gtk_application_window_new(app);
+
+    drawing_area = gtk_drawing_area_new();
+
+    gtk_drawing_area_set_draw_func((drawing_area: *GtkDrawingArea), draw_mandel, 0, 0);
+
+    gtk_window_set_child(window, drawing_area);
+
+    gtk_window_present(window);
+}
+
+
+//=====================================================================
+double = float(64);
+
+struct complex
+{
+    vec(double, 2);
+};
+
+alwaysinline  (_.re): (a:  complex) ~>  double  { v_return(a[0][0]); }
+alwaysinline  (_.re): (a: &complex) ~> &double  { v_return(a[0][0]); }
+
+alwaysinline  (_.im): (a:  complex) ~>  double  { v_return(a[0][1]); }
+alwaysinline  (_.im): (a: &complex) ~> &double  { v_return(a[0][1]); }
+
+
+//---------------------------------------------------------------------
+alwaysinline
+cabs2: (a: complex) ~> double
+{
+    v_return(a.re*a.re + a.im*a.im);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_+_): (a: complex, b: complex) ~> complex
+{
+    v_return({a[0] + b[0]});
+}
+
+alwaysinline
+(_-_): (a: complex, b: complex) ~> complex
+{
+    v_return({a[0] - b[0]});
+}
+
+alwaysinline
+(_*_): (a: complex, b: complex) ~> complex
+{
+    v_return({{a.re*b.re - a.im*b.im, a.im*b.re + a.re*b.im}});
+}
+
+alwaysinline
+(_/_): (a: complex, b: complex) ~> complex
+{
+    d = cabs2(b);
+
+    v_return({ {(a.re*b.re + a.im*b.im)/d, (a.im*b.re - a.re*b.im)/d} });
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_+=_): (a: &complex, b: complex) ~> &complex
+{
+    a[0] += b[0];
+
+    v_return(a);
+}
+
+alwaysinline
+(_-=_): (a: &complex, b: complex) ~> &complex
+{
+    a[0] -= b[0];
+
+    v_return(a);
+}
+
+alwaysinline
+(_*=_): (a: &complex, b: complex) ~> &complex
+{
+    a := a * b;
+
+    v_return(a);
+}
+
+alwaysinline
+(_/=_): (a: &complex, b: complex) ~> &complex
+{
+    a := a / b;
+
+    v_return(a);
+}
+
+
+//=====================================================================
+MAXITER = 1000000;
+
+EPSILON = 1e-16;
+
+check_mandel: (c: complex) ~> int
+{
+    p: &complex := 0;
+
+    eps_init = cabs2(c);
+
+    eps: &double := eps_init;
+
+    period: &int := 0;
+
+    maxperiod: &int := 64;
+
+    z: &complex := c;
+
+    for (i: &int := 0; i < MAXITER; ++i)
+    {
+        if (cabs2(z) > 4)  v_return(i);
+
+        z := z*z + c;
+
+        eps2 = cabs2(p - z);
+
+        if (eps2 < EPSILON)  v_return(-1);
+
+        if (eps2 < eps)
+        {
+            p := z;
+
+            eps := eps2;
+        }
+        else
+        {
+            ++period;
+
+            if (period > maxperiod)
+            {
+                period := 0;
+
+                maxperiod *= 2;
+
+                eps := eps_init;
+
+                p := z;
+            }
+        }
+    }
+
+    v_return(-2);       //- Sic!
+}
+
+
+////---------------------------------------------------------------------
+center: complex = {{ 0.0, 0.0 }};
+
+scale: double = 1.5;
+
+//center: complex = {{ -1.75, 0.0 }};
+//
+//scale: double = 1/3e2;
+
+
+//=====================================================================
+draw_mandel: (drawing_area: *GtkDrawingArea,
+              cr: *cairo_t,
+              width: int,
+              height: int,
+              aux: *void
+             ) ~> void
+{
+    stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, width);
+
+    data = v_malloc(uint(8), stride*height);
+    defer v_free(data);
+
+    {   k = 2*scale / height;
+
+        x0 = center.re - k*(width -1)/2;
+        y0 = center.im + k*(height-1)/2;
+
+        z0: complex = {{x0, y0}};
+
+        for (j: &int := 0; j < height; ++j)
+        {
+            d_j = data + stride*j;
+
+            y = k * j;
+
+            for (i: &int := 0; i < width; ++i)
+            {
+                x = k * i;
+
+                d = check_mandel(z0 + {{x, -y}});
+
+                u: &unsigned := (d: unsigned);
+
+                if (d < 0)  u := (257 + d : unsigned);
+
+                u %= 256;
+
+                sqrt: (double) ~> double;
+
+                u := (sqrt(u / 255.0) * 255 : unsigned);
+
+                *(d_j + i*4 : *vec(uint(8), 3)) := (u: uint(8));
+            }
+        }
+    }
+
+    surface = cairo_image_surface_create_for_data(data, CAIRO_FORMAT_RGB24, width, height, stride);
+    defer cairo_surface_destroy(surface);
+
+    cairo_set_source_surface(cr, surface, 0, 0);
+
+    cairo_paint(cr);
+
+    cairo_set_source_rgb(cr, 0, 0, 0);      //- WTF?
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    app = gtk_application_new(0, 0);
+
+    g_signal_connect_data(app, "activate", (on_activate: *(()~>void)), 0, 0, 0);
+
+    g_application_run(app, 1, &("Нечто" : *char));
+}
+
+
+
+
