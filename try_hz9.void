@@ -250,7 +250,28 @@ fprintf: (*FILE, *const char, ...) ~> int;
 }
 
 
+//---------------------------------------------------------------------
+qsort: (ptr: *void, count: size_t, size: size_t, comp: *((*const void, *const void) ~> int)) ~> void;
 
+compare: (a: *const void, b: *const void) ~> int
+{
+    a = *(a: *const int);
+    b = *(b: *const int);
+
+    if (a < b)  v_return(-1);
+    if (a > b)  v_return(+1);
+
+    v_return(0);
+}
+
+{   ints: &int[] := { 0, 4, 2, 3, 1 };
+
+    qsort(ints, 5, int.size, compare);
+
+    for (i: &int := 0; i < 5; ++i)  printf("%d ", ints[i]);
+
+    printf("\n");
+}
 
 
 

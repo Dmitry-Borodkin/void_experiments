@@ -56,10 +56,16 @@ gtk_drawing_area_set_draw_func: (*GtkDrawingArea, GtkDrawingAreaDrawFunc, aux: *
 
 gtk_widget_queue_draw: (*GtkWidget) ~> void;
 
-//g_timeout_add: (interval: unsigned, func: *((aux: *void) ~> int), aux: *void) ~> unsigned;
 
+//---------------------------------------------------------------------
+on_idle: (aux: *void) ~> bool
+{
+    gtk_widget_queue_draw((aux: *GtkWidget));
 
-//g_thread_self: () ~> *void;
+    v_return(false);
+}
+
+g_idle_add: (*((*void)~>bool), *void) ~> unsigned;
 
 
 //---------------------------------------------------------------------
@@ -102,7 +108,7 @@ alwaysinline  (_.im): (a: &complex) ~> &double  { v_return(a[0][1]); }
 
 //---------------------------------------------------------------------
 alwaysinline
-cabs2: (a: complex) ~> double
+norm: (a: complex) ~> double
 {
     v_return(a.re*a.re + a.im*a.im);
 }
@@ -129,7 +135,7 @@ alwaysinline
 alwaysinline
 (_/_): (a: complex, b: complex) ~> complex
 {
-    d = cabs2(b);
+    d = norm(b);
 
     v_return({ {(a.re*b.re + a.im*b.im)/d, (a.im*b.re - a.re*b.im)/d} });
 }
@@ -169,54 +175,40 @@ alwaysinline
 
 
 //=====================================================================
-MAXITER = 1000000;
+MAXITER = 10000000;
 
 EPSILON = 1e-16;
 
+////---------------------------------------------------------------------
 check_mandel: (c: complex) ~> int
 {
     p: &complex := 0;
 
-    eps_init = cabs2(c);
-
-    eps: &double := eps_init;
-
     period: &int := 0;
 
-    maxperiod: &int := 64;
+    maxperiod: &int := 2;
 
     z: &complex := c;
 
     for (i: &int := 0; i < MAXITER; ++i)
     {
-        if (cabs2(z) > 4)  v_return(i);
+        if (norm(z) > 4)  v_return(i);
 
         z := z*z + c;
 
-        eps2 = cabs2(p - z);
+        eps = norm(p - z);
 
-        if (eps2 < EPSILON)  v_return(-1);
+        if (eps < EPSILON)  v_return(-1);
 
-        if (eps2 < eps)
+        ++period;
+
+        if (period > maxperiod)
         {
+            period := 0;
+
+            maxperiod += maxperiod/2;
+
             p := z;
-
-            eps := eps2;
-        }
-        else
-        {
-            ++period;
-
-            if (period > maxperiod)
-            {
-                period := 0;
-
-                maxperiod *= 2;
-
-                eps := eps_init;
-
-                p := z;
-            }
         }
     }
 
@@ -225,13 +217,52 @@ check_mandel: (c: complex) ~> int
 
 
 ////---------------------------------------------------------------------
-center: complex = {{ 0.0, 0.0 }};
+check_mandel2: (c: complex) ~> int
+{
 
-scale: double = 1.5;
+    p: &complex := 0;
 
-//center: complex = {{ -1.75, 0.0 }};
+    z: &complex := c;
+
+    for (i: &int := 0; i < MAXITER; ++i)
+    {
+        if (norm(z) > 4)  v_return(i);
+
+        z := z*z + c;
+
+        eps = norm(p - z);
+
+        if (eps < EPSILON)  v_return(-1);
+//      if (eps < EPSILON)  v_return(i);
+
+        if (i & 1)  p := p*p + c;
+    }
+
+    v_return(-2);       //- Sic!
+}
+
+
+////---------------------------------------------------------------------
+//center: complex = {{ -0.5, 0.0 }};
 //
-//scale: double = 1/3e2;
+//scale: double = 1.5;
+
+center: complex = {{ -1.0 + 0.8*0.25, 0.6*0.25 }};
+
+scale: double = 1/1e3;
+
+
+//---------------------------------------------------------------------
+sqrt: (double) ~> double;
+
+
+//---------------------------------------------------------------------
+wsize: &unsigned[2] := 0;
+wline: &unsigned := v_undef();
+
+data: &(*uint(8)) := 0;     defer v_free(data);
+
+stride: &unsigned := v_undef();
 
 
 //=====================================================================
@@ -242,10 +273,22 @@ draw_mandel: (drawing_area: *GtkDrawingArea,
               aux: *void
              ) ~> void
 {
-    stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, width);
+    w = wsize[0];
+    h = wsize[1];
 
-    data = v_malloc(uint(8), stride*height);
-    defer v_free(data);
+    if (w != width  ||  h != height)
+    {
+        v_free(data);
+
+        stride := cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, width);
+
+        data := v_malloc(uint(8), stride*height);
+
+        w := width;
+        h := height;
+
+        wline := 0;
+    }
 
     {   k = 2*scale / height;
 
@@ -254,9 +297,11 @@ draw_mandel: (drawing_area: *GtkDrawingArea,
 
         z0: complex = {{x0, y0}};
 
-        for (j: &int := 0; j < height; ++j)
+        j = wline;
+
+        if (j < height)
         {
-            d_j = data + stride*j;
+            d_j = (data + stride*j : *uint(8)[4]);
 
             y = k * j;
 
@@ -266,29 +311,36 @@ draw_mandel: (drawing_area: *GtkDrawingArea,
 
                 d = check_mandel(z0 + {{x, -y}});
 
-                u: &unsigned := (d: unsigned);
+                p = *(d_j + i : *vec(uint(8), 3));
 
-                if (d < 0)  u := (257 + d : unsigned);
+                if (d >= 0)
+                {
+                    u = (d + (d&1)*16) % 256;
 
-                u %= 256;
-
-                sqrt: (double) ~> double;
-
-                u := (sqrt(u / 255.0) * 255 : unsigned);
-
-                *(d_j + i*4 : *vec(uint(8), 3)) := (u: uint(8));
+                    p := (sqrt(u / 255.0) * 255 : uint(8));
+                }
+                else
+                {
+                    if (d == -1)  p := 0;
+                    else          p := {0, 0, 255};
+                }
             }
+
+            ++j;
+
+            g_idle_add(on_idle, drawing_area);
         }
     }
 
     surface = cairo_image_surface_create_for_data(data, CAIRO_FORMAT_RGB24, width, height, stride);
     defer cairo_surface_destroy(surface);
 
+    cairo_save(cr);
+    defer cairo_restore(cr);
+
     cairo_set_source_surface(cr, surface, 0, 0);
 
     cairo_paint(cr);
-
-    cairo_set_source_rgb(cr, 0, 0, 0);      //- WTF?
 }
 
 
