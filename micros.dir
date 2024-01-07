@@ -25,6 +25,8 @@ try_gmp2.void ... WTF?                                         │try_gmp2.void
                                                                │
 try_mandel.void                                                │try_mandel.void
                                                                │
+try_clifford.void                                              │try_clifford.void
+                                                               │
                                                                │
 ───────────────────────────────────────────────────────────────│
 try_global_obj.void                                            │try_global_obj.void

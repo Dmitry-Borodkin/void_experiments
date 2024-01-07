@@ -1,0 +1,262 @@
+{   v_import("mainline.void");
+
+    v_import("llvm-c/Support.void");
+
+    v_import("printf.void");
+
+    v_import("cairo.void");
+}
+
+{   v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+//- ... <gtk/gtk.h>
+//---------------------------------------------------------------------
+{
+    ok = LLVMLoadLibraryPermanently("libgtk-4.so");
+
+//  printf("ok: %d\n", ok);
+}
+
+
+//---------------------------------------------------------------------
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(2); }
+
+
+//---------------------------------------------------------------------
+struct GtkApplication;
+struct GtkWidget;
+struct GtkDrawingArea;
+
+//---------------------------------------------------------------------
+gtk_application_new: (id: *const char, flags: int) ~> *GtkApplication;
+
+g_signal_connect_data: (instance: *void,
+                        signal: *const char,
+                        callback: *(()~>void),
+                        data: *void,
+                        notify: *void,
+                        flags: int
+                       ) ~> long;
+
+g_application_run: (app: *GtkApplication, argc: int, argv: **char) ~> int;
+
+
+gtk_application_window_new: (app: *GtkApplication) ~> *GtkWidget;
+
+
+gtk_window_set_child: (wnd: *GtkWidget, widget: *GtkWidget) ~> void;
+
+gtk_window_present: (wnd: *GtkWidget) ~> void;
+
+
+gtk_drawing_area_new: () ~> *GtkWidget;
+
+
+GtkDrawingAreaDrawFunc = *((*GtkDrawingArea, *cairo_t, w: int, h: int, aux: *void) ~> void);
+
+gtk_drawing_area_set_draw_func: (*GtkDrawingArea, GtkDrawingAreaDrawFunc, aux: *void, destroy: *void) ~> void;
+
+
+gtk_widget_queue_draw: (*GtkWidget) ~> void;
+
+
+//---------------------------------------------------------------------
+on_idle: (aux: *void) ~> bool
+{
+    gtk_widget_queue_draw((aux: *GtkWidget));
+
+    v_return(false);
+}
+
+g_idle_add: (*((*void)~>bool), *void) ~> unsigned;
+
+
+//---------------------------------------------------------------------
+draw_clifford: (drawing_area: *GtkDrawingArea,
+                cr: *cairo_t,
+                width: int,
+                height: int,
+                aux: *void
+               ) ~> void;
+
+//---------------------------------------------------------------------
+on_activate: (app: *GtkApplication, data: *void) ~> void
+{
+    window = gtk_application_window_new(app);
+
+    drawing_area = gtk_drawing_area_new();
+
+    gtk_drawing_area_set_draw_func((drawing_area: *GtkDrawingArea), draw_clifford, 0, 0);
+
+    gtk_window_set_child(window, drawing_area);
+
+    gtk_window_present(window);
+}
+
+
+//=====================================================================
+STEPS = 50000000;
+
+//---------------------------------------------------------------------
+double = float(64);
+
+sqrt: (double) ~> double;
+
+fabs: (double) ~> double;
+
+sin: (double) ~> double;
+cos: (double) ~> double;
+
+
+//---------------------------------------------------------------------
+wsize: &unsigned[2] := 0;
+
+hist: &(*unsigned) := 0;    defer v_free(hist);
+
+maxhist: &unsigned := 0;
+
+
+//=====================================================================
+a = -1.4;
+b =  1.6;
+c =  1.0;
+d =  0.7;
+
+clifford_iter: (v: double[2]) ~> double[2]
+{
+    x = v[0];
+    y = v[1];
+
+    xn = sin(a*y) + c*cos(a*x);
+    yn = sin(b*x) + d*cos(b*y);
+
+    v_return({xn, yn});
+}
+
+//---------------------------------------------------------------------
+draw_clifford: (drawing_area: *GtkDrawingArea,
+                cr: *cairo_t,
+                width: int,
+                height: int,
+                aux: *void
+               ) ~> void
+{
+    w = wsize[0];
+    h = wsize[1];
+
+    if (w != width  ||  h != height)
+    {
+        v_free(hist);
+
+        sz = width * height;
+
+        hist := v_malloc(unsigned, sz);
+
+        memset: (*void, int, size_t) ~> *void;
+
+        memset(hist, 0, sz*unsigned.size);
+
+        maxhist := 0;
+
+        w := width;
+        h := height;
+    }
+
+    {   scx = 1.1 + fabs(c);
+        scy = 1.1 + fabs(d);
+
+        scale: &double := v_undef();
+
+        if (scx < scy)  scale := scy;
+        else            scale := scx;
+
+        scale *= 2;
+
+        wscale: &double := v_undef();
+
+        if (width < height) wscale := width;
+        else                wscale := height;
+
+        v: &double[2] := { 0.1, -0.1 };
+
+        for (i: &int := 0; i < STEPS; ++i)
+        {
+            x = v[0];
+            y = v[1];
+
+            x = x / scale;
+            y = y / scale;
+
+            x =   x*wscale + width/2.0;
+            y = - y*wscale + height/2.0;
+
+            x = (x: unsigned);
+            y = (y: unsigned);
+
+            p = hist[width*y + x];
+
+            p += 1;
+
+            if (maxhist < p)  maxhist := p;
+
+            v := clifford_iter(v);
+        }
+    }
+
+    maxhist = (maxhist: double);
+
+    stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, width);
+
+    data = v_malloc(uint(8), stride*height);
+    defer v_free(data);
+
+    for (j: &int := 0; j < height; ++j)
+    {
+        d_j = (data + stride*j : *uint(8)[4]);
+
+        h_j = hist + width*j;
+
+        for (i: &int := 0; i < width; ++i)
+        {
+            p = *(d_j + i : *vec(uint(8), 3));
+
+            u = 1 - h_j[i]/maxhist;
+
+            u = u * u;
+            u = u * u;
+            u = u * u;
+            u = u * u;
+            u = u * u;
+//          u = u * u;
+
+            p := (u * 255 : uint(8));
+        }
+    }
+
+    surface = cairo_image_surface_create_for_data(data, CAIRO_FORMAT_RGB24, width, height, stride);
+    defer cairo_surface_destroy(surface);
+
+    cairo_save(cr);
+    defer cairo_restore(cr);
+
+    cairo_set_source_surface(cr, surface, 0, 0);
+
+    cairo_paint(cr);
+}
+
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    app = gtk_application_new(0, 0);
+
+    g_signal_connect_data(app, "activate", (on_activate: *(()~>void)), 0, 0, 0);
+
+    g_application_run(app, 1, &("Нечто" : *char));
+}
+
+
+
