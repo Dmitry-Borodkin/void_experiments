@@ -1,0 +1,108 @@
+{   v_import("mainline.void");
+
+    v_import("llvm-c/Support.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+loadlib: (fname: *const char) ~> void
+{
+    ok = LLVMLoadLibraryPermanently(fname);
+
+    msg: &*const char := v_undef();
+
+    if (ok == 0)    msg := "ok";
+    else            msg := "fail";
+
+    printf("load %s: %s\n", fname, msg);
+}
+
+//---------------------------------------------------------------------
+{
+    loadlib("libGL.so");
+    loadlib("libGLU.so");
+    loadlib("libglut.so");
+}
+
+
+//---------------------------------------------------------------------
+//- ... <GL/gl.h>
+//---------------------------------------------------------------------
+GL_COLOR_BUFFER_BIT = 0x00004000;
+GL_POLYGON = 0x0009;
+
+//---------------------------------------------------------------------
+GLbitfield = unsigned;
+GLenum     = unsigned;
+GLfloat    = float(32);
+
+//---------------------------------------------------------------------
+glClear: (GLbitfield) ~> void;
+
+glBegin: (GLenum) ~> void;
+glEnd: () ~> void;
+
+glColor3f: (red: GLfloat, green: GLfloat, blue: GLfloat) ~> void;
+
+glVertex3f: (x: GLfloat, y: GLfloat, z: GLfloat) ~> void;
+
+glFlush: () ~> void;
+
+//---------------------------------------------------------------------
+//- ... <GL/glut.h>
+//---------------------------------------------------------------------
+GLUT_SINGLE = 0x0000;
+GLUT_RGB    = 0x0000;
+
+//---------------------------------------------------------------------
+glutInit: (argcp: *int, argv: **char) ~> void;
+
+glutInitDisplayMode: (unsigned) ~> void;
+
+glutInitWindowSize: (x: int, y: int) ~> void;
+glutInitWindowPosition: (width: int, height: int) ~> void;
+glutCreateWindow: (*char) ~> int;
+
+glutDisplayFunc: (*(() ~> void)) ~> void;
+
+glutMainLoop: () ~> void;
+
+
+//---------------------------------------------------------------------
+display: () ~> void
+{
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glBegin(GL_POLYGON);
+      glColor3f(1, 0, 0); glVertex3f(-0.6, -0.75, 0.5);
+      glColor3f(0, 1, 0); glVertex3f(0.6, -0.75, 0);
+      glColor3f(0, 0, 1); glVertex3f(0, 0.75, 0);
+    glEnd();
+
+    glFlush();
+}
+
+
+//---------------------------------------------------------------------
+voidc_argc: &int;
+voidc_argv: &**char;
+
+{
+    glutInit(&voidc_argc, voidc_argv);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+
+//  glutInitWindowPosition(80, 80);
+    glutInitWindowSize(400, 300);
+    glutCreateWindow("A Simple Triangle");
+
+    glutDisplayFunc(display);
+
+    glutMainLoop();
+}
+
+

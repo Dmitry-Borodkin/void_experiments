@@ -27,6 +27,8 @@ try_mandel.void                                                │try_mandel.voi
                                                                │
 try_clifford.void                                              │try_clifford.void
                                                                │
+try_opengl.void                                                │try_opengl.void
+                                                               │
                                                                │
 ───────────────────────────────────────────────────────────────│
 try_global_obj.void                                            │try_global_obj.void
