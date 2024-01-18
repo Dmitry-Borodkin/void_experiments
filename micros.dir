@@ -12,6 +12,10 @@ try_handlers.void                                              │try_handlers.v
                                                                │
                                                                │
 ───────────────────────────────────────────────────────────────│
+try_condcomp.void                                              │try_condcomp.void
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
 try_trace/                                                     │try_trace/micros.dir
                                                                │
 try_kaleidoscope/                                              │try_kaleidoscope/micros.dir

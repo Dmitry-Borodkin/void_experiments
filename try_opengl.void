@@ -25,8 +25,38 @@ loadlib: (fname: *const char) ~> void
 //---------------------------------------------------------------------
 {
     loadlib("libGL.so");
-    loadlib("libGLU.so");
-    loadlib("libglut.so");
+    loadlib("libglfw.so");
+}
+
+
+//---------------------------------------------------------------------
+//- ... <GLFW/glfw3.h>
+//---------------------------------------------------------------------
+glfwInit: () ~> int;
+glfwTerminate: () ~> void;
+
+struct GLFWwindow;
+struct GLFWmonitor;
+
+glfwCreateWindow: (width: int, height: int, title: *const char, monitor: *GLFWmonitor, share: *GLFWwindow) ~> *GLFWwindow;
+glfwDestroyWindow: (*GLFWwindow) ~> void;
+
+glfwMakeContextCurrent: (*GLFWwindow) ~> void;
+
+glfwWindowShouldClose: (*GLFWwindow) ~> int;
+
+glfwSwapBuffers: (*GLFWwindow) ~> void;
+
+glfwPollEvents: () ~> void;
+
+
+glfwSetErrorCallback: (*((int, *const char) ~> void)) ~> *((int, *const char) ~> void);
+
+
+//---------------------------------------------------------------------
+error_callback: (err: int, msg: *const char) ~> void
+{
+    printf("Error: (%d) - %s\n", err, msg);
 }
 
 
@@ -53,56 +83,35 @@ glVertex3f: (x: GLfloat, y: GLfloat, z: GLfloat) ~> void;
 
 glFlush: () ~> void;
 
-//---------------------------------------------------------------------
-//- ... <GL/glut.h>
-//---------------------------------------------------------------------
-GLUT_SINGLE = 0x0000;
-GLUT_RGB    = 0x0000;
 
 //---------------------------------------------------------------------
-glutInit: (argcp: *int, argv: **char) ~> void;
-
-glutInitDisplayMode: (unsigned) ~> void;
-
-glutInitWindowSize: (x: int, y: int) ~> void;
-glutInitWindowPosition: (width: int, height: int) ~> void;
-glutCreateWindow: (*char) ~> int;
-
-glutDisplayFunc: (*(() ~> void)) ~> void;
-
-glutMainLoop: () ~> void;
-
-
-//---------------------------------------------------------------------
-display: () ~> void
 {
-    glClear(GL_COLOR_BUFFER_BIT);
+    glfwSetErrorCallback(error_callback);
 
-    glBegin(GL_POLYGON);
-      glColor3f(1, 0, 0); glVertex3f(-0.6, -0.75, 0.5);
-      glColor3f(0, 1, 0); glVertex3f(0.6, -0.75, 0);
-      glColor3f(0, 0, 1); glVertex3f(0, 0.75, 0);
-    glEnd();
+    glfwInit();
 
-    glFlush();
+    window = glfwCreateWindow(640, 480, "Hello World", 0, 0);
+
+    glfwMakeContextCurrent(window);
+
+    while (!glfwWindowShouldClose(window))
+    {
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        glBegin(GL_POLYGON);
+          glColor3f(1, 0, 0); glVertex3f(-0.6, -0.75, 0.5);
+          glColor3f(0, 1, 0); glVertex3f(0.6, -0.75, 0);
+          glColor3f(0, 0, 1); glVertex3f(0, 0.75, 0);
+        glEnd();
+
+        glFlush();
+
+        glfwSwapBuffers(window);
+
+        glfwPollEvents();
+    }
+
+    glfwDestroyWindow(window);
+    glfwTerminate();
 }
-
-
-//---------------------------------------------------------------------
-voidc_argc: &int;
-voidc_argv: &**char;
-
-{
-    glutInit(&voidc_argc, voidc_argv);
-    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
-
-//  glutInitWindowPosition(80, 80);
-    glutInitWindowSize(400, 300);
-    glutCreateWindow("A Simple Triangle");
-
-    glutDisplayFunc(display);
-
-    glutMainLoop();
-}
-
 

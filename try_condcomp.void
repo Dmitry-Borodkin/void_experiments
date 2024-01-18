@@ -1,0 +1,297 @@
+{   v_import("mainline.void");
+
+    v_import("llvm-c/Core.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_mainline();
+}
+
+
+//---------------------------------------------------------------------
+{
+    q_ref = v_reference_type(v_quark_t, 0);
+
+    q = v_quark_ptr_from_string;
+
+    v_add_symbol("unit_ccif_list_q", q_ref, q("unit_ccif_list"));
+    v_add_symbol("stmt_ccif_list_q", q_ref, q("stmt_ccif_list"));
+}
+
+
+//====================================================================-
+
+
+
+//---------------------------------------------------------------------
+//- Grammar actions ...
+//---------------------------------------------------------------------
+//private
+mk_unit_ccif_grammar_action: (ret: v_std_any_ptr, *void, any: v_std_any_ptr, size_t) ~> void
+{
+    list = v_std_any_get_pointer(v_ast_generic_list_t, any+0);
+    cond = v_std_any_get_pointer(v_ast_expr_t,         any+1);
+    undl = v_std_any_get_pointer(v_ast_generic_list_t, any+2);
+
+    if (!undl)
+    {
+        v_std_any_set_pointer(ret, (list: *v_ast_base_t));
+
+        v_return();
+    }
+
+    expr: &v_ast_expr_t := {};      expr = &expr;
+
+    if (cond)   v_copy(expr, cond);
+
+    ccif: &v_ast_generic_list_t := {};      ccif = &ccif;
+
+    if (list)   v_list_append(ccif, list, (expr: *v_ast_base_t));
+    else        v_make_list(ccif, unit_ccif_list_q, (expr: *v_ast_base_t));
+
+    v_list_append(ccif, ccif, (undl: *v_ast_base_t));
+
+    v_std_any_set_pointer(ret, ccif);
+}
+
+//---------------------------------------------------------------------
+//private
+mk_stmt_ccif_grammar_action: (ret: v_std_any_ptr, *void, any: v_std_any_ptr, size_t) ~> void
+{
+    list = v_std_any_get_pointer(v_ast_generic_list_t, any+0);
+    cond = v_std_any_get_pointer(v_ast_expr_t,         any+1);
+    slst = v_std_any_get_pointer(v_ast_stmt_list_t,    any+2);
+
+    if (!slst)
+    {
+        v_std_any_set_pointer(ret, (list: *v_ast_stmt_t));
+
+        v_return();
+    }
+
+    expr: &v_ast_expr_t := {};      expr = &expr;
+
+    if (cond)   v_copy(expr, cond);
+
+    ccif: &v_ast_generic_list_t := {};      ccif = &ccif;
+
+    if (list)   v_list_append(ccif, list, (expr: *v_ast_base_t));
+    else        v_make_list(ccif, stmt_ccif_list_q, (expr: *v_ast_base_t));
+
+    v_list_append(ccif, ccif, (slst: *v_ast_base_t));
+
+    v_std_any_set_pointer(ret, ccif);
+}
+
+
+//---------------------------------------------------------------------
+//private
+compile_unit_ccif_list: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    list = (self: *v_ast_generic_list_t);
+
+    size = v_list_get_size(list);
+
+    builder = v_target_get_builder();
+
+    for (i: &int := 0; i < size; i += 2)
+    {
+        cond = v_list_get_item(list, i);
+
+        if (!v_empty(cond))
+        {
+            v_set_result_type(UNREFERENCE_TAG);
+            v_set_result_value(0);
+
+            v_ast_accept_visitor(cond, vis);
+
+            v = v_get_result_value();
+
+            v = LLVMBuildIsNotNull(builder, v, "");
+
+            if (!LLVMConstIntGetZExtValue(v))  v_continue();
+        }
+
+        undl = (v_list_get_item(list, i+1) : *v_ast_generic_list_t);
+
+        n = v_list_get_size(undl);
+
+        for (j: &int := 0; j < n; ++j)
+        {
+            item = v_list_get_item(undl, j);
+
+            v_ast_accept_visitor(item, vis);
+        }
+
+        v_break();
+    }
+}
+
+//---------------------------------------------------------------------
+//private
+compile_stmt_ccif_list: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    list = (self: *v_ast_generic_list_t);
+
+    size = v_list_get_size(list);
+
+    builder = v_target_get_builder();
+
+    for (i: &int := 0; i < size; i += 2)
+    {
+        cond = v_list_get_item(list, i);
+
+        if (!v_empty(cond))
+        {
+            v_set_result_type(UNREFERENCE_TAG);
+            v_set_result_value(0);
+
+            v_ast_accept_visitor(cond, vis);
+
+            v = v_get_result_value();
+
+            v = LLVMBuildIsNotNull(builder, v, "");
+
+            if (!LLVMConstIntGetZExtValue(v))  v_continue();
+        }
+
+        slst = v_list_get_item(list, i+1);
+
+        v_ast_accept_visitor(slst, vis);
+
+        v_break();
+    }
+}
+
+
+//=====================================================================
+{
+    gr0: &v_peg_grammar_t := {};    gr0 = &gr0;
+
+    v_peg_get_grammar(gr0);
+
+    grammar gr0
+    {
+    actions:
+        mk_unit_ccif = mk_unit_ccif_grammar_action;
+        mk_stmt_ccif = mk_stmt_ccif_grammar_action;
+
+    parsers:
+
+        unit_ccif_lr = l:unit_ccif_lr _ "#elif" _'('_ c:expr _')'_ u:unit_defn_list_lr  { mk_unit_ccif(l, c, u) }
+                     / "#if" _'('_ c:expr _')'_ u:unit_defn_list_lr                     { mk_unit_ccif(0, c, u) }
+                     ;
+
+        unit_ccif_lr is left-recursive;
+
+
+        unit_ccif_list = l:unit_ccif_lr _ "#else" _ u:unit_defn_list_lr  { mk_unit_ccif(l, 0, u) }
+                       / unit_ccif_lr
+                       ;
+
+        unit_ccif = l:unit_ccif_list _ "#endif"  { mk_unit_ccif(l, 0, 0) };
+
+        unit_defn += unit_ccif;
+
+
+        stmt_ccif_lr = l:stmt_ccif_lr _ "#elif" _'('_ c:expr _')'_ s:stmt_list  { mk_stmt_ccif(l, c, s) }
+                     / "#if" _'('_ c:expr _')'_ s:stmt_list                     { mk_stmt_ccif(0, c, s) }
+                     ;
+
+        stmt_ccif_lr is left-recursive;
+
+
+        stmt_ccif_list = l:stmt_ccif_lr _ "#else" _ s:stmt_list  { mk_stmt_ccif(l, 0, s) }
+                       / stmt_ccif_lr
+                       ;
+
+        stmt_ccif = l:stmt_ccif_list _ "#endif"  { mk_stmt_ccif(l, 0, 0) };
+
+        stmt += stmt_ccif;
+    }
+
+    v_peg_set_grammar(gr0);
+}
+
+
+//---------------------------------------------------------------------
+{
+    vis = v_get_compiler();
+
+    voidc_visitor_set_void_method(vis, vis, unit_ccif_list_q, compile_unit_ccif_list, 0);
+    voidc_visitor_set_void_method(vis, vis, stmt_ccif_list_q, compile_stmt_ccif_list, 0);
+}
+
+
+//=====================================================================
+{
+    printf("here 0\n");
+
+    a = 3;
+
+    #if (a == 0)
+
+        printf("a: %d\n", a);
+
+    #elif (a == 1)
+
+        printf("a: %d\n", a);
+
+    #elif (a == 2)
+
+        printf("a: %d\n", a);
+
+    #elif (a == 3)
+
+        printf("a: %d\n", a);
+
+    #elif (a == 4)
+
+        printf("a: %d\n", a);
+
+    #else
+
+        printf("a: %d\n", a);
+
+    #endif
+
+    printf("here 1\n");
+
+}
+
+
+//---------------------------------------------------------------------
+h0 = printf("Here 0\n");
+
+a = 3;
+
+#if (a == 0)
+
+    b = printf("0 a: %d\n", a);
+
+#elif (a == 1)
+
+    b = printf("1 a: %d\n", a);
+
+#elif (a == 2)
+
+    b = printf("2 a: %d\n", a);
+
+#elif (a == 3)
+
+    b = printf("3 a: %d\n", a);
+
+#elif (a == 4)
+
+    b = printf("4 a: %d\n", a);
+
+#else
+
+    b = printf("a: %d\n", a);
+
+#endif
+
+h1 = printf("Here 1\n");
+
+
