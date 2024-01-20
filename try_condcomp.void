@@ -225,6 +225,7 @@ compile_stmt_ccif_list: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t)
 
 
 //=====================================================================
+{ v_debug_print_module(1); }
 {
     printf("here 0\n");
 
@@ -262,6 +263,8 @@ compile_stmt_ccif_list: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t)
 
 
 //---------------------------------------------------------------------
+{ v_debug_print_module(1); }
+
 h0 = printf("Here 0\n");
 
 a = 3;
@@ -293,5 +296,6 @@ a = 3;
 #endif
 
 h1 = printf("Here 1\n");
+
 
 
