@@ -1,0 +1,60 @@
+{   v_import("mainline.void");
+
+    v_import("llvm-c/Core.void");
+}
+{   v_enable_mainline(); }
+
+printf: (*const char, ...) ~> int;
+
+v_find_file_for_import: (*v_std_string_t, *const char, *const char) ~> void;
+
+{
+    s: &v_std_string_t := {};
+
+    v_find_file_for_import(&s, "", "mainline.void");
+
+    printf("[%s] %d\n", v_std_string_get(&s), v_empty(&s));
+
+    v_find_file_for_import(&s, "", "qwe.hzhz");
+
+    printf("[%s] %d\n", v_std_string_get(&s), v_empty(&s));
+}
+
+
+//---------------------------------------------------------------------
+has_import_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    arg0 = v_list_get_item(args, 0);
+
+    str = v_ast_expr_string_get_string(arg0);
+
+    s: &v_std_string_t := {};
+
+    v_find_file_for_import(&s, "", str);
+
+    ok = !v_empty(&s);
+
+    ok = LLVMConstInt(v_type_get_llvm_type(bool), ok, false);
+
+    v_adopt_result(bool, ok);
+}
+
+{   v_add_intrinsic("v_has_import", has_import_intrinsic, 0);
+}
+
+
+//---------------------------------------------------------------------
+{ v_debug_print_module(1); }
+{
+    ok = v_has_import("mainline.void");
+
+    printf("%d\n", ok);
+
+    ok = v_has_import("qwe.hzhz");
+
+    printf("%d\n", ok);
+}
+
+
