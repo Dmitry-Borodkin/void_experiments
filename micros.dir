@@ -16,6 +16,8 @@ try_condcomp.void                                              │try_condcomp.v
                                                                │
 try_has_import.void                                            │try_has_import.void
                                                                │
+try_stmt_list_lr.void                                          │try_stmt_list_lr.void
+                                                               │
                                                                │
 ───────────────────────────────────────────────────────────────│
 try_trace/                                                     │try_trace/micros.dir

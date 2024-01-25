@@ -1,0 +1,148 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
+
+
+//---------------------------------------------------------------------
+struct my_ctx_node_t
+{
+    pos:  size_t;
+
+    next: *my_ctx_node_t;
+
+    grammar: v_peg_grammar_t;
+};
+
+(v_initialize(_)): (*my_ctx_node_t, size_t) ~> void = derive;
+(v_terminate(_)):  (*my_ctx_node_t, size_t) ~> void = derive;
+
+
+//---------------------------------------------------------------------
+struct my_ctx_t
+{
+    root: *my_ctx_node_t;
+};
+
+
+//---------------------------------------------------------------------
+my_stmt_list_grammar_action: (ret: v_std_any_ptr, aux: *void, any: v_std_any_ptr, size_t) ~> void
+{
+    list = v_std_any_get_pointer(v_ast_stmt_list_t, any+0);
+    stmt = v_std_any_get_pointer(v_ast_stmt_t,      any+1);
+
+    rlst: &v_ast_stmt_list_t := {};
+
+    block
+    {
+        if (list)
+        {
+            v_list_append(&rlst, list, stmt);
+
+            v_break();
+        }
+
+        //- assert(list == 0);
+
+        if (!stmt)
+        {
+            v_make_list_nil(&rlst);
+
+            v_break();
+        }
+
+
+        any = v_ast_get_property((stmt: *v_ast_base_t), v_quark_from_string("pos_start"));
+
+        pos = v_std_any_get_value(size_t, any);
+
+
+        str: &*const char := v_undef();
+
+        root = (aux: *my_ctx_t)->root;
+
+        if (root  &&  root->pos == pos)
+        {
+            r = v_load(&root);
+
+            root := r->next;
+
+            v_peg_set_grammar(&r->grammar);
+
+            delete r;
+
+
+            str := "end";
+        }
+        else
+        {
+            r = new my_ctx_node_t;
+
+            r->pos  := pos;
+            r->next := root;
+
+            v_peg_get_grammar(&r->grammar);
+
+            root := r;
+
+
+            str := "begin";
+        }
+
+
+        line:   &size_t := v_undef();
+        column: &size_t := v_undef();
+
+        v_peg_get_line_column(pos, line, column);
+
+        printf("(%zd, %zd) %s\n", line+1, column+1, str);
+
+
+        v_make_list(&rlst, stmt, 1);
+    }
+
+    v_std_any_set_pointer(ret, &rlst);
+}
+
+
+//=====================================================================
+my_ctx: &my_ctx_t := 0;
+
+
+//---------------------------------------------------------------------
+{
+    gr0: &v_peg_grammar_t := {};    gr0 = &gr0;
+
+    v_peg_get_grammar(gr0);
+
+    ctx = &my_ctx;
+
+    grammar gr0
+    {
+    actions:
+        mk_stmt_list = my_stmt_list_grammar_action, ctx;
+    }
+
+    v_peg_set_grammar(gr0);
+}
+
+
+//=====================================================================
+{
+    a = 1;
+
+    b = 2;
+
+    {
+        q = 3;
+
+        w = 4;
+    }
+
+    printf("a: %d, b: %d\n", a, b);
+}
+
+//---------------------------------------------------------------------
+
+
