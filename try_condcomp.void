@@ -109,6 +109,11 @@ compile_unit_ccif_list: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t)
             v = v_get_result_value();
 
             v = LLVMBuildIsNotNull(builder, v, "");
+//{
+//s = LLVMPrintValueToString(v);
+//printf("%d - uv: %s\n", LLVMIsAConstantInt(v) != 0, s);
+//LLVMDisposeMessage(s);
+//}
 
             if (!LLVMConstIntGetZExtValue(v))  v_continue();
         }
@@ -152,6 +157,11 @@ compile_stmt_ccif_list: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t)
             v = v_get_result_value();
 
             v = LLVMBuildIsNotNull(builder, v, "");
+//{
+//s = LLVMPrintValueToString(v);
+//printf("%d - sv: %s\n", LLVMIsAConstantInt(v) != 0, s);
+//LLVMDisposeMessage(s);
+//}
 
             if (!LLVMConstIntGetZExtValue(v))  v_continue();
         }
@@ -296,6 +306,37 @@ a = 3;
 #endif
 
 h1 = printf("Here 1\n");
+
+
+//---------------------------------------------------------------------
+{ v_debug_print_module(1); }
+
+#if (true  &&  2*2 == 4)
+
+    q = printf("Sic!\n");
+
+#endif
+
+
+#if (2*2 == 5  ||  true)
+
+    r = printf("Sic!!\n");
+
+#endif
+
+
+#if (3 < 2*2 < 5)
+
+    s = printf("Sic!!!\n");
+
+#endif
+
+
+
+
+
+
+
 
 
 
