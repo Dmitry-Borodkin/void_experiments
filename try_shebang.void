@@ -1,8 +1,33 @@
-#!/usr/bin/env -S echo a b c
+#!/usr/bin/env -S voidc -s
 
-//  #!/usr/bin/env voidc
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
 
-{   v_import("printf.void"); }
 
-{   printf("Hello!\n"); }
+//---------------------------------------------------------------------
+voidc_argc: &int;
+voidc_argv: &**const char;
+
+optind: &int;
+
+printf: (*const char, ...) ~> int;
+
+
+//---------------------------------------------------------------------
+{
+    printf("voidc_argc: %d\n", voidc_argc);
+
+    printf("voidc_argv: ");
+
+    for (i: &int := 0; i < voidc_argc; ++i)
+    {
+        printf("%s ", voidc_argv[i]);
+    }
+
+    printf("\n");
+
+    printf("optind: %d\n", optind);
+}
+
+
 

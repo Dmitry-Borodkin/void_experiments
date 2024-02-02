@@ -18,19 +18,19 @@
 //====================================================================-
 FILE = v_struct("FILE");
 
-v_popen: (command: *const char, prop: *const char) -> *FILE;
+v_popen: (command: *const char, prop: *const char) ~> *FILE;
 
-v_pclose: (*FILE) -> int;
+v_pclose: (*FILE) ~> int;
 
-fprintf: (stream: *FILE, format: *const char, ...) -> int;
+fprintf: (stream: *FILE, format: *const char, ...) ~> int;
 
-fscanf: (stream: *FILE, format: *const char, ...) -> int;
+fscanf: (stream: *FILE, format: *const char, ...) ~> int;
 
-fputs: (buf: *char, stream: *FILE) -> int;
+fputs: (buf: *char, stream: *FILE) ~> int;
 
-sprintf: (str: *char, format: *const char, ...) -> int;
+sprintf: (str: *char, format: *const char, ...) ~> int;
 
-system: (cmd: *const char) -> int;
+system: (cmd: *const char) ~> int;
 
 
 //---------------------------------------------------------------------
@@ -133,13 +133,13 @@ buffer: &*char := 0;
 
 
 //====================================================================-
-import_path_ft = (*void, *const char) -> void;
+import_path_ft = (*void, *const char) ~> void;
 
-import_paths_iter: (*void, *import_path_ft, *void) -> void;
+import_paths_iter: (*void, *import_path_ft, *void) ~> void;
 
 
 //---------------------------------------------------------------------
-import_path_fun: (*void, path: *const char) -> void
+import_path_fun: (*void, path: *const char) ~> void
 {
     printf("%s\n", path);
 }

@@ -196,11 +196,11 @@ compile_stmt_ccif_list: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t)
         unit_ccif_lr is left-recursive;
 
 
-        unit_ccif_list = l:unit_ccif_lr _ "#else" _ u:unit_defn_list_lr  { mk_unit_ccif(l, 0, u) }
+        unit_ccif_list = l:unit_ccif_lr _ "#else" !ident_cont _ u:unit_defn_list_lr     { mk_unit_ccif(l, 0, u) }
                        / unit_ccif_lr
                        ;
 
-        unit_ccif = l:unit_ccif_list _ "#endif"  { mk_unit_ccif(l, 0, 0) };
+        unit_ccif = l:unit_ccif_list _ "#endif" !ident_cont     { mk_unit_ccif(l, 0, 0) };
 
         unit_defn += unit_ccif;
 
@@ -212,11 +212,11 @@ compile_stmt_ccif_list: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t)
         stmt_ccif_lr is left-recursive;
 
 
-        stmt_ccif_list = l:stmt_ccif_lr _ "#else" _ s:stmt_list  { mk_stmt_ccif(l, 0, s) }
+        stmt_ccif_list = l:stmt_ccif_lr _ "#else" !ident_cont _ s:stmt_list     { mk_stmt_ccif(l, 0, s) }
                        / stmt_ccif_lr
                        ;
 
-        stmt_ccif = l:stmt_ccif_list _ "#endif"  { mk_stmt_ccif(l, 0, 0) };
+        stmt_ccif = l:stmt_ccif_list _ "#endif" !ident_cont     { mk_stmt_ccif(l, 0, 0) };
 
         stmt += stmt_ccif;
     }
