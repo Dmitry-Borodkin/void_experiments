@@ -77,10 +77,7 @@ my_stmt_list_grammar_action: (ret: v_std_any_ptr, aux: *void, any: v_std_any_ptr
         }
         else
         {
-            r = new my_ctx_node_t;
-
-            r->pos  := pos;
-            r->next := root;
+            r = new my_ctx_node_t {{pos, root}};
 
             v_peg_get_grammar(&r->grammar);
 

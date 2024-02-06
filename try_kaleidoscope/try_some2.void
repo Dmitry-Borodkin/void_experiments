@@ -1,9 +1,8 @@
-{   v_import("mainline.void");
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
 
-    v_import("printf.void");
-}
-
-{   v_enable_mainline(); }
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
 
 
 //---------------------------------------------------------------------

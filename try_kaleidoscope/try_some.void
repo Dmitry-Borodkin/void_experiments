@@ -1,9 +1,8 @@
-{   v_import("mainline.void");
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
 
-    v_import("printf.void");
-}
-
-{   v_enable_mainline(); }
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
 
 
 //---------------------------------------------------------------------
@@ -17,9 +16,9 @@ mk_unit_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~>
     }
     else
     {
-        num = v_std_any_get_value(int, any+0);
+        num = v_std_any_get_value(intptr_t, any+0);
 
-        printf("answer = %d\n", num);
+        printf("answer = %zd\n", num);
     }
 
     //- Make "empty" unit...
@@ -56,10 +55,10 @@ mk_binop_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~
 {
     op = v_std_any_get_value(char32_t, any+0);
 
-    lhs = v_std_any_get_value(int, any+1);
-    rhs = v_std_any_get_value(int, any+2);
+    lhs = v_std_any_get_value(intptr_t, any+1);
+    rhs = v_std_any_get_value(intptr_t, any+2);
 
-    num: &int := v_undef();
+    num: &intptr_t := v_undef();
 
     switch(op)
     {
@@ -78,11 +77,11 @@ mk_number_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) 
 {
     sstr = v_std_any_get_pointer(v_std_string_t, any+0);
 
-    atoi: (*const char) ~> int;
+    atoll: (*const char) ~> long_long;
 
-    num = atoi(v_std_string_get(sstr));
+    num = atoll(v_std_string_get(sstr));
 
-    v_std_any_set_value(ret, num);
+    v_std_any_set_value(ret, (num: intptr_t));
 }
 
 
@@ -102,9 +101,9 @@ mk_number_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) 
         mk_number = mk_number_grammar_action;
 
     parsers:
-        unit = _ <e:expr> _ EOL     { mk_unit(e, $1s) }
-             / _ <(!EOL .)*> EOL    { mk_unit($1, $1s) }        //- Sic!
-             / _ !.                 { mk_EOF() }
+        unit = _ <e:expr> _ EOL     { mk_unit(e, $1s) }         //- answer
+             / _ <(!EOL .)*> EOL    { mk_unit($1, $1s) }        //- error
+             / _ !.                 { mk_EOF() }                //- EOF
              ;
 
         //----------------------------------------------------------
@@ -113,18 +112,19 @@ mk_number_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) 
 
         expr is left-recursive;
 
-
-        fact = l:fact _ op:[*/%] _ r:prim   { mk_binop(op, l, r) }
-             / prim;
+        fact = l:fact _ op:[*/%] _ r:unary  { mk_binop(op, l, r) }
+             / unary;
 
         fact is left recursive;
 
+        unary = op:[-+] _ e:prim            { mk_binop(op, 0, e) }
+              / prim;
 
-        prim = '(' _ e:expr _ ')'       { e }
+        prim = '(' _ e:expr _ ')'           { e }
              / number;
 
         //----------------------------------------------------------
-        number = [-+]? [0-9]+       { mk_number($0) };
+        number = [0-9]+                     { mk_number($0) };
 
         //----------------------------------------------------------
         _ = [ \t]*;
@@ -132,7 +132,12 @@ mk_number_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) 
         EOL = '\n' / "\r\n" / '\r' / ';';
     }
 
-    v_peg_set_grammar(gr0);         //- Sic!!!
+    v_peg_set_grammar(gr0);         //- Replace current grammar!
 }
+
+
+0
+
+2*2
 
 
