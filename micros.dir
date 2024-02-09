@@ -59,6 +59,7 @@ try_ctors.void                                                 │try_ctors.void
 ───────────────────────────────────────────────────────────────│
 try_library/                                                   │try_library/micros.dir
                                                                │
+try_string3.void                                               │try_string3.void
 try_string2.void                                               │try_string2.void
                                                                │
 try_10001.void                                                 │try_10001.void

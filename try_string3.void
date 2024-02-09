@@ -1,0 +1,290 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
+
+
+//---------------------------------------------------------------------
+struct string_t
+{
+    _data: *char;
+    _size: size_t;
+
+    union
+    {
+        local: char[16];
+
+        capacity: size_t;
+    };
+};
+
+
+//---------------------------------------------------------------------
+//{   v_debug_print_module(2);
+//
+//    voidc_verify_jit_module_optimized(true);
+//}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_.is_long): (self: &const string_t) ~> bool
+{
+    v_return(self._data != self[2].local);
+}
+
+
+//---------------------------------------------------------------------
+memcpy: (*void, *const void, size_t) ~> *void;
+memset: (*void, int, size_t) ~> *void;
+
+realloc: (*void, size_t) ~> *void;
+
+
+//---------------------------------------------------------------------
+inlinehint
+(v_initialize(_)): (dst: *string_t, count: size_t) ~> void
+{
+    for (i: &size_t := 0; i < count; ++i)
+    {
+        di = dst[i];
+
+        di._data := di[2].local;
+        di._size := 0;
+        di[2].local[0] := 0;
+    }
+}
+
+inlinehint
+(v_terminate(_)): (dst: *string_t, count: size_t) ~> void
+{
+    for (i: &size_t := 0; i < count; ++i)
+    {
+        di = dst[i];
+
+        if (di.is_long) v_free(di._data);
+    }
+}
+
+inlinehint
+(v_copy(_)): (dst: *string_t, src: *const string_t, count: size_t) ~> void
+{
+    for (i: &size_t := 0; i < count; ++i)
+    {
+        di = dst[i];
+        si = src[i];
+
+        if (di.is_long) v_free(di._data);
+
+        di._size := si._size;
+
+        sz1 = si._size + 1;
+
+        if (si.is_long)
+        {
+            di._data := v_malloc(char, sz1);
+
+            di[2].capacity := si._size;
+        }
+        else
+        {
+            di._data := di[2].local;
+        }
+
+        memcpy(di._data, si._data, sz1);
+    }
+}
+
+inlinehint
+(v_move(_)): (dst: *string_t, src: *string_t, count: size_t) ~> void
+{
+    for (i: &size_t := 0; i < count; ++i)
+    {
+        di = dst[i];
+        si = src[i];
+
+        if (di.is_long) v_free(di._data);
+
+        di._size := si._size;
+
+        if (si.is_long)
+        {
+            di._data := si._data;
+
+            di[2].capacity := si[2].capacity;
+        }
+        else
+        {
+            di._data := di[2].local;
+
+            memcpy(di._data, si._data, si._size+1);
+        }
+
+        si._data := si[2].local;
+        si._size := 0;
+        si[2].local[0] := 0;
+    }
+}
+
+
+//---------------------------------------------------------------------
+alwaysinline
+(_.data): (str: &string_t) ~> *char
+{
+    v_return(str._data);
+}
+
+alwaysinline
+(_.size): (str: &const string_t) ~> size_t
+{
+    v_return(str._size);
+}
+
+inlinehint
+(_.capacity): (str: &const string_t) ~> size_t
+{
+    if (str.is_long)  v_return(str[2].capacity);
+    else              v_return(15);
+}
+
+
+//---------------------------------------------------------------------
+inlinehint
+(_.set()): (str: &string_t, s: *const char) ~> void
+{
+    strlen: (*const char) ~> size_t;
+
+    len = strlen(s);
+
+    if (len > str.capacity)
+    {
+        if (str.is_long) v_free(str._data);
+
+        str._data := v_malloc(char, len+1);
+        str[2].capacity := len;
+    }
+
+    str._size := len;
+
+    memcpy(str._data, s, len+1);
+}
+
+inlinehint
+(_.append()): (str: &string_t, s: *const char) ~> void
+{
+    strlen: (*const char) ~> size_t;
+
+    len = strlen(s);
+
+    sz = str._size;
+
+    sz_len = sz + len;
+
+    if (sz_len > str.capacity)
+    {
+        if (str.is_long)
+        {
+            str._data := (realloc(str._data, sz_len+1) : *char);
+        }
+        else
+        {
+            d = v_malloc(char, sz_len+1);
+
+            memcpy(d, str._data, sz);
+
+            str._data := d;
+        }
+
+        str[2].capacity := sz_len;
+    }
+
+    memcpy(str._data+sz, s, len+1);
+
+    str._size := sz_len;
+}
+
+
+
+
+//---------------------------------------------------------------------
+pr_string: (s: string_t) ~> void
+{
+    s = *v_get_object_pointer(s);
+
+    printf("d: %s, s: %zd, c: %zd\n", s.data, s.size, s.capacity);
+}
+
+
+//---------------------------------------------------------------------
+//{   v_debug_print_module(2);
+//
+//    voidc_verify_jit_module_optimized(true);
+//}
+{
+    s: &string_t := {};
+
+    s.set("qwerty____0");
+
+    pr_string(s);
+
+    s.set("qwerty_________1");
+
+    pr_string(s);
+
+    s.set("qwerty_______________________________________________________________________________________2");
+
+    pr_string(s);
+
+    s.set("qwerty___________________3");
+
+    pr_string(s);
+
+    s.set("qwerty_____4");
+
+    pr_string(s);
+
+    s.append("asdfgh_____5");
+
+    pr_string(s);
+}
+
+
+//---------------------------------------------------------------------
+alwaysinline
+(_:=_): (str: &string_t, val: string_t) ~> &string_t
+{
+    v_copy(&str, v_get_object_pointer(val));
+
+    v_return(str);
+}
+
+//---------------------------------------------------------------------
+//{   v_debug_print_module(2);
+//
+//    voidc_verify_jit_module_optimized(true);
+//}
+{   s: &string_t[2] := {};
+
+    s[0].set("1");
+    s[1].set("0");
+
+    pr_string(s[1]);
+
+    for (i: &int := 0; i < 9; ++i)
+    {
+        t: &string_t := s[1];
+
+        t.append(s[0].data);
+
+        s[0] := s[1];
+        s[1] := t;
+
+        pr_string(t);
+    }
+}
+
+
+
+
+
+
