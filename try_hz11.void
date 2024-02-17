@@ -1,0 +1,19 @@
+{   v_local_import("mainline.void");
+
+    v_local_import("llvm-c/Core.void");
+
+    v_enable_mainline();
+
+    //-----------------------------------------------------------------
+    LLVMDisposeMemoryBuffer(voidc_get_unit_buffer());
+    voidc_set_unit_buffer(0);
+}
+
+//---------------------------------------------------------------------
+{
+    printf: (*const char, ...) ~> int;
+
+    printf("Hello world!\n");
+}
+
+

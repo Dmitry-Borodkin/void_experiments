@@ -70,6 +70,9 @@ asc_primes.void                                                │asc_primes.voi
                                                                │
                                                                │
 ───────────────────────────────────────────────────────────────│
+try_hz12.void                                                  │try_hz12.void
+try_hz11.void                                                  │try_hz11.void
+                                                               │
 try_hz10.void                                                  │try_hz10.void
                                                                │
 try_hz9.void                                                   │try_hz9.void
