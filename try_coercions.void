@@ -83,7 +83,26 @@ get_chain_item: (any: *const v_std_any_t) ~> &const coe_chain_item_t
 //---------------------------------------------------------------------
 set_coe_map: (t0: *v_type_t, qmap: v_quark_t, t1: *v_type_t, any: *v_std_any_t) ~> void
 {
-    amap: &*v_std_any_t := v_type_get_property(t0, qmap);
+    apmap: &*v_std_any_t := v_get_property_q(qmap);
+
+    if (!apmap)
+    {
+        map: &v_util_map_t := {};
+
+        v_make_map(&map);
+
+        a: &v_std_any_t := {};
+
+        v_std_any_set_pointer(&a, &map);
+
+        v_add_property_q(qmap, &a);
+
+        apmap := v_get_property_q(qmap);
+    }
+
+    pmap = v_std_any_get_pointer(v_util_map_t, apmap);
+
+    amap: &*v_std_any_t := v_map_find(pmap, (t0: intptr_t));
 
     if (!amap)
     {
@@ -103,9 +122,9 @@ set_coe_map: (t0: *v_type_t, qmap: v_quark_t, t1: *v_type_t, any: *v_std_any_t) 
 
         v_std_any_set_pointer(&a, &map);
 
-        v_type_set_property(t0, qmap, &a);
+        v_map_insert(pmap, pmap, (t0: intptr_t), &a);
 
-        amap := v_type_get_property(t0, qmap);
+        amap := v_map_find(pmap, (t0: intptr_t));
     }
 
     map = v_std_any_get_pointer(v_util_map_t, amap);
@@ -115,7 +134,13 @@ set_coe_map: (t0: *v_type_t, qmap: v_quark_t, t1: *v_type_t, any: *v_std_any_t) 
 
 get_coe_map: (t0: *v_type_t, qmap: v_quark_t, t1: *v_type_t) ~> *v_std_any_t
 {
-    amap = v_type_get_property(t0, qmap);
+    apmap: &*v_std_any_t := v_get_property_q(qmap);
+
+    if (!apmap) v_return(0);
+
+    pmap = v_std_any_get_pointer(v_util_map_t, apmap);
+
+    amap = v_map_find(pmap, (t0: intptr_t));
 
     if (!amap)  v_return(0);
 

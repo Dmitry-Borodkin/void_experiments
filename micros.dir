@@ -6,9 +6,11 @@ try_coercions.void                                             │try_coercions.
                                                                │
 try_introspect6.void    ... constants ...                      │try_introspect6.void | LC_ALL=C sort
                                                                │
-try_introspect5.void    ... type properties ...                │try_introspect5.void
+try_introspect5.void    ... overloads ?!?!?!?!?!?! ...         │try_introspect5.void
                                                                │
 try_handlers.void                                              │try_handlers.void
+                                                               │
+try_expr_stmt.void                                             │try_expr_stmt.void
                                                                │
                                                                │
 ───────────────────────────────────────────────────────────────│
@@ -36,6 +38,8 @@ try_mandel.void                                                │try_mandel.voi
 try_clifford.void                                              │try_clifford.void
                                                                │
 try_opengl.void                                                │try_opengl.void
+                                                               │
+try_gsl.void                                                   │try_gsl.void
                                                                │
                                                                │
 ───────────────────────────────────────────────────────────────│
