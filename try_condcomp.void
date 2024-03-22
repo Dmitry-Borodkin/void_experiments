@@ -89,6 +89,9 @@ mk_stmt_ccif_grammar_action: (ret: v_std_any_ptr, *void, any: v_std_any_ptr, siz
 //private
 compile_unit_ccif_list: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
+//printf("compile_unit_ccif_list start\n");
+//defer printf("compile_unit_ccif_list stop\n");
+
     list = (self: *v_ast_generic_list_t);
 
     size = v_list_get_size(list);
@@ -243,27 +246,27 @@ compile_stmt_ccif_list: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t)
 
     #if (a == 0)
 
-        printf("a: %d\n", a);
+        printf("0 a: %d\n", a);
 
     #elif (a == 1)
 
-        printf("a: %d\n", a);
+        printf("1 a: %d\n", a);
 
     #elif (a == 2)
 
-        printf("a: %d\n", a);
+        printf("2 a: %d\n", a);
 
     #elif (a == 3)
 
-        printf("a: %d\n", a);
+        printf("3 a: %d\n", a);
 
     #elif (a == 4)
 
-        printf("a: %d\n", a);
+        printf("4 a: %d\n", a);
 
     #else
 
-        printf("a: %d\n", a);
+        printf("? a: %d\n", a);
 
     #endif
 
@@ -301,11 +304,11 @@ a = 3;
 
 #else
 
-    b = printf("a: %d\n", a);
+    b = printf("? a: %d\n", a);
 
 #endif
 
-h1 = printf("Here 1\n");
+h1 = printf("Here 1, b: %d\n", b);
 
 
 //---------------------------------------------------------------------

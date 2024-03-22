@@ -55,7 +55,7 @@
         fscanf(p, "%500s", buffer);
     }
 
-    if (v_find_constant("_WIN32", 0, 0))
+    #if (v_defined(_WIN32))
     {
         cmd = buffer + 512;
 
@@ -66,6 +66,7 @@
 
         fscanf(p, "%1000s", buffer);
     }
+    #endif
 
     //-----------------------------------------------------------------
     {   p = v_popen("bash", "w");

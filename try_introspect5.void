@@ -13,7 +13,7 @@
 //{ v_debug_print_module(99); }
 
 //====================================================================-
-FILE = v_struct("FILE");
+struct FILE;
 
 v_popen: (command: *const char, prop: *const char) ~> *FILE;
 
@@ -100,14 +100,20 @@ types_iter(type_ft fun, void *aux)
     hctx->types_iter(fun, aux);
 }
 
-typedef void (*prop_ft)(void *aux, v_quark_t, const std::any *);
+typedef void (*overload_ft)(void *aux, v_quark_t, v_type_t *, v_quark_t);
 
 void
-type_props_iter(prop_ft fun, void *aux, const v_type_t *t)
+overloads_iter(overload_ft fun, void *aux)
 {
-    for (auto &it : t->properties)
+    auto *gctx = voidc_global_ctx_t::target;
+    auto *lctx = gctx->local_ctx;
+
+    for (auto &i : lctx->decls.overloads)
     {
-        fun(aux, it.first, &it.second);
+        for (auto &j : i.second)
+        {
+            fun(aux, i.first, j.first, j.second);
+        }
     }
 }
 
@@ -182,18 +188,48 @@ type_ft = (*void, *const v_type_t) ~> void;
 
 types_iter: (*type_ft, *void) ~> void;
 
-prop_ft = (*void, v_quark_t, *const v_std_any_t) ~> void;
+overload_ft = (*void, v_quark_t, *const v_type_t, v_quark_t) ~> void;
 
-type_props_iter: (*prop_ft, *void, *const v_type_t) ~> void;
+overloads_iter: (*overload_ft, *void) ~> void;
 
 
 //---------------------------------------------------------------------
-type_prop_fun: (*void, q: v_quark_t, a: *const v_std_any_t) ~> void
-{
-    printf("    %s\n", v_quark_to_string(q));
+idx: &v_util_map_t := {};
 
+{ v_make_map(&idx); }
+
+
+//---------------------------------------------------------------------
+overload_fun: (*void, q: v_quark_t, t: *const v_type_t, v_quark_t) ~> void
+{
+    alst: &*v_std_any_t := v_map_find(&idx, (t: intptr_t));
+
+    atmp: &v_std_any_t := {};
+
+    if (!alst)
+    {
+        lst: &v_util_list_t := {};
+
+        v_make_list_nil(&lst);
+
+        v_std_any_set_pointer(&atmp, &lst);
+
+        v_map_insert(&idx, &idx, (t: intptr_t), &atmp);
+
+        alst := v_map_find(&idx, (t: intptr_t));
+    }
+
+    v_std_any_set_value(&atmp, q);
+
+    plst = v_std_any_get_pointer(v_util_list_t, alst);
+
+    v_list_append(plst, plst, &atmp);
 }
 
+//---------------------------------------------------------------------
+{
+    overloads_iter(overload_fun, 0);
+}
 
 //---------------------------------------------------------------------
 type_fun: (*void, t: *const v_type_t) ~> void
@@ -204,7 +240,22 @@ type_fun: (*void, t: *const v_type_t) ~> void
 
     printf("%s\n", v_std_string_get(&sstr));
 
-    type_props_iter(type_prop_fun, 0, t);
+    alst: &*v_std_any_t := v_map_find(&idx, (t: intptr_t));
+
+    if (!alst)  v_return();
+
+    plst = v_std_any_get_pointer(v_util_list_t, alst);
+
+    sz = v_list_get_size(plst);
+
+    for (i: &int := 0; i < sz; ++i)
+    {
+        a = v_list_get_item(plst, i);
+
+        q = v_std_any_get_value(v_quark_t, a);
+
+        printf("    %s\n", v_quark_to_string(q));
+    }
 }
 
 
