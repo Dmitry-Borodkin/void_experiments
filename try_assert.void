@@ -10,6 +10,16 @@
 
 
 //---------------------------------------------------------------------
+{
+    q_ref = v_reference_type(v_quark_t, 0);
+
+    q = v_quark_ptr_from_string;
+
+    v_add_symbol("cc_message_q", q_ref, q("cc_message"));
+}
+
+
+//---------------------------------------------------------------------
 //- <assert.h>
 //---------------------------------------------------------------------
 #if (v_defined(_WIN32))
@@ -114,97 +124,127 @@ v_assert_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
     v_ast_accept_visitor((stmt+0: *v_ast_base_t), vis);
 }
 
+{   v_add_intrinsic("v_assert", v_assert_intrinsic, 0);
+}
+
+
 //---------------------------------------------------------------------
-v_static_assert_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+mk_cc_message_grammar_action: (ret: v_std_any_ptr, *void, any: v_std_any_ptr, size_t) ~> void
 {
-    if (v_find_constant("NDEBUG", 0, 0))   v_return();
+    tstr = v_std_any_get_pointer(v_std_string_t,    any+0);
+    elst = v_std_any_get_pointer(v_ast_expr_list_t, any+1);
 
-    call = (self: *v_ast_expr_t);
+    expr: &v_ast_expr_t := {};
 
-    args = v_ast_expr_call_get_arg_list(call);
+    v_ast_make_expr_string(&expr, v_std_string_get(tstr));
 
-    arg0 = v_list_get_item(args, 0);
+    list: &v_ast_generic_list_t := {};
 
-    len: &size_t := 0;
+    v_make_list(&list, cc_message_q, (&expr: *v_ast_base_t));
 
-    module = v_get_module();
+    v_list_append(&list, &list, (elst: *v_ast_base_t));
 
-    filename = LLVMGetSourceFileName(module, &len);
+    kind = v_std_any_get_value(intptr_t, any+2);
 
-//  printf("filename: %s\n", filename);
+    if (kind) v_std_any_set_pointer(ret, (&list : *v_ast_stmt_t));      //- stmt
+    else      v_std_any_set_pointer(ret, (&list : *v_ast_base_t));      //- unit_defn
+}
 
-#if (!v_defined(_WIN32))
 
-    builder = v_target_get_builder();
+//---------------------------------------------------------------------
+//private
+compile_cc_message: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    list = (self: *v_ast_generic_list_t);
 
-    function: &*const char := "";
+    etag = (v_list_get_item(list, 0) : *v_ast_expr_t);
 
-    if (cur_b = LLVMGetInsertBlock(builder))
+    tag = v_ast_expr_string_get_string(etag);
+
+    tag = (tag[0] : char32_t);
+
+    stag: &*const char := "?";
+
+    switch(tag)
     {
-        fun = LLVMGetBasicBlockParent(cur_b);
-
-        function := LLVMGetValueName2(fun, &len);
+    case 'e':   stag := "Error";    v_break();
+    case 'w':   stag := "Warning";  v_break();
+    case 'n':   stag := "Note";     v_break();
     }
 
-//  printf("function: %s\n", function);
+    elst = (v_list_get_item(list, 1) : *v_ast_expr_list_t);
 
-#endif
+    str = v_ast_expr_string_get_string(v_list_get_item(elst, 0));      //- Sic!
 
-    line:   &size_t := v_undef();
-    column: &size_t := v_undef();
+    printf("%s: %s\n", stag, str);
 
-    ps = v_std_any_get_value(size_t, v_ast_get_property((arg0: *v_ast_base_t), v_quark_from_string("pos_start")));
-    pe = v_std_any_get_value(size_t, v_ast_get_property((arg0: *v_ast_base_t), v_quark_from_string("pos_end")));
+    if (tag == 'e')
+    {
+        abort: () ~> void;
 
-    v_peg_get_line_column(ps, line, column);
-
-//  printf("location: (%zd, %zd)\n", line+1, column+1);
-
-    sstr: &v_std_string_t := {};
-
-    v_peg_take_string(&sstr, ps, pe);
-
-//  printf("assertion: (%s)\n", v_std_string_get(&sstr));
-
-    v_set_result_type(UNREFERENCE_TAG);
-    v_set_result_value(0);
-
-    v_ast_accept_visitor((arg0: *v_ast_base_t), vis);
-
-    v = v_get_result_value();
-
-    v = LLVMBuildIsNotNull(builder, v, "");
-
-    if (LLVMConstIntGetZExtValue(v))  v_return();
-
-#if (v_defined(_WIN32))
-
-    _assert(v_std_string_get(&sstr), filename, (line+1 : unsigned));
-
-#else
-
-    __assert_fail(v_std_string_get(&sstr), filename, (line+1 : unsigned), function);
-
-#endif
-}
-
-{   v_add_intrinsic("v_assert",        v_assert_intrinsic,        0);
-    v_add_intrinsic("v_static_assert", v_static_assert_intrinsic, 0);
+        abort();
+    }
 }
 
 
-//---------------------------------------------------------------------
+//=====================================================================
+{
+    gr0: &v_peg_grammar_t := {};    gr0 = &gr0;
+
+    v_peg_get_grammar(gr0);
+
+    grammar gr0
+    {
+    actions:
+        mk_cc_message = mk_cc_message_grammar_action;
+
+    parsers:
+        unit_defn += '#' t:("error"/"warning"/"note") _'('_ l:expr_list _')'    { mk_cc_message(t, l, 0) };
+        stmt      += '#' t:("error"/"warning"/"note") _'('_ l:expr_list _')'    { mk_cc_message(t, l, 1) };
+    }
+
+    v_peg_set_grammar(gr0);
+}
+
+{
+    vis = v_get_compiler();
+
+    voidc_visitor_set_void_method(vis, vis, cc_message_q, compile_cc_message, 0);
+}
+
+
+//=====================================================================
 {   v_debug_print_module(2);
 
     voidc_verify_jit_module_optimized(true);
 }
 {
     v_assert(2 * 2 == 4);
-//  v_assert(2 * 2 == 5  &&  "Dynamic!");
+//  v_assert(2 * 2 == 5  &&  "Hello!");
 
-    v_static_assert(2 * 2 == 4);
-//  v_static_assert(2 * 2 == 5  &&  "Static!");
 }
+
+
+//---------------------------------------------------------------------
+
+
+#note ("Hello 0")
+
+
+{
+    printf("aaaaaa\n");
+
+#note ("Hello 1")
+
+    printf("bbbbbb\n");
+}
+
+
+#warning ("just test...")
+
+
+#error ("AAAAAAAAAAAAAAAAAAAAA!!!")
+
 
 
 
