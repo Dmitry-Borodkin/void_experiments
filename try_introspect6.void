@@ -83,7 +83,7 @@ constant_types_iter(constant_type_ft fun, void *aux)
         fscanf(p, "%500s", buffer);
     }
 
-    if (v_find_constant("_WIN32", 0, 0))
+#if (v_defined(_WIN32))
     {
         cmd = buffer + 512;
 
@@ -94,6 +94,7 @@ constant_types_iter(constant_type_ft fun, void *aux)
 
         fscanf(p, "%1000s", buffer);
     }
+#endif
 
     //-----------------------------------------------------------------
     {   p = v_popen("bash", "w");
@@ -101,16 +102,21 @@ constant_types_iter(constant_type_ft fun, void *aux)
 
         fprintf(p, "clang -x c++ -c -fPIC");
 
-        if (v_find_constant("NDEBUG", 0, 0))  fprintf(p, " -O3 -DNDEBUG");
+#if (v_defined(NDEBUG))
+
+        fprintf(p, " -O3 -DNDEBUG");
+
+#endif
 
         fprintf(p, " $(llvm-config --cxxflags) -std=c++17");
 
         fprintf(p, " -I%s", v_std_string_get(&voidc_include_path));
 
-        if (v_find_constant("_WIN32", 0, 0))
-        {
-            fprintf(p, " -IC:/Tools/include -frtti -fcxx-exceptions");
-        }
+#if (v_defined(_WIN32))
+
+        fprintf(p, " -IC:/Tools/include -frtti -fcxx-exceptions");
+
+#endif
 
         fprintf(p, " -o %s", buffer);
 
