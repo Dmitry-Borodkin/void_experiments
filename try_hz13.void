@@ -1,0 +1,76 @@
+{   v_import("mainline.void");
+
+    v_import("printf.void");
+}
+
+{   v_enable_mainline();
+}
+
+//---------------------------------------------------------------------
+{
+    printf("printf: %p, %p\n", printf, v_find_symbol_value("printf"));
+
+    sin: (float(64)) ~> float(64);
+
+    printf("sin: %p\n", v_find_symbol_value("sin"));
+
+}
+
+
+//---------------------------------------------------------------------
+my_print: (aux: *void) ~> void
+{
+    printf("[%s]\n", (aux: *const char));
+}
+
+//---------------------------------------------------------------------
+some_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    str = v_ast_expr_string_get_string(v_list_get_item(args, 0));
+
+    v_add_local_cleaner(my_print, str);
+}
+
+pr_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    str = v_ast_expr_string_get_string(v_list_get_item(args, 0));
+
+    printf(str);
+}
+
+{   v_add_intrinsic("some", some_intrinsic, 0);
+    v_add_intrinsic("pr", pr_intrinsic, 0);
+}
+
+//---------------------------------------------------------------------
+{
+    some("Hello");
+
+    some("Hello again");
+
+    {
+        some("hello");
+
+        pr("hi\n");
+
+        some("hello again");
+
+    }
+
+    some("Hello one more time");
+
+    pr("Hi\n");
+}
+
+
+
+
+
+
+
+
+

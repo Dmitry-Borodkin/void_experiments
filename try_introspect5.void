@@ -58,18 +58,23 @@ public:
     void
     types_iter(type_ft fun, void *aux)
     {
-        fun(aux, _void_type.get());
-        fun(aux, _f16_type.get());
-        fun(aux, _f32_type.get());
-        fun(aux, _f64_type.get());
-        fun(aux, _f128_type.get());
+        auto _fun = [this, fun, aux](const v_type_t *t)
+        {
+            if (t)  fun(aux, t);
+        };
 
-        for (auto &it : int_types)          fun(aux, it.second.get());
-        for (auto &it : uint_types)         fun(aux, it.second.get());
-        for (auto &it : function_types)     fun(aux, it.second.get());
-        for (auto &it : pointer_types)      fun(aux, it.second.get());
-        for (auto &it : reference_types)    fun(aux, it.second.get());
-        for (auto &it : named_struct_types) fun(aux, it.second.get());
+        _fun(_void_type.get());
+        _fun(_f16_type.get());
+        _fun(_f32_type.get());
+        _fun(_f64_type.get());
+        _fun(_f128_type.get());
+
+        for (auto &it : int_types)          _fun(it.second.get());
+        for (auto &it : uint_types)         _fun(it.second.get());
+        for (auto &it : function_types)     _fun(it.second.get());
+        for (auto &it : pointer_types)      _fun(it.second.get());
+        for (auto &it : reference_types)    _fun(it.second.get());
+        for (auto &it : named_struct_types) _fun(it.second.get());
 
         for (auto &it : anon_struct_types)
         {
@@ -77,12 +82,12 @@ public:
 
             if (st->name()) continue;
 
-            fun(aux, st);
+            _fun(st);
         }
 
-        for (auto &it : array_types)        fun(aux, it.second.get());
-        for (auto &it : vector_types)       fun(aux, it.second.get());
-        for (auto &it : svector_types)      fun(aux, it.second.get());
+        for (auto &it : array_types)        _fun(it.second.get());
+        for (auto &it : vector_types)       _fun(it.second.get());
+        for (auto &it : svector_types)      _fun(it.second.get());
     }
 
 };
@@ -233,11 +238,6 @@ overload_fun: (*void, q: v_quark_t, t: *const v_type_t, v_quark_t) ~> void
 }
 
 //---------------------------------------------------------------------
-{
-    overloads_iter(overload_fun, 0);
-}
-
-//---------------------------------------------------------------------
 type_fun: (*void, t: *const v_type_t) ~> void
 {
     sstr: &v_std_string_t := {};
@@ -267,7 +267,26 @@ type_fun: (*void, t: *const v_type_t) ~> void
 
 //=====================================================================
 {
+    filename = v_target_local_ctx_get_filename(v_target_get_voidc_local_ctx());
+
+    gctx = v_target_create_global_ctx(int.size, long.size, intptr_t.size);
+    lctx = v_target_create_local_ctx(filename, gctx);
+
+    v_target_set_global_ctx(gctx);
+
+    //----------------------------------------------------------
+    v_enable_mainline();
+
+    //----------------------------------------------------------
+    overloads_iter(overload_fun, 0);
+
     types_iter(type_fun, 0);
+
+    //----------------------------------------------------------
+    v_target_set_global_ctx(v_target_get_voidc_global_ctx());
+
+    v_target_destroy_local_ctx(lctx);
+    v_target_destroy_global_ctx(gctx);
 }
 
 

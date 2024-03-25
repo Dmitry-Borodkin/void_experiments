@@ -1,12 +1,11 @@
-{   v_import("level-00");
-    v_import("level-01");
+{   v_import("mainline.void");
 
     v_import("llvm-c/Core.void");
 
     v_import("printf.void");
 }
 
-{   v_enable_level_01(); }
+{   v_enable_mainline(); }
 
 
 //---------------------------------------------------------------------
@@ -30,7 +29,7 @@ voidc_argv: &**char;
 
 
 //---------------------------------------------------------------------
-strlen: (*const char) -> int;
+strlen: (*const char) ~> int;
 
 {
     s = "0123456789";
@@ -57,7 +56,7 @@ strlen: (*const char) -> int;
 }
 
 //---------------------------------------------------------------------
-mk_str_literal_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_t) -> void
+mk_str_literal_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     call = (self: *v_ast_expr_t);
 
@@ -69,13 +68,11 @@ mk_str_literal_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_
 
     value = (v_find_symbol_value(name) : *char);
 
-    expr = v_alloca(v_ast_expr_t);
-    v_initialize(expr);
-    defer v_terminate(expr);
+    expr: &v_ast_expr_t := {};
 
-    v_ast_make_expr_string(expr, value);
+    v_ast_make_expr_string(&expr, value);
 
-    v_ast_accept_visitor((expr : v_ast_base_ptr), vis);
+    v_ast_accept_visitor((&expr : v_ast_base_ptr), vis);
 }
 
 {   v_add_intrinsic("mk_str_literal", mk_str_literal_intrinsic, 0);
@@ -83,7 +80,7 @@ mk_str_literal_intrinsic: (vis: *voidc_visitor_t, aux: *void, self: *v_ast_base_
 
 
 //---------------------------------------------------------------------
-strdup: (*const char) -> *char;
+strdup: (*const char) ~> *char;
 
 {   s = strdup("QWERTY");
 
