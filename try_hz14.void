@@ -1,0 +1,38 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+
+printf: (*const char, ...) ~> int;
+
+//---------------------------------------------------------------------
+double = float(64);
+
+log2: (double) ~> double;
+
+round: (double) ~> double;
+fabs:  (double) ~> double;
+
+//---------------------------------------------------------------------
+{
+    D: &double[3] := { log2(3), log2(5), log2(7) };
+
+    for (n: &int := 2; n < 1000; ++n)
+    {
+        printf("%d:", n);
+
+        for (i: &int := 0; i < 3; ++i)
+        {
+            Dn = D[i] * n;
+
+            rDn = round(Dn);
+
+            dn = fabs((Dn - rDn) / n);
+
+            printf("  %g", dn);
+        }
+
+        printf("\n");
+    }
+
+}
+
+

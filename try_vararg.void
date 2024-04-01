@@ -1,16 +1,11 @@
-{   v_import("level-00");
-    v_import("level-01");
-    v_import("level-02");
-    v_import("level-03");
+{   v_import("mainline.void");
 
     v_import("llvm-c/Core.void");
 
     v_import("printf.void");
 }
 
-{   v_enable_level_01();
-    v_enable_level_02();
-    v_enable_level_03();
+{   v_enable_mainline();
 }
 
 
@@ -29,7 +24,7 @@ struct va_list { (*void)[3]; };
 }
 
 //---------------------------------------------------------------------
-va_arg_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> void
+va_arg_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     call = (self: *v_ast_expr_t);
 
@@ -72,7 +67,7 @@ va_arg_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> void
 //---------------------------------------------------------------------
 //{ v_debug_print_module(1); }
 
-test_fun: (n: int, ...) -> void
+test_fun: (n: int, ...) ~> void
 {
     ap: &va_list := v_undef();
 

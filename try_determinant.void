@@ -1,21 +1,16 @@
-{   v_import("level-00");
-    v_import("level-01");
-    v_import("level-02");
-    v_import("level-03");
+{   v_import("mainline.void");
 
     v_import("llvm-c/Core.void");
 
     v_import("printf.void");
 }
 
-{   v_enable_level_01();
-    v_enable_level_02();
-    v_enable_level_03();
+{   v_enable_mainline();
 }
 
 
 //---------------------------------------------------------------------
-det_helper: (N: int, v: **LLVMValueRef) -> LLVMValueRef
+det_helper: (N: int, v: **LLVMValueRef) ~> LLVMValueRef
 {
     if (N == 1) v_return(v[0][0]);
 
@@ -27,15 +22,13 @@ det_helper: (N: int, v: **LLVMValueRef) -> LLVMValueRef
 
     for (i: &int := 0; i < N; ++i)
     {
-        k: &int := 0;
+        {   k: &int := 0;
 
-        for (j: &int := 0; j < N; ++j)
-        {
-            if (j != i)
+            for (j: &int := 0; j < N; ++j)
             {
-                w[k] := v[j] + 1;
+                if (j == i) v_continue();
 
-                ++k;
+                w[k++] := v[j] + 1;
             }
         }
 
@@ -46,12 +39,12 @@ det_helper: (N: int, v: **LLVMValueRef) -> LLVMValueRef
         if (i == 0)
         {
             r := p;
+
+            v_continue();
         }
-        else
-        {
-            if (i & 1)  r := LLVMBuildFSub(builder, r, p, "");
-            else        r := LLVMBuildFAdd(builder, r, p, "");
-        }
+
+        if (i & 1)  r := LLVMBuildFSub(builder, r, p, "");
+        else        r := LLVMBuildFAdd(builder, r, p, "");
     }
 
     v_return(r);
@@ -59,7 +52,7 @@ det_helper: (N: int, v: **LLVMValueRef) -> LLVMValueRef
 
 
 //---------------------------------------------------------------------
-determinant_intrinsic: (vis: *voidc_visitor_t, *void, self: *v_ast_base_t) -> void
+determinant_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     call = (self: *v_ast_expr_t);
 
