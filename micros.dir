@@ -13,6 +13,7 @@ try_handlers.void                                              │try_handlers.v
 try_expr_stmt.void                                             │try_expr_stmt.void
                                                                │
 try_handlers2.void                                             │try_handlers2.void
+try_handlers3.void                                             │try_handlers3.void
                                                                │
                                                                │
 ───────────────────────────────────────────────────────────────│

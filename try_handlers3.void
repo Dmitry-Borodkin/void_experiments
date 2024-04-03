@@ -1,11 +1,5 @@
-{   v_import("mainline.void");
-
-//  v_import("llvm-c/Core.void");
-}
-
-{   v_enable_mainline();
-}
-
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
 
 //---------------------------------------------------------------------
 printf: (*const char, ...) ~> int;
@@ -107,19 +101,17 @@ handle_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> vo
 
 
 //=====================================================================
-voidc_internal_add_handler: (name: *const char, fname: *const char, fun: *void, aux: *void) ~> void
+voidc_internal_make_handler: (hname: *const char, fname: *const char, fun: *void, aux: *void) ~> void
 {
     sstr: &v_std_string_t := {};
 
     v_std_string_set(&sstr, "voidc.handler.");
 
-    v_std_string_append(&sstr, name);
+    v_std_string_append(&sstr, hname);
 
     quark = *v_quark_ptr_from_string(v_std_string_get(&sstr));
 
     v_add_intrinsic_q(quark, fun, aux);
-
-    if (v_get_intrinsic(name, 0))   v_return();
 
     ftype = v_find_symbol_type(fname);
 
@@ -129,84 +121,87 @@ voidc_internal_add_handler: (name: *const char, fname: *const char, fun: *void, 
 
     v_std_string_set(&sstr, "voidc.handler_qname.");
 
-    v_std_string_append(&sstr, name);
+    v_std_string_append(&sstr, hname);
 
     hqname = v_quark_from_string(v_std_string_get(&sstr));
 
     c_arg = v_type_generic_cons_arg(hqname, &t_arg, 1);
 
-    v_add_intrinsic(name, handle_intrinsic, c_arg);
+    v_add_intrinsic(hname, handle_intrinsic, c_arg);
 
-    if (!v_find_symbol_type_q(hqname))
-    {
-        q_ref = v_reference_type(v_quark_t, 0);
+    q_ref = v_reference_type(v_quark_t, 0);
 
-        v_add_symbol_q(hqname, q_ref, &quark);
-    }
+    v_add_symbol_q(hqname, q_ref, &quark);
 }
 
 //---------------------------------------------------------------------
-v_add_handler_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+v_make_handler_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
 
-    qname = v_ast_expr_identifier_get_name(v_list_get_item(args, 0));
+    hname = v_ast_expr_identifier_get_name(v_list_get_item(args, 0));
 
     fun_expr = v_list_get_item(args, 1);
+    aux_expr = v_list_get_item(args, 2);
 
     fname = v_ast_expr_identifier_get_name(fun_expr);
 
-    aux_expr = v_list_get_item(args, 2);
-
     expr: &v_ast_expr_t := {};
 
-    v_ast_make_expr_string(&expr, qname);
+    v_ast_make_expr_string(&expr, hname);
 
-    list: &v_ast_expr_list_t := {};
+    list: &v_ast_expr_list_t[2] := {};
 
-    v_make_list(&list, &expr);
+    v_make_list(list+0, &expr);
 
     v_ast_make_expr_string(&expr, fname);
 
-    v_list_append(&list, &list, &expr);
+    v_list_append(list+0, list+0, &expr);
 
-    v_list_append(&list, &list, fun_expr);
-    v_list_append(&list, &list, aux_expr);
+    v_list_append(list+0, list+0, fun_expr);
 
-    v_ast_make_expr_identifier(&expr, "voidc_internal_add_handler");
+    v_make_list(list+1, aux_expr);
 
-    v_ast_make_expr_call(&expr, &expr, &list);
+    void_ptr = v_pointer_type(void, 0);         //- Sic!
+
+    v_ast_make_expr_compiled(&expr, v_static_type_t, (void_ptr: LLVMValueRef));
+
+    v_list_append(list+1, list+1, &expr);
+
+    v_ast_make_expr_identifier(&expr, "v_cast");
+
+    v_ast_make_expr_call(&expr, &expr, list+1);
+
+    v_list_append(list+0, list+0, &expr);
+
+    v_ast_make_expr_identifier(&expr, "voidc_internal_make_handler");
+
+    v_ast_make_expr_call(&expr, &expr, list+0);
 
     v_ast_accept_visitor((&expr: *v_ast_base_t), vis);
 }
 
 
 //---------------------------------------------------------------------
-voidc_internal_get_handler: (qname: *const char, aux: **void) ~> *void
-{
-    sstr: &v_std_string_t := {};
-
-    v_std_string_set(&sstr, "voidc.handler.");
-
-    v_std_string_append(&sstr, qname);
-
-    quark = v_quark_from_string(v_std_string_get(&sstr));
-
-    v_return(v_get_intrinsic_q(quark, aux));
-}
-
-//---------------------------------------------------------------------
 v_get_handler_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
 
-    qname = v_ast_expr_identifier_get_name(v_list_get_item(args, 0));
+    hname = v_ast_expr_identifier_get_name(v_list_get_item(args, 0));
 
     aux_ptr_expr = v_list_get_item(args, 1);
 
+    void_tg_arg: &*void := v_undef();
+
+    v_get_intrinsic(hname, &void_tg_arg);
+
+    tg_arg = (void_tg_arg: *v_type_generic_arg_t);
+
+    hqname = v_type_generic_arg_cons_get_cons(tg_arg);
+
     expr: &v_ast_expr_t[2] := {};
 
-    v_ast_make_expr_string(expr+0, qname);
+    v_ast_make_expr_identifier(expr+0, v_quark_to_string(hqname));
 
     list: &v_ast_expr_list_t := {};
 
@@ -225,15 +220,9 @@ v_get_handler_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> 
 
     v_make_list(&list, expr, 2);
 
-    v_ast_make_expr_identifier(expr+0, "voidc_internal_get_handler");
+    v_ast_make_expr_identifier(expr+0, "v_get_intrinsic_q");
 
     v_ast_make_expr_call(expr+0, expr+0, &list);
-
-    void_tg_arg: &*void := v_undef();
-
-    v_get_intrinsic(qname, &void_tg_arg);
-
-    tg_arg = (void_tg_arg: *v_type_generic_arg_t);
 
     ftype = v_type_generic_arg_type_get_type(v_type_generic_arg_cons_get_args(tg_arg)[0]);
 
@@ -248,19 +237,70 @@ v_get_handler_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> 
     v_ast_accept_visitor((expr+0: *v_ast_base_t), vis);
 }
 
+//---------------------------------------------------------------------
+v_set_handler_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
 
-{   v_add_intrinsic("v_add_handler", v_add_handler_intrinsic, 0);
-    v_add_intrinsic("v_get_handler", v_get_handler_intrinsic, 0);
-}
+    hname = v_ast_expr_identifier_get_name(v_list_get_item(args, 0));
 
+    fun_expr = v_list_get_item(args, 1);
+    aux_expr = v_list_get_item(args, 2);
 
-//=====================================================================
-{   v_add_handler(some, printf, "some: %s %s\n");
+    void_tg_arg: &*void := v_undef();
+
+    v_get_intrinsic(hname, &void_tg_arg);
+
+    tg_arg = (void_tg_arg: *v_type_generic_arg_t);
+
+    hqname = v_type_generic_arg_cons_get_cons(tg_arg);
+
+    expr: &v_ast_expr_t := {};
+
+    v_ast_make_expr_identifier(&expr, v_quark_to_string(hqname));
+
+    list: &v_ast_expr_list_t[2] := {};
+
+    v_make_list(list+0, &expr);
+
+    v_list_append(list+0, list+0, fun_expr);
+
+    v_make_list(list+1, aux_expr);
+
+    void_ptr = v_pointer_type(void, 0);         //- Sic!
+
+    v_ast_make_expr_compiled(&expr, v_static_type_t, (void_ptr: LLVMValueRef));
+
+    v_list_append(list+1, list+1, &expr);
+
+    v_ast_make_expr_identifier(&expr, "v_cast");
+
+    v_ast_make_expr_call(&expr, &expr, list+1);
+
+    v_list_append(list+0, list+0, &expr);
+
+    v_ast_make_expr_identifier(&expr, "v_add_intrinsic_q");
+
+    v_ast_make_expr_call(&expr, &expr, list+0);
+
+    v_ast_accept_visitor((&expr: *v_ast_base_t), vis);
 }
 
 
 //---------------------------------------------------------------------
-//{   v_debug_print_module(2);
+{   v_add_intrinsic("v_make_handler", v_make_handler_intrinsic, 0);
+    v_add_intrinsic("v_get_handler",  v_get_handler_intrinsic,  0);
+    v_add_intrinsic("v_set_handler",  v_set_handler_intrinsic,  0);
+}
+
+
+//=====================================================================
+{   v_make_handler(some, printf, "some: %s %s\n");
+}
+
+
+//---------------------------------------------------------------------
+//{   v_debug_print_module(99);
 //    voidc_verify_jit_module_optimized(true);
 //}
 {
@@ -275,7 +315,7 @@ handler_1: (aux: *void, m: int) ~> void
     printf("handler_1: %d, %d\n", (aux: int), m);
 }
 
-{   v_add_handler(some2, handler_1, (77: *void));
+{   v_make_handler(some2, handler_1, 77);
 }
 
 //---------------------------------------------------------------------
@@ -308,13 +348,23 @@ handler_1_ctx: &handler_1_ctx_t := v_undef();
 
 {   handler_1_ctx.fun := v_get_handler(some2, &handler_1_ctx.aux);
 
-    v_add_handler(some2, handler_2, &handler_1_ctx);
+    v_set_handler(some2, handler_2, &handler_1_ctx);
 }
 
 //---------------------------------------------------------------------
 {
     some2(99);
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
