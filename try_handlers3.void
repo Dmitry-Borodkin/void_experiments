@@ -6,6 +6,17 @@ printf: (*const char, ...) ~> int;
 
 
 //---------------------------------------------------------------------
+{   v_assert(v_target_get_global_ctx() == v_target_get_voidc_global_ctx());
+
+    void_ptr     = v_pointer_type(void,     0);
+    void_ptr_ptr = v_pointer_type(void_ptr, 0);
+
+    v_add_type("void_ptr",     void_ptr);
+    v_add_type("void_ptr_ptr", void_ptr_ptr);
+}
+
+
+//---------------------------------------------------------------------
 handle_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     ttag = v_get_result_type();
@@ -18,9 +29,6 @@ handle_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> vo
     hqname = v_type_generic_arg_cons_get_cons(tg_arg);
 
     ftype = v_type_generic_arg_type_get_type(v_type_generic_arg_cons_get_args(tg_arg)[0]);
-
-    void_ptr     = v_pointer_type(void,     0);     //- Sic!
-    void_ptr_ptr = v_pointer_type(void_ptr, 0);     //- Sic!
 
     aux_var_v = v_make_temporary(void_ptr, 0);
 
@@ -162,8 +170,6 @@ v_make_handler_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~>
 
     v_make_list(list+1, aux_expr);
 
-    void_ptr = v_pointer_type(void, 0);         //- Sic!
-
     v_ast_make_expr_compiled(&expr, v_static_type_t, (void_ptr: LLVMValueRef));
 
     v_list_append(list+1, list+1, &expr);
@@ -206,9 +212,6 @@ v_get_handler_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> 
     list: &v_ast_expr_list_t := {};
 
     v_make_list(&list, aux_ptr_expr);
-
-    void_ptr     = v_pointer_type(void,     0);     //- Sic!
-    void_ptr_ptr = v_pointer_type(void_ptr, 0);     //- Sic!
 
     v_ast_make_expr_compiled(expr+1, v_static_type_t, (void_ptr_ptr: LLVMValueRef));
 
@@ -266,8 +269,6 @@ v_set_handler_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> 
     v_list_append(list+0, list+0, fun_expr);
 
     v_make_list(list+1, aux_expr);
-
-    void_ptr = v_pointer_type(void, 0);         //- Sic!
 
     v_ast_make_expr_compiled(&expr, v_static_type_t, (void_ptr: LLVMValueRef));
 
