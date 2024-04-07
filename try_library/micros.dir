@@ -18,6 +18,9 @@ try_module2.void                                               │try_module2.vo
 ───────────────────────────────────────────────────────────────│
 try_cstdio.void                                                │try_cstdio.void
                                                                │
+cstdio_mod.void                                                │cstdio_mod.void
+                                                               │
+---------------------------------------------------------------│
 try_cassert.void                                               │try_cassert.void
                                                                │
                                                                │

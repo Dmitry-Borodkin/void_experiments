@@ -14,7 +14,8 @@
 //- ... <gtk/gtk.h>
 //---------------------------------------------------------------------
 {
-    ok = LLVMLoadLibraryPermanently("libgtk-4.so");
+//  ok = LLVMLoadLibraryPermanently("libgtk-4.so");
+    ok = LLVMLoadLibraryPermanently("libgtk-4-1.dll");
 
 //  printf("ok: %d\n", ok);
 }

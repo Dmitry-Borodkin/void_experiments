@@ -236,4 +236,3 @@ feof:      (stream: *FILE) ~> int;
 ferror:    (stream: *FILE) ~> int;
 perror:    (s: *const char) ~> void;
 
-

@@ -23,6 +23,7 @@ test_fun: (n: int, ...) ~> void
     for (i: &int := 0; i < n; ++i)
     {
         v = va_arg(ap, int(64));        //- WTF?
+//      v = va_arg(ap, int);
 
         fprintf(stdout, "%d: %d\n", i, v);
     }

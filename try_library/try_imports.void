@@ -89,6 +89,11 @@ make_module: (modname: *const char) ~> void
     v_enable_mainline();
 
     //----------------------------------------------------------
+    #if (v_defined(_WIN32))     is_win32 = true;
+    #else                       is_win32 = false;
+    #endif
+
+    //----------------------------------------------------------
     filename = v_target_local_ctx_get_filename(v_target_get_voidc_local_ctx());
 
     gctx = v_target_create_global_ctx(int.size, long.size, intptr_t.size);
@@ -100,6 +105,9 @@ make_module: (modname: *const char) ~> void
     dl = v_target_get_voidc_data_layout();
 
     v_target_set_data_layout(dl);
+
+    //----------------------------------------------------------
+    if (is_win32)   v_add_constant("_WIN32", v_find_type("void"), 0);
 
     //----------------------------------------------------------
     collect_defines();

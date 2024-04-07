@@ -12,7 +12,10 @@ try_main.o: try_main.void try_imports.void try_header.void try_cstdarg.void try_
 try_module.o: try_module.void try_imports.void try_header.void try_cstdio.void
 	voidc $< -- $(MYFLAGS)
 
-try_main: try_main.o try_module.o
+cstdio_mod.o: cstdio_mod.void try_imports.void try_cstdio.void
+	voidc $< -- $(MYFLAGS)
+
+try_main: try_main.o try_module.o cstdio_mod.o
 	clang $^ -o $@
 
 
