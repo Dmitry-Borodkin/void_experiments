@@ -483,8 +483,84 @@ v_add_coercion: (kind: int, quark: v_quark_t, from: *v_type_t, to: *v_type_t) ~>
 }
 
 
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+//private
+op_assign_helper_ctx_t = struct
+{
+    fun: *((aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+            t0: *v_type_t, v0: LLVMValueRef, qh: v_quark_t, q: v_quark_t,
+            rhs: *v_ast_expr_t) ~> void);
+
+    aux: *void;
+};
 
 //---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+//private
+my_op_assign_helper: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                      t0: *v_type_t, v0: LLVMValueRef, qh: v_quark_t, q: v_quark_t,
+                      rhs: *v_ast_expr_t) ~> void
+{
+    t: &*v_type_t    := t0;
+    v: &LLVMValueRef := v0;
+
+    if (l = get_coe_map_list(t0, full_dir_q, 0))
+    {
+        void_fun: &*void := v_undef();
+        void_aux: &*void := v_undef();
+
+        ft: &*v_type_t    := v_undef();
+        fv: &LLVMValueRef := v_undef();
+
+        s = v_list_get_size(l);
+
+        for (i: &size_t := 0; i < s; ++i)
+        {
+            item = get_chain_item(v_list_get_item(l, i));
+
+            if (v_util_lookup_function_dict(q, item.type, void_fun, void_aux, ft, fv))
+            {
+                t := item.type;
+
+                v_break();
+            }
+        }
+
+        if (t0 != t)  v := v_convert_to_type(t0, v0, t);
+    }
+
+    ctx = *(aux: *op_assign_helper_ctx_t);
+
+    ctx.fun(ctx.aux, vis, self, t, v, qh, q, rhs);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//=====================================================================
+//- ...
+//=====================================================================
+
+
+
 
 
 
