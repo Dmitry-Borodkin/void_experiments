@@ -1,27 +1,37 @@
-{   v_import("level-00");
-    v_import("level-01");
-    v_import("level-02");
+{   v_import("mainline.void");
 
     v_import("llvm-c/Core.void");
 }
 
-{   v_import("printf.void");
-}
+{   v_enable_mainline(); }
 
-{   v_enable_level_01();
-    v_enable_level_02();
-}
+printf: (*const char, ...) ~> int;
+
+//---------------------------------------------------------------------
+//{   v_import("level-00");
+//    v_import("level-01");
+//    v_import("level-02");
+//
+//    v_import("llvm-c/Core.void");
+//}
+//
+//{   v_import("printf.void");
+//}
+//
+//{   v_enable_level_01();
+//    v_enable_level_02();
+//}
 
 
 //---------------------------------------------------------------------
 double = float(64);
 
-abs: (double) -> double;
+abs: (double) ~> double;
 
-snprintf: (s: *char, l: size_t, f: *const char, ...) -> int;
+snprintf: (s: *char, l: size_t, f: *const char, ...) ~> int;
 
-sin: (double) -> double;
-cos: (double) -> double;
+sin: (double) ~> double;
+cos: (double) ~> double;
 
 M_PI = 3.14159265358979323846264338327950288419716939937510582;
 
@@ -39,7 +49,7 @@ M_PI = 3.14159265358979323846264338327950288419716939937510582;
 //---------------------------------------------------------------------
 EPSILON = 1e-9;
 
-is_equal: (x: double, y: double) -> bool
+is_equal: (x: double, y: double) ~> bool
 {
     if (x == y)  v_return(true);
 
@@ -57,14 +67,14 @@ is_equal: (x: double, y: double) -> bool
 }
 
 alwaysinline
-is_finite: (x: double) -> bool
+is_finite: (x: double) ~> bool
 {
     v_return(abs(x) < 1e15);        //- ?...
 }
 
 infinity = 1e1000;
 
-det_3: (v: &double[9]) -> double
+det_3: (v: &double[9]) ~> double
 {
     v00 = v[0]; v01 = v[1]; v02 = v[2];
     v10 = v[3]; v11 = v[4]; v12 = v[5];
@@ -77,7 +87,7 @@ det_3: (v: &double[9]) -> double
 
 
 //---------------------------------------------------------------------
-seq_equal: (a: *double, b: *double, n: int) -> bool
+seq_equal: (a: *double, b: *double, n: int) ~> bool
 {
     ret: &bool := true;
 
@@ -103,7 +113,7 @@ struct Vector
 };
 
 //---------------------------------------------------------------------
-(_<<__): (s: &v_std_string_ptr, v: Vector) -> &v_std_string_ptr
+(_<<__): (s: &v_std_string_ptr, v: Vector) ~> &v_std_string_ptr
 {
     n = 1 + snprintf(0, 0, "(%g, %g)", v.x, v.y);
 
@@ -116,54 +126,54 @@ struct Vector
 
 //---------------------------------------------------------------------
 alwaysinline
-(_+_): (a: Vector, b: Vector) -> Vector
+(_+_): (a: Vector, b: Vector) ~> Vector
 {
     v_return({ a.x+b.x, a.y+b.y });
 }
 
 alwaysinline
-(_-_): (a: Vector, b: Vector) -> Vector
+(_-_): (a: Vector, b: Vector) ~> Vector
 {
     v_return({ a.x-b.x, a.y-b.y });
 }
 
 alwaysinline
-(+_): (a: Vector) -> Vector
+(+_): (a: Vector) ~> Vector
 {
     v_return(a);
 }
 
 alwaysinline
-(-_): (a: Vector) -> Vector
+(-_): (a: Vector) ~> Vector
 {
     v_return({ -a.x, -a.y });
 }
 
 alwaysinline
-(_*_): (a: Vector, k: double) -> Vector
+(_*_): (a: Vector, k: double) ~> Vector
 {
     v_return({ a.x*k, a.y*k });
 }
 
 alwaysinline
-(_*__): (k: double, a: Vector) -> Vector
+(_*__): (k: double, a: Vector) ~> Vector
 {
     v_return({ k*a.x, k*a.y });
 }
 
 alwaysinline
-(_/_): (a: Vector, k: double) -> Vector
+(_/_): (a: Vector, k: double) ~> Vector
 {
     v_return({ a.x/k, a.y/k });
 }
 
-(_==_): (a: Vector, b: Vector) -> bool
+(_==_): (a: Vector, b: Vector) ~> bool
 {
     v_return( is_equal(a.x, b.x)  &&  is_equal(a.y, b.y) );
 }
 
 alwaysinline
-(_!=_): (a: Vector, b: Vector) -> bool
+(_!=_): (a: Vector, b: Vector) ~> bool
 {
     v_return( !(a == b) );
 }
@@ -176,19 +186,19 @@ Vector_infinity: Vector = {infinity, infinity};
 
 //---------------------------------------------------------------------
 alwaysinline
-(_.dot()): (a: Vector, b: Vector) -> double
+(_.dot()): (a: Vector, b: Vector) ~> double
 {
     v_return( a.x*b.x + a.y*b.y );
 }
 
 alwaysinline
-(_.crs()): (a: Vector, b: Vector) -> double
+(_.crs()): (a: Vector, b: Vector) ~> double
 {
     v_return( a.x*b.y - a.y*b.x );
 }
 
 alwaysinline
-(_.is_finite()): (a: Vector) -> bool
+(_.is_finite()): (a: Vector) ~> bool
 {
     v_return( is_finite(a.x)  &&  is_finite(a.y) );
 }
@@ -205,7 +215,7 @@ struct Point
 };
 
 //---------------------------------------------------------------------
-(_<<__): (s: &v_std_string_ptr, p: Point) -> &v_std_string_ptr
+(_<<__): (s: &v_std_string_ptr, p: Point) ~> &v_std_string_ptr
 {
     n = 1 + snprintf(0, 0, "(%g, %g, %g)", p.x, p.y, p.w);
 
@@ -218,19 +228,19 @@ struct Point
 
 //---------------------------------------------------------------------
 alwaysinline
-(_+_): (p: Point, v: Vector) -> Point
+(_+_): (p: Point, v: Vector) ~> Point
 {
     v_return({ p.x + p.w*v.x, p.y + p.w*v.y, p.w });
 }
 
 alwaysinline
-(_-_): (a: Point, b: Point) -> Vector
+(_-_): (a: Point, b: Point) ~> Vector
 {
     v_return({ a.x/a.w - b.x/b.w, a.y/a.w - b.y/b.w });
 }
 
 //---------------------------------------------------------------------
-(_.norm()): (p: &Point) -> bool
+(_.norm()): (p: &Point) ~> bool
 {
     pa: &double[3] := {p.x, p.y, p.w};
 
@@ -254,7 +264,7 @@ alwaysinline
 }
 
 //---------------------------------------------------------------------
-(_.is_affine()): (p: &Point) -> bool
+(_.is_affine()): (p: &Point) ~> bool
 {
     if (!p.norm())  v_return(false);
 
@@ -262,7 +272,7 @@ alwaysinline
 }
 
 //---------------------------------------------------------------------
-(_==_): (a: &Point, b: &Point) -> bool
+(_==_): (a: &Point, b: &Point) ~> bool
 {
     if (!(a.norm()  &&  b.norm()))  v_return(false);
 
@@ -273,7 +283,7 @@ alwaysinline
 }
 
 alwaysinline
-(_!=_): (a: &Point, b: &Point) -> bool
+(_!=_): (a: &Point, b: &Point) ~> bool
 {
     v_return(!(a == b));
 }
@@ -297,7 +307,7 @@ struct Line
 };
 
 //---------------------------------------------------------------------
-(_<<__): (s: &v_std_string_ptr, l: Line) -> &v_std_string_ptr
+(_<<__): (s: &v_std_string_ptr, l: Line) ~> &v_std_string_ptr
 {
     n = 1 + snprintf(0, 0, "(%g, %g, %g)", l.cx, l.cy, l.cw);
 
@@ -310,13 +320,13 @@ struct Line
 
 //---------------------------------------------------------------------
 alwaysinline
-(_+_): (l: Line, v: Vector) -> Line
+(_+_): (l: Line, v: Vector) ~> Line
 {
     v_return({ l.cx, l.cy, l.cw - l.cx*v.x - l.cy*v.y });
 }
 
 //---------------------------------------------------------------------
-(_.norm()): (l: &Line) -> bool
+(_.norm()): (l: &Line) ~> bool
 {
     la: &double[3] := {l.cx, l.cy, l.cw};
 
@@ -340,7 +350,7 @@ alwaysinline
 }
 
 //---------------------------------------------------------------------
-(_.is_affine()): (l: &Line) -> bool
+(_.is_affine()): (l: &Line) ~> bool
 {
     if (!l.norm())  v_return(false);
 
@@ -348,7 +358,7 @@ alwaysinline
 }
 
 //---------------------------------------------------------------------
-(_==_): (a: &Line, b: &Line) -> bool
+(_==_): (a: &Line, b: &Line) ~> bool
 {
     if (!(a.norm()  &&  b.norm()))  v_return(false);
 
@@ -359,7 +369,7 @@ alwaysinline
 }
 
 alwaysinline
-(_!=_): (a: &Line, b: &Line) -> bool
+(_!=_): (a: &Line, b: &Line) ~> bool
 {
     v_return(!(a == b));
 }
@@ -371,7 +381,7 @@ Line_ordinate: Line = {1, 0, 0};
 
 
 //=====================================================================
-incident: (l: &Line, p: &Point) -> bool
+incident: (l: &Line, p: &Point) ~> bool
 {
     l.norm();
     p.norm();
@@ -381,13 +391,13 @@ incident: (l: &Line, p: &Point) -> bool
 
 //---------------------------------------------------------------------
 alwaysinline
-(_&_): (a: Point, b: Point) -> Line
+(_&_): (a: Point, b: Point) ~> Line
 {
     v_return({a.y*b.w - a.w*b.y, a.w*b.x - a.x*b.w, a.x*b.y - a.y*b.x});
 }
 
 alwaysinline
-(_&_): (a: Line, b: Line) -> Point
+(_&_): (a: Line, b: Line) ~> Point
 {
     v_return({a.cy*b.cw - a.cw*b.cy, a.cw*b.cx - a.cx*b.cw, a.cx*b.cy - a.cy*b.cx});
 }
@@ -402,7 +412,7 @@ struct Transform
 };
 
 //---------------------------------------------------------------------
-(_<<__): (s: &v_std_string_ptr, t: Transform) -> &v_std_string_ptr
+(_<<__): (s: &v_std_string_ptr, t: Transform) ~> &v_std_string_ptr
 {
     t = t[0];
 
@@ -416,7 +426,7 @@ struct Transform
 }
 
 //---------------------------------------------------------------------
-(_.norm()): (t: &Transform) -> bool
+(_.norm()): (t: &Transform) ~> bool
 {
     t = t[0];
 
@@ -442,13 +452,13 @@ struct Transform
 
 //---------------------------------------------------------------------
 alwaysinline
-(_.det()): (t: &Transform) -> double
+(_.det()): (t: &Transform) ~> double
 {
     v_return( det_3(t[0]) );
 }
 
 //---------------------------------------------------------------------
-(_.is_regular()): (t: &Transform) -> bool
+(_.is_regular()): (t: &Transform) ~> bool
 {
     if (!t.norm())  v_return(false);
 
@@ -456,7 +466,7 @@ alwaysinline
 }
 
 //---------------------------------------------------------------------
-(_.is_affine()): (t: &Transform) -> bool
+(_.is_affine()): (t: &Transform) ~> bool
 {
     if (!t.norm())  v_return(false);
 
@@ -468,7 +478,7 @@ alwaysinline
 }
 
 //---------------------------------------------------------------------
-(_==_): (a: &Transform, b: &Transform) -> bool
+(_==_): (a: &Transform, b: &Transform) ~> bool
 {
     if (!(a.norm()  &&  b.norm()))  v_return(false);
 
@@ -476,18 +486,18 @@ alwaysinline
 }
 
 alwaysinline
-(_!=_): (a: &Transform, b: &Transform) -> bool
+(_!=_): (a: &Transform, b: &Transform) ~> bool
 {
     v_return(!(a == b));
 }
 
 
 //---------------------------------------------------------------------
-Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
+Transform_op_postfix_call_intrinsic: (aux: *void, vis: voidc_visitor_ptr,
                                       self: v_ast_base_ptr,
                                       args: v_ast_expr_list_ptr,
                                       t0: v_type_ptr, v0: LLVMValueRef
-                                     ) -> void
+                                     ) ~> void
 {
     arg = v_list_get_item(args, 0);
 
@@ -510,22 +520,22 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
     ft: &v_type_ptr   := 0;
     fv: &LLVMValueRef := 0;
 
-    ok = v_util_lookup_function_dict(vis, t1, q, void_fun, void_aux, ft, fv);
+    ok = v_util_lookup_function_dict(q, t1, void_fun, void_aux, ft, fv);
     //- assert(ok);
 
-    intrinsic_t = (vis: voidc_visitor_ptr, aux: *void,
+    intrinsic_t = (aux: *void, vis: voidc_visitor_ptr,
                    self: v_ast_base_ptr,
                    args: v_ast_expr_list_ptr,
                    t0: v_type_ptr, v0: LLVMValueRef,
                    t1: v_type_ptr, v1: LLVMValueRef
-                  ) -> void;
+                  ) ~> void;
 
     if (fun = (void_fun: *intrinsic_t))
     {
         v_set_result_type(ttag);
         v_set_result_value(vtag);
 
-        fun(vis, void_aux, self, args, t1, v1, t0, v0);         //- Sic!!!
+        fun(void_aux, vis, self, args, t1, v1, t0, v0);         //- Sic!!!
     }
     else
     {
@@ -564,14 +574,14 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 
     q = v_quark_from_string;
 
-    v_util_function_dict_set(Transform_ref, q("v.op_postfix_call"), q("Transform.op_postfix_call_intrinsic"));
-    v_util_function_dict_set(Transform,     q("v.op_postfix_call"), q("Transform.op_postfix_call_intrinsic"));
+    v_util_function_dict_set(q("v.op_postfix_call"), Transform_ref, q("Transform.op_postfix_call_intrinsic"));
+    v_util_function_dict_set(q("v.op_postfix_call"), Transform,     q("Transform.op_postfix_call_intrinsic"));
 
     v_add_intrinsic("Transform.op_postfix_call_intrinsic", Transform_op_postfix_call_intrinsic, 0);
 }
 
 //---------------------------------------------------------------------
-(_.transform()): (v: Vector, t: Transform) -> Vector
+(_.transform()): (v: Vector, t: Transform) ~> Vector
 {
     t = t[0];
 
@@ -582,7 +592,7 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
     v_return({ x/w, y/w });
 }
 
-(_.transform()): (p: Point, t: Transform) -> Point
+(_.transform()): (p: Point, t: Transform) ~> Point
 {
     t = t[0];
 
@@ -593,7 +603,7 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
     v_return({ x, y, w });
 }
 
-(_.transform()): (l: Line, t: Transform) -> Line
+(_.transform()): (l: Line, t: Transform) ~> Line
 {
     t = t[0];
 
@@ -613,7 +623,7 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 }
 
 //---------------------------------------------------------------------
-(_+_): (t: Transform, v: Vector) -> Transform
+(_+_): (t: Transform, v: Vector) ~> Transform
 {
     t = t[0];
 
@@ -635,7 +645,7 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 }
 
 //---------------------------------------------------------------------
-(_*_): (a: Transform, b: Transform) -> Transform
+(_*_): (a: Transform, b: Transform) ~> Transform
 {
     a = a[0];
     b = b[0];
@@ -657,7 +667,7 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
                 wx, wy, ww }});
 }
 
-(_*__): (k: double, t: Transform) -> Transform
+(_*__): (k: double, t: Transform) ~> Transform
 {
     t = t[0];
 
@@ -679,7 +689,7 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 }
 
 //---------------------------------------------------------------------
-(~_): (t: Transform) -> Transform
+(~_): (t: Transform) ~> Transform
 {
     t = t[0];
 
@@ -708,25 +718,25 @@ Transform_op_postfix_call_intrinsic: (vis: voidc_visitor_ptr, aux: *void,
 }
 
 //---------------------------------------------------------------------
-(_/_): (a: Transform, b: Transform) -> Transform
+(_/_): (a: Transform, b: Transform) ~> Transform
 {
     v_return(a * (~b));
 }
 
 //---------------------------------------------------------------------
 alwaysinline
-(_.scaled()): (t: Transform, k: double) -> Transform
+(_.scaled()): (t: Transform, k: double) ~> Transform
 {
     v_return(k * t);
 }
 
 alwaysinline
-(_.shifted()): (t: Transform, v: Vector) -> Transform
+(_.shifted()): (t: Transform, v: Vector) ~> Transform
 {
     v_return(t + v);
 }
 
-(_.rotated()): (t: Transform, d: double) -> Transform
+(_.rotated()): (t: Transform, d: double) ~> Transform
 {
     a = d * (M_PI/180);
 
@@ -741,7 +751,7 @@ alwaysinline
 }
 
 //---------------------------------------------------------------------
-_map4_util: (o1: &Point, o2: &Point, o3: &Point, o4: &Point) -> Transform
+_map4_util: (o1: &Point, o2: &Point, o3: &Point, o4: &Point) ~> Transform
 {
     o1.norm();
     o2.norm();
@@ -767,7 +777,7 @@ _map4_util: (o1: &Point, o2: &Point, o3: &Point, o4: &Point) -> Transform
 
 Transform_map4: (i1: &Point, i2: &Point, i3: &Point, i4: &Point,
                  o1: &Point, o2: &Point, o3: &Point, o4: &Point
-                ) -> Transform
+                ) ~> Transform
 {
     t1 = _map4_util(i1, i2, i3, i4);
     t2 = _map4_util(o1, o2, o3, o4);
@@ -777,7 +787,7 @@ Transform_map4: (i1: &Point, i2: &Point, i3: &Point, i4: &Point,
 
 Transform_map3: (i1: &Point, i2: &Point, i3: &Point,
                  o1: &Point, o2: &Point, o3: &Point
-                ) -> Transform
+                ) ~> Transform
 {
     i4 = i3 + (i2 - i1);
     o4 = o3 + (o2 - o1);
@@ -787,7 +797,7 @@ Transform_map3: (i1: &Point, i2: &Point, i3: &Point,
 
 Transform_map2: (i1: &Point, i2: &Point,
                  o1: &Point, o2: &Point
-                ) -> Transform
+                ) ~> Transform
 {
     v = i2 - i1;    v: Vector = { -v.y, v.x };
 
@@ -802,7 +812,7 @@ Transform_map2: (i1: &Point, i2: &Point,
 
 Transform_map2_mirror: (i1: &Point, i2: &Point,
                         o1: &Point, o2: &Point
-                       ) -> Transform
+                       ) ~> Transform
 {
     v = i2 - i1;    v: Vector = { -v.y, v.x };
 

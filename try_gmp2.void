@@ -1,5 +1,6 @@
 {   v_import("mainline.void");
 
+    v_import("llvm-c/Core.void");
     v_import("llvm-c/Support.void");
 
     v_import("printf.void");
@@ -20,27 +21,24 @@ fscanf: (stream: *FILE, format: *const char, ...) ~> int;
 
 //{ v_debug_print_module(1); }
 //---------------------------------------------------------------------
-{   buffer: &*char := 0;
-    defer v_free(buffer);
+{
 
-    libname: &*char := 0;
+#if (v_defined(_WIN32))
 
-    if (v_find_constant("_WIN32", 0, 0))
-    {
-        buffer := v_malloc(char, 1024);
+    libname = v_malloc(char, 1024);
+    defer v_free(libname);
 
-        {   p = v_popen("bash -c \"dlltool -I $(pkg-config --variable=libdir gmp)/libgmp.dll.a\"", "r");
-            defer v_pclose(p);
+    {   p = v_popen("bash -c \"dlltool -I $(pkg-config --variable=libdir gmp)/libgmp.dll.a\"", "r");
+        defer v_pclose(p);
 
-            fscanf(p, "%1023s", buffer);
-        }
-
-        libname := buffer;
+        fscanf(p, "%1023s", libname);
     }
-    else
-    {
-        libname := "libgmp.so";
-    }
+
+#else
+
+    libname = "libgmp.so";
+
+#endif
 
     ok = LLVMLoadLibraryPermanently(libname);
 
@@ -49,13 +47,12 @@ fscanf: (stream: *FILE, format: *const char, ...) ~> int;
 
 
 //=====================================================================
-{   w = v_type_integer_get_width(long);
+{   w = v_type_integer_get_width(v_find_type("long"));
 
     v_add_type("ulong", v_uint_type(w));
 }
 
 double = float(64);
-
 
 //---------------------------------------------------------------------
 struct mpz_t
@@ -74,6 +71,41 @@ __gmpz_init: (*mpz_t) ~> void;
 __gmpz_clear: (*mpz_t) ~> void;
 
 //---------------------------------------------------------------------
+__gmpz_set: (*mpz_t, *const mpz_t) ~> void;
+__gmpz_set_ui: (*mpz_t, ulong) ~> void;
+__gmpz_set_si: (*mpz_t, long) ~> void;
+__gmpz_set_d: (*mpz_t, double) ~> void;
+__gmpz_set_str: (*mpz_t, *const char, int) ~> int;
+
+//---------------------------------------------------------------------
+__gmpz_init_set: (*mpz_t, *const mpz_t) ~> void;
+__gmpz_init_set_ui: (*mpz_t, ulong) ~> void;
+__gmpz_init_set_si: (*mpz_t, long) ~> void;
+__gmpz_init_set_d: (*mpz_t, double) ~> void;
+__gmpz_init_set_str: (*mpz_t, *const char, int) ~> int;
+
+//---------------------------------------------------------------------
+__gmpz_add: (*mpz_t, *const mpz_t, *const mpz_t) ~> void;
+__gmpz_sub: (*mpz_t, *const mpz_t, *const mpz_t) ~> void;
+__gmpz_mul: (*mpz_t, *const mpz_t, *const mpz_t) ~> void;
+__gmpz_tdiv_q: (*mpz_t, *const mpz_t, *const mpz_t) ~> void;
+__gmpz_tdiv_r: (*mpz_t, *const mpz_t, *const mpz_t) ~> void;
+__gmpz_and: (*mpz_t, *const mpz_t, *const mpz_t) ~> void;
+__gmpz_ior: (*mpz_t, *const mpz_t, *const mpz_t) ~> void;
+__gmpz_xor: (*mpz_t, *const mpz_t, *const mpz_t) ~> void;
+__gmpz_com: (*mpz_t, *const mpz_t) ~> void;
+__gmpz_neg: (*mpz_t, *const mpz_t) ~> void;
+__gmpz_abs: (*mpz_t, *const mpz_t) ~> void;         //- ?
+
+//---------------------------------------------------------------------
+__gmpz_mul_2exp: (*mpz_t, *const mpz_t, ulong) ~> void;
+__gmpz_fdiv_q_2exp: (*mpz_t, *const mpz_t, ulong) ~> void;
+
+//---------------------------------------------------------------------
+__gmpz_cmp: (*const mpz_t, *const mpz_t) ~> int;
+
+
+//---------------------------------------------------------------------
 alwaysinline
 (v_initialize(_)): (p: *mpz_t, n: size_t) ~> void
 {
@@ -87,22 +119,6 @@ alwaysinline
 }
 
 //---------------------------------------------------------------------
-__gmpz_set: (*mpz_t, *const mpz_t) ~> void;
-__gmpz_set_ui: (*mpz_t, ulong) ~> void;
-__gmpz_set_si: (*mpz_t, long) ~> void;
-__gmpz_set_d: (*mpz_t, double) ~> void;
-__gmpz_set_str: (*mpz_t, *const char, int) ~> int;
-
-__gmpz_swap: (*mpz_t, *mpz_t) ~> void;
-
-//---------------------------------------------------------------------
-__gmpz_init_set: (*mpz_t, *const mpz_t) ~> void;
-__gmpz_init_set_ui: (*mpz_t, ulong) ~> void;
-__gmpz_init_set_si: (*mpz_t, long) ~> void;
-__gmpz_init_set_d: (*mpz_t, double) ~> void;
-__gmpz_init_set_str: (*mpz_t, *const char, int) ~> int;
-
-//---------------------------------------------------------------------
 alwaysinline
 (v_copy(_)): (d: *mpz_t, s: *const mpz_t, n: size_t) ~> void
 {
@@ -111,6 +127,1050 @@ alwaysinline
 
 
 //---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+literal_integer_ctx_t = struct
+{
+    fun: *((*void, *voidc_visitor_t, *v_ast_base_t) ~> void);
+
+    aux: *void;
+};
+
+//---------------------------------------------------------------------
+my_literal_integer_intrinsic: (aux: *void, vis: *voidc_visitor_t,
+                               self: *v_ast_base_t) ~> void
+{
+    ttag = v_get_result_type();
+
+    if (ttag != v_find_type("mpz_t"))
+    {
+        ctx = *(aux: *literal_integer_ctx_t);
+
+        ctx.fun(ctx.aux, vis, self);
+
+        v_return();
+    }
+
+    vtag = v_get_result_value();
+
+    vr = v_obtain_special_result_value(vis, ttag);
+
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    arg0 = v_list_get_item(args, 0);
+    arg1 = v_list_get_item(args, 1);
+
+    t_str = v_ast_expr_string_get_string(arg1);         //- Suffix string
+
+    v_assert(t_str[0] == 0);
+
+    src: &*const char := v_ast_expr_string_get_string(arg0);        //- Value string (source)
+
+    dst: &v_std_string_t := {};
+
+    if (src[0] == '-')
+    {
+        ++src;
+
+        v_std_string_set(&dst, "-");        //- ????????
+    }
+    else
+    {
+        v_std_string_set(&dst, "");
+
+        if (src[0] == '+')  ++src;
+    }
+
+    radix: &int := 10;
+
+    if (src[0] == '0')
+    {
+        switch((src[1] : char32_t))
+        {
+        case 0: v_break();
+
+        case 'x': case 'X':     radix := 16;  src += 2;   v_break();
+        case 'b': case 'B':     radix :=  2;  src += 2;   v_break();
+
+        default:                radix :=  8;  src += 1;   v_break();
+        }
+    }
+
+    loop
+    {
+        if (!*src)  v_break();
+
+        if (*src != '\'')   v_std_string_append_char(&dst, *src);
+
+        ++src;
+    }
+
+    expr: &v_ast_expr_t := {};
+
+    v_ast_make_expr_compiled(&expr, v_pointer_type(ttag, 0), vr);
+
+    list: &v_ast_expr_list_t := {};
+
+    v_make_list(&list, &expr);
+
+    v_ast_make_expr_string(&expr, v_std_string_get(&dst));
+
+    v_list_append(&list, &list, &expr);
+
+    v_ast_make_expr_integer(&expr, radix);
+
+    v_list_append(&list, &list, &expr);
+
+    v_ast_make_expr_identifier(&expr, "__gmpz_set_str");
+
+    v_ast_make_expr_call(&expr, &expr, &list);
+
+    v_set_result_type(INVIOLABLE_TAG);
+    v_set_result_value(0);
+
+    v_ast_accept_visitor((&expr : *v_ast_base_t), vis);
+
+    v_set_result_type(ttag);
+    v_set_result_value(vtag);
+
+    v_adopt_result(ttag, vr);
+}
+
+//---------------------------------------------------------------------
+literal_integer_ctx: &literal_integer_ctx_t := v_undef();
+
+{   q = v_quark_from_string("v.literal.integer");
+
+    void_fun = v_get_intrinsic_q(q, &literal_integer_ctx.aux);
+
+    literal_integer_ctx.fun := (void_fun: *((*void, *voidc_visitor_t, *v_ast_base_t) ~> void));
+
+    v_add_intrinsic_q(q, my_literal_integer_intrinsic, &literal_integer_ctx);
+}
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+expr_integer_ctx_t = struct
+{
+    fun: *((*void, *voidc_visitor_t, *v_ast_base_t) ~> void);
+
+    aux: *void;
+};
+
+//---------------------------------------------------------------------
+my_compile_expr_integer: (aux: *void, vis: *voidc_visitor_t,
+                          self: *v_ast_base_t) ~> void
+{
+    ttag = v_get_result_type();
+
+    if (ttag != v_find_type("mpz_t"))
+    {
+        ctx = *(aux: *literal_integer_ctx_t);
+
+        ctx.fun(ctx.aux, vis, self);
+
+        v_return();
+    }
+
+    vtag = v_get_result_value();
+
+    vr = v_obtain_special_result_value(vis, ttag);
+
+    expr: &v_ast_expr_t := {};
+
+    v_ast_make_expr_compiled(&expr, v_pointer_type(ttag, 0), vr);
+
+    list: &v_ast_expr_list_t := {};
+
+    v_make_list(&list, &expr);
+
+    v_list_append(&list, &list, (self: *v_ast_expr_t));
+
+    v_ast_make_expr_identifier(&expr, "__gmpz_set_si");
+
+    v_ast_make_expr_call(&expr, &expr, &list);
+
+    v_set_result_type(INVIOLABLE_TAG);
+    v_set_result_value(0);
+
+    v_ast_accept_visitor((&expr : *v_ast_base_t), vis);
+
+    v_set_result_type(ttag);
+    v_set_result_value(vtag);
+
+    v_adopt_result(ttag, vr);
+}
+
+//---------------------------------------------------------------------
+expr_integer_ctx: &expr_integer_ctx_t := v_undef();
+
+{   q = v_quark_from_string("expr_integer");
+
+    vis = v_get_compiler();
+
+    void_fun = voidc_visitor_get_void_method(vis, q, &expr_integer_ctx.aux);
+
+    expr_integer_ctx.fun := (void_fun: *((*void, *voidc_visitor_t, *v_ast_base_t) ~> void));
+
+    voidc_visitor_set_void_method(vis, vis, q, my_compile_expr_integer, &expr_integer_ctx);
+}
+
+
+//---------------------------------------------------------------------
+//private
+mpz_temporary_cleaner: (void_tmp: *void) ~> void
+{
+    vtmp = (void_tmp: LLVMValueRef);
+
+    ft: &v_type_ptr   := v_undef();
+    fv: &LLVMValueRef := v_undef();
+
+    v_obtain_identifier("__gmpz_clear", &ft, &fv);
+
+    builder = v_target_get_builder();
+
+    if (v_type_is_pointer(ft))  ft := v_type_refptr_get_element_type(ft);
+
+    LLVMBuildCall2(builder, v_type_get_llvm_type(ft), fv, &vtmp, 1, "");
+}
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+//private
+convert_to_type_ctx_t = struct
+{
+    fun: *((*void, t0: *v_type_t, v0: LLVMValueRef, t1: *v_type_t) ~> LLVMValueRef);
+
+    aux: *void;
+};
+
+//---------------------------------------------------------------------
+//private
+my_convert_to_type: (aux: *void, t0: *v_type_t, v0: LLVMValueRef, t1: *v_type_t) ~> LLVMValueRef
+{
+    if (t0 == t1)   v_return(v0);
+
+    _mpz_t = v_find_type("mpz_t");
+
+    if (t1 == _mpz_t)
+    block
+    {
+        v1: &LLVMValueRef := v0;
+
+        fn: &*const char := v_undef();
+
+        builder = v_target_get_builder();
+
+        if (v_type_is_floating_point(t0))
+        {
+            _double = v_f64_type();
+
+            if (t0 != _double)
+            {
+                v1 := LLVMBuildFPCast(builder, v0, v_type_get_llvm_type(_double), "");
+            }
+
+            fn := "__gmpz_init_set_d";
+        }
+        else if (v_type_is_integer(t0))
+        {
+            sign = v_type_integer_is_signed(t0);
+
+            w = v_type_integer_get_width(t0);
+
+            long_width = v_type_integer_get_width(v_find_type("long"));
+
+            v_assert(w <= long_width);      //- ?!?!?!?
+
+            if (w < long_width)
+            {
+                v1 := LLVMBuildIntCast2(builder, v0, v_type_get_llvm_type(long), sign, "");
+            }
+
+            if (sign) fn := "__gmpz_init_set_si";
+            else      fn := "__gmpz_init_set_ui";
+        }
+        else
+        {
+            v_break();      //- ?
+        }
+
+        ttag = v_get_result_type();
+        vtag = v_get_result_value();
+
+        vtmp = v_make_temporary(t1, 0);
+
+        val: &LLVMValueRef[2] := {vtmp, v1};
+
+        ft: &v_type_ptr   := v_undef();
+        fv: &LLVMValueRef := v_undef();
+
+        v_obtain_identifier(fn, &ft, &fv);
+
+        if (v_type_is_pointer(ft))  ft := v_type_refptr_get_element_type(ft);
+
+        LLVMBuildCall2(builder, v_type_get_llvm_type(ft), fv, val, 2, "");
+
+        v_add_temporary_cleaner(mpz_temporary_cleaner, vtmp);
+
+        v_set_result_type(ttag);
+        v_set_result_value(vtag);
+
+        v_return(vtmp);
+    }
+
+    ctx = *(aux: *convert_to_type_ctx_t);
+
+    v_return(ctx.fun(ctx.aux, t0, v0, t1));
+}
+
+//---------------------------------------------------------------------
+convert_to_type_ctx: &convert_to_type_ctx_t := v_undef();
+
+{   convert_to_type_ctx.fun := v_get_convert_to_type_hook(&convert_to_type_ctx.aux);
+
+    v_set_convert_to_type_hook(my_convert_to_type, &convert_to_type_ctx);
+}
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+alwaysinline
+(_+_): (a: mpz_t, b: mpz_t) ~> mpz_t
+{
+    a = v_get_object_pointer(a);
+    b = v_get_object_pointer(b);
+    r = v_get_return_value();
+
+    __gmpz_add(&r, a, b);
+}
+
+alwaysinline
+(_+__): (a: mpz_t, b: mpz_t) ~> mpz_t
+{
+    v_return(a + b);
+}
+
+alwaysinline
+(_+_): (a: &mpz_t, b: mpz_t) ~> mpz_t
+{
+    b = v_get_object_pointer(b);
+    r = v_get_return_value();
+
+    __gmpz_add(&r, &a, b);
+}
+
+alwaysinline
+(_+__): (a: mpz_t, b: &mpz_t) ~> mpz_t
+{
+    a = v_get_object_pointer(a);
+    r = v_get_return_value();
+
+    __gmpz_add(&r, a, &b);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_-_): (a: mpz_t, b: mpz_t) ~> mpz_t
+{
+    a = v_get_object_pointer(a);
+    b = v_get_object_pointer(b);
+    r = v_get_return_value();
+
+    __gmpz_sub(&r, a, b);
+}
+
+alwaysinline
+(_-__): (a: mpz_t, b: mpz_t) ~> mpz_t
+{
+    v_return(a - b);
+}
+
+alwaysinline
+(_-_): (a: &mpz_t, b: mpz_t) ~> mpz_t
+{
+    b = v_get_object_pointer(b);
+    r = v_get_return_value();
+
+    __gmpz_sub(&r, &a, b);
+}
+
+alwaysinline
+(_-__): (a: mpz_t, b: &mpz_t) ~> mpz_t
+{
+    a = v_get_object_pointer(a);
+    r = v_get_return_value();
+
+    __gmpz_sub(&r, a, &b);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_*_): (a: mpz_t, b: mpz_t) ~> mpz_t
+{
+    a = v_get_object_pointer(a);
+    b = v_get_object_pointer(b);
+    r = v_get_return_value();
+
+    __gmpz_mul(&r, a, b);
+}
+
+alwaysinline
+(_*__): (a: mpz_t, b: mpz_t) ~> mpz_t
+{
+    v_return(a * b);
+}
+
+alwaysinline
+(_*_): (a: &mpz_t, b: mpz_t) ~> mpz_t
+{
+    b = v_get_object_pointer(b);
+    r = v_get_return_value();
+
+    __gmpz_mul(&r, &a, b);
+}
+
+alwaysinline
+(_*__): (a: mpz_t, b: &mpz_t) ~> mpz_t
+{
+    a = v_get_object_pointer(a);
+    r = v_get_return_value();
+
+    __gmpz_mul(&r, a, &b);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_/_): (a: mpz_t, b: mpz_t) ~> mpz_t
+{
+    a = v_get_object_pointer(a);
+    b = v_get_object_pointer(b);
+    r = v_get_return_value();
+
+    __gmpz_tdiv_q(&r, a, b);
+}
+
+alwaysinline
+(_/__): (a: mpz_t, b: mpz_t) ~> mpz_t
+{
+    v_return(a / b);
+}
+
+alwaysinline
+(_/_): (a: &mpz_t, b: mpz_t) ~> mpz_t
+{
+    b = v_get_object_pointer(b);
+    r = v_get_return_value();
+
+    __gmpz_tdiv_q(&r, &a, b);
+}
+
+alwaysinline
+(_/__): (a: mpz_t, b: &mpz_t) ~> mpz_t
+{
+    a = v_get_object_pointer(a);
+    r = v_get_return_value();
+
+    __gmpz_tdiv_q(&r, a, &b);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_%_): (a: mpz_t, b: mpz_t) ~> mpz_t
+{
+    a = v_get_object_pointer(a);
+    b = v_get_object_pointer(b);
+    r = v_get_return_value();
+
+    __gmpz_tdiv_r(&r, a, b);
+}
+
+alwaysinline
+(_%__): (a: mpz_t, b: mpz_t) ~> mpz_t
+{
+    v_return(a % b);
+}
+
+alwaysinline
+(_%_): (a: &mpz_t, b: mpz_t) ~> mpz_t
+{
+    b = v_get_object_pointer(b);
+    r = v_get_return_value();
+
+    __gmpz_tdiv_r(&r, &a, b);
+}
+
+alwaysinline
+(_%__): (a: mpz_t, b: &mpz_t) ~> mpz_t
+{
+    a = v_get_object_pointer(a);
+    r = v_get_return_value();
+
+    __gmpz_tdiv_r(&r, a, &b);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_&_): (a: mpz_t, b: mpz_t) ~> mpz_t
+{
+    a = v_get_object_pointer(a);
+    b = v_get_object_pointer(b);
+    r = v_get_return_value();
+
+    __gmpz_and(&r, a, b);
+}
+
+alwaysinline
+(_&__): (a: mpz_t, b: mpz_t) ~> mpz_t
+{
+    v_return(a & b);
+}
+
+alwaysinline
+(_&_): (a: &mpz_t, b: mpz_t) ~> mpz_t
+{
+    b = v_get_object_pointer(b);
+    r = v_get_return_value();
+
+    __gmpz_and(&r, &a, b);
+}
+
+alwaysinline
+(_&__): (a: mpz_t, b: &mpz_t) ~> mpz_t
+{
+    a = v_get_object_pointer(a);
+    r = v_get_return_value();
+
+    __gmpz_and(&r, a, &b);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_|_): (a: mpz_t, b: mpz_t) ~> mpz_t
+{
+    a = v_get_object_pointer(a);
+    b = v_get_object_pointer(b);
+    r = v_get_return_value();
+
+    __gmpz_ior(&r, a, b);
+}
+
+alwaysinline
+(_|__): (a: mpz_t, b: mpz_t) ~> mpz_t
+{
+    v_return(a | b);
+}
+
+alwaysinline
+(_|_): (a: &mpz_t, b: mpz_t) ~> mpz_t
+{
+    b = v_get_object_pointer(b);
+    r = v_get_return_value();
+
+    __gmpz_ior(&r, &a, b);
+}
+
+alwaysinline
+(_|__): (a: mpz_t, b: &mpz_t) ~> mpz_t
+{
+    a = v_get_object_pointer(a);
+    r = v_get_return_value();
+
+    __gmpz_ior(&r, a, &b);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_^_): (a: mpz_t, b: mpz_t) ~> mpz_t
+{
+    a = v_get_object_pointer(a);
+    b = v_get_object_pointer(b);
+    r = v_get_return_value();
+
+    __gmpz_xor(&r, a, b);
+}
+
+alwaysinline
+(_^__): (a: mpz_t, b: mpz_t) ~> mpz_t
+{
+    v_return(a ^ b);
+}
+
+alwaysinline
+(_^_): (a: &mpz_t, b: mpz_t) ~> mpz_t
+{
+    b = v_get_object_pointer(b);
+    r = v_get_return_value();
+
+    __gmpz_xor(&r, &a, b);
+}
+
+alwaysinline
+(_^__): (a: mpz_t, b: &mpz_t) ~> mpz_t
+{
+    a = v_get_object_pointer(a);
+    r = v_get_return_value();
+
+    __gmpz_xor(&r, a, &b);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_<<_): (a: mpz_t, u: ulong) ~> mpz_t
+{
+    a = v_get_object_pointer(a);
+    r = v_get_return_value();
+
+    __gmpz_mul_2exp(&r, a, u);
+}
+
+alwaysinline
+(_<<_): (a: &mpz_t, u: ulong) ~> mpz_t
+{
+    r = v_get_return_value();
+
+    __gmpz_mul_2exp(&r, &a, u);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_>>_): (a: mpz_t, u: ulong) ~> mpz_t
+{
+    a = v_get_object_pointer(a);
+    r = v_get_return_value();
+
+    __gmpz_fdiv_q_2exp(&r, a, u);
+}
+
+alwaysinline
+(_>>_): (a: &mpz_t, u: ulong) ~> mpz_t
+{
+    r = v_get_return_value();
+
+    __gmpz_fdiv_q_2exp(&r, &a, u);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(~_): (a: mpz_t) ~> mpz_t
+{
+    a = v_get_object_pointer(a);
+    r = v_get_return_value();
+
+    __gmpz_com(&r, a);
+}
+
+alwaysinline
+(~_): (a: &mpz_t) ~> mpz_t
+{
+    r = v_get_return_value();
+
+    __gmpz_com(&r, &a);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(-_): (a: mpz_t) ~> mpz_t
+{
+    a = v_get_object_pointer(a);
+    r = v_get_return_value();
+
+    __gmpz_neg(&r, a);
+}
+
+alwaysinline
+(-_): (a: &mpz_t) ~> mpz_t
+{
+    r = v_get_return_value();
+
+    __gmpz_neg(&r, &a);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_==_): (a: mpz_t, b: mpz_t) ~> bool
+{
+    a = v_get_object_pointer(a);
+    b = v_get_object_pointer(b);
+
+    v_return(__gmpz_cmp(a, b) == 0);
+}
+
+alwaysinline
+(_==__): (a: mpz_t, b: mpz_t) ~> bool
+{
+    v_return(a == b);
+}
+
+alwaysinline
+(_==_): (a: &mpz_t, b: mpz_t) ~> bool
+{
+    b = v_get_object_pointer(b);
+
+    v_return(__gmpz_cmp(&a, b) == 0);
+}
+
+alwaysinline
+(_==__): (a: mpz_t, b: &mpz_t) ~> bool
+{
+    a = v_get_object_pointer(a);
+
+    v_return(__gmpz_cmp(a, &b) == 0);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_!=_): (a: mpz_t, b: mpz_t) ~> bool
+{
+    a = v_get_object_pointer(a);
+    b = v_get_object_pointer(b);
+
+    v_return(__gmpz_cmp(a, b) != 0);
+}
+
+alwaysinline
+(_!=__): (a: mpz_t, b: mpz_t) ~> bool
+{
+    v_return(a != b);
+}
+
+alwaysinline
+(_!=_): (a: &mpz_t, b: mpz_t) ~> bool
+{
+    b = v_get_object_pointer(b);
+
+    v_return(__gmpz_cmp(&a, b) != 0);
+}
+
+alwaysinline
+(_!=__): (a: mpz_t, b: &mpz_t) ~> bool
+{
+    a = v_get_object_pointer(a);
+
+    v_return(__gmpz_cmp(a, &b) != 0);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_<_): (a: mpz_t, b: mpz_t) ~> bool
+{
+    a = v_get_object_pointer(a);
+    b = v_get_object_pointer(b);
+
+    v_return(__gmpz_cmp(a, b) < 0);
+}
+
+alwaysinline
+(_<__): (a: mpz_t, b: mpz_t) ~> bool
+{
+    v_return(a < b);
+}
+
+alwaysinline
+(_<_): (a: &mpz_t, b: mpz_t) ~> bool
+{
+    b = v_get_object_pointer(b);
+
+    v_return(__gmpz_cmp(&a, b) < 0);
+}
+
+alwaysinline
+(_<__): (a: mpz_t, b: &mpz_t) ~> bool
+{
+    a = v_get_object_pointer(a);
+
+    v_return(__gmpz_cmp(a, &b) < 0);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_<=_): (a: mpz_t, b: mpz_t) ~> bool
+{
+    a = v_get_object_pointer(a);
+    b = v_get_object_pointer(b);
+
+    v_return(__gmpz_cmp(a, b) <= 0);
+}
+
+alwaysinline
+(_<=__): (a: mpz_t, b: mpz_t) ~> bool
+{
+    v_return(a <= b);
+}
+
+alwaysinline
+(_<=_): (a: &mpz_t, b: mpz_t) ~> bool
+{
+    b = v_get_object_pointer(b);
+
+    v_return(__gmpz_cmp(&a, b) <= 0);
+}
+
+alwaysinline
+(_<=__): (a: mpz_t, b: &mpz_t) ~> bool
+{
+    a = v_get_object_pointer(a);
+
+    v_return(__gmpz_cmp(a, &b) <= 0);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_>_): (a: mpz_t, b: mpz_t) ~> bool
+{
+    a = v_get_object_pointer(a);
+    b = v_get_object_pointer(b);
+
+    v_return(__gmpz_cmp(a, b) > 0);
+}
+
+alwaysinline
+(_>__): (a: mpz_t, b: mpz_t) ~> bool
+{
+    v_return(a > b);
+}
+
+alwaysinline
+(_>_): (a: &mpz_t, b: mpz_t) ~> bool
+{
+    b = v_get_object_pointer(b);
+
+    v_return(__gmpz_cmp(&a, b) > 0);
+}
+
+alwaysinline
+(_>__): (a: mpz_t, b: &mpz_t) ~> bool
+{
+    a = v_get_object_pointer(a);
+
+    v_return(__gmpz_cmp(a, &b) < 0);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_>=_): (a: mpz_t, b: mpz_t) ~> bool
+{
+    a = v_get_object_pointer(a);
+    b = v_get_object_pointer(b);
+
+    v_return(__gmpz_cmp(a, b) >= 0);
+}
+
+alwaysinline
+(_>=__): (a: mpz_t, b: mpz_t) ~> bool
+{
+    v_return(a >= b);
+}
+
+alwaysinline
+(_>=_): (a: &mpz_t, b: mpz_t) ~> bool
+{
+    b = v_get_object_pointer(b);
+
+    v_return(__gmpz_cmp(&a, b) >= 0);
+}
+
+alwaysinline
+(_>=__): (a: mpz_t, b: &mpz_t) ~> bool
+{
+    a = v_get_object_pointer(a);
+
+    v_return(__gmpz_cmp(a, &b) >= 0);
+}
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+alwaysinline
+(_:=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t
+{
+    v_copy(&v, v_get_object_pointer(x));
+
+    v_return(v);
+}
+
+alwaysinline
+(_+=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t
+{
+    v_return(v := v + x);
+}
+
+alwaysinline
+(_-=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t
+{
+    v_return(v := v - x);
+}
+
+alwaysinline
+(_*=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t
+{
+    v_return(v := v * x);
+}
+
+alwaysinline
+(_/=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t
+{
+    v_return(v := v / x);
+}
+
+alwaysinline
+(_%=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t
+{
+    v_return(v := v % x);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_&=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t
+{
+    v_return(v := v & x);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_|=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t
+{
+    v_return(v := v | x);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_^=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t
+{
+    v_return(v := v ^ x);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_<<=_): (v: &mpz_t, u: ulong) ~> &mpz_t
+{
+    v_return(v := v << u);
+}
+
+//---------------------------------------------------------------------
+alwaysinline
+(_>>=_): (v: &mpz_t, u: ulong) ~> &mpz_t
+{
+    v_return(v := v >> u);
+}
+
+
+
+//=====================================================================
+//=====================================================================
+__gmp_printf: (*const char, ...) ~> int;
+
+
+
+//---------------------------------------------------------------------
+{
+    N = 256*8;
+
+    num_t = uint(N);
+
+    num: &num_t := 98765432109876543210987654321098765432109876543210987654321098765432109876543210987654321098765432109876543210;
+
+    __gmpz_import: (*mpz_t, size_t, int, size_t, int, size_t, *const void) ~> void;
+
+    bnum: &mpz_t := {};
+
+//  __gmpz_import(&bnum, num_t.size, -1, 1, 0, 0, &num);
+    __gmpz_import(&bnum, 1, 1, num_t.size, 0, 0, &num);
+
+    __gmp_printf("%Zd\n", &bnum);
+
+}
+
+//---------------------------------------------------------------------
+{
+    bnum: &mpz_t := {};
+
+    __gmpz_set_str(&bnum, "-100", 8);
+
+    __gmp_printf("%Zd\n", &bnum);
+
+}
+
+//---------------------------------------------------------------------
+//{   v_debug_print_module(2);
+//    voidc_verify_jit_module_optimized(true);
+//}
+{
+//  val: mpz_t = -0x100;
+//  val: mpz_t = -100;
+    val: mpz_t = 98765432109876543210987654321098765432109876543210987654321098765432109876543210987654321098765432109876543210;
+
+    bnum: &mpz_t := val;
+
+    __gmp_printf("%Zd\n", &bnum);
+
+
+}
+
+
+//---------------------------------------------------------------------
+//{   v_debug_print_module(2);
+//    voidc_verify_jit_module_optimized(true);
+//}
+{
+    f: &mpz_t[2] := { 0, 1 };
+
+    N = 4782;
+
+    for (i: &int := 2; i <= N; ++i)
+    {
+        fn = f[0] + f[1];
+
+        v_assert(f[0] <= f[1] <= fn);
+
+        f[0] := f[1];
+        f[1] := fn;
+    }
+
+    n: &mpz_t := 1;
+
+    for (i: &int := 0; i < 999; ++i)
+    {
+        n *= 10;
+    }
+
+    v_assert(f[0] < n <= f[1]);
+
+    __gmp_printf("\n%Zd\n", &f[1]);
+}
+
+
+//---------------------------------------------------------------------
+{
+    printf("\n");
+
+    r: &mpz_t := 1;
+
+    N = 1000;
+
+    for (i: &int := 1; i <= N; ++i)
+    {
+        r *= i;
+//      r := i * r;
+
+        __gmp_printf("%Zd\n", &r);
+    }
+}
+
+
+//---------------------------------------------------------------------
+{
+    r: &mpz_t := 1;
+
+    r <<= 1000;
+
+    __gmp_printf("%Zd\n", &r);
+}
 
 
 
