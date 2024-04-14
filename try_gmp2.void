@@ -85,6 +85,9 @@ __gmpz_init_set_d: (*mpz_t, double) ~> void;
 __gmpz_init_set_str: (*mpz_t, *const char, int) ~> int;
 
 //---------------------------------------------------------------------
+__gmpz_import: (*mpz_t, size_t, int, size_t, int, size_t, *const void) ~> void;
+
+//---------------------------------------------------------------------
 __gmpz_add: (*mpz_t, *const mpz_t, *const mpz_t) ~> void;
 __gmpz_sub: (*mpz_t, *const mpz_t, *const mpz_t) ~> void;
 __gmpz_mul: (*mpz_t, *const mpz_t, *const mpz_t) ~> void;
@@ -141,19 +144,7 @@ my_literal_integer_intrinsic: (aux: *void, vis: *voidc_visitor_t,
                                self: *v_ast_base_t) ~> void
 {
     ttag = v_get_result_type();
-
-    if (ttag != v_find_type("mpz_t"))
-    {
-        ctx = *(aux: *literal_integer_ctx_t);
-
-        ctx.fun(ctx.aux, vis, self);
-
-        v_return();
-    }
-
     vtag = v_get_result_value();
-
-    vr = v_obtain_special_result_value(vis, ttag);
 
     args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
 
@@ -162,7 +153,16 @@ my_literal_integer_intrinsic: (aux: *void, vis: *voidc_visitor_t,
 
     t_str = v_ast_expr_string_get_string(arg1);         //- Suffix string
 
-    v_assert(t_str[0] == 0);
+    if (ttag != v_find_type("mpz_t")  ||  t_str[0] != 0)
+    {
+        ctx = *(aux: *literal_integer_ctx_t);
+
+        ctx.fun(ctx.aux, vis, self);
+
+        v_return();
+    }
+
+    vr = v_obtain_special_result_value(vis, ttag);
 
     src: &*const char := v_ast_expr_string_get_string(arg0);        //- Value string (source)
 
@@ -172,7 +172,7 @@ my_literal_integer_intrinsic: (aux: *void, vis: *voidc_visitor_t,
     {
         ++src;
 
-        v_std_string_set(&dst, "-");        //- ????????
+        v_std_string_set(&dst, "-");
     }
     else
     {
@@ -221,7 +221,7 @@ my_literal_integer_intrinsic: (aux: *void, vis: *voidc_visitor_t,
 
     v_list_append(&list, &list, &expr);
 
-    v_ast_make_expr_identifier(&expr, "__gmpz_set_str");
+    v_ast_make_expr_identifier(&expr, "__gmpz_set_str");        //- ?
 
     v_ast_make_expr_call(&expr, &expr, &list);
 
@@ -381,17 +381,59 @@ my_convert_to_type: (aux: *void, t0: *v_type_t, v0: LLVMValueRef, t1: *v_type_t)
 
             w = v_type_integer_get_width(t0);
 
-            long_width = v_type_integer_get_width(v_find_type("long"));
+            _long = v_find_type("long");
 
-            v_assert(w <= long_width);      //- ?!?!?!?
+            long_width = v_type_integer_get_width(_long);
 
-            if (w < long_width)
+            if (w <= long_width)
             {
-                v1 := LLVMBuildIntCast2(builder, v0, v_type_get_llvm_type(long), sign, "");
-            }
+                if (w < long_width)
+                {
+                    v1 := LLVMBuildIntCast2(builder, v0, v_type_get_llvm_type(_long), sign, "");
+                }
 
-            if (sign) fn := "__gmpz_init_set_si";
-            else      fn := "__gmpz_init_set_ui";
+                if (sign) fn := "__gmpz_init_set_si";
+                else      fn := "__gmpz_init_set_ui";
+            }
+            else    //- w > long_width
+            {
+                v1 := v_make_temporary(t0, v0);
+
+                ttag = v_get_result_type();
+                vtag = v_get_result_value();
+
+                vtmp = v_make_temporary(t1, LLVMConstNull(v_type_get_llvm_type(t1)));
+
+                size_t_ = v_type_get_llvm_type(v_find_type("size_t"));
+                int_    = v_type_get_llvm_type(v_find_type("int"));
+
+                val: &LLVMValueRef[7] :=
+                {
+                    vtmp,                                   //- rop
+                    LLVMConstInt(size_t_,         1, 0),    //- count
+                    LLVMConstInt(int_,            1, 0),    //- order
+                    LLVMConstInt(size_t_,   (w+7)/8, 0),    //- size
+                    LLVMConstInt(int_,            0, 0),    //- endian
+                    LLVMConstInt(size_t_, (8-w%8)%8, 0),    //- nails
+                    v1                                      //- op
+                };
+
+                ft: &v_type_ptr   := v_undef();
+                fv: &LLVMValueRef := v_undef();
+
+                v_obtain_identifier("__gmpz_import", &ft, &fv);
+
+                if (v_type_is_pointer(ft))  ft := v_type_refptr_get_element_type(ft);
+
+                LLVMBuildCall2(builder, v_type_get_llvm_type(ft), fv, val, 7, "");
+
+                v_add_temporary_cleaner(mpz_temporary_cleaner, vtmp);
+
+                v_set_result_type(ttag);
+                v_set_result_value(vtag);
+
+                v_return(vtmp);
+            }
         }
         else
         {
@@ -947,7 +989,7 @@ alwaysinline
 {
     a = v_get_object_pointer(a);
 
-    v_return(__gmpz_cmp(a, &b) < 0);
+    v_return(__gmpz_cmp(a, &b) > 0);
 }
 
 //---------------------------------------------------------------------
@@ -1024,35 +1066,30 @@ alwaysinline
     v_return(v := v % x);
 }
 
-//---------------------------------------------------------------------
 alwaysinline
 (_&=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t
 {
     v_return(v := v & x);
 }
 
-//---------------------------------------------------------------------
 alwaysinline
 (_|=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t
 {
     v_return(v := v | x);
 }
 
-//---------------------------------------------------------------------
 alwaysinline
 (_^=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t
 {
     v_return(v := v ^ x);
 }
 
-//---------------------------------------------------------------------
 alwaysinline
 (_<<=_): (v: &mpz_t, u: ulong) ~> &mpz_t
 {
     v_return(v := v << u);
 }
 
-//---------------------------------------------------------------------
 alwaysinline
 (_>>=_): (v: &mpz_t, u: ulong) ~> &mpz_t
 {
@@ -1074,8 +1111,6 @@ __gmp_printf: (*const char, ...) ~> int;
     num_t = uint(N);
 
     num: &num_t := 98765432109876543210987654321098765432109876543210987654321098765432109876543210987654321098765432109876543210;
-
-    __gmpz_import: (*mpz_t, size_t, int, size_t, int, size_t, *const void) ~> void;
 
     bnum: &mpz_t := {};
 
@@ -1164,12 +1199,15 @@ __gmp_printf: (*const char, ...) ~> int;
 
 
 //---------------------------------------------------------------------
+//{   v_debug_print_module(2);
+//    voidc_verify_jit_module_optimized(true);
+//}
 {
-    r: &mpz_t := 1;
+    r: &mpz_t := 1u67;
 
     r <<= 1000;
 
-    __gmp_printf("%Zd\n", &r);
+    __gmp_printf("\n%Zd\n", &r);
 }
 
 

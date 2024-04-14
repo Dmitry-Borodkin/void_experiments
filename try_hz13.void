@@ -67,10 +67,114 @@ pr_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 }
 
 
+//---------------------------------------------------------------------
+foo_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    ttag = v_get_result_type();
+    vtag = v_get_result_value();
+
+    //- First argument
+
+    v_set_result_type(INVIOLABLE_TAG);
+    v_set_result_value(0);
+
+    arg0 = v_list_get_item(args, 0);
+
+    v_ast_accept_visitor((arg0 : *v_ast_base_t), vis);
+
+    t = v_get_result_type();
+    v = v_get_result_value();
+
+    q = (aux: v_quark_t);
+
+    void_fun: &*void := 0;
+    void_aux: &*void := 0;
+
+    ft: &*v_type_t    := 0;
+    fv: &LLVMValueRef := 0;
+
+    if (v_util_lookup_function_dict(q, t, void_fun, void_aux, ft, fv))
+    {
+        //- Got overloading!
+
+        intrinsic_t = (aux: *void, vis: *voidc_visitor_t,
+                       self: *v_ast_base_t,
+                       t0: *v_type_t, v0: LLVMValueRef
+                      ) ~> void;
+
+        if (fun = (void_fun: *intrinsic_t))
+        {
+            v_set_result_type(ttag);
+            v_set_result_value(vtag);
+
+            fun(void_aux, vis, self, t, v);
+
+            v_return();
+        }
+        else
+        {
+            expr: &v_ast_expr_t := {};
+
+            arg_count = v_list_get_size(args);
+
+            arg_ptrs = v_malloc(*v_ast_expr_t, arg_count);
+            defer v_free(arg_ptrs);
+
+            for (i: &int := 0; i < arg_count; ++i)
+            {
+                if (i == 0)
+                {
+                    v_ast_make_expr_compiled(&expr, t, v);
+
+                    arg_ptrs[0] := &expr;
+                }
+                else
+                {
+                    arg_ptrs[i] := v_list_get_item(args, i);
+                }
+            }
+
+            v_set_result_type(ttag);
+            v_set_result_value(vtag);
+
+            v_llvm_build_call(vis, self, ft, fv, arg_ptrs, (arg_count: unsigned));
+        }
+    }
+    else
+    {
+        v_assert(false);
+    }
+}
 
 
 
 
+
+//{   v_debug_print_module(2);
+//    voidc_verify_jit_module_optimized(true);
+//}
+
+(foo(_)): (a: int, b: int) ~> void
+{
+    printf("foo(%d, %d)\n", a, b);
+}
+
+
+
+{
+    v_add_intrinsic("foo", foo_intrinsic, (v_quark_from_string("foo") : *void));
+}
+
+
+{
+    foo(5, 7);
+
+
+
+
+}
 
 
 
