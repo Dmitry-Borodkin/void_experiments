@@ -95,61 +95,49 @@ foo_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
     ft: &*v_type_t    := 0;
     fv: &LLVMValueRef := 0;
 
-    if (v_util_lookup_function_dict(q, t, void_fun, void_aux, ft, fv))
+    ok = v_util_lookup_function_dict(q, t, void_fun, void_aux, ft, fv);
+    v_assert(ok);
+
+    //- Overloading only!
+
+    intrinsic_t = (aux: *void, vis: *voidc_visitor_t,
+                   self: *v_ast_base_t,
+                   t0: *v_type_t, v0: LLVMValueRef
+                  ) ~> void;
+
+    if (fun = (void_fun: *intrinsic_t))
     {
-        //- Got overloading!
+        v_set_result_type(ttag);
+        v_set_result_value(vtag);
 
-        intrinsic_t = (aux: *void, vis: *voidc_visitor_t,
-                       self: *v_ast_base_t,
-                       t0: *v_type_t, v0: LLVMValueRef
-                      ) ~> void;
+        fun(void_aux, vis, self, t, v);
 
-        if (fun = (void_fun: *intrinsic_t))
-        {
-            v_set_result_type(ttag);
-            v_set_result_value(vtag);
-
-            fun(void_aux, vis, self, t, v);
-
-            v_return();
-        }
-        else
-        {
-            expr: &v_ast_expr_t := {};
-
-            arg_count = v_list_get_size(args);
-
-            arg_ptrs = v_malloc(*v_ast_expr_t, arg_count);
-            defer v_free(arg_ptrs);
-
-            for (i: &int := 0; i < arg_count; ++i)
-            {
-                if (i == 0)
-                {
-                    v_ast_make_expr_compiled(&expr, t, v);
-
-                    arg_ptrs[0] := &expr;
-                }
-                else
-                {
-                    arg_ptrs[i] := v_list_get_item(args, i);
-                }
-            }
-
-            v_set_result_type(ttag);
-            v_set_result_value(vtag);
-
-            v_llvm_build_call(vis, self, ft, fv, arg_ptrs, (arg_count: unsigned));
-        }
+        v_return();
     }
-    else
+
+    expr: &v_ast_expr_t := {};
+
+    v_ast_make_expr_compiled(&expr, t, v);
+
+    arg_count = v_list_get_size(args);
+
+    arg_ptrs = new (*v_ast_expr_t)[arg_count] { &expr };
+    defer delete[] arg_ptrs;
+
+    for (i: &int := 1; i < arg_count; ++i)
     {
-        v_assert(false);
+        arg_ptrs[i] := v_list_get_item(args, i);
     }
+
+    v_set_result_type(ttag);
+    v_set_result_value(vtag);
+
+    v_llvm_build_call(vis, self, ft, fv, arg_ptrs, (arg_count: unsigned));
 }
 
-
-
+{   v_add_intrinsic("foo", foo_intrinsic, (v_quark_from_string("foo") : *void));
+    v_add_intrinsic("bar", foo_intrinsic, (v_quark_from_string("bar") : *void));
+}
 
 
 //{   v_debug_print_module(2);
@@ -161,18 +149,22 @@ foo_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
     printf("foo(%d, %d)\n", a, b);
 }
 
-
-
+(foo(_)): (a: float(64), b: int, s: *const char) ~> void
 {
-    v_add_intrinsic("foo", foo_intrinsic, (v_quark_from_string("foo") : *void));
+    printf("foo(%g, %d, \"%s\")\n", a, b, s);
 }
 
+(bar(_)): (a: int, b: int) ~> void
+{
+    printf("bar(%d, %d)\n", a, b);
+}
 
 {
     foo(5, 7);
 
+    foo(0.5, 77, "hello");
 
-
+    bar(55, 777);
 
 }
 

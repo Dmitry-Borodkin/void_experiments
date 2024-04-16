@@ -228,7 +228,7 @@ my_literal_integer_intrinsic: (aux: *void, vis: *voidc_visitor_t,
     v_set_result_type(INVIOLABLE_TAG);
     v_set_result_value(0);
 
-    v_ast_accept_visitor((&expr : *v_ast_base_t), vis);
+    v_ast_accept_visitor(&expr, vis);
 
     v_set_result_type(ttag);
     v_set_result_value(vtag);
@@ -295,7 +295,7 @@ my_compile_expr_integer: (aux: *void, vis: *voidc_visitor_t,
     v_set_result_type(INVIOLABLE_TAG);
     v_set_result_value(0);
 
-    v_ast_accept_visitor((&expr : *v_ast_base_t), vis);
+    v_ast_accept_visitor(&expr, vis);
 
     v_set_result_type(ttag);
     v_set_result_value(vtag);
