@@ -17,7 +17,7 @@ my_add_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> vo
 
     v_ast_make_expr_op_binary(&expr, v_op_infix_add, lhs, rhs);
 
-    v_ast_accept_visitor((&expr: *v_ast_base_t), vis);
+    v_ast_accept_visitor(&expr, vis);
 }
 
 {    v_add_intrinsic("my_add", my_add_intrinsic, 0);
@@ -38,7 +38,7 @@ my_binop_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> 
 
     v_ast_make_expr_op_binary(&expr, op, lhs, rhs);
 
-    v_ast_accept_visitor((&expr: *v_ast_base_t), vis);
+    v_ast_accept_visitor(&expr, vis);
 }
 
 {    v_add_intrinsic("my_sub", my_binop_intrinsic, v_op_infix_sub);

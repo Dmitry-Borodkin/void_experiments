@@ -1187,43 +1187,57 @@ struct F {};
 //---------------------------------------------------------------------
 {
     v_import("../../programming/llvm-c/clang-plugin/try_decl_nodes2.void");
+    v_import("../../programming/llvm-c/clang-plugin/try_type_nodes.void");
+    v_import("../../programming/llvm-c/clang-plugin/try_stmt_nodes.void");
 }
 
 {
-    t = v_find_symbol_type("clang_decl");
-
-    n = v_type_array_get_length(v_type_refptr_get_element_type(t));
-
-    printf("n: %zu\n", n);
-
-    s: &v_std_string_t := {};
-
-    for (i: &int := 0; i < n; ++i)
+    tab: &struct { name: *const char; table: *(*const char)[2]; suffix: *const char; }[3] :=
     {
-        v_std_string_set(&s, "clang.");
+        { "clang_decl", clang_decl, "Decl" },
+        { "clang_type", clang_type, "Type" },
+        { "clang_stmt", clang_stmt, "" },
+    };
 
-        v_std_string_append(&s, clang_decl[i][0]);
-        v_std_string_append(&s, "Decl");
+    for (k: &int := 0; k < 3; ++k)
+    {
+        t = v_find_symbol_type(tab[k].name);
 
-        t0 = v_struct_type_named(v_std_string_get(&s));
+        n = v_type_array_get_length(v_type_refptr_get_element_type(t));
 
-        v_std_string_set(&s, "clang.");
+        printf("%s n: %zu\n", tab[k].name, n);
 
-        v_std_string_append(&s, clang_decl[i][1]);
+        s: &v_std_string_t := {};
 
-        t1 = v_struct_type_named(v_std_string_get(&s));
+        for (i: &int := 0; i < n; ++i)
+        {
+            v_std_string_set(&s, "clang.");
 
-        v_std_string_set(&s, clang_decl[i][0]);
+            v_std_string_append(&s, tab[k].table[i][0]);
+            v_std_string_append(&s, tab[k].suffix);
 
-        v_std_string_append(&s, "-");
-        v_std_string_append(&s, clang_decl[i][1]);
+            t0 = v_struct_type_named(v_std_string_get(&s));
 
-        q = v_quark_from_string(v_std_string_get(&s));
+            v_std_string_set(&s, "clang.");
 
-        v_add_coercion(v_coe_projective, q, t0, t1);
+            v_std_string_append(&s, tab[k].table[i][1]);
+
+            t1 = v_struct_type_named(v_std_string_get(&s));
+
+            v_std_string_set(&s, tab[k].table[i][0]);
+
+            v_std_string_append(&s, "-");
+            v_std_string_append(&s, tab[k].table[i][1]);
+
+            q = v_quark_from_string(v_std_string_get(&s));
+
+            v_add_coercion(v_coe_projective, q, t0, t1);
+        }
     }
 
     print_chain_list(v_struct_type_named("clang.Decl"), trans_rev_q);
+    print_chain_list(v_struct_type_named("clang.Type"), trans_rev_q);
+    print_chain_list(v_struct_type_named("clang.Stmt"), trans_rev_q);
 }
 
 
