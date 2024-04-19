@@ -146,94 +146,20 @@ my_literal_integer_intrinsic: (aux: *void, vis: *voidc_visitor_t,
     ttag = v_get_result_type();
     vtag = v_get_result_value();
 
-    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
-
-    arg0 = v_list_get_item(args, 0);
-    arg1 = v_list_get_item(args, 1);
-
-    t_str = v_ast_expr_string_get_string(arg1);         //- Suffix string
-
-    if (ttag != v_find_type("mpz_t")  ||  t_str[0] != 0)
-    {
-        ctx = *(aux: *literal_integer_ctx_t);
-
-        ctx.fun(ctx.aux, vis, self);
-
-        v_return();
-    }
-
-    vr = v_obtain_special_result_value(vis, ttag);
-
-    src: &*const char := v_ast_expr_string_get_string(arg0);        //- Value string (source)
-
-    dst: &v_std_string_t := {};
-
-    if (src[0] == '-')
-    {
-        ++src;
-
-        v_std_string_set(&dst, "-");
-    }
-    else
-    {
-        v_std_string_set(&dst, "");
-
-        if (src[0] == '+')  ++src;
-    }
-
-    radix: &int := 10;
-
-    if (src[0] == '0')
-    {
-        switch((src[1] : char32_t))
-        {
-        case 0: v_break();
-
-        case 'x': case 'X':     radix := 16;  src += 2;   v_break();
-        case 'b': case 'B':     radix :=  2;  src += 2;   v_break();
-
-        default:                radix :=  8;  src += 1;   v_break();
-        }
-    }
-
-    loop
-    {
-        if (!*src)  v_break();
-
-        if (*src != '\'')   v_std_string_append_char(&dst, *src);
-
-        ++src;
-    }
-
-    expr: &v_ast_expr_t := {};
-
-    v_ast_make_expr_compiled(&expr, v_pointer_type(ttag, 0), vr);
-
-    list: &v_ast_expr_list_t := {};
-
-    v_make_list(&list, &expr);
-
-    v_ast_make_expr_string(&expr, v_std_string_get(&dst));
-
-    v_list_append(&list, &list, &expr);
-
-    v_ast_make_expr_integer(&expr, radix);
-
-    v_list_append(&list, &list, &expr);
-
-    v_ast_make_expr_identifier(&expr, "__gmpz_set_str");        //- ?
-
-    v_ast_make_expr_call(&expr, &expr, &list);
-
     v_set_result_type(INVIOLABLE_TAG);
     v_set_result_value(0);
 
-    v_ast_accept_visitor(&expr, vis);
+    ctx = *(aux: *literal_integer_ctx_t);
+
+    ctx.fun(ctx.aux, vis, self);
+
+    t = v_get_result_type();
+    v = v_get_result_value();
 
     v_set_result_type(ttag);
     v_set_result_value(vtag);
 
-    v_adopt_result(ttag, vr);
+    v_adopt_result(t, v);
 }
 
 //---------------------------------------------------------------------
@@ -397,19 +323,19 @@ my_convert_to_type: (aux: *void, t0: *v_type_t, v0: LLVMValueRef, t1: *v_type_t)
             }
             else    //- w > long_width
             {
-                v1 := v_make_temporary(t0, v0);
-
                 ttag = v_get_result_type();
                 vtag = v_get_result_value();
 
-                vtmp = v_make_temporary(t1, LLVMConstNull(v_type_get_llvm_type(t1)));
+                v1 := v_make_temporary(t0, v0);
+
+                vr = v_obtain_special_result_value(v_get_compiler(), t1);
 
                 size_t_ = v_type_get_llvm_type(v_find_type("size_t"));
                 int_    = v_type_get_llvm_type(v_find_type("int"));
 
                 val: &LLVMValueRef[7] :=
                 {
-                    vtmp,                                   //- rop
+                    vr,                                     //- rop
                     LLVMConstInt(size_t_,         1, 0),    //- count
                     LLVMConstInt(int_,            1, 0),    //- order
                     LLVMConstInt(size_t_,   (w+7)/8, 0),    //- size
@@ -427,12 +353,10 @@ my_convert_to_type: (aux: *void, t0: *v_type_t, v0: LLVMValueRef, t1: *v_type_t)
 
                 LLVMBuildCall2(builder, v_type_get_llvm_type(ft), fv, val, 7, "");
 
-                v_add_temporary_cleaner(mpz_temporary_cleaner, vtmp);
-
                 v_set_result_type(ttag);
                 v_set_result_value(vtag);
 
-                v_return(vtmp);
+                v_return(vr);
             }
         }
         else
@@ -1223,9 +1147,9 @@ check_fruits: (a: mpz_t, b: mpz_t, c: mpz_t) ~> bool
     v_return(a*ab*ac + b*ab*bc + c*ac*bc == 4*ab*ac*bc);
 }
 
-A: mpz_t = 154476802108746166441951315019919837485664325669565431700026634898253202035277999u267;
-B: mpz_t =  36875131794129999827197811565225474825492979968971970996283137471637224634055579u267;
-C: mpz_t =   4373612677928697257861252602371390152816537558161613618621437993378423467772036u267;
+A = 154476802108746166441951315019919837485664325669565431700026634898253202035277999;
+B =  36875131794129999827197811565225474825492979968971970996283137471637224634055579;
+C =   4373612677928697257861252602371390152816537558161613618621437993378423467772036;
 
 {   if (check_fruits(A, B, C))  printf("\nOK\n");
     else                        printf("\nFail\n");
