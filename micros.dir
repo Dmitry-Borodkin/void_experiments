@@ -36,6 +36,8 @@ try_kaleidoscope/                                              │try_kaleidosco
 try_gmp2.void ... !                                            │try_gmp2.void
                                                                │
                                                                │
+try_cairo_text.void                                            │try_cairo_text.void
+                                                               │
 try_mandel.void                                                │try_mandel.void
                                                                │
 try_clifford.void                                              │try_clifford.void

@@ -1,0 +1,408 @@
+{   v_import("mainline.void");
+
+    v_import("llvm-c/Support.void");
+
+    v_import("printf.void");
+
+    v_import("cairo.void");
+}
+
+{   v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+//- ... <gtk/gtk.h>
+//---------------------------------------------------------------------
+{
+    ok = LLVMLoadLibraryPermanently("libgtk-4.so");
+
+//  printf("ok: %d\n", ok);
+}
+
+
+//---------------------------------------------------------------------
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(2); }
+
+
+//---------------------------------------------------------------------
+struct GtkApplication;
+struct GtkWidget;
+struct GtkDrawingArea;
+struct GtkEventController;
+
+//---------------------------------------------------------------------
+gtk_application_new: (id: *const char, flags: int) ~> *GtkApplication;
+
+g_signal_connect_data: (instance: *void,
+                        signal: *const char,
+                        callback: *(()~>void),
+                        data: *void,
+                        notify: *void,
+                        flags: int
+                       ) ~> long;
+
+g_application_run: (app: *GtkApplication, argc: int, argv: **char) ~> int;
+
+
+gtk_application_window_new: (app: *GtkApplication) ~> *GtkWidget;
+
+
+gtk_window_set_default_size: (wnd: *GtkWidget, width: int, height: int) ~> void;
+
+gtk_window_set_child: (wnd: *GtkWidget, widget: *GtkWidget) ~> void;
+
+gtk_window_present: (wnd: *GtkWidget) ~> void;
+
+
+gtk_drawing_area_new: () ~> *GtkWidget;
+
+
+GtkDrawingAreaDrawFunc = *((*GtkDrawingArea, *cairo_t, w: int, h: int, aux: *void) ~> void);
+
+gtk_drawing_area_set_draw_func: (*GtkDrawingArea, GtkDrawingAreaDrawFunc, aux: *void, destroy: *void) ~> void;
+
+
+gtk_widget_queue_draw: (*GtkWidget) ~> void;
+
+gtk_event_controller_key_new: () ~> *GtkEventController;
+
+gtk_widget_add_controller: (*GtkWidget, *GtkEventController) ~> void;
+
+
+//---------------------------------------------------------------------
+key_pressed: (controller: *GtkEventController,
+              keyval:     unsigned,
+              keycode:    unsigned,
+              modifiers:  unsigned,
+              text_view:  *GtkWidget
+              ) ~> int;
+
+//---------------------------------------------------------------------
+draw_cairo_text: (drawing_area: *GtkDrawingArea,
+                  cr: *cairo_t,
+                  width: int,
+                  height: int,
+                  aux: *void
+                 ) ~> void;
+
+//---------------------------------------------------------------------
+on_activate: (app: *GtkApplication, data: *void) ~> void
+{
+    window = gtk_application_window_new(app);
+
+    gtk_window_set_default_size(window, 1024, 768);
+
+    drawing_area = gtk_drawing_area_new();
+
+    gtk_drawing_area_set_draw_func((drawing_area: *GtkDrawingArea), draw_cairo_text, 0, 0);
+
+    gtk_window_set_child(window, drawing_area);
+
+    controller = gtk_event_controller_key_new();
+    g_signal_connect_data(controller, "key-pressed", (key_pressed: *(()~>void)), drawing_area, 0, 0);
+    gtk_widget_add_controller(window, controller);
+
+    gtk_window_present(window);
+}
+
+
+//---------------------------------------------------------------------
+double = float(64);
+
+
+//---------------------------------------------------------------------
+(_.flush())        = cairo_surface_flush;
+(_.write_to_png()) = cairo_surface_write_to_png;
+(_.destroy())      = cairo_surface_destroy;
+
+(_.destroy())         = cairo_destroy;
+(_.paint())           = cairo_paint;
+(_.fill())            = cairo_fill;
+(_.fill_preserve())   = cairo_fill_preserve;
+(_.stroke())          = cairo_stroke;
+(_.set_source_rgb())  = cairo_set_source_rgb;
+(_.set_source_rgba()) = cairo_set_source_rgba;
+(_.rectangle())       = cairo_rectangle;
+(_.set_line_width())  = cairo_set_line_width;
+(_.line_to())         = cairo_line_to;
+(_.move_to())         = cairo_move_to;
+(_.close_path())      = cairo_close_path;
+(_.set_fill_rule())   = cairo_set_fill_rule;
+(_.set_operator())    = cairo_set_operator;
+(_.get_operator())    = cairo_get_operator;
+(_.show_text())       = cairo_show_text;
+
+
+struct cairo_font_extents_t
+{
+    ascent       : double;
+    descent      : double;
+    height       : double;
+    max_x_advance: double;
+    max_y_advance: double;
+};
+
+cairo_font_extents: (*cairo_t, *cairo_font_extents_t) ~> void;
+
+(_.get_font_extents()) = cairo_font_extents;
+(_.select_font_face()) = cairo_select_font_face;
+(_.set_font_size())    = cairo_set_font_size;
+
+
+
+
+//=====================================================================
+
+//---------------------------------------------------------------------
+text: &v_util_list_t := {};
+
+block
+{
+    v_make_list_nil(&text);
+
+    struct FILE;
+
+    v_fopen: (filename: *const char, mode: *const char) ~> *FILE;
+    v_fclose: (stream: *FILE) ~> int;
+
+    perror: (s: *const char) ~> void;
+
+    fgets: (s: *char, n: int, stream: *FILE) ~> *char;
+
+//  filename = "try_cairo_text.void";
+    filename = "micros.dir";
+
+    f = v_fopen(filename, "r");
+    defer v_fclose(f);
+
+    if (!f)
+    {
+        perror(filename);
+
+        v_return();
+    }
+
+    bufsize = 1024;
+
+    buf = v_malloc(char, bufsize);
+    defer v_free(buf);
+
+    sstr: &v_std_string_t := {};
+
+    sany: &v_std_any_t := {};
+
+    while (fgets(buf, bufsize, f))
+    {
+        strchr: (*char, int) ~> *char;
+
+        if (p = strchr(buf, '\n'))  *p := 0;
+
+        v_std_string_set(&sstr, buf);
+
+        v_std_any_set_pointer(&sany, &sstr);
+
+        v_list_append(&text, &text, &sany);
+    }
+}
+
+
+//---------------------------------------------------------------------
+position_x: &int := 0;
+position_y: &int := 0;
+
+caret_x: &int := 0;
+caret_y: &int := 0;
+caret_p: &int := 0;
+
+//---------------------------------------------------------------------
+draw_cairo_text: (drawing_area: *GtkDrawingArea,
+                  cr: *cairo_t,
+                  width: int,
+                  height: int,
+                  aux: *void
+                 ) ~> void
+{
+    cr.set_source_rgb(0,0,0);
+    cr.paint();
+
+    c = 0.75;
+
+    cr.set_source_rgb(c,c,c);
+
+    cr.select_font_face("DejaVu Sans Mono", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+
+    font_size = 13.0;
+
+    cr.set_font_size(font_size);
+
+    exts: &cairo_font_extents_t := 0;
+
+    cr.get_font_extents(&exts);
+
+//    printf("size: %g\n", font_size);
+//    printf("ascent:  %g\n", exts.ascent);
+//    printf("descent: %g\n", exts.descent);
+//    printf("height:  %g\n", exts.height);
+//    printf("max_x_advance: %g\n", exts.max_x_advance);
+//    printf("max_y_advance: %g\n", exts.max_y_advance);
+
+    sz = v_list_get_size(&text);
+
+    if (caret_p)
+    {
+        caret_y += caret_p * (height/exts.height : int);
+
+        caret_p := 0;
+    }
+
+    if (caret_x < 0)
+    {
+        position_x -= caret_x;
+
+        caret_x := 0;
+    }
+
+    if (caret_y < 0)
+    {
+        position_y -= caret_y;
+
+        caret_y := 0;
+    }
+
+    s_x = (width/exts.max_x_advance : int);
+    s_y = (height/exts.height : int);
+
+    if (caret_x >= s_x)
+    {
+        position_x -= caret_x - s_x + 1;
+
+        caret_x := s_x - 1;
+    }
+
+    if (caret_y >= s_y)
+    {
+        position_y -= caret_y - s_y + 1;
+
+        caret_y := s_y - 1;
+    }
+
+    pos_x = 2 + position_x*exts.max_x_advance;
+    pos_y = 1 + position_y*exts.height + exts.ascent;
+
+    pos: &double := pos_y;
+
+    for (i: &int := 0; i < sz; ++i)
+    {
+        any = v_list_get_item(&text, i);
+
+        sstr = v_std_any_get_pointer(v_std_string_t, any);
+
+        str = v_std_string_get(sstr);
+
+        cr.move_to(pos_x, pos);
+
+        cr.show_text(str);
+
+        pos += exts.height;
+
+        if (pos-exts.ascent > height) v_break();
+    }
+
+    c_x = 2 + caret_x*exts.max_x_advance;
+    c_y = 2 + caret_y*exts.height;
+
+    cr.set_operator(CAIRO_OPERATOR_DIFFERENCE);
+
+    cr.rectangle(c_x, c_y, exts.max_x_advance, exts.height);
+
+    cr.fill();
+}
+
+//---------------------------------------------------------------------
+GDK_KEY_Home      = 0xff50;
+GDK_KEY_Left      = 0xff51;
+GDK_KEY_Up        = 0xff52;
+GDK_KEY_Right     = 0xff53;
+GDK_KEY_Down      = 0xff54;
+GDK_KEY_Page_Up   = 0xff55;
+GDK_KEY_Page_Down = 0xff56;
+
+key_pressed: (controller: *GtkEventController,
+              keyval:     unsigned,
+              keycode:    unsigned,
+              modifiers:  unsigned,
+              widget:     *GtkWidget
+              ) ~> int
+{
+//    gdk_keyval_name: (unsigned) ~> *const char;
+//
+//    printf("%s\n", gdk_keyval_name(keyval));
+
+    switch(keyval)
+    {
+    case GDK_KEY_Home:
+
+        caret_x := position_x := 0;
+        caret_y := position_y := 0;
+        caret_p := 0;
+
+        v_break();
+
+    case GDK_KEY_Up:
+
+        caret_y -= 1;
+
+        v_break();
+
+    case GDK_KEY_Down:
+
+        caret_y += 1;
+
+        v_break();
+
+    case GDK_KEY_Page_Up:
+
+        caret_p -= 1;
+
+        v_break();
+
+    case GDK_KEY_Page_Down:
+
+        caret_p += 1;
+
+        v_break();
+
+    case GDK_KEY_Left:
+
+        caret_x -= 1;
+
+        v_break();
+
+    case GDK_KEY_Right:
+
+        caret_x += 1;
+
+        v_break();
+
+    default:
+
+        v_return(0);    //- GDK_EVENT_PROPAGATE
+    }
+
+    gtk_widget_queue_draw(widget);
+
+    v_return(0);    //- GDK_EVENT_PROPAGATE
+}
+
+
+//=====================================================================
+//{ v_debug_print_module(1); }
+{
+    app = gtk_application_new(0, 0);
+
+    g_signal_connect_data(app, "activate", (on_activate: *(()~>void)), 0, 0, 0);
+
+    g_application_run(app, 1, &("Нечто" : *char));
+}
+
+
