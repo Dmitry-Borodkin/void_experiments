@@ -12,6 +12,19 @@
 
 some_int: &int := 777;
 
+some_switch: (n: int) ~> int
+{
+    switch(n)
+    {
+    case 3: v_return(some_int + 17);
+    case 5: v_return(some_int + 15);
+    case 7: v_return(some_int + 13);
+    }
+
+    v_return(some_int);
+}
+
+
 //---------------------------------------------------------------------
 {   emit_module("try_module2_1.o"); }
 //---------------------------------------------------------------------

@@ -175,6 +175,28 @@ emit_module: (filename: *const char) ~> void
     LLVMTargetMachineEmitToFile(target_machine, module, filename, LLVMObjectFile, 0);
 
     //----------------------------------------------------------
+    {   msg: &*char := 0;
+        asm: &LLVMMemoryBufferRef := 0;
+
+        err = LLVMTargetMachineEmitToMemoryBuffer(target_machine, module, LLVMAssemblyFile, &msg, &asm);
+
+        if (err)
+        {
+            printf("\n%s\n", msg);
+
+            LLVMDisposeMessage(msg);
+        }
+        else
+        {
+            asmbuf_ptr = LLVMGetBufferStart(asm);
+
+            printf("\n%s\n", asmbuf_ptr);
+
+            LLVMDisposeMemoryBuffer(asm);
+        }
+    }
+
+    //----------------------------------------------------------
     LLVMDisposeModule(module);
 
     //----------------------------------------------------------
