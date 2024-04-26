@@ -1,8 +1,6 @@
 {   v_import("mainline.void");
 
     v_import("llvm-c/Core.void");
-
-//  v_import("printf.void");
 }
 
 {   v_enable_mainline();
@@ -15,19 +13,19 @@
 //====================================================================-
 FILE = v_struct("FILE");
 
-v_popen: (command: *const char, prop: *const char) ~> *FILE;
+popen: (command: *const char, prop: *const char) ~> *FILE;
 
-v_pclose: (*FILE) ~> int;
+pclose: (*FILE) ~> int;
 
-v_fprintf: (stream: *FILE, format: *const char, ...) ~> int;
+fprintf: (stream: *FILE, format: *const char, ...) ~> int;
 
-v_fscanf: (stream: *FILE, format: *const char, ...) ~> int;
+fscanf: (stream: *FILE, format: *const char, ...) ~> int;
 
-v_fputs: (buf: *char, stream: *FILE) ~> int;
+fputs: (buf: *char, stream: *FILE) ~> int;
 
-v_sprintf: (str: *char, format: *const char, ...) ~> int;
+sprintf: (str: *char, format: *const char, ...) ~> int;
 
-v_printf: (format: *const char, ...) ~> int;
+printf: (format: *const char, ...) ~> int;
 
 system: (cmd: *const char) ~> int;
 
@@ -43,7 +41,7 @@ voidc_include_path: &v_std_string_t := {};
 
     *strrchr(v_std_string_get(&voidc_include_path), '/') := 0;
 
-//  v_printf("voidc_include_path: %s\n", v_std_string_get(&voidc_include_path));
+//  printf("voidc_include_path: %s\n", v_std_string_get(&voidc_include_path));
 }
 
 //---------------------------------------------------------------------
@@ -79,50 +77,50 @@ constant_types_iter(constant_type_ft fun, void *aux)
 {   buffer = v_malloc(char, 1024);
     defer v_free(buffer);
 
-    {   p = v_popen("mktemp", "r");
-        defer v_pclose(p);
+    {   p = popen("mktemp", "r");
+        defer pclose(p);
 
-        v_fscanf(p, "%500s", buffer);
+        fscanf(p, "%500s", buffer);
     }
 
 #if (v_defined(_WIN32))
     {
         cmd = buffer + 512;
 
-        v_sprintf(cmd, "cygpath -m %s", buffer);
+        sprintf(cmd, "cygpath -m %s", buffer);
 
-        p = v_popen(cmd, "r");
-        defer v_pclose(p);
+        p = popen(cmd, "r");
+        defer pclose(p);
 
-        v_fscanf(p, "%1000s", buffer);
+        fscanf(p, "%1000s", buffer);
     }
 #endif
 
     //-----------------------------------------------------------------
-    {   p = v_popen("bash", "w");
-        defer v_pclose(p);
+    {   p = popen("bash", "w");
+        defer pclose(p);
 
-        v_fprintf(p, "clang -x c++ -c -fPIC");
+        fprintf(p, "clang -x c++ -c -fPIC");
 
 #if (v_defined(NDEBUG))
 
-        v_fprintf(p, " -O3 -DNDEBUG");
+        fprintf(p, " -O3 -DNDEBUG");
 
 #endif
 
-        v_fprintf(p, " $(llvm-config --cxxflags) -std=c++17");
+        fprintf(p, " $(llvm-config --cxxflags) -std=c++17");
 
-        v_fprintf(p, " -I%s", v_std_string_get(&voidc_include_path));
+        fprintf(p, " -I%s", v_std_string_get(&voidc_include_path));
 
 #if (v_defined(_WIN32))
 
-        v_fprintf(p, " -IC:/Tools/include -frtti -fcxx-exceptions");
+        fprintf(p, " -IC:/Tools/include -frtti -fcxx-exceptions");
 
 #endif
 
-        v_fprintf(p, " -o %s", buffer);
+        fprintf(p, " -o %s", buffer);
 
-        v_fprintf(p, " - <<HEREDOC\n%s\nHEREDOC\n", my_source);
+        fprintf(p, " - <<HEREDOC\n%s\nHEREDOC\n", my_source);
     }
 
     //-----------------------------------------------------------------
@@ -134,10 +132,10 @@ constant_types_iter(constant_type_ft fun, void *aux)
     voidc_add_local_object_file_to_jit(mb);
 
     //-----------------------------------------------------------------
-    {   p = v_popen("bash", "w");
-        defer v_pclose(p);
+    {   p = popen("bash", "w");
+        defer pclose(p);
 
-        v_fprintf(p, "rm %s\n", buffer);
+        fprintf(p, "rm %s\n", buffer);
     }
 }
 
@@ -171,7 +169,7 @@ constant_type_fun: (*void, q: v_quark_t, t: *const v_type_t) ~> void
         s := LLVMPrintValueToString(v);
     }
 
-    v_printf("%s: %s === %s\n", v_quark_to_string(q), v_std_string_get(sstr+0), s);
+    printf("%s: %s === %s\n", v_quark_to_string(q), v_std_string_get(sstr+0), s);
 
     if (t != v_static_type_t)   LLVMDisposeMessage(s);
 }
@@ -180,7 +178,7 @@ constant_type_fun: (*void, q: v_quark_t, t: *const v_type_t) ~> void
 ////=====================================================================
 //w: struct { int; long; } = { 7, 8 };
 //
-//z: int = v_printf("Превед!\n");
+//z: int = printf("Превед!\n");
 //
 //ww: &int[2] := { 77, 88 };
 //
@@ -198,17 +196,17 @@ constant_type_fun: (*void, q: v_quark_t, t: *const v_type_t) ~> void
 {
     constant_types_iter(constant_type_fun, 0);
 
-//    v_printf("\n");
+//    printf("\n");
 //
-//    v_printf("z: %d\n", z);
+//    printf("z: %d\n", z);
 //
-//    v_printf("zz: %ld\n", *zz);
+//    printf("zz: %ld\n", *zz);
 //
-//    v_printf("pww: %p\n", pww);
-//    v_printf("rww: %p\n", &rww);
+//    printf("pww: %p\n", pww);
+//    printf("rww: %p\n", &rww);
 //
-//    v_printf("vpww: %p\n", vpww);
-//    v_printf("vrww: %p\n", vrww);
+//    printf("vpww: %p\n", vpww);
+//    printf("vrww: %p\n", vrww);
 }
 
 

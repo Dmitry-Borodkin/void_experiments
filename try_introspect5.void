@@ -15,9 +15,9 @@
 //====================================================================-
 struct FILE;
 
-v_popen: (command: *const char, prop: *const char) ~> *FILE;
+popen: (command: *const char, prop: *const char) ~> *FILE;
 
-v_pclose: (*FILE) ~> int;
+pclose: (*FILE) ~> int;
 
 fprintf: (stream: *FILE, format: *const char, ...) ~> int;
 
@@ -131,8 +131,8 @@ overloads_iter(overload_ft fun, void *aux)
 {   buffer = v_malloc(char, 1024);
     defer v_free(buffer);
 
-    {   p = v_popen("mktemp", "r");
-        defer v_pclose(p);
+    {   p = popen("mktemp", "r");
+        defer pclose(p);
 
         fscanf(p, "%500s", buffer);
     }
@@ -143,16 +143,16 @@ overloads_iter(overload_ft fun, void *aux)
 
         sprintf(cmd, "cygpath -m %s", buffer);
 
-        p = v_popen(cmd, "r");
-        defer v_pclose(p);
+        p = popen(cmd, "r");
+        defer pclose(p);
 
         fscanf(p, "%1000s", buffer);
     }
 #endif
 
     //-----------------------------------------------------------------
-    {   p = v_popen("bash", "w");
-        defer v_pclose(p);
+    {   p = popen("bash", "w");
+        defer pclose(p);
 
         fprintf(p, "clang -x c++ -c -fPIC");
 
@@ -186,8 +186,8 @@ overloads_iter(overload_ft fun, void *aux)
     voidc_add_local_object_file_to_jit(mb);
 
     //-----------------------------------------------------------------
-    {   p = v_popen("bash", "w");
-        defer v_pclose(p);
+    {   p = popen("bash", "w");
+        defer pclose(p);
 
         fprintf(p, "rm %s\n", buffer);
     }

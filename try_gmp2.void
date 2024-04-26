@@ -12,9 +12,9 @@
 //=====================================================================
 struct FILE;
 
-v_popen: (command: *const char, prop: *const char) ~> *FILE;
+popen: (command: *const char, prop: *const char) ~> *FILE;
 
-v_pclose: (*FILE) ~> int;
+pclose: (*FILE) ~> int;
 
 fscanf: (stream: *FILE, format: *const char, ...) ~> int;
 
@@ -28,8 +28,8 @@ fscanf: (stream: *FILE, format: *const char, ...) ~> int;
     libname = v_malloc(char, 1024);
     defer v_free(libname);
 
-    {   p = v_popen("bash -c \"dlltool -I $(pkg-config --variable=libdir gmp)/libgmp.dll.a\"", "r");
-        defer v_pclose(p);
+    {   p = popen("bash -c \"dlltool -I $(pkg-config --variable=libdir gmp)/libgmp.dll.a\"", "r");
+        defer pclose(p);
 
         fscanf(p, "%1023s", libname);
     }

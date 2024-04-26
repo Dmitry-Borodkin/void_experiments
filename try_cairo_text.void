@@ -2,15 +2,13 @@
 
     v_import("llvm-c/Support.void");
 
-//  v_import("printf.void");
-
     v_import("cairo.void");
 }
 
 {   v_enable_mainline(); }
 
 //---------------------------------------------------------------------
-v_printf: (*const char, ...) ~> int;
+printf: (*const char, ...) ~> int;
 
 
 //---------------------------------------------------------------------
@@ -19,7 +17,7 @@ v_printf: (*const char, ...) ~> int;
 {
     ok = LLVMLoadLibraryPermanently("libgtk-4.so");
 
-//  v_printf("ok: %d\n", ok);
+//  printf("ok: %d\n", ok);
 }
 
 
@@ -166,22 +164,22 @@ block
 
     struct FILE;
 
-    v_fopen: (filename: *const char, mode: *const char) ~> *FILE;
-    v_fclose: (stream: *FILE) ~> int;
+    fopen: (filename: *const char, mode: *const char) ~> *FILE;
+    fclose: (stream: *FILE) ~> int;
 
-    v_perror: (s: *const char) ~> void;
+    perror: (s: *const char) ~> void;
 
-    v_fgets: (s: *char, n: int, stream: *FILE) ~> *char;
+    fgets: (s: *char, n: int, stream: *FILE) ~> *char;
 
 //  filename = "try_cairo_text.void";
     filename = "micros.dir";
 
-    f = v_fopen(filename, "r");
-    defer v_fclose(f);
+    f = fopen(filename, "r");
+    defer fclose(f);
 
     if (!f)
     {
-        v_perror(filename);
+        perror(filename);
 
         v_return();
     }
@@ -195,7 +193,7 @@ block
 
     sany: &v_std_any_t := {};
 
-    while (v_fgets(buf, bufsize, f))
+    while (fgets(buf, bufsize, f))
     {
         strchr: (*char, int) ~> *char;
 
@@ -243,12 +241,12 @@ draw_cairo_text: (drawing_area: *GtkDrawingArea,
 
     cr.get_font_extents(&exts);
 
-//    v_printf("size: %g\n", font_size);
-//    v_printf("ascent:  %g\n", exts.ascent);
-//    v_printf("descent: %g\n", exts.descent);
-//    v_printf("height:  %g\n", exts.height);
-//    v_printf("max_x_advance: %g\n", exts.max_x_advance);
-//    v_printf("max_y_advance: %g\n", exts.max_y_advance);
+//    printf("size: %g\n", font_size);
+//    printf("ascent:  %g\n", exts.ascent);
+//    printf("descent: %g\n", exts.descent);
+//    printf("height:  %g\n", exts.height);
+//    printf("max_x_advance: %g\n", exts.max_x_advance);
+//    printf("max_y_advance: %g\n", exts.max_y_advance);
 
     sz = v_list_get_size(&text);
 
@@ -340,7 +338,7 @@ key_pressed: (controller: *GtkEventController,
 {
 //    gdk_keyval_name: (unsigned) ~> *const char;
 //
-//    v_printf("%s\n", gdk_keyval_name(keyval));
+//    printf("%s\n", gdk_keyval_name(keyval));
 
     switch(keyval)
     {
