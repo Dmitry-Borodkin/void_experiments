@@ -250,6 +250,14 @@ block
 
 
 //---------------------------------------------------------------------
+font_size: &double := 13;
+
+font_width:  &int := 0;
+font_height: &int := v_undef();
+font_ascent: &int := v_undef();
+
+
+//---------------------------------------------------------------------
 position_x: &int := 0;
 position_y: &int := 0;
 
@@ -274,38 +282,29 @@ draw_cairo_text: (drawing_area: *GtkDrawingArea,
 
     cr.select_font_face("DejaVu Sans Mono", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
 
-    font_size = 13.0;
+    if (font_width == 0)
+    {
+        cr.set_font_size(font_size);
+
+        exts: &cairo_text_extents_t := v_undef();
+
+        cr.get_text_extents("0123456789", &exts);
+
+        font_size *= 80 / exts.x_advance;
+
+        font_width  :=  8;          //- ?
+        font_height := 15;          //- ?
+        font_ascent := 13;          //- ?
+    }
 
     cr.set_font_size(font_size);
-
-    exts: &cairo_font_extents_t := 0;
-
-    cr.get_font_extents(&exts);
-
-    printf("size: %g\n", font_size);
-    printf("ascent:  %g\n", exts.ascent);
-    printf("descent: %g\n", exts.descent);
-    printf("height:  %g\n", exts.height);
-    printf("max_x_advance: %g\n", exts.max_x_advance);
-    printf("max_y_advance: %g\n", exts.max_y_advance);
-
-    txts: &cairo_text_extents_t := 0;
-
-    cr.get_text_extents("0123456789", &txts);
-
-    printf("text x_bearing: %g\n", txts.x_bearing);
-    printf("text y_bearing: %g\n", txts.y_bearing);
-    printf("text width    : %g\n", txts.width    );
-    printf("text height   : %g\n", txts.height   );
-    printf("text x_advance: %g\n", txts.x_advance);
-    printf("text y_advance: %g\n", txts.y_advance);
 
     //-----------------------------------------------------------------
     sz = v_list_get_size(&text);
 
     if (caret_p)
     {
-        caret_y += caret_p * (height/exts.height : int);
+        caret_y += caret_p * (height/font_height : int);
 
         caret_p := 0;
     }
@@ -324,8 +323,8 @@ draw_cairo_text: (drawing_area: *GtkDrawingArea,
         caret_y := 0;
     }
 
-    s_x = (width/exts.max_x_advance : int);
-    s_y = (height/exts.height : int);
+    s_x = (width/font_width : int);
+    s_y = (height/font_height : int);
 
     if (caret_x >= s_x)
     {
@@ -341,8 +340,8 @@ draw_cairo_text: (drawing_area: *GtkDrawingArea,
         caret_y := s_y - 1;
     }
 
-    pos_x = 2 + position_x*exts.max_x_advance;
-    pos_y = 1 + position_y*exts.height + exts.ascent;
+    pos_x = 2 + position_x*font_width;
+    pos_y = 1 + position_y*font_height + font_ascent;
 
     pos: &double := pos_y;
 
@@ -358,17 +357,17 @@ draw_cairo_text: (drawing_area: *GtkDrawingArea,
 
         cr.show_text(str);
 
-        pos += exts.height;
+        pos += font_height;
 
-        if (pos-exts.ascent > height) v_break();
+        if (pos-font_ascent > height) v_break();
     }
 
-    c_x = 2 + caret_x*exts.max_x_advance;
-    c_y = 2 + caret_y*exts.height;
+    c_x = 2 + caret_x*font_width;
+    c_y = 2 + caret_y*font_height;
 
     cr.set_operator(CAIRO_OPERATOR_DIFFERENCE);
 
-    cr.rectangle(c_x, c_y, exts.max_x_advance, exts.height);
+    cr.rectangle(c_x, c_y, font_width, font_height);
 
     cr.fill();
 }
