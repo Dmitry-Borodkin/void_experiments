@@ -12,10 +12,38 @@ printf: (*const char, ...) ~> int;
 
 
 //---------------------------------------------------------------------
+struct FILE;
+
+popen: (command: *const char, prop: *const char) ~> *FILE;
+
+pclose: (*FILE) ~> int;
+
+fscanf: (stream: *FILE, format: *const char, ...) ~> int;
+
+
+//---------------------------------------------------------------------
 //- ... <gtk/gtk.h>
 //---------------------------------------------------------------------
 {
-    ok = LLVMLoadLibraryPermanently("libgtk-4.so");
+
+#if (v_defined(_WIN32))
+
+    libname = v_malloc(char, 1024);
+    defer v_free(libname);
+
+    {   p = popen("bash -c \"dlltool -I $(pkg-config --variable=libdir gtk4)/libgtk-4.dll.a\"", "r");
+        defer pclose(p);
+
+        fscanf(p, "%1023s", libname);
+    }
+
+#else
+
+    libname = "libgtk-4.so";
+
+#endif
+
+    ok = LLVMLoadLibraryPermanently(libname);
 
 //  printf("ok: %d\n", ok);
 }
@@ -23,7 +51,7 @@ printf: (*const char, ...) ~> int;
 
 //---------------------------------------------------------------------
 //{ voidc_verify_jit_module_optimized(true); }
-//{ v_debug_print_module(2); }
+//{ v_debug_print_module(999); }
 
 
 //---------------------------------------------------------------------
@@ -146,7 +174,20 @@ struct cairo_font_extents_t
 
 cairo_font_extents: (*cairo_t, *cairo_font_extents_t) ~> void;
 
+struct cairo_text_extents_t
+{
+    x_bearing: double;
+    y_bearing: double;
+    width    : double;
+    height   : double;
+    x_advance: double;
+    y_advance: double;
+};
+
+cairo_text_extents: (*cairo_t, *const char, *cairo_text_extents_t) ~> void;
+
 (_.get_font_extents()) = cairo_font_extents;
+(_.get_text_extents()) = cairo_text_extents;
 (_.select_font_face()) = cairo_select_font_face;
 (_.set_font_size())    = cairo_set_font_size;
 
@@ -241,13 +282,25 @@ draw_cairo_text: (drawing_area: *GtkDrawingArea,
 
     cr.get_font_extents(&exts);
 
-//    printf("size: %g\n", font_size);
-//    printf("ascent:  %g\n", exts.ascent);
-//    printf("descent: %g\n", exts.descent);
-//    printf("height:  %g\n", exts.height);
-//    printf("max_x_advance: %g\n", exts.max_x_advance);
-//    printf("max_y_advance: %g\n", exts.max_y_advance);
+    printf("size: %g\n", font_size);
+    printf("ascent:  %g\n", exts.ascent);
+    printf("descent: %g\n", exts.descent);
+    printf("height:  %g\n", exts.height);
+    printf("max_x_advance: %g\n", exts.max_x_advance);
+    printf("max_y_advance: %g\n", exts.max_y_advance);
 
+    txts: &cairo_text_extents_t := 0;
+
+    cr.get_text_extents("0123456789", &txts);
+
+    printf("text x_bearing: %g\n", txts.x_bearing);
+    printf("text y_bearing: %g\n", txts.y_bearing);
+    printf("text width    : %g\n", txts.width    );
+    printf("text height   : %g\n", txts.height   );
+    printf("text x_advance: %g\n", txts.x_advance);
+    printf("text y_advance: %g\n", txts.y_advance);
+
+    //-----------------------------------------------------------------
     sz = v_list_get_size(&text);
 
     if (caret_p)
