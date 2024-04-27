@@ -295,13 +295,13 @@ draw_cairo_text: (drawing_area: *GtkDrawingArea,
 
     if (font_width == 0)
     {
-        cr.set_font_size(font_size);
-
-        exts: &cairo_text_extents_t := v_undef();
-
-        cr.get_text_extents("0123456789", &exts);
-
-        font_size *= 80 / exts.x_advance;
+//        cr.set_font_size(font_size);
+//
+//        exts: &cairo_text_extents_t := v_undef();
+//
+//        cr.get_text_extents("0123456789", &exts);
+//
+//        font_size *= 80 / exts.x_advance;
 
         font_width  :=  8;          //- ?
         font_height := 15;          //- ?
@@ -311,16 +311,26 @@ draw_cairo_text: (drawing_area: *GtkDrawingArea,
     cr.set_font_size(font_size);
 
     //-----------------------------------------------------------------
-    matrix: &cairo_matrix_t := v_undef();
+//    matrix: &cairo_matrix_t := v_undef();
+//
+//    cr.get_font_matrix(&matrix);
+//
+//    printf("xx: %g\n", matrix.xx);
+//    printf("yx: %g\n", matrix.yx);
+//    printf("xy: %g\n", matrix.xy);
+//    printf("yy: %g\n", matrix.yy);
+//    printf("x0: %g\n", matrix.x0);
+//    printf("y0: %g\n", matrix.y0);
 
-    cr.get_font_matrix(&matrix);
+    fo = cairo_font_options_create();
 
-    printf("xx: %g\n", matrix.xx);
-    printf("yx: %g\n", matrix.yx);
-    printf("xy: %g\n", matrix.xy);
-    printf("yy: %g\n", matrix.yy);
-    printf("x0: %g\n", matrix.x0);
-    printf("y0: %g\n", matrix.y0);
+    cairo_get_font_options(cr, fo);
+
+    cairo_font_options_set_hint_metrics(fo, CAIRO_HINT_METRICS_ON);
+
+    cairo_set_font_options(cr, fo);
+
+    cairo_font_options_destroy(fo);
 
     //-----------------------------------------------------------------
     sz = v_list_get_size(&text);
