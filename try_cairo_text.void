@@ -333,6 +333,15 @@ draw_cairo_text: (drawing_area: *GtkDrawingArea,
     cairo_font_options_destroy(fo);
 
     //-----------------------------------------------------------------
+    {   dx: &double := 1;
+        dy: &double := 1;
+
+        cairo_device_to_user_distance(cr, &dx, &dy);
+
+        printf("dx: %g, dy: %g\n", dx, dy);
+    }
+
+    //-----------------------------------------------------------------
     sz = v_list_get_size(&text);
 
     if (caret_p)
