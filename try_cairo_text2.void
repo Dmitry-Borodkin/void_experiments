@@ -1,0 +1,480 @@
+{   v_import("mainline.void");
+
+    v_import("llvm-c/Support.void");
+
+    v_import("cairo.void");
+}
+
+{   v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
+
+
+//---------------------------------------------------------------------
+struct FILE;
+
+popen: (command: *const char, prop: *const char) ~> *FILE;
+
+pclose: (*FILE) ~> int;
+
+fscanf: (stream: *FILE, format: *const char, ...) ~> int;
+
+
+//---------------------------------------------------------------------
+//- ... <gtk-3.0/gtk/gtk.h>
+//- ... <gtk-3.0/gdk/gdk.h>
+//- ... <gtk-3.0/gdk/gdkkeysyms.h>
+//- ... <gtk-3.0/gdk/gdkevents.h>
+//- ... <gtk-3.0/gdk/gdktypes.h>
+//---------------------------------------------------------------------
+{
+
+#if (v_defined(_WIN32))
+
+    libname = v_malloc(char, 1024);
+    defer v_free(libname);
+
+    {   p = popen("bash -c \"dlltool -I $(pkg-config --variable=libdir gtk+-3.0)/libgtk-3.dll.a\"", "r");
+        defer pclose(p);
+
+        fscanf(p, "%1023s", libname);
+    }
+
+#else
+
+    libname = "libgtk-3.so";
+
+#endif
+
+    ok = LLVMLoadLibraryPermanently(libname);
+
+//  printf("ok: %d\n", ok);
+}
+
+
+//---------------------------------------------------------------------
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(999); }
+
+
+//---------------------------------------------------------------------
+struct GtkApplication;
+struct GtkContainer;
+struct GtkWidget;
+
+//---------------------------------------------------------------------
+gtk_application_new: (id: *const char, flags: int) ~> *GtkApplication;
+
+g_signal_connect_data: (instance: *void,
+                        signal: *const char,
+                        callback: *(()~>void),
+                        data: *void,
+                        notify: *void,
+                        flags: int
+                       ) ~> long;
+
+g_application_run: (app: *GtkApplication, argc: int, argv: **char) ~> int;
+
+
+gtk_application_window_new: (app: *GtkApplication) ~> *GtkWidget;
+
+
+gtk_window_set_default_size: (wnd: *GtkWidget, width: int, height: int) ~> void;
+
+gtk_container_add: (container: *GtkContainer, widget: *GtkWidget) ~> void;
+
+gtk_widget_show_all: (wnd: *GtkWidget) ~> void;
+
+
+gtk_drawing_area_new: () ~> *GtkWidget;
+
+gtk_widget_get_allocated_width:  (*GtkWidget) ~> int;
+gtk_widget_get_allocated_height: (*GtkWidget) ~> int;
+
+gtk_widget_queue_draw: (*GtkWidget) ~> void;
+
+
+gtk_widget_add_events: (*GtkWidget, int) ~> void;
+
+//---------------------------------------------------------------------
+GDK_KEY_PRESS_MASK = 1024;
+
+GdkEventType = int;
+
+struct GdkWindow;
+
+struct GdkEventKey
+{
+    type:               GdkEventType;
+    window:            *GdkWindow;
+    send_event:         int(8);
+    time:               uint(32);
+    state:              unsigned;
+    keyval:             unsigned;
+    length:             int;
+    string:            *char;
+    hardware_keycode:   uint(16);
+    group:              uint(8);
+
+    is_modifier:        unsigned;   //- ???
+};
+
+//---------------------------------------------------------------------
+key_pressed: (widget: *GtkWidget, event: *GdkEventKey, aux: *void) ~> int;
+
+//---------------------------------------------------------------------
+draw_cairo_text: (widget: *GtkWidget, cr: *cairo_t, aux: *void) ~> void;
+
+
+//---------------------------------------------------------------------
+on_activate: (app: *GtkApplication, data: *void) ~> void
+{
+    window = gtk_application_window_new(app);
+
+    gtk_window_set_default_size(window, 1024, 768);
+
+    gtk_widget_add_events(window, GDK_KEY_PRESS_MASK);
+
+    g_signal_connect_data(window, "key_press_event", (key_pressed: *(()~>void)), 0, 0, 0);
+
+    drawing_area = gtk_drawing_area_new();
+
+    g_signal_connect_data(drawing_area, "draw", (draw_cairo_text: *(()~>void)), 0, 0, 0);
+
+    gtk_container_add((window: *GtkContainer), drawing_area);
+
+    gtk_widget_show_all(window);
+}
+
+
+//---------------------------------------------------------------------
+double = float(64);
+
+
+//---------------------------------------------------------------------
+(_.flush())        = cairo_surface_flush;
+(_.write_to_png()) = cairo_surface_write_to_png;
+(_.destroy())      = cairo_surface_destroy;
+
+(_.destroy())         = cairo_destroy;
+(_.paint())           = cairo_paint;
+(_.fill())            = cairo_fill;
+(_.fill_preserve())   = cairo_fill_preserve;
+(_.stroke())          = cairo_stroke;
+(_.set_source_rgb())  = cairo_set_source_rgb;
+(_.set_source_rgba()) = cairo_set_source_rgba;
+(_.rectangle())       = cairo_rectangle;
+(_.set_line_width())  = cairo_set_line_width;
+(_.line_to())         = cairo_line_to;
+(_.move_to())         = cairo_move_to;
+(_.close_path())      = cairo_close_path;
+(_.set_fill_rule())   = cairo_set_fill_rule;
+(_.set_operator())    = cairo_set_operator;
+(_.get_operator())    = cairo_get_operator;
+(_.show_text())       = cairo_show_text;
+
+
+struct cairo_font_extents_t
+{
+    ascent       : double;
+    descent      : double;
+    height       : double;
+    max_x_advance: double;
+    max_y_advance: double;
+};
+
+cairo_font_extents: (*cairo_t, *cairo_font_extents_t) ~> void;
+
+struct cairo_text_extents_t
+{
+    x_bearing: double;
+    y_bearing: double;
+    width    : double;
+    height   : double;
+    x_advance: double;
+    y_advance: double;
+};
+
+cairo_text_extents: (*cairo_t, *const char, *cairo_text_extents_t) ~> void;
+
+(_.get_font_extents()) = cairo_font_extents;
+(_.get_text_extents()) = cairo_text_extents;
+(_.select_font_face()) = cairo_select_font_face;
+(_.set_font_size())    = cairo_set_font_size;
+
+
+struct cairo_matrix_t
+{
+    xx: double; yx: double;
+    xy: double; yy: double;
+    x0: double; y0: double;
+};
+
+cairo_get_font_matrix: (*cairo_t, *cairo_matrix_t) ~> void;
+cairo_set_font_matrix: (*cairo_t, *const cairo_matrix_t) ~> void;
+
+(_.get_font_matrix()) = cairo_get_font_matrix;
+(_.set_font_matrix()) = cairo_set_font_matrix;
+
+
+//=====================================================================
+
+//---------------------------------------------------------------------
+text: &v_util_list_t := {};
+
+block
+{
+    v_make_list_nil(&text);
+
+    struct FILE;
+
+    fopen: (filename: *const char, mode: *const char) ~> *FILE;
+    fclose: (stream: *FILE) ~> int;
+
+    perror: (s: *const char) ~> void;
+
+    fgets: (s: *char, n: int, stream: *FILE) ~> *char;
+
+//  filename = "try_cairo_text.void";
+    filename = "micros.dir";
+
+    f = fopen(filename, "r");
+    defer fclose(f);
+
+    if (!f)
+    {
+        perror(filename);
+
+        v_return();
+    }
+
+    bufsize = 1024;
+
+    buf = v_malloc(char, bufsize);
+    defer v_free(buf);
+
+    sstr: &v_std_string_t := {};
+
+    sany: &v_std_any_t := {};
+
+    while (fgets(buf, bufsize, f))
+    {
+        strchr: (*char, int) ~> *char;
+
+        if (p = strchr(buf, '\n'))  *p := 0;
+
+        v_std_string_set(&sstr, buf);
+
+        v_std_any_set_pointer(&sany, &sstr);
+
+        v_list_append(&text, &text, &sany);
+    }
+}
+
+
+//---------------------------------------------------------------------
+font_size: &double := 13;
+
+font_width:  &int := 0;
+font_height: &int := v_undef();
+font_ascent: &int := v_undef();
+
+//---------------------------------------------------------------------
+position_x: &int := 0;
+position_y: &int := 0;
+
+caret_x: &int := 0;
+caret_y: &int := 0;
+caret_p: &int := 0;
+
+//---------------------------------------------------------------------
+draw_cairo_text: (widget: *GtkWidget, cr: *cairo_t, aux: *void) ~> void
+{
+    width  = gtk_widget_get_allocated_width(widget);
+    height = gtk_widget_get_allocated_height(widget);
+
+    cr.set_source_rgb(0,0,0);
+    cr.paint();
+
+    c = 0.75;
+
+    cr.set_source_rgb(c,c,c);
+
+    cr.select_font_face("DejaVu Sans Mono", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+
+    if (font_width == 0)
+    {
+//        cr.set_font_size(font_size);
+//
+//        exts: &cairo_text_extents_t := v_undef();
+//
+//        cr.get_text_extents("0123456789", &exts);
+//
+//        font_size *= 80 / exts.x_advance;
+
+        font_width  :=  8;          //- ?
+        font_height := 15;          //- ?
+        font_ascent := 13;          //- ?
+    }
+
+    cr.set_font_size(font_size);
+
+    //-----------------------------------------------------------------
+    sz = v_list_get_size(&text);
+
+    if (caret_p)
+    {
+        caret_y += caret_p * (height/font_height : int);
+
+        caret_p := 0;
+    }
+
+    if (caret_x < 0)
+    {
+        position_x -= caret_x;
+
+        caret_x := 0;
+    }
+
+    if (caret_y < 0)
+    {
+        position_y -= caret_y;
+
+        caret_y := 0;
+    }
+
+    s_x = (width/font_width : int);
+    s_y = (height/font_height : int);
+
+    if (caret_x >= s_x)
+    {
+        position_x -= caret_x - s_x + 1;
+
+        caret_x := s_x - 1;
+    }
+
+    if (caret_y >= s_y)
+    {
+        position_y -= caret_y - s_y + 1;
+
+        caret_y := s_y - 1;
+    }
+
+    pos_x = 2 + position_x*font_width;
+    pos_y = 1 + position_y*font_height + font_ascent;
+
+    pos: &double := pos_y;
+
+    for (i: &int := 0; i < sz; ++i)
+    {
+        any = v_list_get_item(&text, i);
+
+        sstr = v_std_any_get_pointer(v_std_string_t, any);
+
+        str = v_std_string_get(sstr);
+
+        cr.move_to(pos_x, pos);
+
+        cr.show_text(str);
+
+        pos += font_height;
+
+        if (pos-font_ascent > height) v_break();
+    }
+
+    c_x = 2 + caret_x*font_width;
+    c_y = 2 + caret_y*font_height;
+
+    cr.set_operator(CAIRO_OPERATOR_DIFFERENCE);
+
+    cr.rectangle(c_x, c_y, font_width, font_height);
+
+    cr.fill();
+}
+
+//---------------------------------------------------------------------
+GDK_KEY_Home      = 0xff50;
+GDK_KEY_Left      = 0xff51;
+GDK_KEY_Up        = 0xff52;
+GDK_KEY_Right     = 0xff53;
+GDK_KEY_Down      = 0xff54;
+GDK_KEY_Page_Up   = 0xff55;
+GDK_KEY_Page_Down = 0xff56;
+
+key_pressed: (widget: *GtkWidget, event: *GdkEventKey, aux: *void) ~> int
+{
+    keyval = event->keyval;
+
+//    gdk_keyval_name: (unsigned) ~> *const char;
+//
+//    printf("%s\n", gdk_keyval_name(keyval));
+
+    switch(keyval)
+    {
+    case GDK_KEY_Home:
+
+        caret_x := position_x := 0;
+        caret_y := position_y := 0;
+        caret_p := 0;
+
+        v_break();
+
+    case GDK_KEY_Up:
+
+        caret_y -= 1;
+
+        v_break();
+
+    case GDK_KEY_Down:
+
+        caret_y += 1;
+
+        v_break();
+
+    case GDK_KEY_Page_Up:
+
+        caret_p -= 1;
+
+        v_break();
+
+    case GDK_KEY_Page_Down:
+
+        caret_p += 1;
+
+        v_break();
+
+    case GDK_KEY_Left:
+
+        caret_x -= 1;
+
+        v_break();
+
+    case GDK_KEY_Right:
+
+        caret_x += 1;
+
+        v_break();
+
+    default:
+
+        v_return(0);    //- GDK_EVENT_PROPAGATE
+    }
+
+    gtk_widget_queue_draw(widget);
+
+    v_return(0);    //- GDK_EVENT_PROPAGATE
+}
+
+
+//=====================================================================
+//{ v_debug_print_module(1); }
+{
+    app = gtk_application_new(0, 0);
+
+    g_signal_connect_data(app, "activate", (on_activate: *(()~>void)), 0, 0, 0);
+
+    g_application_run(app, 1, &("Нечто" : *char));
+}
+
+
