@@ -232,8 +232,8 @@ ft_face: &FT_Face := v_undef();
 
 block
 {
-//  FT_New_Face(ft_library, "/usr/share/fonts/dejavu/DejaVuSansMono.ttf", 0, &ft_face);
-    FT_New_Face(ft_library, "C:/Work/Downloads/dejavu-fonts-ttf-2.37/ttf/DejaVuSansMono.ttf", 0, &ft_face);
+    FT_New_Face(ft_library, "/usr/share/fonts/dejavu/DejaVuSansMono.ttf", 0, &ft_face);
+//  FT_New_Face(ft_library, "C:/Work/Downloads/dejavu-fonts-ttf-2.37/ttf/DejaVuSansMono.ttf", 0, &ft_face);
 }
 
 defer FT_Done_Face(ft_face);
