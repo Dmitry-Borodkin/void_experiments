@@ -206,6 +206,39 @@ cairo_set_font_matrix: (*cairo_t, *const cairo_matrix_t) ~> void;
 (_.set_font_matrix()) = cairo_set_font_matrix;
 
 
+//---------------------------------------------------------------------
+FT_Library = * struct FT_LibraryRec_;
+
+FT_Init_FreeType: (*FT_Library) ~> int;
+FT_Done_FreeType: (FT_Library) ~> int;
+
+
+ft_library: &FT_Library := v_undef();
+
+block
+{
+    FT_Init_FreeType(&ft_library);
+}
+
+defer FT_Done_FreeType(ft_library);
+
+
+FT_Face = * struct FT_FaceRec_;
+
+FT_New_Face: (FT_Library, *const char, long, *FT_Face) ~> int;
+FT_Done_Face: (FT_Face) ~> int;
+
+ft_face: &FT_Face := v_undef();
+
+block
+{
+    FT_New_Face(ft_library, "/usr/share/fonts/dejavu/DejaVuSansMono.ttf", 0, &ft_face);
+}
+
+defer FT_Done_Face(ft_face);
+
+
+
 //=====================================================================
 
 //---------------------------------------------------------------------
@@ -262,7 +295,7 @@ block
 
 
 //---------------------------------------------------------------------
-font_size: &double := 13;
+font_size: &double := 10.0/72*96;
 
 font_width:  &int := 0;
 font_height: &int := v_undef();
@@ -291,7 +324,14 @@ draw_cairo_text: (drawing_area: *GtkDrawingArea,
 
     cr.set_source_rgb(c,c,c);
 
-    cr.select_font_face("DejaVu Sans Mono", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+//  cr.select_font_face("DejaVu Sans Mono", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+
+    cairo_ft_font_face_create_for_ft_face: (FT_Face, int) ~> *cairo_font_face_t;
+
+    font_face = cairo_ft_font_face_create_for_ft_face(ft_face, 0);
+
+    cairo_set_font_face(cr, font_face);
+
 
     if (font_width == 0)
     {
@@ -300,6 +340,8 @@ draw_cairo_text: (drawing_area: *GtkDrawingArea,
 //        exts: &cairo_text_extents_t := v_undef();
 //
 //        cr.get_text_extents("0123456789", &exts);
+//
+//        printf("x_advance = %g\n", exts.x_advance/10);
 //
 //        font_size *= 80 / exts.x_advance;
 
@@ -322,24 +364,24 @@ draw_cairo_text: (drawing_area: *GtkDrawingArea,
 //    printf("x0: %g\n", matrix.x0);
 //    printf("y0: %g\n", matrix.y0);
 
-    fo = cairo_font_options_create();
-
-    cairo_get_font_options(cr, fo);
-
-    cairo_font_options_set_hint_metrics(fo, CAIRO_HINT_METRICS_ON);
-
-    cairo_set_font_options(cr, fo);
-
-    cairo_font_options_destroy(fo);
+//    fo = cairo_font_options_create();
+//
+//    cairo_get_font_options(cr, fo);
+//
+//    cairo_font_options_set_hint_metrics(fo, CAIRO_HINT_METRICS_ON);
+//
+//    cairo_set_font_options(cr, fo);
+//
+//    cairo_font_options_destroy(fo);
 
     //-----------------------------------------------------------------
-    {   dx: &double := 1;
-        dy: &double := 1;
-
-        cairo_device_to_user_distance(cr, &dx, &dy);
-
-        printf("dx: %g, dy: %g\n", dx, dy);
-    }
+//    {   dx: &double := 1;
+//        dy: &double := 1;
+//
+//        cairo_device_to_user_distance(cr, &dx, &dy);
+//
+//        printf("dx: %g, dy: %g\n", dx, dy);
+//    }
 
     //-----------------------------------------------------------------
     sz = v_list_get_size(&text);
