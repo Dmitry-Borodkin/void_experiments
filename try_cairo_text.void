@@ -12,6 +12,10 @@ printf: (*const char, ...) ~> int;
 
 
 //---------------------------------------------------------------------
+WINDOZE = v_defined(_WIN32);
+
+
+//---------------------------------------------------------------------
 struct FILE;
 
 popen: (command: *const char, prop: *const char) ~> *FILE;
@@ -26,7 +30,7 @@ fscanf: (stream: *FILE, format: *const char, ...) ~> int;
 //---------------------------------------------------------------------
 {
 
-#if (v_defined(_WIN32))
+#if (WINDOZE)
 
     libname = v_malloc(char, 1024);
     defer v_free(libname);
@@ -77,8 +81,6 @@ g_application_run: (app: *GtkApplication, argc: int, argv: **char) ~> int;
 gtk_application_window_new: (app: *GtkApplication) ~> *GtkWidget;
 
 
-gtk_window_set_default_size: (wnd: *GtkWidget, width: int, height: int) ~> void;
-
 gtk_window_set_child: (wnd: *GtkWidget, widget: *GtkWidget) ~> void;
 
 gtk_window_present: (wnd: *GtkWidget) ~> void;
@@ -97,6 +99,8 @@ gtk_widget_queue_draw: (*GtkWidget) ~> void;
 gtk_event_controller_key_new: () ~> *GtkEventController;
 
 gtk_widget_add_controller: (*GtkWidget, *GtkEventController) ~> void;
+
+gtk_widget_set_size_request: (*GtkWidget, int, int) ~> void;
 
 
 //---------------------------------------------------------------------
@@ -120,9 +124,9 @@ on_activate: (app: *GtkApplication, data: *void) ~> void
 {
     window = gtk_application_window_new(app);
 
-    gtk_window_set_default_size(window, 1024, 768);
-
     drawing_area = gtk_drawing_area_new();
+
+    gtk_widget_set_size_request(drawing_area, 128*8+4, 64*15+4);
 
     gtk_drawing_area_set_draw_func((drawing_area: *GtkDrawingArea), draw_cairo_text, 0, 0);
 
@@ -212,7 +216,6 @@ FT_Library = * struct FT_LibraryRec_;
 FT_Init_FreeType: (*FT_Library) ~> int;
 FT_Done_FreeType: (FT_Library) ~> int;
 
-
 ft_library: &FT_Library := v_undef();
 
 block
@@ -222,7 +225,7 @@ block
 
 defer FT_Done_FreeType(ft_library);
 
-
+//---------------------------------------------------------------------
 FT_Face = * struct FT_FaceRec_;
 
 FT_New_Face: (FT_Library, *const char, long, *FT_Face) ~> int;
@@ -232,19 +235,29 @@ ft_face: &FT_Face := v_undef();
 
 block
 {
-    FT_New_Face(ft_library, "/usr/share/fonts/dejavu/DejaVuSansMono.ttf", 0, &ft_face);
-//  FT_New_Face(ft_library, "C:/Work/Downloads/dejavu-fonts-ttf-2.37/ttf/DejaVuSansMono.ttf", 0, &ft_face);
+#if (WINDOZE) path = "C:/Work/Downloads/dejavu-fonts-ttf-2.37/ttf/DejaVuSansMono.ttf";
+#else         path = "/usr/share/fonts/dejavu/DejaVuSansMono.ttf";
+#endif
+
+    FT_New_Face(ft_library, path, 0, &ft_face);
 }
 
 defer FT_Done_Face(ft_face);
 
+//---------------------------------------------------------------------
+font_face: &*cairo_font_face_t := v_undef();
 
-cairo_ft_font_face_create_for_ft_face: (FT_Face, int) ~> *cairo_font_face_t;
+block
+{
+    cairo_ft_font_face_create_for_ft_face: (FT_Face, int) ~> *cairo_font_face_t;
+
+    font_face := cairo_ft_font_face_create_for_ft_face(ft_face, 0);
+}
+
+defer cairo_font_face_destroy(font_face);
 
 
 //=====================================================================
-
-//---------------------------------------------------------------------
 text: &v_util_list_t := {};
 
 block
@@ -329,8 +342,6 @@ draw_cairo_text: (drawing_area: *GtkDrawingArea,
 
 //  cr.select_font_face("DejaVu Sans Mono", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
 
-    font_face = cairo_ft_font_face_create_for_ft_face(ft_face, 0);
-
     cairo_set_font_face(cr, font_face);
 
     //-----------------------------------------------------------------
@@ -349,9 +360,11 @@ draw_cairo_text: (drawing_area: *GtkDrawingArea,
         printf("max_x_advance: %g\n", exts.max_x_advance);
         printf("max_y_advance: %g\n", exts.max_y_advance);
 
-        font_width  := (exts.max_x_advance: int);
-        font_height := (exts.height: int);
-        font_ascent := (exts.ascent: int);
+        round: (double) ~> double;
+
+        font_width  := (round(exts.max_x_advance) : int);
+        font_height := (round(exts.height) : int);
+        font_ascent := (round(exts.ascent) : int);
     }
 
     //-----------------------------------------------------------------
@@ -435,6 +448,7 @@ GDK_KEY_Right     = 0xff53;
 GDK_KEY_Down      = 0xff54;
 GDK_KEY_Page_Up   = 0xff55;
 GDK_KEY_Page_Down = 0xff56;
+GDK_KEY_End       = 0xff57;
 
 key_pressed: (controller: *GtkEventController,
               keyval:     unsigned,
@@ -443,16 +457,14 @@ key_pressed: (controller: *GtkEventController,
               widget:     *GtkWidget
               ) ~> int
 {
-//    gdk_keyval_name: (unsigned) ~> *const char;
-//
-//    printf("%s\n", gdk_keyval_name(keyval));
-
     switch(keyval)
     {
     case GDK_KEY_Home:
 
-        caret_x := position_x := 0;
-        caret_y := position_y := 0;
+        position_x := 0;
+        position_y := 0;
+        caret_x := 0;
+        caret_y := 0;
         caret_p := 0;
 
         v_break();
@@ -493,7 +505,34 @@ key_pressed: (controller: *GtkEventController,
 
         v_break();
 
+    case GDK_KEY_End:
+
+        position_x := 0;
+        position_y := 0;
+        caret_x := 0;
+        caret_y := (v_list_get_size(&text) : int);
+        caret_p := 0;
+
+        v_break();
+
     default:
+
+        gdk_keyval_to_unicode: (unsigned) ~> char32_t;
+
+        if (c = gdk_keyval_to_unicode(keyval))
+        {
+            sstr: &v_std_string_t := {};
+
+            v_std_string_append_char(&sstr, c);
+
+            printf("[%s], (0x%X)\n", v_std_string_get(&sstr), c);
+        }
+        else
+        {
+            gdk_keyval_name: (unsigned) ~> *const char;
+
+            printf("%s\n", gdk_keyval_name(keyval));
+        }
 
         v_return(0);    //- GDK_EVENT_PROPAGATE
     }
