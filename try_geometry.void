@@ -26,7 +26,7 @@ printf: (*const char, ...) ~> int;
 //---------------------------------------------------------------------
 double = float(64);
 
-abs: (double) ~> double;
+fabs: (double) ~> double;
 
 snprintf: (s: *char, l: size_t, f: *const char, ...) ~> int;
 
@@ -53,11 +53,11 @@ is_equal: (x: double, y: double) ~> bool
 {
     if (x == y)  v_return(true);
 
-    size = abs(x) + abs(y);
+    size = fabs(x) + fabs(y);
 
     if (size <= EPSILON)  v_return(true);
 
-    diff = abs(x - y);
+    diff = fabs(x - y);
 
     if (diff <= EPSILON)  v_return(true);
 
@@ -69,7 +69,7 @@ is_equal: (x: double, y: double) ~> bool
 alwaysinline
 is_finite: (x: double) ~> bool
 {
-    v_return(abs(x) < 1e15);        //- ?...
+    v_return(fabs(x) < 1e15);       //- ?...
 }
 
 infinity = 1e1000;
@@ -250,7 +250,7 @@ alwaysinline
     {
         if (!is_finite(pa[i]))  v_return(false);
 
-        if (di = abs(pa[i]), d < di)  d := di;
+        if (di = fabs(pa[i]), d < di)   d := di;
     }
 
     if (d == 0)  v_return(false);
@@ -268,7 +268,7 @@ alwaysinline
 {
     if (!p.norm())  v_return(false);
 
-    v_return( abs(p.w) > EPSILON );
+    v_return( fabs(p.w) > EPSILON );
 }
 
 //---------------------------------------------------------------------
@@ -336,7 +336,7 @@ alwaysinline
     {
         if (!is_finite(la[i]))  v_return(false);
 
-        if (di = abs(la[i]), d < di)  d := di;
+        if (di = fabs(la[i]), d < di)   d := di;
     }
 
     if (d == 0)  v_return(false);
@@ -354,7 +354,7 @@ alwaysinline
 {
     if (!l.norm())  v_return(false);
 
-    v_return( abs(l.cx) > EPSILON  ||  abs(l.cy) > EPSILON );
+    v_return( fabs(l.cx) > EPSILON  ||  fabs(l.cy) > EPSILON );
 }
 
 //---------------------------------------------------------------------
@@ -386,7 +386,7 @@ incident: (l: &Line, p: &Point) ~> bool
     l.norm();
     p.norm();
 
-    v_return( abs(l.cx*p.x + l.cy*p.y + l.cw*p.w) < EPSILON );
+    v_return( fabs(l.cx*p.x + l.cy*p.y + l.cw*p.w) < EPSILON );
 }
 
 //---------------------------------------------------------------------
@@ -436,7 +436,7 @@ struct Transform
     {
         if (!is_finite(t[i]))  v_return(false);
 
-        if (di = abs(t[i]), d < di)  d := di;
+        if (di = fabs(t[i]), d < di)  d := di;
     }
 
     if (d == 0)  v_return(false);
@@ -462,7 +462,7 @@ alwaysinline
 {
     if (!t.norm())  v_return(false);
 
-    v_return( abs(t.det()) > EPSILON );
+    v_return( fabs(t.det()) > EPSILON );
 }
 
 //---------------------------------------------------------------------
@@ -472,9 +472,9 @@ alwaysinline
 
     t = t[0];
 
-    v_return( abs(t[6]) <= EPSILON  &&
-              abs(t[7]) <= EPSILON  &&
-              abs(t[8]) >  EPSILON );
+    v_return( fabs(t[6]) <= EPSILON  &&
+              fabs(t[7]) <= EPSILON  &&
+              fabs(t[8]) >  EPSILON );
 }
 
 //---------------------------------------------------------------------
