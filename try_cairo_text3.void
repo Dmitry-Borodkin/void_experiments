@@ -211,50 +211,21 @@ cairo_set_font_matrix: (*cairo_t, *const cairo_matrix_t) ~> void;
 
 
 //---------------------------------------------------------------------
-FT_Library = * struct FT_LibraryRec_;
+struct PangoLayout;
+struct PangoFontDescription;
 
-FT_Init_FreeType: (*FT_Library) ~> int;
-FT_Done_FreeType: (FT_Library) ~> int;
+pango_cairo_create_layout: (*cairo_t) ~> *PangoLayout;
 
-ft_library: &FT_Library := v_undef();
+pango_font_description_from_string: (*const char) ~> *PangoFontDescription;
 
-block
-{
-    FT_Init_FreeType(&ft_library);
-}
+pango_layout_set_font_description: (*PangoLayout, *const PangoFontDescription) ~> void;
 
-defer FT_Done_FreeType(ft_library);
+pango_font_description_free: (*PangoFontDescription) ~> void;
 
-//---------------------------------------------------------------------
-FT_Face = * struct FT_FaceRec_;
+pango_layout_set_text: (*PangoLayout, *const char, int) ~> void;
 
-FT_New_Face: (FT_Library, *const char, long, *FT_Face) ~> int;
-FT_Done_Face: (FT_Face) ~> int;
+pango_cairo_show_layout: (*cairo_t, *PangoLayout) ~> void;
 
-ft_face: &FT_Face := v_undef();
-
-block
-{
-#if (WINDOZE) path = "C:/Work/Downloads/dejavu-fonts-ttf-2.37/ttf/DejaVuSansMono.ttf";
-#else         path = "/usr/share/fonts/dejavu/DejaVuSansMono.ttf";
-#endif
-
-    FT_New_Face(ft_library, path, 0, &ft_face);
-}
-
-defer FT_Done_Face(ft_face);
-
-//---------------------------------------------------------------------
-font_face: &*cairo_font_face_t := v_undef();
-
-block
-{
-    cairo_ft_font_face_create_for_ft_face: (FT_Face, int) ~> *cairo_font_face_t;
-
-    font_face := cairo_ft_font_face_create_for_ft_face(ft_face, 0);
-}
-
-defer cairo_font_face_destroy(font_face);
 
 
 //=====================================================================
@@ -273,9 +244,9 @@ block
 
     fgets: (s: *char, n: int, stream: *FILE) ~> *char;
 
-    filename = "/home/bdn/work/the/txt/tst.txt";
+//  filename = "/home/bdn/work/the/txt/tst.txt";
 //  filename = "try_cairo_text.void";
-//  filename = "micros.dir";
+    filename = "micros.dir";
 
     f = fopen(filename, "r");
     defer fclose(f);
@@ -316,7 +287,6 @@ font_size: &double := 13;
 
 font_width:  &int := 0;
 font_height: &int := v_undef();
-font_ascent: &int := v_undef();
 
 //---------------------------------------------------------------------
 position_x: &int := 0;
@@ -341,32 +311,19 @@ draw_cairo_text: (drawing_area: *GtkDrawingArea,
 
     cr.set_source_rgb(c,c,c);
 
-//  cr.select_font_face("DejaVu Sans Mono", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
-
-    cairo_set_font_face(cr, font_face);
-
     //-----------------------------------------------------------------
-    cr.set_font_size(font_size);
-
     if (font_width == 0)
     {
-        exts: &cairo_font_extents_t := 0;
-
-        cr.get_font_extents(&exts);
-
-        printf("size: %g\n", font_size);
-        printf("ascent:  %g\n", exts.ascent);
-        printf("descent: %g\n", exts.descent);
-        printf("height:  %g\n", exts.height);
-        printf("max_x_advance: %g\n", exts.max_x_advance);
-        printf("max_y_advance: %g\n", exts.max_y_advance);
-
-        round: (double) ~> double;
-
-        font_width  := (round(exts.max_x_advance) : int);
-        font_height := (round(exts.height) : int);
-        font_ascent := (round(exts.ascent) : int);
+        font_width  :=  8;
+        font_height := 15;
     }
+
+    //-----------------------------------------------------------------
+    layout = pango_cairo_create_layout(cr);
+
+    desc = pango_font_description_from_string("DejaVu Sans Mono 10");
+    pango_layout_set_font_description(layout, desc);
+    pango_font_description_free(desc);
 
     //-----------------------------------------------------------------
     sz = v_list_get_size(&text);
@@ -410,7 +367,7 @@ draw_cairo_text: (drawing_area: *GtkDrawingArea,
     }
 
     pos_x = 2 + position_x*font_width;
-    pos_y = 1 + position_y*font_height + font_ascent;
+    pos_y = 1 + position_y*font_height;
 
     pos: &double := pos_y;
 
@@ -424,12 +381,18 @@ draw_cairo_text: (drawing_area: *GtkDrawingArea,
 
         cr.move_to(pos_x, pos);
 
-        cr.show_text(str);
+        pango_layout_set_text(layout, str, -1);
+
+        pango_cairo_show_layout(cr, layout);
 
         pos += font_height;
 
-        if (pos-font_ascent > height) v_break();
+        if (pos > height) v_break();
     }
+
+    g_object_unref: (*void) ~> void;
+
+    g_object_unref(layout);
 
     c_x = 2 + caret_x*font_width;
     c_y = 2 + caret_y*font_height;
