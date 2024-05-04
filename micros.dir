@@ -17,6 +17,8 @@ try_handlers3.void                                             │try_handlers3.
                                                                │
                                                                │
 ───────────────────────────────────────────────────────────────│
+try_fun_expr.void                                              │try_fun_expr.void
+                                                               │
 try_condcomp.void                                              │try_condcomp.void
                                                                │
 try_has_import.void                                            │try_has_import.void

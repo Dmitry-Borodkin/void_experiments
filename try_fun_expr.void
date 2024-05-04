@@ -1,0 +1,68 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
+
+
+//---------------------------------------------------------------------
+//private
+mk_unit_fun_expr_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
+{
+    head = v_std_any_get_pointer(v_ast_generic_list_t, any+0);
+    expr = v_std_any_get_pointer(v_ast_expr_t,         any+1);
+
+    stmt: &v_ast_stmt_t := {};
+
+    v_ast_make_stmt_call(&stmt, 0, v_quark_from_string("v_return"), expr, 1);
+
+    slst: &v_ast_stmt_list_t := {};
+
+    v_make_list(&slst, &stmt);
+
+    lst: &v_ast_generic_list_t := {};
+
+    v_list_append(&lst, head, (&slst: *v_ast_base_t));
+
+    v_std_any_set_pointer(ret, (&lst: *v_ast_base_t));
+}
+
+
+//---------------------------------------------------------------------
+{
+    gr0: &v_peg_grammar_t := {};    gr0 = &gr0;
+
+    v_peg_get_grammar(gr0);
+
+    //-----------------------------------------------------------------
+    grammar gr0
+    {
+    actions:
+        mk_unit_fun_expr = mk_unit_fun_expr_grammar_action;
+
+    parsers:
+        unit_fun_defn =+ h:unit_fun_defn_hdr _'='_ e:expr _';'    { mk_unit_fun_expr(h, e) };
+
+        unit_spec_fun_defn =+ h:unit_spec_fun_defn_hdr _'='_ e:expr _';'    { mk_unit_fun_expr(h, e) };
+    }
+
+    v_peg_set_grammar(gr0);
+
+    //- ...
+}
+
+
+//---------------------------------------------------------------------
+add: (a: int, b: int) ~> int = a+b;
+
+(_.mul()): (a: int, b: int) ~> int = a*b;
+
+
+{
+    printf("add(2, 3) = %d\n", add(2, 3));
+
+    printf("(2).mul(3) = %d\n", (2).mul(3));
+
+}
+
+
