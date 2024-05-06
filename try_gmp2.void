@@ -416,10 +416,7 @@ alwaysinline
 }
 
 alwaysinline
-(_+__): (a: mpz_t, b: mpz_t) ~> mpz_t
-{
-    v_return(a + b);
-}
+(_+__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a + b;
 
 alwaysinline
 (_+_): (a: &mpz_t, b: mpz_t) ~> mpz_t
@@ -451,10 +448,7 @@ alwaysinline
 }
 
 alwaysinline
-(_-__): (a: mpz_t, b: mpz_t) ~> mpz_t
-{
-    v_return(a - b);
-}
+(_-__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a - b;
 
 alwaysinline
 (_-_): (a: &mpz_t, b: mpz_t) ~> mpz_t
@@ -486,10 +480,7 @@ alwaysinline
 }
 
 alwaysinline
-(_*__): (a: mpz_t, b: mpz_t) ~> mpz_t
-{
-    v_return(a * b);
-}
+(_*__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a * b;
 
 alwaysinline
 (_*_): (a: &mpz_t, b: mpz_t) ~> mpz_t
@@ -521,10 +512,7 @@ alwaysinline
 }
 
 alwaysinline
-(_/__): (a: mpz_t, b: mpz_t) ~> mpz_t
-{
-    v_return(a / b);
-}
+(_/__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a / b;
 
 alwaysinline
 (_/_): (a: &mpz_t, b: mpz_t) ~> mpz_t
@@ -556,10 +544,7 @@ alwaysinline
 }
 
 alwaysinline
-(_%__): (a: mpz_t, b: mpz_t) ~> mpz_t
-{
-    v_return(a % b);
-}
+(_%__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a % b;
 
 alwaysinline
 (_%_): (a: &mpz_t, b: mpz_t) ~> mpz_t
@@ -591,10 +576,7 @@ alwaysinline
 }
 
 alwaysinline
-(_&__): (a: mpz_t, b: mpz_t) ~> mpz_t
-{
-    v_return(a & b);
-}
+(_&__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a & b;
 
 alwaysinline
 (_&_): (a: &mpz_t, b: mpz_t) ~> mpz_t
@@ -626,10 +608,7 @@ alwaysinline
 }
 
 alwaysinline
-(_|__): (a: mpz_t, b: mpz_t) ~> mpz_t
-{
-    v_return(a | b);
-}
+(_|__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a | b;
 
 alwaysinline
 (_|_): (a: &mpz_t, b: mpz_t) ~> mpz_t
@@ -661,10 +640,7 @@ alwaysinline
 }
 
 alwaysinline
-(_^__): (a: mpz_t, b: mpz_t) ~> mpz_t
-{
-    v_return(a ^ b);
-}
+(_^__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a ^ b;
 
 alwaysinline
 (_^_): (a: &mpz_t, b: mpz_t) ~> mpz_t
@@ -767,10 +743,7 @@ alwaysinline
 }
 
 alwaysinline
-(_==__): (a: mpz_t, b: mpz_t) ~> bool
-{
-    v_return(a == b);
-}
+(_==__): (a: mpz_t, b: mpz_t) ~> bool  =  a == b;
 
 alwaysinline
 (_==_): (a: &mpz_t, b: mpz_t) ~> bool
@@ -799,10 +772,7 @@ alwaysinline
 }
 
 alwaysinline
-(_!=__): (a: mpz_t, b: mpz_t) ~> bool
-{
-    v_return(a != b);
-}
+(_!=__): (a: mpz_t, b: mpz_t) ~> bool  =  a != b;
 
 alwaysinline
 (_!=_): (a: &mpz_t, b: mpz_t) ~> bool
@@ -831,10 +801,7 @@ alwaysinline
 }
 
 alwaysinline
-(_<__): (a: mpz_t, b: mpz_t) ~> bool
-{
-    v_return(a < b);
-}
+(_<__): (a: mpz_t, b: mpz_t) ~> bool  =  a < b;
 
 alwaysinline
 (_<_): (a: &mpz_t, b: mpz_t) ~> bool
@@ -863,10 +830,7 @@ alwaysinline
 }
 
 alwaysinline
-(_<=__): (a: mpz_t, b: mpz_t) ~> bool
-{
-    v_return(a <= b);
-}
+(_<=__): (a: mpz_t, b: mpz_t) ~> bool  =  a <= b;
 
 alwaysinline
 (_<=_): (a: &mpz_t, b: mpz_t) ~> bool
@@ -895,10 +859,7 @@ alwaysinline
 }
 
 alwaysinline
-(_>__): (a: mpz_t, b: mpz_t) ~> bool
-{
-    v_return(a > b);
-}
+(_>__): (a: mpz_t, b: mpz_t) ~> bool  =  a > b;
 
 alwaysinline
 (_>_): (a: &mpz_t, b: mpz_t) ~> bool
@@ -927,10 +888,7 @@ alwaysinline
 }
 
 alwaysinline
-(_>=__): (a: mpz_t, b: mpz_t) ~> bool
-{
-    v_return(a >= b);
-}
+(_>=__): (a: mpz_t, b: mpz_t) ~> bool  =  a >= b;
 
 alwaysinline
 (_>=_): (a: &mpz_t, b: mpz_t) ~> bool
@@ -960,66 +918,16 @@ alwaysinline
     v_return(v);
 }
 
-alwaysinline
-(_+=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t
-{
-    v_return(v := v + x);
-}
-
-alwaysinline
-(_-=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t
-{
-    v_return(v := v - x);
-}
-
-alwaysinline
-(_*=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t
-{
-    v_return(v := v * x);
-}
-
-alwaysinline
-(_/=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t
-{
-    v_return(v := v / x);
-}
-
-alwaysinline
-(_%=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t
-{
-    v_return(v := v % x);
-}
-
-alwaysinline
-(_&=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t
-{
-    v_return(v := v & x);
-}
-
-alwaysinline
-(_|=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t
-{
-    v_return(v := v | x);
-}
-
-alwaysinline
-(_^=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t
-{
-    v_return(v := v ^ x);
-}
-
-alwaysinline
-(_<<=_): (v: &mpz_t, u: ulong) ~> &mpz_t
-{
-    v_return(v := v << u);
-}
-
-alwaysinline
-(_>>=_): (v: &mpz_t, u: ulong) ~> &mpz_t
-{
-    v_return(v := v >> u);
-}
-
+alwaysinline (_+=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  v := v + x;
+alwaysinline (_-=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  v := v - x;
+alwaysinline (_*=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  v := v * x;
+alwaysinline (_/=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  v := v / x;
+alwaysinline (_%=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  v := v % x;
+alwaysinline (_&=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  v := v & x;
+alwaysinline (_|=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  v := v | x;
+alwaysinline (_^=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  v := v ^ x;
+alwaysinline (_<<=_): (v: &mpz_t, u: ulong) ~> &mpz_t  =  v := v << u;
+alwaysinline (_>>=_): (v: &mpz_t, u: ulong) ~> &mpz_t  =  v := v >> u;
 
 
 //=====================================================================
