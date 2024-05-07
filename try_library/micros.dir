@@ -30,7 +30,7 @@ try_imports.void                                               │try_imports.vo
                                                                │
                                                                │
 ───────────────────────────────────────────────────────────────│
-Makefile                                                       │Makefile -j9
+Makefile                                                       │Makefile
     clean                                                      │Makefile clean
 ───────────────────────────────────────────────────────────────│
 void.doit                                                      │void.doit

@@ -169,7 +169,7 @@ emit_module: (filename: *const char) ~> void
     }
 
     //----------------------------------------------------------
-//  v_verify_module(module);
+    v_verify_module(module);
 
     //----------------------------------------------------------
     LLVMTargetMachineEmitToFile(target_machine, module, filename, LLVMObjectFile, 0);

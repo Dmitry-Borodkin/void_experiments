@@ -193,7 +193,7 @@ my_compile_expr_integer: (aux: *void, vis: *voidc_visitor_t,
 
     if (ttag != v_find_type("mpz_t"))
     {
-        ctx = *(aux: *literal_integer_ctx_t);
+        ctx = *(aux: *expr_integer_ctx_t);
 
         ctx.fun(ctx.aux, vis, self);
 

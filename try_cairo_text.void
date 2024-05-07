@@ -273,8 +273,7 @@ block
 
     fgets: (s: *char, n: int, stream: *FILE) ~> *char;
 
-    filename = "/home/bdn/work/the/txt/tst.txt";
-//  filename = "try_cairo_text.void";
+    filename = "try_cairo_text.void";
 //  filename = "micros.dir";
 
     f = fopen(filename, "r");
