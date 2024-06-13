@@ -16,8 +16,12 @@ struct v_static_namespace_t;        //- Opaque...
 //---------------------------------------------------------------------
 struct v_namespace_t
 {
-    list: v_util_list_t;        //- Names in "textual" order
-    map:  v_util_map_t;         //- Names -> "global" names...
+    prefix: v_std_string_t;         //- ...
+
+    list:   v_util_list_t;          //- Names in "textual" order
+    map:    v_util_map_t;           //- Names -> "global" names...
+
+    used:   v_util_list_t;          //- Used namespaces
 };
 
 
@@ -28,21 +32,30 @@ struct v_namespace_t
     {
         p_i = p[i];
 
+        v_initialize(&p_i.prefix);
         v_initialize(&p_i.list);
         v_initialize(&p_i.map);
+        v_initialize(&p_i.used);
 
         v_make_list_nil(&p_i.list);
         v_make_map(&p_i.map);
+        v_make_list_nil(&p_i.used);
     }
 }
 
 (v_terminate(_)): (p: *v_namespace_t, n: size_t) ~> void  =  derive;
 
-(v_copy(_)): (d: *v_namespace_t, s: *const v_namespace_t, n: size_t) ~> void  =  derive;
+(v_copy(_)): (d: *v_namespace_t, s: *const v_namespace_t, n: size_t) ~> void  =  derive;        //- ?
+
+//---------------------------------------------------------------------
+//private
+namespace_cleaner: (void_ctx: *void) ~> void
+{
+    delete (void_ctx: *v_namespace_t);
+}
 
 
 //=====================================================================
-//---------------------------------------------------------------------
 {
     q_ref = v_reference_type(v_quark_t, 0);
 
@@ -52,7 +65,25 @@ struct v_namespace_t
     v_add_symbol("unit_defn_close_q",     q_ref, q("unit_defn_close"));
     v_add_symbol("unit_defn_using_q",     q_ref, q("unit_defn_using"));
     v_add_symbol("q_stmt_using",          q_ref, q("v.stmt_using"));
+
+    v_add_symbol("q_op_postfix_dot", q_ref, q("v.op_postfix_dot"));
+
+    v_add_symbol("q_current_namespace_list",  q_ref, q("v.current_namespace_list"));
+    v_add_symbol("q_current_namespace_stack", q_ref, q("v.current_namespace_stack"));
 }
+
+
+//---------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
 
 
 //---------------------------------------------------------------------
@@ -76,7 +107,7 @@ mk_unit_namespace_open_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_an
 
 //---------------------------------------------------------------------
 //private
-mk_unit_defn_close_grammar_action: (ret: v_std_any_ptr, *void, any: v_std_any_ptr, size_t) ~> void
+mk_unit_defn_close_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
 {
     list: &v_ast_generic_list_t := {};
 
@@ -87,7 +118,7 @@ mk_unit_defn_close_grammar_action: (ret: v_std_any_ptr, *void, any: v_std_any_pt
 
 //---------------------------------------------------------------------
 //private
-mk_using_stmt_grammar_action: (ret: v_std_any_ptr, *void, any: v_std_any_ptr, size_t) ~> void
+mk_using_stmt_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
 {
     flag = v_std_any_get_value(intptr_t, any+0);
     expr = v_std_any_get_pointer(v_ast_expr_t, any+1);
@@ -107,7 +138,7 @@ mk_using_stmt_grammar_action: (ret: v_std_any_ptr, *void, any: v_std_any_ptr, si
 
 //---------------------------------------------------------------------
 //private
-mk_unit_defn_using_grammar_action: (ret: v_std_any_ptr, *void, any: v_std_any_ptr, size_t) ~> void
+mk_unit_defn_using_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
 {
     elst = v_std_any_get_pointer(v_ast_expr_list_t, any);
 
@@ -120,7 +151,7 @@ mk_unit_defn_using_grammar_action: (ret: v_std_any_ptr, *void, any: v_std_any_pt
 
 //---------------------------------------------------------------------
 //private
-mk_stmt_using_grammar_action: (ret: v_std_any_ptr, *void, any: v_std_any_ptr, size_t) ~> void
+mk_stmt_using_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
 {
     elst = v_std_any_get_pointer(v_ast_expr_list_t, any);
 
@@ -141,11 +172,173 @@ mk_stmt_using_grammar_action: (ret: v_std_any_ptr, *void, any: v_std_any_ptr, si
 //---------------------------------------------------------------------
 //- Compile methods ...
 //---------------------------------------------------------------------
+dump_namespaces: () ~> void
+{
+printf("dump_namespaces start\n");
+defer printf("dump_namespaces stop\n");
+
+    anss = v_std_any_get_pointer(v_util_list_t, v_get_property_q(q_current_namespace_stack));
+
+    s = v_list_get_size(anss);
+
+    printf("s - %d\n", (s: int));
+
+    for (i: &int := 0; i < s; ++i)
+    {
+        p = v_list_get_item(anss, i);
+
+        q = v_std_any_get_pointer(v_util_list_t, p);
+
+        s = v_list_get_size(q);
+
+        printf("%d\n", (s: int));
+
+        for (j: &int := 0; j < s; ++j)
+        {
+            r = v_list_get_item(q, j);
+
+            ns = (v_std_any_get_value(intptr_t, r) : *v_namespace_t);
+
+            printf("  %s\n", v_std_string_get(&ns->prefix));
+        }
+    }
+
+    ansl = v_std_any_get_pointer(v_util_list_t, v_get_property_q(q_current_namespace_list));
+
+    s = v_list_get_size(ansl);
+
+    printf("l - %d\n", (s: int));
+
+    for (j: &int := 0; j < s; ++j)
+    {
+        r = v_list_get_item(ansl, j);
+
+        ns = (v_std_any_get_value(intptr_t, r) : *v_namespace_t);
+
+        printf("  %s\n", v_std_string_get(&ns->prefix));
+    }
+}
+
+
+
+
+
+//---------------------------------------------------------------------
 //private
 compile_unit_namespace_open: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
 printf("compile_unit_namespace_open start\n");
 defer printf("compile_unit_namespace_open stop\n");
+
+dump_namespaces();
+defer dump_namespaces();
+
+    list = (self: *v_ast_generic_list_t);
+    nsid = (v_list_get_item(list, 0) : *v_ast_expr_t);
+
+    v_assert(!v_empty(nsid));
+
+    N: &int := 0;
+
+    for (e: &*v_ast_expr_t := nsid; ; ++N)
+    {
+        q = v_ast_base_get_visitor_method_tag(e);
+        if (q != v_ast_expr_call_visitor_method_tag)  v_break();
+
+        f = v_ast_expr_call_get_fun_expr(e);
+
+        q = v_ast_base_get_visitor_method_tag(f);
+        if (q != v_ast_expr_identifier_visitor_method_tag)  v_break();
+
+        q = v_ast_expr_identifier_get_name_q(f);
+        if (q != q_op_postfix_dot)  v_break();
+
+        args = v_ast_expr_call_get_arg_list(e);
+
+        e := v_list_get_item(args, 1);
+    }
+
+    etmp: &*v_ast_expr_t := nsid;
+
+    qs = new v_quark_t[N+1];
+    defer delete[] qs;
+
+    for (i: &int := 0; i < N; ++i)
+    {
+        args = v_ast_expr_call_get_arg_list(etmp);
+
+        op = v_list_get_item(args, 0);
+
+        void_obj = v_ast_generic_get_object(op);
+
+        obj = *(void_obj: *v_ast_operator_unary_t);
+
+        pay = (&obj[2] : *v_ast_generic_list_t);
+
+        expr = (v_list_get_item(pay, 0) : *v_ast_expr_t);
+
+        qs[N-i] := v_ast_expr_identifier_get_name_q(expr);
+
+        etmp := v_list_get_item(args, 1);
+    }
+
+    v_assert(v_ast_base_get_visitor_method_tag(etmp) == v_ast_expr_identifier_visitor_method_tag);      //- ?
+
+    qs[0] := v_ast_expr_identifier_get_name_q(etmp);
+
+    {   anss = v_std_any_get_pointer(v_util_list_t, v_get_property_q(q_current_namespace_stack));
+
+        v_list_append(anss, anss, v_get_property_q(q_current_namespace_list));
+    }
+
+    for (i: &int := 0; i <= N; ++i)
+    {
+        qns = v_check_alias_q(qs[i]);
+
+//      v_assert(v_find_constant_type(qns) == v_static_namespace_t);
+
+        ns: &*v_namespace_t := (v_find_constant_value_q(qns) : *v_namespace_t);
+
+        if (!ns)
+        {
+            ns := new v_namespace_t;
+
+            v_add_local_cleaner(namespace_cleaner, ns);
+
+            pref = &ns->prefix;
+
+            a = v_get_property_q(q_current_namespace_list);
+
+            l = v_std_any_get_pointer(v_util_list_t, a);
+
+            if (s = v_list_get_size(l))
+            {
+                c = v_list_get_item(l, s-1);
+
+                v_copy(pref, &(v_std_any_get_value(intptr_t, c): *v_namespace_t)->prefix);
+
+                v_std_string_append_char(pref, ' ');
+
+                v_std_string_append(pref, v_quark_to_string(qns));
+            }
+            else
+            {
+                v_std_string_set(pref, v_quark_to_string(qns));
+            }
+        }
+
+printf(" %s\n", v_std_string_get(&ns->prefix));
+
+        ansl = v_std_any_get_pointer(v_util_list_t, v_get_property_q(q_current_namespace_list));
+
+        a: &v_std_any_t := {};
+
+        v_std_any_set_value(&a, (ns: intptr_t));
+
+        v_list_append(ansl, ansl, &a);
+
+
+    }
 
 
 }
@@ -157,7 +350,18 @@ compile_unit_defn_close: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t
 printf("compile_unit_defn_close start\n");
 defer printf("compile_unit_defn_close stop\n");
 
+dump_namespaces();
+defer dump_namespaces();
 
+    anss = v_std_any_get_pointer(v_util_list_t, v_get_property_q(q_current_namespace_stack));
+
+    i = v_list_get_size(anss) - 1;
+
+    a = v_get_property_q(q_current_namespace_list);
+
+    v_copy(a, v_list_get_item(anss, i));
+
+    v_list_erase(anss, anss, i, 1);
 }
 
 //---------------------------------------------------------------------
@@ -170,6 +374,8 @@ defer printf("compile_unit_defn_using stop\n");
 
 }
 
+//---------------------------------------------------------------------
+//- ...
 //---------------------------------------------------------------------
 //private
 v_stmt_using_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
@@ -190,6 +396,19 @@ defer printf("v_stmt_using_intrinsic stop\n");
     voidc_visitor_set_void_method(vis, vis, unit_defn_using_q,     compile_unit_defn_using,     0);
 
     v_add_intrinsic_q(q_stmt_using, v_stmt_using_intrinsic, 0);
+
+    //--------------------------------------------------------------
+    {   l: &v_util_list_t := {};
+
+        v_make_list_nil(&l);
+
+        a: &v_std_any_t := {};
+
+        v_std_any_set_pointer(&a, &l);
+
+        v_add_property_q(q_current_namespace_list,  &a);
+        v_add_property_q(q_current_namespace_stack, &a);
+    }
 }
 
 
@@ -215,11 +434,9 @@ defer printf("v_stmt_using_intrinsic stop\n");
 
         unit_defn_close = '}'   { mk_unit_defn_close() };
 
-
         using_stmt = "using" !ident_cont _ "namespace" !ident_cont _ e:expr _';'    { mk_using_stmt(1, e) }
                    / "using" !ident_cont _ e:expr _';'                              { mk_using_stmt(0, e) }
                    ;
-
 
         unit_defn += unit_namespace_open
                    / unit_defn_close
@@ -255,15 +472,15 @@ b = 100;
 
 }
 
-namespace {
-
-using namespace qwe.asd.zxc;
-
-using a0.a1.a;
-
-c = 1000;
-
-}
+//namespace {
+//
+//using namespace qwe.asd.zxc;
+//
+//using a0.a1.a;
+//
+//c = 1000;
+//
+//}
 
 
 {
