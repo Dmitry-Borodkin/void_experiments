@@ -70,6 +70,7 @@ namespace_cleaner: (void_ctx: *void) ~> void
 
     v_add_symbol("q_current_namespace_list",  q_ref, q("v.current_namespace_list"));
     v_add_symbol("q_current_namespace_stack", q_ref, q("v.current_namespace_stack"));
+    v_add_symbol("q_current_namespace_used",  q_ref, q("v.current_namespace_used"));
 }
 
 
@@ -199,7 +200,7 @@ defer printf("dump_namespaces stop\n");
 
             ns = (v_std_any_get_value(intptr_t, r) : *v_namespace_t);
 
-            printf("  %s\n", v_std_string_get(&ns->prefix));
+            printf("  [%s] %zd %zd\n", v_std_string_get(&ns->prefix), v_list_get_size(&ns->list), v_map_get_size(&ns->map));
         }
     }
 
@@ -215,12 +216,9 @@ defer printf("dump_namespaces stop\n");
 
         ns = (v_std_any_get_value(intptr_t, r) : *v_namespace_t);
 
-        printf("  %s\n", v_std_string_get(&ns->prefix));
+        printf("  [%s] %zd %zd\n", v_std_string_get(&ns->prefix), v_list_get_size(&ns->list), v_map_get_size(&ns->map));
     }
 }
-
-
-
 
 
 //---------------------------------------------------------------------
@@ -315,16 +313,38 @@ defer dump_namespaces();
             {
                 c = v_list_get_item(l, s-1);
 
-                v_copy(pref, &(v_std_any_get_value(intptr_t, c): *v_namespace_t)->prefix);
+                cur_ns = (v_std_any_get_value(intptr_t, c): *v_namespace_t);
+
+                v_copy(pref, &cur_ns->prefix);
 
                 v_std_string_append_char(pref, ' ');
 
                 v_std_string_append(pref, v_quark_to_string(qns));
+
+                sstr: &v_std_string_t := {};
+
+                v_std_string_set(&sstr, "v__");
+
+                voidc_internal_std_string_append_mangle(&sstr, pref);
+
+                qm = v_quark_from_string(v_std_string_get(&sstr));
+
+                a: &v_std_any_t := {};
+
+                v_std_any_set_value(&a, qns);
+
+                v_list_append(&cur_ns->list, &cur_ns->list, &a);
+
+                v_std_any_set_value(&a, qm);
+
+                v_map_insert(&cur_ns->map, &cur_ns->map, (qns: intptr_t), &a);
             }
             else
             {
                 v_std_string_set(pref, v_quark_to_string(qns));
             }
+
+            v_add_constant_q(qns, v_static_namespace_t, (ns: LLVMValueRef));
         }
 
 printf(" %s\n", v_std_string_get(&ns->prefix));
@@ -386,6 +406,82 @@ defer printf("v_stmt_using_intrinsic stop\n");
 
 }
 
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+//private
+lookup_in_namespace: (cache: *v_util_map_t, ns: *v_namespace_t, q: v_quark_t) ~> v_quark_t
+{
+    if (v_map_find(cache, (ns: intptr_t)))  v_return(0);
+
+    if (a = v_map_find(&ns->map, (q: intptr_t)))
+    {
+        v_return(v_std_any_get_value(v_quark_t, a));
+    }
+
+    a: &v_std_any_t := {};
+
+    v_map_insert(cache, cache, (ns: intptr_t), &a);
+
+    s = v_list_get_size(&ns->used);
+
+    for (i: &int := (s-1 : int); i >= 0; --i)
+    {
+        r = v_list_get_item(&ns->used, i);
+
+        nsu = (v_std_any_get_value(intptr_t, r) : *v_namespace_t);
+
+        qr = lookup_in_namespace(cache, nsu, q);
+
+        if (qr) v_return(qr);
+    }
+
+    v_return(0);
+}
+
+//---------------------------------------------------------------------
+my_check_alias_ctx_t = struct
+{
+    fun: *((*void, v_quark_t) ~> v_quark_t);
+    aux: *void;
+};
+
+//---------------------------------------------------------------------
+//private
+my_check_alias: (aux: *void, q: v_quark_t) ~> v_quark_t
+{
+//printf("my_check_alias start %s\n", v_quark_to_string(q));
+//defer printf("my_check_alias stop  %s\n", v_quark_to_string(v_get_return_value()));
+
+    cache: &v_util_map_t := {};
+
+    v_make_map(&cache);
+
+    lists: &v_quark_t[2] := { q_current_namespace_list, q_current_namespace_used };
+
+    for (l: &int := 0; l < 2; ++l)
+    {
+        lst = v_std_any_get_pointer(v_util_list_t, v_get_property_q(lists[l]));
+
+        s = v_list_get_size(lst);
+
+        for (i: &int := (s-1 : int); i >= 0; --i)
+        {
+            r = v_list_get_item(lst, i);
+
+            ns = (v_std_any_get_value(intptr_t, r) : *v_namespace_t);
+
+            qr = lookup_in_namespace(&cache, ns, q);
+
+            if (qr) v_return(qr);
+        }
+    }
+
+    ctx = *(aux: *my_check_alias_ctx_t);
+
+    v_return(ctx.fun(ctx.aux, q));
+}
+
 
 //---------------------------------------------------------------------
 {
@@ -408,7 +504,21 @@ defer printf("v_stmt_using_intrinsic stop\n");
 
         v_add_property_q(q_current_namespace_list,  &a);
         v_add_property_q(q_current_namespace_stack, &a);
+        v_add_property_q(q_current_namespace_used,  &a);
     }
+
+    //--------------------------------------------------------------
+    ctx = v_malloc(my_check_alias_ctx_t);
+
+    free: (*void) ~> void;
+
+    v_add_local_cleaner(free, ctx);
+
+    ctx->fun := v_get_check_alias_hook(&ctx->aux);
+
+    v_set_check_alias_hook(my_check_alias, ctx);
+
+
 }
 
 
@@ -471,6 +581,25 @@ b = 100;
 }
 
 }
+
+
+//qaz = qwe.asd.zxc;
+//
+//namespace qaz {
+
+namespace qwe.asd.zxc {
+
+namespace b0 {
+namespace b1 {
+
+bb = 200;
+
+}
+}
+
+}
+
+
 
 //namespace {
 //
