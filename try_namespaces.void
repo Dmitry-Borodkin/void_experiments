@@ -10,10 +10,6 @@ printf: (*const char, ...) ~> int;
 
 
 //=====================================================================
-struct v_static_namespace_t;        //- Opaque...
-
-
-//---------------------------------------------------------------------
 struct v_namespace_t
 {
     name:   v_quark_t;              //- Own name...
@@ -89,6 +85,12 @@ namespace_cleaner: (void_ctx: *void) ~> void
     v_add_symbol("voidc_abstract_static_constant_q", q_ref, q("voidc.abstract_static_constant"));
 
     v_add_symbol("voidc_abstract_static_namespace_intrinsic_q", q_ref, q("voidc.abstract_static_namespace_intrinsic"));
+}
+
+//---------------------------------------------------------------------
+{   t = v_generic_type(q_static_namespace_t, 0, 0);
+
+    v_add_type_q(q_static_namespace_t, t);
 }
 
 
@@ -230,11 +232,11 @@ defer printf("dump_namespaces stop\n");
 //private
 compile_unit_namespace_open: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
-printf("compile_unit_namespace_open start\n");
-defer printf("compile_unit_namespace_open stop\n");
+//printf("compile_unit_namespace_open start\n");
+//defer printf("compile_unit_namespace_open stop\n");
 
-dump_namespaces();
-defer dump_namespaces();
+//dump_namespaces();
+//defer dump_namespaces();
 
     list = (self: *v_ast_generic_list_t);
     nsid = (v_list_get_item(list, 0) : *v_ast_expr_t);
@@ -356,7 +358,7 @@ defer dump_namespaces();
             v_add_constant_q(qns, v_static_namespace_t, (ns: LLVMValueRef));
         }
 
-printf(" %s\n", v_std_string_get(&ns->prefix));
+//printf(" %s\n", v_std_string_get(&ns->prefix));
 
         ansl = v_std_any_get_pointer(v_util_list_t, v_get_property_q(q_current_namespace_list));
 
@@ -376,11 +378,11 @@ printf(" %s\n", v_std_string_get(&ns->prefix));
 //private
 compile_unit_defn_close: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
-printf("compile_unit_defn_close start\n");
-defer printf("compile_unit_defn_close stop\n");
+//printf("compile_unit_defn_close start\n");
+//defer printf("compile_unit_defn_close stop\n");
 
-dump_namespaces();
-defer dump_namespaces();
+//dump_namespaces();
+//defer dump_namespaces();
 
     anss = v_std_any_get_pointer(v_util_list_t, v_get_property_q(q_current_namespace_stack));
 
@@ -397,8 +399,8 @@ defer dump_namespaces();
 //private
 compile_unit_defn_using: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
-printf("compile_unit_defn_using start\n");
-defer printf("compile_unit_defn_using stop\n");
+//printf("compile_unit_defn_using start\n");
+//defer printf("compile_unit_defn_using stop\n");
 
 
 }
@@ -409,8 +411,8 @@ defer printf("compile_unit_defn_using stop\n");
 //private
 v_stmt_using_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
-printf("v_stmt_using_intrinsic start\n");
-defer printf("v_stmt_using_intrinsic stop\n");
+//printf("v_stmt_using_intrinsic start\n");
+//defer printf("v_stmt_using_intrinsic stop\n");
 
 
 }
@@ -459,8 +461,12 @@ my_check_alias_ctx_t = struct
 //private
 my_obtain_alias: (aux: *void, q: v_quark_t) ~> v_quark_t
 {
-printf("my_obtain_alias start %s\n", v_quark_to_string(q));
-defer printf("my_obtain_alias stop  %s\n", v_quark_to_string(v_get_return_value()));
+//printf("my_obtain_alias start %s\n", v_quark_to_string(q));
+//defer printf("my_obtain_alias stop  %s\n", v_quark_to_string(v_get_return_value()));
+
+    strncmp: (*const char, *const char, size_t) ~> int;
+
+    if (strncmp(v_quark_to_string(q), "v__", 3) == 0)   v_return(q);        //- Sic!
 
     lst = v_std_any_get_pointer(v_util_list_t, v_get_property_q(q_current_namespace_list));
 
@@ -508,8 +514,12 @@ defer printf("my_obtain_alias stop  %s\n", v_quark_to_string(v_get_return_value(
 //private
 my_lookup_alias: (aux: *void, q: v_quark_t) ~> v_quark_t
 {
-printf("my_lookup_alias start %s\n", v_quark_to_string(q));
-defer printf("my_lookup_alias stop  %s\n", v_quark_to_string(v_get_return_value()));
+//printf("my_lookup_alias start %s\n", v_quark_to_string(q));
+//defer printf("my_lookup_alias stop  %s\n", v_quark_to_string(v_get_return_value()));
+
+    strncmp: (*const char, *const char, size_t) ~> int;
+
+    if (strncmp(v_quark_to_string(q), "v__", 3) == 0)   v_return(q);        //- Sic!
 
     cache: &v_util_map_t := {};
 
@@ -562,8 +572,8 @@ my_op_postfix_dot_helper: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_
                            alst: *v_ast_expr_list_t
                           ) ~> void
 {
-printf("my_op_postfix_dot_helper start\n");
-defer printf("my_op_postfix_dot_helper stop\n");
+//printf("my_op_postfix_dot_helper start\n");
+//defer printf("my_op_postfix_dot_helper stop\n");
 
     if (t0 != v_static_namespace_t)
     {
@@ -770,8 +780,6 @@ qaz = qwe.asd.zxc;
 
 namespace qaz {
 
-//namespace qwe.asd.zxc {
-
 namespace b0 {
 namespace b1 {
 
@@ -789,7 +797,9 @@ bb = 200;
 
     printf("%d\n", a+b);
 
-    bb = qaz.b0.b1.bb;
+    qaz_b0_b1 = qaz.b0.b1;
+
+    bb = qaz_b0_b1.bb;
 
     printf("%d\n", a+b+bb);
 }
