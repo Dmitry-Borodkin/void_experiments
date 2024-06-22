@@ -158,20 +158,29 @@ constant_type_fun: (*void, q: v_quark_t, t: *const v_type_t) ~> void
 
     s: &*const char := 0;
 
-    if (t == v_static_type_t)
-    {
-        voidc_internal_std_string_append_type(&sstr[1], (v: *v_type_t));
+    t_ = v_type_get_llvm_type(t);
 
-        s := v_std_string_get(sstr+1);
+    if (t_)
+    {
+        s := LLVMPrintValueToString(v);
     }
     else
     {
-        s := LLVMPrintValueToString(v);
+        if (t == v_static_type_t)
+        {
+            voidc_internal_std_string_append_type(&sstr[1], (v: *v_type_t));
+
+            s := v_std_string_get(sstr+1);
+        }
+        else
+        {
+            s := "<unknown>";
+        }
     }
 
     printf("%s: %s === %s\n", v_quark_to_string(q), v_std_string_get(sstr+0), s);
 
-    if (t != v_static_type_t)   LLVMDisposeMessage(s);
+    if (t_)   LLVMDisposeMessage(s);
 }
 
 
