@@ -63,6 +63,7 @@ namespace_cleaner: (void_ctx: *void) ~> void
     v_add_symbol("unit_defn_close_q",     q_ref, q("unit_defn_close"));
     v_add_symbol("unit_defn_using_q",     q_ref, q("unit_defn_using"));
     v_add_symbol("q_stmt_using",          q_ref, q("v.stmt_using"));
+    v_add_symbol("unit_val_defn_q",       q_ref, q("unit_val_defn"));
 
     v_add_symbol("q_op_postfix_dot", q_ref, q("v.op_postfix_dot"));
 
@@ -402,7 +403,79 @@ compile_unit_defn_using: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t
 //printf("compile_unit_defn_using start\n");
 //defer printf("compile_unit_defn_using stop\n");
 
+    list = (self: *v_ast_generic_list_t);
+    elst = (v_list_get_item(list, 0) : *v_ast_expr_list_t);
 
+    flag = v_ast_expr_integer_get_number(v_list_get_item(elst, 0));
+    expr = v_list_get_item(elst, 1);
+
+    if (flag)       //- using namespace  <ns-id> ;
+    {
+        v_set_result_type(INVIOLABLE_TAG);
+        v_set_result_value(0);
+
+        v_ast_accept_visitor(expr, vis);
+
+        t = v_get_result_type();
+        v = v_get_result_value();
+
+        v_assert(t == v_static_namespace_t);
+
+        ns = (v: *v_namespace_t);
+
+        a: &v_std_any_t := {};
+
+        v_std_any_set_value(&a, (ns: intptr_t));
+
+        lst: &*v_util_list_t := 0;
+
+        lst := v_std_any_get_pointer(v_util_list_t, v_get_property_q(q_current_namespace_list));
+
+        if (s = v_list_get_size(lst))
+        {
+            r = v_list_get_item(lst, s-1);
+
+            cur_ns = (v_std_any_get_value(intptr_t, r) : *v_namespace_t);
+
+            lst := &cur_ns->used;
+        }
+        else
+        {
+            lst := v_std_any_get_pointer(v_util_list_t, v_get_property_q(q_current_namespace_used));
+        }
+
+        v_list_append(lst, lst, &a);
+
+        v_return();
+    }
+
+    //- using  <ns-id> . <id> ;
+
+    list = v_ast_expr_call_get_arg_list(expr);
+
+    op = v_list_get_item(list, 0);
+
+    void_obj = v_ast_generic_get_object(op);
+
+    obj = *(void_obj: *v_ast_operator_unary_t);
+
+    pay = (&obj[2] : *v_ast_generic_list_t);
+
+    eid = (v_list_get_item(pay, 0) : *v_ast_expr_t);
+
+    ast: &v_ast_base_t[4] := {};
+
+    v_ast_make_expr_integer((ast+0 : *v_ast_expr_t), 0);
+
+    v_copy((ast+1 : *v_ast_expr_t), eid);
+
+    v_copy((ast+3 : *v_ast_expr_t), expr);
+
+    lst: &v_ast_generic_list_t := {};
+
+    v_make_list(&lst, unit_val_defn_q, ast, 4);
+
+    v_ast_accept_visitor(&lst, vis);
 }
 
 //---------------------------------------------------------------------
@@ -414,7 +487,61 @@ v_stmt_using_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t)
 //printf("v_stmt_using_intrinsic start\n");
 //defer printf("v_stmt_using_intrinsic stop\n");
 
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
 
+    flag = v_ast_expr_integer_get_number(v_list_get_item(args, 0));
+    expr = v_list_get_item(args, 1);
+
+    if (flag)       //- using namespace  <ns-id> ;
+    {
+        v_push_temporaries();       //- ?
+
+        v_set_result_type(INVIOLABLE_TAG);
+        v_set_result_value(0);
+
+        v_ast_accept_visitor(expr, vis);
+
+        t = v_get_result_type();
+        v = v_get_result_value();
+
+        v_pop_temporaries();        //- ?
+
+        v_assert(t == v_static_namespace_t);
+
+        ns = (v: *v_namespace_t);
+
+        a: &v_std_any_t := {};
+
+        v_std_any_set_value(&a, (ns: intptr_t));
+
+        lst = v_std_any_get_pointer(v_util_list_t, v_get_property_q(q_current_namespace_used));
+
+        v_list_append(lst, lst, &a);
+
+        v_return();
+    }
+
+    //- using  <ns-id> . <id> ;
+
+    list = v_ast_expr_call_get_arg_list(expr);
+
+    op = v_list_get_item(list, 0);
+
+    void_obj = v_ast_generic_get_object(op);
+
+    obj = *(void_obj: *v_ast_operator_unary_t);
+
+    pay = (&obj[2] : *v_ast_generic_list_t);
+
+    eid = (v_list_get_item(pay, 0) : *v_ast_expr_t);
+
+    qname = v_ast_expr_identifier_get_name_q(eid);
+
+    stmt: &v_ast_stmt_t := {};
+
+    v_ast_make_stmt_q(&stmt, qname, expr);
+
+    v_ast_accept_visitor(&stmt, vis);
 }
 
 //---------------------------------------------------------------------
@@ -805,23 +932,35 @@ bb = 200;
 }
 
 
-//namespace {
-//
-//using namespace qwe.asd.zxc;
-//
-//using a0.a1.a;
-//
-//c = 1000;
-//
+namespace c0 {
+
+using namespace qwe.asd.zxc;
+
+using a0.a1.a;
+
+c: &int := 1000 + a + b0.b1.b;
+
+//f: () ~> void
+//{
+//    printf("f()\n");
 //}
 
+}
 
+
+{ v_debug_print_module(1); }
 {
     using namespace qwe.asd.zxc;
 
+    printf("%d\n", a0.a1.a);
+
     using a0.a1.a;
 
+    printf("%d\n", a);
 
+    printf("%d %d\n", c0.c, c0.a);
+
+//  c0.f();
 }
 
 
