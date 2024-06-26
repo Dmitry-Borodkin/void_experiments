@@ -853,6 +853,8 @@ op_postfix_dot_helper_ctx_t = struct
            ) ~> void);
 
     aux: *void;
+
+    lookup_alias: *my_check_alias_ctx_t;        //- WTF !?!
 };
 
 //---------------------------------------------------------------------
@@ -866,6 +868,8 @@ my_op_postfix_dot_helper: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_
 //printf("my_op_postfix_dot_helper start\n");
 //defer printf("my_op_postfix_dot_helper stop\n");
 
+    ctx = *(aux: *op_postfix_dot_helper_ctx_t);
+
     {   void_fun: &*void := v_undef();
         void_aux: &*void := v_undef();
 
@@ -877,33 +881,57 @@ my_op_postfix_dot_helper: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_
             v_util_lookup_function_dict(q0, t0, void_fun, void_aux, ft, fv)
            )
         {
-            ctx = *(aux: *op_postfix_dot_helper_ctx_t);
-
             ctx.fun(ctx.aux, vis, self, t0, v0, q0, q1, alst);
 
             v_return();
         }
     }
 
-    ns = (v0: *v_namespace_t);
-
     q = v_quark_from_string(v_quark_to_string(q0) + 1);         //- Skip leading '.'
 
-    cache: &v_util_map_t := {};
+    qr: &v_quark_t := q;
 
-    v_make_map(&cache);
+    root_ns = ((-1: intptr_t) : *v_namespace_t);        //- Sic!
 
-    qr = lookup_in_namespace(&cache, ns, q);
+    if (ns = (v0: *v_namespace_t), ns != root_ns)       //- Just some "normal" namespace...
+    {
+        cache: &v_util_map_t := {};
 
-    v_assert(qr);
+        v_make_map(&cache);
 
-    expr: &v_ast_expr_t := {};
+        qr := lookup_in_namespace(&cache, ns, q);
 
-    v_ast_make_expr_identifier_q(&expr, qr);
+        v_assert(qr);
+    }
 
-    if (alst) v_ast_make_expr_call(&expr, &expr, alst);
+    tr: &*v_type_t    := 0;
+    vr: &LLVMValueRef := 0;
 
-    v_ast_accept_visitor(&expr, vis);
+    cur: &my_check_alias_ctx_t := v_undef();
+
+    cur.fun := v_get_lookup_alias_hook(&cur.aux);
+
+    v_set_lookup_alias_hook(ctx.lookup_alias->fun, ctx.lookup_alias->aux);
+
+    ok = v_obtain_identifier_q(qr, &tr, &vr);
+    v_assert(ok);
+
+    v_set_lookup_alias_hook(cur.fun, cur.aux);
+
+    if (alst)
+    {
+        expr: &v_ast_expr_t := {};
+
+        v_ast_make_expr_compiled(&expr, tr, vr);
+
+        v_ast_make_expr_call(&expr, &expr, alst);
+
+        v_ast_accept_visitor(&expr, vis);
+    }
+    else
+    {
+        v_adopt_result(tr, vr);
+    }
 }
 
 
@@ -1091,6 +1119,8 @@ namespaces_ctx_t = struct
 
     v_set_handler(v_compile_op_postfix_dot, my_op_postfix_dot_helper, &ctx.dot);
 
+    ctx.dot.lookup_alias := &ctx.alias[1];
+
     //--------------------------------------------------------------
     void_fun = voidc_visitor_get_void_method(vis, expr_struct_q, &ctx.struct[0].aux);
 
@@ -1145,9 +1175,9 @@ namespaces_ctx_t = struct
 
 
 //=====================================================================
-
 { v_debug_print_module(99); }
 
+//---------------------------------------------------------------------
 namespace qwe.asd.zxc {
 
 namespace a0 {
@@ -1169,6 +1199,7 @@ b = 100;
 }   //- namespace qwe.asd.zxc
 
 
+//---------------------------------------------------------------------
 qaz = qwe.asd.zxc;
 
 namespace qaz {
@@ -1198,6 +1229,7 @@ bb = 200;
 }
 
 
+//---------------------------------------------------------------------
 namespace c0 {
 
 using namespace qwe.asd.zxc;
@@ -1245,6 +1277,22 @@ g: (w: &wsx_t) ~> void
 
     printf("%d\n", wsx.x);
 }
+
+//---------------------------------------------------------------------
+{
+    v_add_constant("root_ns", v_static_namespace_t, ((-1: intptr_t) : LLVMValueRef));
+}
+
+{
+    root_ns.printf("root_ns\n");
+
+
+}
+
+
+
+
+
 
 
 
