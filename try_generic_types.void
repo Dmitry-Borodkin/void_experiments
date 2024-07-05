@@ -1,0 +1,253 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
+
+
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(99); }
+
+
+//---------------------------------------------------------------------
+{
+    q_ref = v_reference_type(v_quark_t, 0);
+
+    q = v_quark_ptr_from_string;
+
+    v_add_symbol("q_type_generic_initialize_hooks",       q_ref, q("v.type_generic_initialize_hooks"));
+    v_add_symbol("q_type_generic_obtain_llvm_type_hooks", q_ref, q("v.type_generic_obtain_llvm_type_hooks"));
+}
+
+
+//=====================================================================
+{   voidc_unit_begin_module("generic_types_module"); }
+
+//private
+hook_initialize_ft = (*void, *v_type_t) ~> void;
+
+//private
+hook_obtain_llvm_type_ft = (*void, *v_type_t) ~> LLVMTypeRef;
+
+
+//---------------------------------------------------------------------
+//export
+v_type_generic_get_initialize_hook: (qcons: v_quark_t, paux: **void) ~> *hook_initialize_ft
+{
+    any = v_get_property_q(q_type_generic_initialize_hooks);
+    if (!any)   v_return(0);
+
+    map = v_std_any_get_pointer(v_util_map_t, any);
+    v_assert(map);
+
+    any = v_map_find(map, qcons);
+    if (!any)   v_return(0);
+
+    p = *v_std_any_get_pointer(intptr_t[2], any);
+    v_assert(p);
+
+    fun = (p[0] : *hook_initialize_ft);
+    aux = (p[1] : *void);
+
+    if (paux) *paux := aux;
+
+    v_return(fun);
+}
+
+//---------------------------------------------------------------------
+//export
+v_type_generic_set_initialize_hook: (qcons: v_quark_t, fun: *hook_initialize_ft, aux: *void) ~> void
+{
+    a: &*v_std_any_t := v_get_property_q(q_type_generic_initialize_hooks);
+    if (!a)
+    {
+        map: &v_util_map_t := {};
+
+        v_make_map(&map);
+
+        any: &v_std_any_t := {};
+
+        v_std_any_set_pointer(&any, &map);
+
+        v_add_property_q(q_type_generic_initialize_hooks, &any);
+
+        a := v_get_property_q(q_type_generic_initialize_hooks);
+    }
+
+    map = v_std_any_get_pointer(v_util_map_t, a);
+
+    data: &intptr_t[2] :=
+    {
+        (fun: intptr_t),
+        (aux: intptr_t),
+    };
+
+    any: &v_std_any_t := {};
+
+    v_std_any_set_pointer(&any, &data);
+
+    v_map_insert(map, map, qcons, &any);
+}
+
+//---------------------------------------------------------------------
+//private
+my_type_generic_initialize_ctx_t = struct
+{
+    fun: *hook_initialize_ft;
+    aux: *void;
+};
+
+//private
+my_type_generic_initialize: (aux: *void, type: *v_type_t) ~> void
+{
+    v_assert(v_type_is_generic(type));
+
+    block
+    {
+        aux: &*void := v_undef();
+
+        fun = v_type_generic_get_initialize_hook(v_type_generic_get_cons(type), &aux);
+        if (!fun)   v_break();
+
+        fun(aux, type);
+
+        v_return();
+    }
+
+    ctx = *(aux: *my_type_generic_initialize_ctx_t);
+
+    ctx.fun(ctx.aux, type);
+}
+
+
+//---------------------------------------------------------------------
+//export
+v_type_generic_get_obtain_llvm_type_hook: (qcons: v_quark_t, paux: **void) ~> *hook_obtain_llvm_type_ft
+{
+    any = v_get_property_q(q_type_generic_obtain_llvm_type_hooks);
+    if (!any)   v_return(0);
+
+    map = v_std_any_get_pointer(v_util_map_t, any);
+    v_assert(map);
+
+    any = v_map_find(map, qcons);
+    if (!any)   v_return(0);
+
+    p = *v_std_any_get_pointer(intptr_t[2], any);
+    v_assert(p);
+
+    fun = (p[0] : *hook_obtain_llvm_type_ft);
+    aux = (p[1] : *void);
+
+    if (paux) *paux := aux;
+
+    v_return(fun);
+}
+
+//---------------------------------------------------------------------
+//export
+v_type_generic_set_obtain_llvm_type_hook: (qcons: v_quark_t, fun: *hook_obtain_llvm_type_ft, aux: *void) ~> void
+{
+    a: &*v_std_any_t := v_get_property_q(q_type_generic_obtain_llvm_type_hooks);
+    if (!a)
+    {
+        map: &v_util_map_t := {};
+
+        v_make_map(&map);
+
+        any: &v_std_any_t := {};
+
+        v_std_any_set_pointer(&any, &map);
+
+        v_add_property_q(q_type_generic_obtain_llvm_type_hooks, &any);
+
+        a := v_get_property_q(q_type_generic_obtain_llvm_type_hooks);
+    }
+
+    map = v_std_any_get_pointer(v_util_map_t, a);
+
+    data: &intptr_t[2] :=
+    {
+        (fun: intptr_t),
+        (aux: intptr_t),
+    };
+
+    any: &v_std_any_t := {};
+
+    v_std_any_set_pointer(&any, &data);
+
+    v_map_insert(map, map, qcons, &any);
+}
+
+//---------------------------------------------------------------------
+//private
+my_type_generic_obtain_llvm_type_ctx_t = struct
+{
+    fun: *hook_obtain_llvm_type_ft;
+    aux: *void;
+};
+
+//private
+my_type_generic_obtain_llvm_type: (aux: *void, type: *v_type_t) ~> LLVMTypeRef
+{
+    v_assert(v_type_is_generic(type));
+
+    block
+    {
+        aux: &*void := v_undef();
+
+        fun = v_type_generic_get_obtain_llvm_type_hook(v_type_generic_get_cons(type), &aux);
+        if (!fun)   v_break();
+
+        v_return(fun(aux, type));
+    }
+
+    ctx = *(aux: *my_type_generic_obtain_llvm_type_ctx_t);
+
+    v_return(ctx.fun(ctx.aux, type));
+}
+
+
+//=====================================================================
+{   voidc_unit_end_module(); }
+
+
+//=====================================================================
+//private
+type_generic_ctx_t = struct
+{
+    ini: my_type_generic_initialize_ctx_t;
+    obt: my_type_generic_obtain_llvm_type_ctx_t;
+};
+
+//---------------------------------------------------------------------
+{
+    ctx = *v_malloc(type_generic_ctx_t);
+
+    v_add_cleaner(free, &ctx);
+
+    ctx.ini.fun := v_type_get_initialize_hook(v_type_kind_generic, &ctx.ini.aux);
+    ctx.obt.fun := v_type_get_obtain_llvm_type_hook(v_type_kind_generic, &ctx.obt.aux);
+
+    v_type_set_initialize_hook(v_type_kind_generic, my_type_generic_initialize, &ctx.ini);
+    v_type_set_obtain_llvm_type_hook(v_type_kind_generic, my_type_generic_obtain_llvm_type, &ctx.obt);
+}
+
+
+//=====================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

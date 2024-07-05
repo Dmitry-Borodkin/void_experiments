@@ -2,6 +2,8 @@
                                                                │
                                                                │
                                                                │
+try_generic_types.void                                         │try_generic_types.void
+                                                               │
 try_namespaces.void                                            │try_namespaces.void
                                                                │
 try_coercions.void                                             │try_coercions.void
