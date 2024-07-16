@@ -560,7 +560,9 @@ namespace my {
 inlinehint
 (v_initialize(_)): (sp: *unique_ptr(T), N: size_t) ~> void
 {
-    for (i: &int := 0; i < N; ++i)  *(&sp[i] : **T) := 0;
+    .memset: (s: *void, c: int, n: size_t) ~> *void;
+
+    .memset(sp, 0, N*my.unique_ptr(int).size);
 }
 
 alwaysinline
@@ -792,78 +794,6 @@ enable_unique_ptr: () ~> void
     my.enable_unique_ptr();
 }
 
-
-//namespace my {
-//
-////---------------------------------------------------------------------
-//inlinehint
-//(v_initialize(_)): (sp: *my.unique_ptr(int), N: size_t) ~> void
-//{
-////    .memset: (s: *void, c: int, n: size_t) ~> *void;
-////
-////    .memset(sp, 0, N*my.unique_ptr(int).size);
-//
-//    for (i: &int := 0; i < N; ++i)  *(&sp[i] : **int) := 0;
-//
-//    printf("init int\n");
-//}
-//
-//inlinehint
-//(v_terminate(_)): (sp: *my.unique_ptr(int), N: size_t) ~> void
-//{
-//    for (i: &int := 0; i < N; ++i)  delete *(&sp[i] : **int);
-//
-//    printf("term int\n");
-//}
-//
-//
-//alwaysinline
-//(_.get()): (sp: &const my.unique_ptr(int)) ~> *int  =  *(&sp: **int);
-//
-//alwaysinline
-//(_.release()): (sp: &my.unique_ptr(int)) ~> *int
-//{
-//    r = sp.get();
-//
-//    *(&sp: **int) := 0;
-//
-//    v_return(r);
-//}
-//
-//alwaysinline
-//(_.reset()): (sp: &my.unique_ptr(int), p: *int) ~> void
-//{
-//    delete sp.get();
-//
-//    *(&sp: **int) := p;
-//}
-//
-//
-//inlinehint
-//(v_move(_)): (dst: *my.unique_ptr(int), src: *my.unique_ptr(int), N: size_t) ~> void
-//{
-//    for (i: &int := 0; i < N; ++i)  dst[i].reset(src[i].release());
-//}
-//
-//
-//alwaysinline
-//(*_): (sp: &my.unique_ptr(int)) ~> &int  =  *sp.get();
-//
-//alwaysinline
-//(_->): (sp: &my.unique_ptr(int)) ~> *int  =  sp.get();
-//
-//
-//alwaysinline
-//(_:=_): (dst: &my.unique_ptr(int), src: &my.unique_ptr(int)) ~> &my.unique_ptr(int)
-//{
-//    dst.reset(src.release());       //- Kinda   v_move(&dst, &src);
-//
-//    v_return(dst);
-//}
-//
-//}
-
-
 //---------------------------------------------------------------------
 #if (v_instantiate_unique_ptr(int))             #endif
 
@@ -893,9 +823,14 @@ enable_unique_ptr: () ~> void
 
 }
 
+{ v_debug_print_module(1); }
+{
+    .memset: (s: *void, c: int, n: size_t) ~> *void;
 
+    a: &int[5] := v_undef();
 
-
+    .memset(&a, 0, 5*int.size);
+}
 
 
 
