@@ -568,6 +568,9 @@ inlinehint
 alwaysinline
 (_.get()): (sp: &const unique_ptr(T)) ~> *T  =  *(&sp: **T);
 
+alwaysinline
+(_.get()): (sp: unique_ptr(T)) ~> *T  =  v_get_object_pointer(sp)->get();
+
 inlinehint
 (v_terminate(_)): (sp: *unique_ptr(T), N: size_t) ~> void
 {
@@ -605,10 +608,16 @@ inlinehint
 
 
 alwaysinline
-(*_): (sp: &unique_ptr(T)) ~> &T  =  *sp.get();
+(*_): (sp: &const unique_ptr(T)) ~> &T  =  *sp.get();
 
 alwaysinline
-(_->): (sp: &unique_ptr(T)) ~> *T  =  sp.get();
+(*_): (sp: unique_ptr(T)) ~> &T  =  *sp.get();
+
+alwaysinline
+(_->): (sp: &const unique_ptr(T)) ~> *T  =  sp.get();
+
+alwaysinline
+(_->): (sp: unique_ptr(T)) ~> *T  =  sp.get();
 
 
 alwaysinline
@@ -771,6 +780,68 @@ instantiate_unique_ptr_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_ba
 }
 
 
+//---------------------------------------------------------------------
+make_unique = v_object_intrinsic("my.make_unique_intrinsic");
+
+//---------------------------------------------------------------------
+private
+make_unique_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+//printf("make_unique_intrinsic start\n");
+//defer printf("make_unique_intrinsic stop\n");
+
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    arg0 = v_list_get_item(args, 0);
+
+    ttag = v_get_result_type();
+    vtag = v_get_result_value();
+
+    v_set_result_type(INVIOLABLE_TAG);
+    v_set_result_value(0);
+
+    v_ast_accept_visitor(arg0, vis);
+
+    elt = (v_get_result_value() : *v_type_t);
+
+    arg = v_type_generic_type_arg(elt);
+
+    tr = v_generic_type(unique_ptr_q, &arg, 1);
+
+    v_set_result_type(ttag);
+    v_set_result_value(vtag);
+
+    vr = v_obtain_special_result_value(vis, tr);        //- Sic !?!
+
+    expr: &v_ast_expr_t := {};
+
+    v_ast_make_expr_compiled(&expr, v_static_type_t, (elt: LLVMValueRef));
+
+    list: &v_ast_expr_list_t := {};
+
+    v_make_list(&list, &expr, 1);
+
+    v_ast_make_expr_identifier(&expr, "v.op_prefix_new");           //- Sic!
+
+    v_ast_make_expr_call(&expr, &expr, &list);
+
+    v_set_result_type(INVIOLABLE_TAG);
+    v_set_result_value(0);
+
+    v_ast_accept_visitor(&expr, vis);
+
+    ptr_v = v_get_result_value();
+
+    builder = v_target_get_builder();
+
+    LLVMBuildStore(builder, ptr_v, vr);             //- Sic !!!
+
+    v_set_result_type(ttag);
+    v_set_result_value(vtag);
+
+    v_adopt_result(tr, vr);
+}
+
 
 //---------------------------------------------------------------------
 enable_unique_ptr: () ~> void
@@ -782,6 +853,8 @@ enable_unique_ptr: () ~> void
     v_add_intrinsic("v_instantiate_unique_ptr", instantiate_unique_ptr_intrinsic, 0);
 
     parse_template();
+
+    v_add_intrinsic("my.make_unique_intrinsic", make_unique_intrinsic, 0);
 }
 
 
@@ -802,7 +875,7 @@ enable_unique_ptr: () ~> void
 
 //---------------------------------------------------------------------
 { voidc_verify_jit_module_optimized(true); }
-{ v_debug_print_module(2); }
+{ v_debug_print_module(99); }
 {
     p: &my.unique_ptr(int) := {};
 
@@ -820,23 +893,35 @@ enable_unique_ptr: () ~> void
 
     printf("q[0]: %s\n", v_std_string_get(q[0].get()));
 
-
 }
 
-{ v_debug_print_module(1); }
+
+//---------------------------------------------------------------------
+struct some_t
 {
-    .memset: (s: *void, c: int, n: size_t) ~> *void;
+    x: int;
+    y: int;
+};
 
-    a: &int[5] := v_undef();
+#if (v_instantiate_unique_ptr(some_t))  #endif
 
-    .memset(&a, 0, 5*int.size);
+
+//---------------------------------------------------------------------
+{
+    r = my.make_unique(some_t);
+
+    r->x := 777;
+    r->y := 888;
+
+    printf("r: (%d, %d)\n", r->x, r->y);
+
 }
 
+some = my.make_unique(some_t);
 
+{ *some := { 7777, 8888 }; }
 
-
-
-
+{ printf("some: (%d, %d)\n", some->x, some->y); }
 
 
 
