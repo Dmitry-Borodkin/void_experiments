@@ -874,8 +874,8 @@ enable_unique_ptr: () ~> void
 
 
 //---------------------------------------------------------------------
-{ voidc_verify_jit_module_optimized(true); }
-{ v_debug_print_module(99); }
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(99); }
 {
     p: &my.unique_ptr(int) := {};
 
@@ -903,6 +903,38 @@ struct some_t
     y: int;
 };
 
+inlinehint
+(v_initialize(_)): (sp: *some_t, n: size_t) ~> void
+{
+    printf("init some_t %d\n", (n: int));
+}
+
+inlinehint
+(v_terminate(_)): (sp: *some_t, n: size_t) ~> void
+{
+    printf("term some_t %d\n", (n: int));
+}
+
+alwaysinline
+(_:=_): (r: &some_t, v: some_t) ~> &some_t
+{
+    v = *v_get_object_pointer(v);       //- WTF ?!?
+
+    r.x := v.x;
+    r.y := v.y;
+
+    v_return(r);
+}
+
+//inlinehint
+//(v_copy(_)): (d: *some_t, s: *const some_t, n: size_t) ~> void
+//{
+//    for (i: &int := 0; i < n; ++i)  d[i] := s[i];
+//
+//    printf("copy some_t %d\n", (n: int));
+//}
+
+
 #if (v_instantiate_unique_ptr(some_t))  #endif
 
 
@@ -917,11 +949,26 @@ struct some_t
 
 }
 
+
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(99); }
+
 some = my.make_unique(some_t);
 
 { *some := { 7777, 8888 }; }
 
 { printf("some: (%d, %d)\n", some->x, some->y); }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -940,22 +987,6 @@ some = my.make_unique(some_t);
 
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
