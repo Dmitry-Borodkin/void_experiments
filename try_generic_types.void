@@ -621,8 +621,10 @@ alwaysinline
 
 
 alwaysinline
-(_:=_): (dst: &unique_ptr(T), src: &unique_ptr(T)) ~> &unique_ptr(T)
+(_:=_): (dst: &unique_ptr(T), src: unique_ptr(T)) ~> &unique_ptr(T)
 {
+    src = *v_get_object_pointer(src);
+
     dst.reset(src.release());       //- Kinda   v_move(&dst, &src);
 
     v_return(dst);
@@ -743,9 +745,7 @@ instantiate_unique_ptr_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_ba
 
     q = v_quark_from_string("expr_identifier");
 
-    void_fun = voidc_visitor_get_void_method(vis, q, &ctx.aux);
-
-    ctx.fun := (void_fun: *((*void, *voidc_visitor_t, *v_ast_base_t) ~> void));
+    ctx.fun := voidc_visitor_get_method(vis, q, &ctx.aux);
 
     ctx.par := &par;
 
@@ -756,7 +756,7 @@ instantiate_unique_ptr_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_ba
 
     v_copy(&saved_vis, vis);
 
-    voidc_visitor_set_void_method(vis, vis, q, my_compile_expr_identifier, &ctx);
+    voidc_visitor_set_method(vis, vis, q, my_compile_expr_identifier, &ctx);
 
     n = v_list_get_size(&template_ast);
 
@@ -918,21 +918,22 @@ inlinehint
 alwaysinline
 (_:=_): (r: &some_t, v: some_t) ~> &some_t
 {
-    v = *v_get_object_pointer(v);       //- WTF ?!?
+    .memcpy: (d: *void, s: *const void, n: size_t) ~> *void;
 
-    r.x := v.x;
-    r.y := v.y;
+    .memcpy(&r, v_get_object_pointer(v), some_t.size);
 
     v_return(r);
 }
 
-//inlinehint
-//(v_copy(_)): (d: *some_t, s: *const some_t, n: size_t) ~> void
-//{
-//    for (i: &int := 0; i < n; ++i)  d[i] := s[i];
-//
-//    printf("copy some_t %d\n", (n: int));
-//}
+inlinehint
+(v_copy(_)): (d: *some_t, s: *const some_t, n: size_t) ~> void
+{
+    .memcpy: (d: *void, s: *const void, n: size_t) ~> *void;
+
+    .memcpy(d, s, n*some_t.size);
+
+    printf("copy some_t %d\n", (n: int));
+}
 
 
 #if (v_instantiate_unique_ptr(some_t))  #endif
