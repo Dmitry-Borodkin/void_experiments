@@ -918,9 +918,8 @@ inlinehint
 alwaysinline
 (_:=_): (r: &some_t, v: some_t) ~> &some_t
 {
-    .memcpy: (d: *void, s: *const void, n: size_t) ~> *void;
-
-    .memcpy(&r, v_get_object_pointer(v), some_t.size);
+    r.x := v.x;         //- ?
+    r.y := v.y;         //- ?
 
     v_return(r);
 }
