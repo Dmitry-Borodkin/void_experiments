@@ -569,7 +569,7 @@ alwaysinline
 (_.get()): (sp: &const unique_ptr(T)) ~> *T  =  *(&sp: **T);
 
 alwaysinline
-(_.get()): (sp: unique_ptr(T)) ~> *T  =  v_get_object_pointer(sp)->get();
+(_.get()): (sp: unique_ptr(T)) ~> *T  =  (&sp)->get();
 
 inlinehint
 (v_terminate(_)): (sp: *unique_ptr(T), N: size_t) ~> void
@@ -621,10 +621,8 @@ alwaysinline
 
 
 alwaysinline
-(_:=_): (dst: &unique_ptr(T), src: unique_ptr(T)) ~> &unique_ptr(T)
+(_:=_): (dst: &unique_ptr(T), src: &unique_ptr(T)) ~> &unique_ptr(T)
 {
-    src = *v_get_object_pointer(src);
-
     dst.reset(src.release());       //- Kinda   v_move(&dst, &src);
 
     v_return(dst);

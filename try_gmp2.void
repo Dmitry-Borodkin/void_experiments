@@ -236,11 +236,9 @@ expr_integer_ctx: &expr_integer_ctx_t := v_undef();
 
     vis = v_get_compiler();
 
-    void_fun = voidc_visitor_get_void_method(vis, q, &expr_integer_ctx.aux);
+    expr_integer_ctx.fun := voidc_visitor_get_method(vis, q, &expr_integer_ctx.aux);
 
-    expr_integer_ctx.fun := (void_fun: *((*void, *voidc_visitor_t, *v_ast_base_t) ~> void));
-
-    voidc_visitor_set_void_method(vis, vis, q, my_compile_expr_integer, &expr_integer_ctx);
+    voidc_visitor_set_method(vis, vis, q, my_compile_expr_integer, &expr_integer_ctx);
 }
 
 
@@ -408,11 +406,9 @@ convert_to_type_ctx: &convert_to_type_ctx_t := v_undef();
 alwaysinline
 (_+_): (a: mpz_t, b: mpz_t) ~> mpz_t
 {
-    a = v_get_object_pointer(a);
-    b = v_get_object_pointer(b);
     r = v_get_return_value();
 
-    __gmpz_add(&r, a, b);
+    __gmpz_add(&r, &a, &b);
 }
 
 alwaysinline
@@ -421,30 +417,26 @@ alwaysinline
 alwaysinline
 (_+_): (a: &mpz_t, b: mpz_t) ~> mpz_t
 {
-    b = v_get_object_pointer(b);
     r = v_get_return_value();
 
-    __gmpz_add(&r, &a, b);
+    __gmpz_add(&r, &a, &b);
 }
 
 alwaysinline
 (_+__): (a: mpz_t, b: &mpz_t) ~> mpz_t
 {
-    a = v_get_object_pointer(a);
     r = v_get_return_value();
 
-    __gmpz_add(&r, a, &b);
+    __gmpz_add(&r, &a, &b);
 }
 
 //---------------------------------------------------------------------
 alwaysinline
 (_-_): (a: mpz_t, b: mpz_t) ~> mpz_t
 {
-    a = v_get_object_pointer(a);
-    b = v_get_object_pointer(b);
     r = v_get_return_value();
 
-    __gmpz_sub(&r, a, b);
+    __gmpz_sub(&r, &a, &b);
 }
 
 alwaysinline
@@ -453,30 +445,26 @@ alwaysinline
 alwaysinline
 (_-_): (a: &mpz_t, b: mpz_t) ~> mpz_t
 {
-    b = v_get_object_pointer(b);
     r = v_get_return_value();
 
-    __gmpz_sub(&r, &a, b);
+    __gmpz_sub(&r, &a, &b);
 }
 
 alwaysinline
 (_-__): (a: mpz_t, b: &mpz_t) ~> mpz_t
 {
-    a = v_get_object_pointer(a);
     r = v_get_return_value();
 
-    __gmpz_sub(&r, a, &b);
+    __gmpz_sub(&r, &a, &b);
 }
 
 //---------------------------------------------------------------------
 alwaysinline
 (_*_): (a: mpz_t, b: mpz_t) ~> mpz_t
 {
-    a = v_get_object_pointer(a);
-    b = v_get_object_pointer(b);
     r = v_get_return_value();
 
-    __gmpz_mul(&r, a, b);
+    __gmpz_mul(&r, &a, &b);
 }
 
 alwaysinline
@@ -485,30 +473,26 @@ alwaysinline
 alwaysinline
 (_*_): (a: &mpz_t, b: mpz_t) ~> mpz_t
 {
-    b = v_get_object_pointer(b);
     r = v_get_return_value();
 
-    __gmpz_mul(&r, &a, b);
+    __gmpz_mul(&r, &a, &b);
 }
 
 alwaysinline
 (_*__): (a: mpz_t, b: &mpz_t) ~> mpz_t
 {
-    a = v_get_object_pointer(a);
     r = v_get_return_value();
 
-    __gmpz_mul(&r, a, &b);
+    __gmpz_mul(&r, &a, &b);
 }
 
 //---------------------------------------------------------------------
 alwaysinline
 (_/_): (a: mpz_t, b: mpz_t) ~> mpz_t
 {
-    a = v_get_object_pointer(a);
-    b = v_get_object_pointer(b);
     r = v_get_return_value();
 
-    __gmpz_tdiv_q(&r, a, b);
+    __gmpz_tdiv_q(&r, &a, &b);
 }
 
 alwaysinline
@@ -517,30 +501,26 @@ alwaysinline
 alwaysinline
 (_/_): (a: &mpz_t, b: mpz_t) ~> mpz_t
 {
-    b = v_get_object_pointer(b);
     r = v_get_return_value();
 
-    __gmpz_tdiv_q(&r, &a, b);
+    __gmpz_tdiv_q(&r, &a, &b);
 }
 
 alwaysinline
 (_/__): (a: mpz_t, b: &mpz_t) ~> mpz_t
 {
-    a = v_get_object_pointer(a);
     r = v_get_return_value();
 
-    __gmpz_tdiv_q(&r, a, &b);
+    __gmpz_tdiv_q(&r, &a, &b);
 }
 
 //---------------------------------------------------------------------
 alwaysinline
 (_%_): (a: mpz_t, b: mpz_t) ~> mpz_t
 {
-    a = v_get_object_pointer(a);
-    b = v_get_object_pointer(b);
     r = v_get_return_value();
 
-    __gmpz_tdiv_r(&r, a, b);
+    __gmpz_tdiv_r(&r, &a, &b);
 }
 
 alwaysinline
@@ -549,30 +529,26 @@ alwaysinline
 alwaysinline
 (_%_): (a: &mpz_t, b: mpz_t) ~> mpz_t
 {
-    b = v_get_object_pointer(b);
     r = v_get_return_value();
 
-    __gmpz_tdiv_r(&r, &a, b);
+    __gmpz_tdiv_r(&r, &a, &b);
 }
 
 alwaysinline
 (_%__): (a: mpz_t, b: &mpz_t) ~> mpz_t
 {
-    a = v_get_object_pointer(a);
     r = v_get_return_value();
 
-    __gmpz_tdiv_r(&r, a, &b);
+    __gmpz_tdiv_r(&r, &a, &b);
 }
 
 //---------------------------------------------------------------------
 alwaysinline
 (_&_): (a: mpz_t, b: mpz_t) ~> mpz_t
 {
-    a = v_get_object_pointer(a);
-    b = v_get_object_pointer(b);
     r = v_get_return_value();
 
-    __gmpz_and(&r, a, b);
+    __gmpz_and(&r, &a, &b);
 }
 
 alwaysinline
@@ -581,30 +557,26 @@ alwaysinline
 alwaysinline
 (_&_): (a: &mpz_t, b: mpz_t) ~> mpz_t
 {
-    b = v_get_object_pointer(b);
     r = v_get_return_value();
 
-    __gmpz_and(&r, &a, b);
+    __gmpz_and(&r, &a, &b);
 }
 
 alwaysinline
 (_&__): (a: mpz_t, b: &mpz_t) ~> mpz_t
 {
-    a = v_get_object_pointer(a);
     r = v_get_return_value();
 
-    __gmpz_and(&r, a, &b);
+    __gmpz_and(&r, &a, &b);
 }
 
 //---------------------------------------------------------------------
 alwaysinline
 (_|_): (a: mpz_t, b: mpz_t) ~> mpz_t
 {
-    a = v_get_object_pointer(a);
-    b = v_get_object_pointer(b);
     r = v_get_return_value();
 
-    __gmpz_ior(&r, a, b);
+    __gmpz_ior(&r, &a, &b);
 }
 
 alwaysinline
@@ -613,30 +585,26 @@ alwaysinline
 alwaysinline
 (_|_): (a: &mpz_t, b: mpz_t) ~> mpz_t
 {
-    b = v_get_object_pointer(b);
     r = v_get_return_value();
 
-    __gmpz_ior(&r, &a, b);
+    __gmpz_ior(&r, &a, &b);
 }
 
 alwaysinline
 (_|__): (a: mpz_t, b: &mpz_t) ~> mpz_t
 {
-    a = v_get_object_pointer(a);
     r = v_get_return_value();
 
-    __gmpz_ior(&r, a, &b);
+    __gmpz_ior(&r, &a, &b);
 }
 
 //---------------------------------------------------------------------
 alwaysinline
 (_^_): (a: mpz_t, b: mpz_t) ~> mpz_t
 {
-    a = v_get_object_pointer(a);
-    b = v_get_object_pointer(b);
     r = v_get_return_value();
 
-    __gmpz_xor(&r, a, b);
+    __gmpz_xor(&r, &a, &b);
 }
 
 alwaysinline
@@ -645,29 +613,26 @@ alwaysinline
 alwaysinline
 (_^_): (a: &mpz_t, b: mpz_t) ~> mpz_t
 {
-    b = v_get_object_pointer(b);
     r = v_get_return_value();
 
-    __gmpz_xor(&r, &a, b);
+    __gmpz_xor(&r, &a, &b);
 }
 
 alwaysinline
 (_^__): (a: mpz_t, b: &mpz_t) ~> mpz_t
 {
-    a = v_get_object_pointer(a);
     r = v_get_return_value();
 
-    __gmpz_xor(&r, a, &b);
+    __gmpz_xor(&r, &a, &b);
 }
 
 //---------------------------------------------------------------------
 alwaysinline
 (_<<_): (a: mpz_t, u: ulong) ~> mpz_t
 {
-    a = v_get_object_pointer(a);
     r = v_get_return_value();
 
-    __gmpz_mul_2exp(&r, a, u);
+    __gmpz_mul_2exp(&r, &a, u);
 }
 
 alwaysinline
@@ -682,10 +647,9 @@ alwaysinline
 alwaysinline
 (_>>_): (a: mpz_t, u: ulong) ~> mpz_t
 {
-    a = v_get_object_pointer(a);
     r = v_get_return_value();
 
-    __gmpz_fdiv_q_2exp(&r, a, u);
+    __gmpz_fdiv_q_2exp(&r, &a, u);
 }
 
 alwaysinline
@@ -700,10 +664,9 @@ alwaysinline
 alwaysinline
 (~_): (a: mpz_t) ~> mpz_t
 {
-    a = v_get_object_pointer(a);
     r = v_get_return_value();
 
-    __gmpz_com(&r, a);
+    __gmpz_com(&r, &a);
 }
 
 alwaysinline
@@ -718,10 +681,9 @@ alwaysinline
 alwaysinline
 (-_): (a: mpz_t) ~> mpz_t
 {
-    a = v_get_object_pointer(a);
     r = v_get_return_value();
 
-    __gmpz_neg(&r, a);
+    __gmpz_neg(&r, &a);
 }
 
 alwaysinline
@@ -734,177 +696,81 @@ alwaysinline
 
 //---------------------------------------------------------------------
 alwaysinline
-(_==_): (a: mpz_t, b: mpz_t) ~> bool
-{
-    a = v_get_object_pointer(a);
-    b = v_get_object_pointer(b);
-
-    v_return(__gmpz_cmp(a, b) == 0);
-}
+(_==_): (a: mpz_t, b: mpz_t) ~> bool   =  __gmpz_cmp(&a, &b) == 0;
 
 alwaysinline
 (_==__): (a: mpz_t, b: mpz_t) ~> bool  =  a == b;
 
 alwaysinline
-(_==_): (a: &mpz_t, b: mpz_t) ~> bool
-{
-    b = v_get_object_pointer(b);
-
-    v_return(__gmpz_cmp(&a, b) == 0);
-}
+(_==_): (a: &mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) == 0;
 
 alwaysinline
-(_==__): (a: mpz_t, b: &mpz_t) ~> bool
-{
-    a = v_get_object_pointer(a);
-
-    v_return(__gmpz_cmp(a, &b) == 0);
-}
+(_==__): (a: mpz_t, b: &mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) == 0;
 
 //---------------------------------------------------------------------
 alwaysinline
-(_!=_): (a: mpz_t, b: mpz_t) ~> bool
-{
-    a = v_get_object_pointer(a);
-    b = v_get_object_pointer(b);
-
-    v_return(__gmpz_cmp(a, b) != 0);
-}
+(_!=_): (a: mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) != 0;
 
 alwaysinline
 (_!=__): (a: mpz_t, b: mpz_t) ~> bool  =  a != b;
 
 alwaysinline
-(_!=_): (a: &mpz_t, b: mpz_t) ~> bool
-{
-    b = v_get_object_pointer(b);
-
-    v_return(__gmpz_cmp(&a, b) != 0);
-}
+(_!=_): (a: &mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) != 0;
 
 alwaysinline
-(_!=__): (a: mpz_t, b: &mpz_t) ~> bool
-{
-    a = v_get_object_pointer(a);
-
-    v_return(__gmpz_cmp(a, &b) != 0);
-}
+(_!=__): (a: mpz_t, b: &mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) != 0;
 
 //---------------------------------------------------------------------
 alwaysinline
-(_<_): (a: mpz_t, b: mpz_t) ~> bool
-{
-    a = v_get_object_pointer(a);
-    b = v_get_object_pointer(b);
-
-    v_return(__gmpz_cmp(a, b) < 0);
-}
+(_<_): (a: mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) < 0;
 
 alwaysinline
 (_<__): (a: mpz_t, b: mpz_t) ~> bool  =  a < b;
 
 alwaysinline
-(_<_): (a: &mpz_t, b: mpz_t) ~> bool
-{
-    b = v_get_object_pointer(b);
-
-    v_return(__gmpz_cmp(&a, b) < 0);
-}
+(_<_): (a: &mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) < 0;
 
 alwaysinline
-(_<__): (a: mpz_t, b: &mpz_t) ~> bool
-{
-    a = v_get_object_pointer(a);
-
-    v_return(__gmpz_cmp(a, &b) < 0);
-}
+(_<__): (a: mpz_t, b: &mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) < 0;
 
 //---------------------------------------------------------------------
 alwaysinline
-(_<=_): (a: mpz_t, b: mpz_t) ~> bool
-{
-    a = v_get_object_pointer(a);
-    b = v_get_object_pointer(b);
-
-    v_return(__gmpz_cmp(a, b) <= 0);
-}
+(_<=_): (a: mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) <= 0;
 
 alwaysinline
 (_<=__): (a: mpz_t, b: mpz_t) ~> bool  =  a <= b;
 
 alwaysinline
-(_<=_): (a: &mpz_t, b: mpz_t) ~> bool
-{
-    b = v_get_object_pointer(b);
-
-    v_return(__gmpz_cmp(&a, b) <= 0);
-}
+(_<=_): (a: &mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) <= 0;
 
 alwaysinline
-(_<=__): (a: mpz_t, b: &mpz_t) ~> bool
-{
-    a = v_get_object_pointer(a);
-
-    v_return(__gmpz_cmp(a, &b) <= 0);
-}
+(_<=__): (a: mpz_t, b: &mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) <= 0;
 
 //---------------------------------------------------------------------
 alwaysinline
-(_>_): (a: mpz_t, b: mpz_t) ~> bool
-{
-    a = v_get_object_pointer(a);
-    b = v_get_object_pointer(b);
-
-    v_return(__gmpz_cmp(a, b) > 0);
-}
+(_>_): (a: mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) > 0;
 
 alwaysinline
 (_>__): (a: mpz_t, b: mpz_t) ~> bool  =  a > b;
 
 alwaysinline
-(_>_): (a: &mpz_t, b: mpz_t) ~> bool
-{
-    b = v_get_object_pointer(b);
-
-    v_return(__gmpz_cmp(&a, b) > 0);
-}
+(_>_): (a: &mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) > 0;
 
 alwaysinline
-(_>__): (a: mpz_t, b: &mpz_t) ~> bool
-{
-    a = v_get_object_pointer(a);
-
-    v_return(__gmpz_cmp(a, &b) > 0);
-}
+(_>__): (a: mpz_t, b: &mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) > 0;
 
 //---------------------------------------------------------------------
 alwaysinline
-(_>=_): (a: mpz_t, b: mpz_t) ~> bool
-{
-    a = v_get_object_pointer(a);
-    b = v_get_object_pointer(b);
-
-    v_return(__gmpz_cmp(a, b) >= 0);
-}
+(_>=_): (a: mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) >= 0;
 
 alwaysinline
 (_>=__): (a: mpz_t, b: mpz_t) ~> bool  =  a >= b;
 
 alwaysinline
-(_>=_): (a: &mpz_t, b: mpz_t) ~> bool
-{
-    b = v_get_object_pointer(b);
-
-    v_return(__gmpz_cmp(&a, b) >= 0);
-}
+(_>=_): (a: &mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) >= 0;
 
 alwaysinline
-(_>=__): (a: mpz_t, b: &mpz_t) ~> bool
-{
-    a = v_get_object_pointer(a);
-
-    v_return(__gmpz_cmp(a, &b) >= 0);
-}
+(_>=__): (a: mpz_t, b: &mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) >= 0;
 
 
 //---------------------------------------------------------------------
@@ -913,7 +779,7 @@ alwaysinline
 alwaysinline
 (_:=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t
 {
-    v_copy(&v, v_get_object_pointer(x));
+    v_copy(&v, &x);
 
     v_return(v);
 }
