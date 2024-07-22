@@ -28,13 +28,12 @@ struct string_t
 
 //---------------------------------------------------------------------
 alwaysinline
-(_.is_long): (self: &const string_t) ~> bool
-{
-    v_return(self._data != self[2].local);
-}
+(_.is_long): (self: &const string_t) ~> bool  =  self._data != self[2].local;
 
 
 //---------------------------------------------------------------------
+strlen: (*const char) ~> size_t;
+
 memcpy: (*void, *const void, size_t) ~> *void;
 memset: (*void, int, size_t) ~> *void;
 
@@ -135,19 +134,26 @@ inlinehint
 
 //---------------------------------------------------------------------
 alwaysinline
-(_.data): (str: &string_t) ~> *char
-{
-    v_return(str._data);
-}
+(_.data): (str: &const string_t) ~> *char  =  str._data;
 
 alwaysinline
-(_.size): (str: &const string_t) ~> size_t
-{
-    v_return(str._size);
-}
+(_.data): (str: string_t) ~> *char  =  str._data;
+
+alwaysinline
+(_.size): (str: &const string_t) ~> size_t  =  str._size;
+
+alwaysinline
+(_.size): (str: string_t) ~> size_t  =  str._size;
 
 inlinehint
 (_.capacity): (str: &const string_t) ~> size_t
+{
+    if (str.is_long)  v_return(str[2].capacity);
+    else              v_return(15);
+}
+
+inlinehint
+(_.capacity): (str: string_t) ~> size_t
 {
     if (str.is_long)  v_return(str[2].capacity);
     else              v_return(15);
@@ -158,8 +164,6 @@ inlinehint
 inlinehint
 (_.set()): (str: &string_t, s: *const char) ~> void
 {
-    strlen: (*const char) ~> size_t;
-
     len = strlen(s);
 
     if (len > str.capacity)
@@ -180,8 +184,6 @@ inlinehint
 inlinehint
 (_.append()): (str: &string_t, s: *const char) ~> void
 {
-    strlen: (*const char) ~> size_t;
-
     len = strlen(s);
 
     sz = str._size;
@@ -219,8 +221,6 @@ inlinehint
 //---------------------------------------------------------------------
 pr_string: (s: string_t) ~> void
 {
-    s = *v_get_object_pointer(s);
-
     printf("d: %s, s: %zd, c: %zd\n", s.data, s.size, s.capacity);
 }
 
@@ -263,7 +263,7 @@ pr_string: (s: string_t) ~> void
 alwaysinline
 (_:=_): (str: &string_t, val: string_t) ~> &string_t
 {
-    v_copy(&str, v_get_object_pointer(val));
+    v_copy(&str, &val);
 
     v_return(str);
 }

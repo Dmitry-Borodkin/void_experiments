@@ -86,8 +86,7 @@ main: (argc: int, argv: **const char) ~> int
 
     printf("\n");
 
-    printf("zzzz.v: %d\n", v_get_object_pointer(zzzz)->v);
-//  printf("zzzz.v: %d\n", zzzz.v);
+    printf("zzzz.v: %d\n", zzzz.v);
 
     printf("\n");
 
