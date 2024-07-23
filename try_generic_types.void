@@ -765,15 +765,6 @@ instantiate_unique_ptr_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_ba
     }
 
     v_copy(vis, &saved_vis);
-
-    //-------------------------------------------------------------
-    tr: &*v_type_t    := v_undef();
-    vr: &LLVMValueRef := v_undef();
-
-    v_find_constant("true", &tr, &vr);
-
-    v_set_result_type(tr);
-    v_set_result_value(vr);
 }
 
 
@@ -865,9 +856,11 @@ enable_unique_ptr: () ~> void
 }
 
 //---------------------------------------------------------------------
-#if (v_instantiate_unique_ptr(int))             #endif
-
-#if (v_instantiate_unique_ptr(v_std_string_t))  #endif
+#do
+(
+    v_instantiate_unique_ptr(int),
+    v_instantiate_unique_ptr(v_std_string_t),
+)
 
 
 //---------------------------------------------------------------------
@@ -932,7 +925,7 @@ inlinehint
 }
 
 
-#if (v_instantiate_unique_ptr(some_t))  #endif
+#do (v_instantiate_unique_ptr(some_t))
 
 
 //---------------------------------------------------------------------
