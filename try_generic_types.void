@@ -346,15 +346,14 @@ v_enable_generic_types: () ~> void
     //--------------------------------------------------------------
     v_add_intrinsic_q(voidc_abstract_object_intrinsic_intrinsic_q, my_abstract_object_intrinsic_intrinsic, 0);
 
-    v_util_function_dict_set(voidc_abstract_static_constant_q, v_object_intrinsic_t,
-                             voidc_abstract_object_intrinsic_intrinsic_q);
+    v_add_overload_q(voidc_abstract_static_constant_q, v_object_intrinsic_t,
+                     voidc_abstract_object_intrinsic_intrinsic_q);
 
     v_add_intrinsic("v_object_intrinsic", my_object_intrinsic_intrinsic, 0);
 
     v_add_intrinsic("v.postfix_call_object_intrinsic_intrinsic", my_postfix_call_object_intrinsic_intrinsic, 0);
 
-    v_util_function_dict_set(v_quark_from_string("v.op_postfix_call"), v_object_intrinsic_t,
-                             v_quark_from_string("v.postfix_call_object_intrinsic_intrinsic"));
+    v_add_overload("v.op_postfix_call", v_object_intrinsic_t, "v.postfix_call_object_intrinsic_intrinsic");
 }
 
 
