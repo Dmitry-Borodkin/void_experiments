@@ -1,0 +1,32 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
+
+
+//---------------------------------------------------------------------
+{
+    str: &v_std_string_t[2] := {};
+
+    N = 10000;
+
+    for (i: &int := 0; i < N; ++i)
+    {
+        rand: () ~> int;
+
+        v_std_string_append_number(str+0, rand());
+
+        v_std_string_set(str+1, "");
+
+        voidc_internal_std_string_append_mangle(str+1, str+0);
+
+        printf("%d, %d, %d\n", i, (v_std_string_get_size(str+0): int), (v_std_string_get_size(str+1): int));
+
+//      printf("%d, %d: %s\n", i, (v_std_string_get_size(str+1): int), v_std_string_get(str+1));
+    }
+
+}
+
+
+

@@ -21,6 +21,8 @@ try_handlers3.void                                             │try_handlers3.
                                                                │
                                                                │
 ───────────────────────────────────────────────────────────────│
+try_compression4.void   ?                                      │try_compression4.void
+                                                               │
 try_fun_expr.void                                              │try_fun_expr.void
                                                                │
 try_condcomp.void                                              │try_condcomp.void
@@ -140,7 +142,7 @@ try_gmp.void        ... objects ...                            │try_gmp.void
 try_structures.void                                            │try_structures.void
                                                                │
 ───────────────────────────────────────────────────────────────│
-try_compression3.void                                          │try_compression3.void
+try_compression3.void   ???                                    │try_compression3.void
 try_compression2.void                                          │try_compression2.void
 try_compression.void                                           │try_compression.void
                                                                │

@@ -28,7 +28,7 @@ table62: &char[62] := v_undef();
 //---------------------------------------------------------------------
 byte = uint(8);
 
-exit: (int) -> void;
+exit: (int) ~> void;
 
 
 //---------------------------------------------------------------------
@@ -50,10 +50,10 @@ struct myz_ctx_t
     buffer_out: uint(8);            //- Output bits buffer
 
     //-------------------------------------------------------------
-    check_in: *((&myz_ctx_t) -> bool);
+    check_in: *((&myz_ctx_t) ~> bool);
     aux_in:   *void;
 
-    check_out: *((&myz_ctx_t) -> bool);
+    check_out: *((&myz_ctx_t) ~> bool);
     aux_out:   *void;
 
     //- ...
@@ -64,7 +64,7 @@ struct myz_ctx_t
 //---------------------------------------------------------------------
 //- Get one byte
 //---------------------------------------------------------------------
-myz_get_byte: (ctx: &myz_ctx_t) -> byte
+myz_get_byte: (ctx: &myz_ctx_t) ~> byte
 {
     if (ctx.avail_in == 0  &&  !(ctx.check_in  &&  ctx.check_in(ctx)))
     {
@@ -83,7 +83,7 @@ myz_get_byte: (ctx: &myz_ctx_t) -> byte
 //---------------------------------------------------------------------
 //- Get one bit
 //---------------------------------------------------------------------
-myz_get_bit: (ctx: &myz_ctx_t) -> bool
+myz_get_bit: (ctx: &myz_ctx_t) ~> bool
 {
     if (ctx.remain_in == 0)
     {
@@ -105,7 +105,7 @@ myz_get_bit: (ctx: &myz_ctx_t) -> bool
 //---------------------------------------------------------------------
 //- ...
 //---------------------------------------------------------------------
-read_bits: (ctx: &myz_ctx_t, bits: int) -> unsigned
+read_bits: (ctx: &myz_ctx_t, bits: int) ~> unsigned
 {
     code: &unsigned := 0;
 
@@ -122,7 +122,7 @@ read_bits: (ctx: &myz_ctx_t, bits: int) -> unsigned
 //---------------------------------------------------------------------
 //- ...
 //---------------------------------------------------------------------
-check_eod: (ctx: &myz_ctx_t) -> bool
+check_eod: (ctx: &myz_ctx_t) ~> bool
 {
     v_return(ctx.avail_in == 0  &&  ctx.buffer_in == 1);
 }
@@ -131,7 +131,7 @@ check_eod: (ctx: &myz_ctx_t) -> bool
 //---------------------------------------------------------------------
 //- Put one byte
 //---------------------------------------------------------------------
-myz_put_byte: (ctx: &myz_ctx_t, b: byte) -> void
+myz_put_byte: (ctx: &myz_ctx_t, b: byte) ~> void
 {
     if (ctx.avail_out == 0  &&  !(ctx.check_out  &&  ctx.check_out(ctx)))
     {
@@ -150,7 +150,7 @@ myz_put_byte: (ctx: &myz_ctx_t, b: byte) -> void
 //---------------------------------------------------------------------
 //- Put one bit
 //---------------------------------------------------------------------
-myz_put_bit: (ctx: &myz_ctx_t, bit: bool) -> void
+myz_put_bit: (ctx: &myz_ctx_t, bit: bool) ~> void
 {
     b = ctx.buffer_out;
     n = ctx.remain_out;
@@ -171,7 +171,7 @@ myz_put_bit: (ctx: &myz_ctx_t, bit: bool) -> void
 //---------------------------------------------------------------------
 //- ...
 //---------------------------------------------------------------------
-write_bits: (ctx: &myz_ctx_t, code: unsigned, bits: int) -> void
+write_bits: (ctx: &myz_ctx_t, code: unsigned, bits: int) ~> void
 {
     code: &unsigned := code;
 
@@ -186,7 +186,7 @@ write_bits: (ctx: &myz_ctx_t, code: unsigned, bits: int) -> void
 //---------------------------------------------------------------------
 //- ...
 //---------------------------------------------------------------------
-write_eod: (ctx: &myz_ctx_t) -> void
+write_eod: (ctx: &myz_ctx_t) ~> void
 {
     write_bits(ctx, 1, 8);
 }
@@ -230,7 +230,7 @@ struct dict_dec_t
 
 
 //---------------------------------------------------------------------
-dict_enc_initialize: (p: *dict_enc_t, n: int) -> void
+dict_enc_initialize: (p: *dict_enc_t, n: int) ~> void
 {
     for (i: &int := 0; i < n; ++i)
     {
@@ -241,13 +241,13 @@ dict_enc_initialize: (p: *dict_enc_t, n: int) -> void
 }
 
 //---------------------------------------------------------------------
-dict_enc_terminate: (p: *dict_enc_t, n: int) -> void
+dict_enc_terminate: (p: *dict_enc_t, n: int) ~> void
 {
     for (i: &int := 0; i < n; ++i)  v_terminate(&p[i].list);
 }
 
 //---------------------------------------------------------------------
-dict_enc_expand: (dict: &dict_enc_t) -> &myz_enc_t
+dict_enc_expand: (dict: &dict_enc_t) ~> &myz_enc_t
 {
     item = v_alloca(v_ast_base_t);
     v_initialize(item);
@@ -267,7 +267,7 @@ dict_enc_expand: (dict: &dict_enc_t) -> &myz_enc_t
 }
 
 //---------------------------------------------------------------------
-dict_enc_at: (dict: &dict_enc_t, i: int) -> &myz_enc_t
+dict_enc_at: (dict: &dict_enc_t, i: int) ~> &myz_enc_t
 {
     void_obj = v_ast_generic_get_object(v_list_get_item(&dict.list, i));
 
@@ -282,16 +282,14 @@ dict_enc_at: (dict: &dict_enc_t, i: int) -> &myz_enc_t
 
     dict_enc_ref = v_reference_type(dict_enc_t, 0);
 
-    q = v_quark_from_string;
+    v_add_overload(".expand()", dict_enc_ref, "dict_enc_expand");
 
-    v_util_function_dict_set(q(".expand()"), dict_enc_ref, "dict_enc_expand");
-
-    v_util_function_dict_set(q("op_postfix_index"), dict_enc_ref, "dict_enc_at");
+    v_add_overload("v.op_postfix_index", dict_enc_ref, "dict_enc_at");
 }
 
 
 //---------------------------------------------------------------------
-dict_dec_initialize: (p: *dict_dec_t, n: int) -> void
+dict_dec_initialize: (p: *dict_dec_t, n: int) ~> void
 {
     for (i: &int := 0; i < n; ++i)
     {
@@ -302,13 +300,13 @@ dict_dec_initialize: (p: *dict_dec_t, n: int) -> void
 }
 
 //---------------------------------------------------------------------
-dict_dec_terminate: (p: *dict_dec_t, n: int) -> void
+dict_dec_terminate: (p: *dict_dec_t, n: int) ~> void
 {
     for (i: &int := 0; i < n; ++i)  v_terminate(&p[i].list);
 }
 
 //---------------------------------------------------------------------
-dict_dec_expand: (dict: &dict_dec_t) -> &myz_dec_t
+dict_dec_expand: (dict: &dict_dec_t) ~> &myz_dec_t
 {
     item = v_alloca(v_ast_base_t);
     v_initialize(item);
@@ -328,7 +326,7 @@ dict_dec_expand: (dict: &dict_dec_t) -> &myz_dec_t
 }
 
 //---------------------------------------------------------------------
-dict_dec_at: (dict: &dict_dec_t, i: int) -> &myz_dec_t
+dict_dec_at: (dict: &dict_dec_t, i: int) ~> &myz_dec_t
 {
     void_obj = v_ast_generic_get_object(v_list_get_item(&dict.list, i));
 
@@ -343,18 +341,16 @@ dict_dec_at: (dict: &dict_dec_t, i: int) -> &myz_dec_t
 
     dict_dec_ref = v_reference_type(dict_dec_t, 0);
 
-    q = v_quark_from_string;
+    v_add_overload(".expand()", dict_dec_ref, "dict_dec_expand");
 
-    v_util_function_dict_set(q(".expand()"), dict_dec_ref, "dict_dec_expand");
-
-    v_util_function_dict_set(q("op_postfix_index"), dict_dec_ref, "dict_dec_at");
+    v_add_overload("v.op_postfix_index", dict_dec_ref, "dict_dec_at");
 }
 
 
 //---------------------------------------------------------------------
 //- Encoding ...
 //---------------------------------------------------------------------
-myz_encode: (ctx: &myz_ctx_t) -> void
+myz_encode: (ctx: &myz_ctx_t) ~> void
 {
     bits: &unsigned := 9;
 
@@ -412,7 +408,7 @@ myz_encode: (ctx: &myz_ctx_t) -> void
 //---------------------------------------------------------------------
 //- Decoding ...
 //---------------------------------------------------------------------
-myz_decode: (ctx: &myz_ctx_t) -> void
+myz_decode: (ctx: &myz_ctx_t) ~> void
 {
     bits: &unsigned := 9;
 
@@ -483,19 +479,24 @@ myz_decode: (ctx: &myz_ctx_t) -> void
 
 
 //=====================================================================
-strlen: (*char) -> size_t;
-strcmp: (*char, *char) -> int;
+strlen: (*char) ~> size_t;
+strcmp: (*char, *char) ~> int;
 
 
 //---------------------------------------------------------------------
 my_source: &char[] :=
-""""Превед!", v_struct({int(64)[2]})""";
+//""""Превед!", v_struct({int(64)[2]})""";
 
-//"""*((*v_struct("voidc_visitor_t"), *void, *v_struct("v_ast_expr_t"), *v_struct("v_type_t"), *v_struct("struct.LLVMOpaqueValue")) -> void)""";
+//"""*((*v_struct("voidc_visitor_t"), *void, *v_struct("v_ast_expr_t"), *v_struct("v_type_t"), *v_struct("struct.LLVMOpaqueValue")) ~> void)""";
 
 //"""
 //std::__allocated_ptr<std::allocator<std::_Sp_counted_ptr_inplace<ast_template_generic_data_t<ast_expr_base_data_t> const, std::allocator<void>, (__gnu_cxx::_Lock_policy)2> > > std::__allocate_guarded<std::allocator<std::_Sp_counted_ptr_inplace<ast_template_generic_data_t<ast_expr_base_data_t> const, std::allocator<void>, (__gnu_cxx::_Lock_policy)2> > >(std::allocator<std::_Sp_counted_ptr_inplace<ast_template_generic_data_t<ast_expr_base_data_t> const, std::allocator<void>, (__gnu_cxx::_Lock_policy)2> >&)
 //""";
+
+"""
+ababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab
+""";
+
 
 {
     BUFSIZE = 1<<16;
@@ -505,7 +506,7 @@ my_source: &char[] :=
 
     ctx: &myz_ctx_t := 0;
 
-    ctx.next_in  := my_source;
+    ctx.next_in  := (my_source : *byte);
     ctx.avail_in := strlen(my_source);
 
     printf("sz: %d\n", (ctx.avail_in : int));
@@ -550,7 +551,6 @@ my_source: &char[] :=
 
     printf("\n");
 
-
     buf2 = v_malloc(byte, BUFSIZE);
 
     ctx.next_in  := buf;
@@ -571,7 +571,7 @@ my_source: &char[] :=
 
     *ctx.next_out := 0;
 
-    printf("strcmp: %d\n", strcmp(my_source, buf2));
+    printf("strcmp: %d\n", strcmp(my_source, (buf2: *char)));
 
 
     v_free(buf2);
