@@ -1,0 +1,84 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
+
+
+//---------------------------------------------------------------------
+namespace my {
+
+some = v_object_intrinsic("some.thing");
+
+}   //- namespace my
+
+//---------------------------------------------------------------------
+some_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    arg0 = v_list_get_item(args, 0);
+
+    v_assert(v_ast_base_get_visitor_method_tag(arg0) == v_ast_expr_identifier_visitor_method_tag);
+
+    name = v_ast_expr_identifier_get_name(arg0);
+
+    sstr: &v_std_string_t := {};
+
+    v_std_string_set(&sstr, "some-");
+
+    v_std_string_append(&sstr, name);
+
+    some_name = v_quark_from_string(v_std_string_get(&sstr));
+
+    ns = (aux: *v_namespace_t);
+
+    if (a = v_map_find(&ns->map, (some_name: intptr_t)))
+    {
+        q = v_std_any_get_value(v_quark_t, a);
+
+        t: &*v_type_t    := v_undef();
+        v: &LLVMValueRef := v_undef();
+
+        v_find_constant_q(q, &t, &v);
+
+        v_set_result_type(t);
+        v_set_result_value(v);
+    }
+    else
+    {
+        v_set_result_type(v_void_type());                   //- Sic !?!
+        v_set_result_value((some_name: LLVMValueRef));      //- Sic !?!
+    }
+}
+
+{   v_add_intrinsic("some.thing", some_intrinsic, v_find_constant_value("my")); }
+
+
+//---------------------------------------------------------------------
+namespace my {
+
+namespace some(foo) { v = 1; }
+namespace some(bar) { v = 2; }
+
+}   //- namespace my
+
+
+namespace my.some(baz) { v = 3; }
+namespace my.some(qux) { v = 4; }
+
+
+//---------------------------------------------------------------------
+{
+//  using namespace my;
+
+    printf("my.some(foo).v: %d\n", my.some(foo).v);
+    printf("my.some(bar).v: %d\n", my.some(bar).v);
+    printf("my.some(baz).v: %d\n", my.some(baz).v);
+    printf("my.some(qux).v: %d\n", my.some(qux).v);
+
+
+}
+
+
+

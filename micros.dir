@@ -2,6 +2,10 @@
                                                                │
                                                                │
                                                                │
+try_generics.void                                              │try_generics.void
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
 try_generic_types.void                                         │try_generic_types.void
                                                                │
 try_namespaces.void                                            │try_namespaces.void
