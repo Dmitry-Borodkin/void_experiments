@@ -561,7 +561,7 @@ inlinehint
 {
     .memset: (s: *void, c: int, n: size_t) ~> *void;
 
-    .memset(sp, 0, N*my.unique_ptr(int).size);
+    .memset(sp, 0, N*my.unique_ptr(T).size);
 }
 
 alwaysinline
@@ -593,7 +593,7 @@ alwaysinline
 alwaysinline
 (_.reset()): (sp: &unique_ptr(T), p: *T) ~> void
 {
-    if (pp = sp.get())  delete pp;
+    if (pp = sp.get())  delete pp;      //- Kinda   v_terminate(&sp);
 
     *(&sp: **T) := p;
 }

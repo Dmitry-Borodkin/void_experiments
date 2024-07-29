@@ -9,7 +9,7 @@ printf: (*const char, ...) ~> int;
 {
     str: &v_std_string_t[2] := {};
 
-    N = 10000;
+    N = 100;
 
     for (i: &int := 0; i < N; ++i)
     {
@@ -21,12 +21,14 @@ printf: (*const char, ...) ~> int;
 
         voidc_internal_std_string_append_mangle(str+1, str+0);
 
-        printf("%d, %d, %d\n", i, (v_std_string_get_size(str+0): int), (v_std_string_get_size(str+1): int));
+//      printf("%d, %d, %d\n", i, (v_std_string_get_size(str+0): int), (v_std_string_get_size(str+1): int));
 
-//      printf("%d, %d: %s\n", i, (v_std_string_get_size(str+1): int), v_std_string_get(str+1));
+        printf("%d, %d: %s\n", i, (v_std_string_get_size(str+1): int), v_std_string_get(str+1));
     }
 
 }
+
+
 
 
 
