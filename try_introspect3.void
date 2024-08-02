@@ -18,23 +18,23 @@
 //---------------------------------------------------------------------
 FILE = v_struct("FILE");
 
-v_popen: (command: *const char, prop: *const char) -> *FILE;
+v_popen: (command: *const char, prop: *const char) ~> *FILE;
 
-v_pclose: (*FILE) -> int;
+v_pclose: (*FILE) ~> int;
 
-fprintf: (stream: *FILE, format: *const char, ...) -> int;
+fprintf: (stream: *FILE, format: *const char, ...) ~> int;
 
-fscanf: (stream: *FILE, format: *const char, ...) -> int;
+fscanf: (stream: *FILE, format: *const char, ...) ~> int;
 
-fputs: (buf: *char, stream: *FILE) -> int;
+fputs: (buf: *char, stream: *FILE) ~> int;
 
-sprintf: (str: *char, format: *const char, ...) -> int;
+sprintf: (str: *char, format: *const char, ...) ~> int;
 
-system: (cmd: *const char) -> int;
+system: (cmd: *const char) ~> int;
 
 
 //---------------------------------------------------------------------
-v_find_file_for_import: (*v_std_string_t, *const char, *const char) -> void;
+v_find_file_for_import: (*v_std_string_t, *const char, *const char) ~> void;
 
 voidc_include_path: &v_std_string_t := v_undef();
 
@@ -42,7 +42,7 @@ voidc_include_path: &v_std_string_t := v_undef();
 
     v_find_file_for_import(&voidc_include_path, "", "level-00");
 
-    strrchr: (*const char, int) -> *char;
+    strrchr: (*const char, int) ~> *char;
 
     *strrchr(v_std_string_get(&voidc_include_path), '/') := 0;
 
@@ -151,7 +151,7 @@ buffer: &*char := 0;
 
 
 //====================================================================-
-append_string_repr: (str: v_std_string_ptr, s: *const char) -> void
+append_string_repr: (str: v_std_string_ptr, s: *const char) ~> void
 {
     s: &*const char := s;
 
@@ -184,7 +184,7 @@ append_string_repr: (str: v_std_string_ptr, s: *const char) -> void
 }
 
 //---------------------------------------------------------------------
-append_type: (str: *v_std_string_t, t: *v_type_t) -> void
+append_type: (str: *v_std_string_t, t: *v_type_t) ~> void
 {
     flag: &bool := false;
 
@@ -234,7 +234,7 @@ append_type: (str: *v_std_string_t, t: *v_type_t) -> void
             v_std_string_append(str, "...");
         }
 
-        v_std_string_append(str, ") -> ");
+        v_std_string_append(str, ") ~> ");
 
         append_type(str, v_type_function_get_return_type(t));
 
@@ -350,16 +350,16 @@ append_type: (str: *v_std_string_t, t: *v_type_t) -> void
 
 
 //---------------------------------------------------------------------
-symbol_type_ft = *((*void, v_quark_t, *v_type_t) -> void);
-symbol_types_iter: (symbol_type_ft, *void) -> void;
+symbol_type_ft = *((*void, v_quark_t, *v_type_t) ~> void);
+symbol_types_iter: (symbol_type_ft, *void) ~> void;
 
 
 //---------------------------------------------------------------------
-symbol_type_fun: (aux: *void, qname: v_quark_t, type: *v_type_t) -> void
+symbol_type_fun: (aux: *void, qname: v_quark_t, type: *v_type_t) ~> void
 {
     sname = v_quark_to_string(qname);
 
-    strncmp: (*const char, *const char, int) -> int;
+    strncmp: (*const char, *const char, int) ~> int;
 
     if (strncmp(sname, "cairo_", 6) != 0)  v_return();
 

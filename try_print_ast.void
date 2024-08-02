@@ -671,26 +671,26 @@ mk_test_stmt_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_
 
     q = v_quark_from_string;
 
-    voidc_visitor_set_void_method(vis, vis, q("expr_identifier"),    print_expr_identifier,   &ctx);
-    voidc_visitor_set_void_method(vis, vis, q("expr_integer"),       print_expr_integer,      &ctx);
-    voidc_visitor_set_void_method(vis, vis, q("expr_char"),          print_expr_char,         &ctx);
-    voidc_visitor_set_void_method(vis, vis, q("expr_string"),        print_expr_string,       &ctx);
-    voidc_visitor_set_void_method(vis, vis, q("expr_call"),          print_expr_call,         &ctx);
-    voidc_visitor_set_void_method(vis, vis, q("expr_list"),          print_expr_list,         &ctx);
-    voidc_visitor_set_void_method(vis, vis, q("expr_struct"),        print_expr_struct,       &ctx);
-    voidc_visitor_set_void_method(vis, vis, q("stmt"),               print_stmt,              &ctx);
-    voidc_visitor_set_void_method(vis, vis, q("stmt_list"),          print_stmt_list,         &ctx);
-    voidc_visitor_set_void_method(vis, vis, q("stmt_if_then_else"),  print_stmt_if_then_else, &ctx);
-    voidc_visitor_set_void_method(vis, vis, q("stmt_block"),         print_stmt_block,        &ctx);
-    voidc_visitor_set_void_method(vis, vis, q("stmt_loop"),          print_stmt_loop,         &ctx);
-    voidc_visitor_set_void_method(vis, vis, q("stmt_switch"),        print_stmt_switch,       &ctx);
-    voidc_visitor_set_void_method(vis, vis, q("case_block"),         print_case_block,        &ctx);
-    voidc_visitor_set_void_method(vis, vis, q("case_list"),          print_generic_list,      &ctx);
-    voidc_visitor_set_void_method(vis, vis, q("stmt_defer"),         print_stmt_defer,        &ctx);
-    voidc_visitor_set_void_method(vis, vis, q("br_item_list"),       print_generic_list,      &ctx);
-    voidc_visitor_set_void_method(vis, vis, q("operator_unary"),     print_operator_unary,    &ctx);
-    voidc_visitor_set_void_method(vis, vis, q("operator_binary"),    print_operator_binary,   &ctx);
-    voidc_visitor_set_void_method(vis, vis, q("projection_payload"), print_generic_list,      &ctx);
+    voidc_visitor_set_method(vis, vis, q("expr_identifier"),    print_expr_identifier,   &ctx);
+    voidc_visitor_set_method(vis, vis, q("expr_integer"),       print_expr_integer,      &ctx);
+    voidc_visitor_set_method(vis, vis, q("expr_char"),          print_expr_char,         &ctx);
+    voidc_visitor_set_method(vis, vis, q("expr_string"),        print_expr_string,       &ctx);
+    voidc_visitor_set_method(vis, vis, q("expr_call"),          print_expr_call,         &ctx);
+    voidc_visitor_set_method(vis, vis, q("expr_list"),          print_expr_list,         &ctx);
+    voidc_visitor_set_method(vis, vis, q("expr_struct"),        print_expr_struct,       &ctx);
+    voidc_visitor_set_method(vis, vis, q("stmt"),               print_stmt,              &ctx);
+    voidc_visitor_set_method(vis, vis, q("stmt_list"),          print_stmt_list,         &ctx);
+    voidc_visitor_set_method(vis, vis, q("stmt_if_then_else"),  print_stmt_if_then_else, &ctx);
+    voidc_visitor_set_method(vis, vis, q("stmt_block"),         print_stmt_block,        &ctx);
+    voidc_visitor_set_method(vis, vis, q("stmt_loop"),          print_stmt_loop,         &ctx);
+    voidc_visitor_set_method(vis, vis, q("stmt_switch"),        print_stmt_switch,       &ctx);
+    voidc_visitor_set_method(vis, vis, q("case_block"),         print_case_block,        &ctx);
+    voidc_visitor_set_method(vis, vis, q("case_list"),          print_generic_list,      &ctx);
+    voidc_visitor_set_method(vis, vis, q("stmt_defer"),         print_stmt_defer,        &ctx);
+    voidc_visitor_set_method(vis, vis, q("br_item_list"),       print_generic_list,      &ctx);
+    voidc_visitor_set_method(vis, vis, q("operator_unary"),     print_operator_unary,    &ctx);
+    voidc_visitor_set_method(vis, vis, q("operator_binary"),    print_operator_binary,   &ctx);
+    voidc_visitor_set_method(vis, vis, q("projection_payload"), print_generic_list,      &ctx);
 
     gr0: &v_peg_grammar_t := {};        gr0 = &gr0;
 
