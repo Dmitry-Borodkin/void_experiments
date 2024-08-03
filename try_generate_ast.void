@@ -1157,6 +1157,8 @@ mk_gen_ast_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t)
 
     my_accept_visitor(ast, &gen_visitor);
 
+printf("\n");
+
     v_terminate(&ctx);
 
     v_std_any_set_value(ret, 1);
@@ -1374,14 +1376,14 @@ $gen_ast
 @stmt
 
 
-//$gen_ast
-//@unit
-//
-//hzhzhz: () ~> void;
-//
-//(_/__): (int, int) ~> int;
-//
-//@unit
+$gen_ast
+@unit
+
+hzhzhz: () ~> void;
+
+(_/__): (int, int) ~> int;
+
+@unit
 
 
 }
