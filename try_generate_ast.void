@@ -52,8 +52,8 @@ printf: (*const char, ...) ~> int;
 //- cc_message              - generic list
 //- cc_do                   - generic list
 //-
-//- operator_unary          -
-//- operator_binary         -
+//- operator_unary          +
+//- operator_binary         +
 //- projection_payload      - generic list
 //-
 //- expr_compiled           !!!
@@ -65,10 +65,12 @@ printf: (*const char, ...) ~> int;
 //---------------------------------------------------------------------
 struct ctx_t
 {
-    gen_list: v_util_list_t;
+    gen_list: v_ast_stmt_list_t;
 
     max_var: int;
     cur_var: int;
+
+    ret_var: v_quark_t;
 
     var_map: v_util_map_t;
 
@@ -99,13 +101,9 @@ struct ctx_t
 //---------------------------------------------------------------------
 (_.add_stmt()): (ctx: &ctx_t, stmt: *v_ast_stmt_t) ~> void
 {
-    a: &v_std_any_t := {};
-
-    v_std_any_set_pointer(&a, stmt);
-
     list = &ctx.gen_list;
 
-    v_list_append(list, list, &a);
+    v_list_append(list, list, stmt);
 }
 
 //---------------------------------------------------------------------
@@ -136,7 +134,12 @@ struct ctx_t
     v_add_symbol("q_expr",         q_ref, q("v_ast_expr_ptr"));
     v_add_symbol("q_generic_list", q_ref, q("v_ast_generic_list_ptr"));
 
-    v_add_symbol("q_cast", q_ref, q("v_cast"));
+    v_add_symbol("q_cast",          q_ref, q("v_cast"));
+    v_add_symbol("q_malloc",        q_ref, q("v_malloc"));
+    v_add_symbol("q_free",          q_ref, q("v_free"));
+    v_add_symbol("q_getelementptr", q_ref, q("v_getelementptr"));
+    v_add_symbol("q_break",         q_ref, q("v_break"));
+    v_add_symbol("q_reference",     q_ref, q("v_reference"));
 
     v_add_symbol("q_ast_make_unit", q_ref, q("v_ast_make_unit"));
     v_add_symbol("q_make_list_nil", q_ref, q("v_make_list_nil"));
@@ -220,11 +223,19 @@ pr_indent: () ~> void
     for (i: &int := 0; i < indent; ++i) printf("  ");
 }
 
+pr_ctx: () ~> void
+{
+    ctx: &ctx_t;
+
+    printf("[%d, %d, %zd]\n", ctx.max_var, ctx.cur_var, v_list_get_size(&ctx.gen_list));
+}
+
 my_accept_visitor: (ast: *v_ast_base_t, vis: *voidc_visitor_t) ~> void
 {
     q = v_ast_base_get_visitor_method_tag(ast);
 
     pr_indent();  printf("%s(\n", v_quark_to_string(q));
+//  pr_indent();  printf("%s( ", v_quark_to_string(q));  pr_ctx();
 
     indent++;
 
@@ -233,6 +244,7 @@ my_accept_visitor: (ast: *v_ast_base_t, vis: *voidc_visitor_t) ~> void
     indent--;
 
     pr_indent();  printf(")\n");
+//  pr_indent();  printf(") "); pr_ctx();
 }
 
 
@@ -266,6 +278,8 @@ gen_unit: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     v_ast_make_stmt_call(&stmt, 0, q_ast_make_unit, expr, 4);
     ctx.add_stmt(&stmt);
+
+    ctx.ret_var := qr;
 }
 
 
@@ -333,6 +347,8 @@ gen_generic_list: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> vo
 
         ctx.pop_var();
     }
+
+    ctx.ret_var := qr;
 }
 
 
@@ -361,6 +377,8 @@ gen_unit_stmt_init: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> 
 
     v_ast_make_stmt_call(&stmt, 0, q_ast_make_unit_stmt_init, expr, 2);
     ctx.add_stmt(&stmt);
+
+    ctx.ret_var := qr;
 }
 
 //---------------------------------------------------------------------
@@ -388,6 +406,8 @@ gen_unit_stmt_term: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> 
 
     v_ast_make_stmt_call(&stmt, 0, q_ast_make_unit_stmt_term, expr, 2);
     ctx.add_stmt(&stmt);
+
+    ctx.ret_var := qr;
 }
 
 
@@ -443,6 +463,8 @@ gen_stmt_list: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
         ctx.pop_var();
     }
+
+    ctx.ret_var := qr;
 }
 
 
@@ -470,10 +492,10 @@ gen_stmt: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     v_ast_make_expr_call(expr+1, expr+1, &elst);
 
-    qs = ctx.cast_var(ctx.cur_var+1, q_stmt);
+    qr = ctx.cast_var(ctx.cur_var+1, q_stmt);
     qe = ctx.cast_var(ctx.cur_var+1, q_expr);
 
-    v_ast_make_expr_identifier_q(expr+0, qs);
+    v_ast_make_expr_identifier_q(expr+0, qr);
     v_ast_make_expr_identifier_q(expr+2, qe);
 
     stmt: &v_ast_stmt_t := {};
@@ -495,6 +517,8 @@ gen_stmt: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     v_ast_make_stmt_call(&stmt, 0, q_ast_make_stmt_q, expr, 3);
     ctx.add_stmt(&stmt);
+
+    ctx.ret_var := qr;
 }
 
 //---------------------------------------------------------------------
@@ -550,6 +574,8 @@ gen_stmt_if_then_else: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) 
 
     ctx.pop_var();
     ctx.pop_var();
+
+    ctx.ret_var := qr;
 }
 
 //---------------------------------------------------------------------
@@ -582,6 +608,8 @@ gen_stmt_block: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     v_ast_make_stmt_call(&stmt, 0, q_ast_make_stmt_block, expr, 3);
     ctx.add_stmt(&stmt);
+
+    ctx.ret_var := qr;
 }
 
 //---------------------------------------------------------------------
@@ -610,6 +638,8 @@ gen_stmt_loop: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     v_ast_make_stmt_call(&stmt, 0, q_ast_make_stmt_loop, expr, 2);
     ctx.add_stmt(&stmt);
+
+    ctx.ret_var := qr;
 }
 
 //---------------------------------------------------------------------
@@ -638,6 +668,8 @@ gen_stmt_defer: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     v_ast_make_stmt_call(&stmt, 0, q_ast_make_stmt_defer, expr, 2);
     ctx.add_stmt(&stmt);
+
+    ctx.ret_var := qr;
 }
 
 //---------------------------------------------------------------------
@@ -674,6 +706,8 @@ gen_stmt_switch: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> voi
     ctx.add_stmt(&stmt);
 
     ctx.pop_var();
+
+    ctx.ret_var := qr;
 }
 
 //---------------------------------------------------------------------
@@ -710,6 +744,8 @@ gen_case_block: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
     ctx.add_stmt(&stmt);
 
     ctx.pop_var();
+
+    ctx.ret_var := qr;
 }
 
 
@@ -765,6 +801,8 @@ gen_expr_list: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
         ctx.pop_var();
     }
+
+    ctx.ret_var := qr;
 }
 
 
@@ -800,6 +838,8 @@ gen_expr_call: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
     ctx.add_stmt(&stmt);
 
     ctx.pop_var();
+
+    ctx.ret_var := qr;
 }
 
 //---------------------------------------------------------------------
@@ -835,6 +875,8 @@ gen_expr_identifier: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~>
 
     v_ast_make_stmt_call(&stmt, 0, q_ast_make_expr_identifier_q, expr, 2);
     ctx.add_stmt(&stmt);
+
+    ctx.ret_var := qr;
 }
 
 //---------------------------------------------------------------------
@@ -860,6 +902,8 @@ gen_expr_integer: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> vo
 
     v_ast_make_stmt_call(&stmt, 0, q_ast_make_expr_integer, expr, 2);
     ctx.add_stmt(&stmt);
+
+    ctx.ret_var := qr;
 }
 
 //---------------------------------------------------------------------
@@ -891,6 +935,8 @@ gen_expr_string: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> voi
 
     v_ast_make_stmt_call(&stmt, 0, q_ast_make_expr_string_data, expr, 3);
     ctx.add_stmt(&stmt);
+
+    ctx.ret_var := qr;
 }
 
 //---------------------------------------------------------------------
@@ -916,6 +962,8 @@ gen_expr_char: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     v_ast_make_stmt_call(&stmt, 0, q_ast_make_expr_char, expr, 2);
     ctx.add_stmt(&stmt);
+
+    ctx.ret_var := qr;
 }
 
 //---------------------------------------------------------------------
@@ -958,6 +1006,8 @@ gen_expr_struct: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> voi
     ctx.add_stmt(&stmt);
 
     ctx.pop_var();
+
+    ctx.ret_var := qr;
 }
 
 //---------------------------------------------------------------------
@@ -993,6 +1043,8 @@ gen_expr_union: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
     ctx.add_stmt(&stmt);
 
     ctx.pop_var();
+
+    ctx.ret_var := qr;
 }
 
 //---------------------------------------------------------------------
@@ -1022,7 +1074,7 @@ gen_expr_stmt: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
     v_ast_make_stmt_call(&stmt, 0, q_ast_make_expr_stmt, expr, 2);
     ctx.add_stmt(&stmt);
 
-    ctx.pop_var();
+    ctx.ret_var := qr;
 }
 
 
@@ -1064,6 +1116,8 @@ gen_operator_unary: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> 
         v_ast_make_stmt_call(&stmt, 0, q_copy, expr, 2);
         ctx.add_stmt(&stmt);
 
+        ctx.ret_var := qr;
+
         v_return();
     }
 
@@ -1090,7 +1144,7 @@ gen_operator_unary: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> 
     v_ast_make_stmt_call(&stmt, 0, q_ast_make_operator_unary, expr, 4);
     ctx.add_stmt(&stmt);
 
-    ctx.pop_var();
+    ctx.ret_var := qr;
 }
 
 //---------------------------------------------------------------------
@@ -1131,6 +1185,8 @@ gen_operator_binary: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~>
 
     v_ast_make_stmt_call(&stmt, 0, q_copy, expr, 2);
     ctx.add_stmt(&stmt);
+
+    ctx.ret_var := qr;
 }
 
 
@@ -1153,15 +1209,107 @@ mk_gen_ast_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t)
 
     ast = v_ast_std_any_get_base(&a);
 
+    v_assert(ast);
+
     v_initialize(&ctx);
 
     my_accept_visitor(ast, &gen_visitor);
 
-printf("\n");
+    v_assert(ctx.cur_var == 0 <= ctx.max_var);
 
     v_terminate(&ctx);
 
     v_std_any_set_value(ret, 1);
+}
+
+//---------------------------------------------------------------------
+mk_quote_ast_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
+{
+    id = v_std_any_get_pointer(v_std_string_t, any);
+
+    a: &v_std_any_t := {};
+
+    v_peg_parse(&a, v_quark_from_string(v_std_string_get(id)));
+
+    ast = v_ast_std_any_get_base(&a);
+
+    v_assert(ast);
+
+    v_initialize(&ctx);
+
+    my_accept_visitor(ast, &gen_visitor);
+
+    v_assert(ctx.cur_var == 0 <= ctx.max_var);
+
+    slst: &v_ast_stmt_list_t[2] := {};
+
+    v_make_list_nil(slst+0);
+
+    expr: &v_ast_expr_t[2] := {};
+
+    v_ast_make_expr_identifier(expr+0, "v_ast_base_t");
+
+    n = ctx.max_var + 1;
+
+    v_ast_make_expr_integer(expr+1, n);
+
+    stmt: &v_ast_stmt_t := {};
+
+    qv0 = ctx.cast_var(0, q_base);
+
+    v_ast_make_stmt_call(&stmt, qv0, q_malloc, expr, 2);
+    v_list_append(slst+0, slst+0, &stmt);
+
+    v_ast_make_expr_identifier_q(expr+0, qv0);
+
+    v_ast_make_stmt_call(&stmt, 0, q_initialize, expr, 2);
+    v_list_append(slst+0, slst+0, &stmt);
+
+    v_ast_make_stmt_call(&stmt, 0, q_terminate, expr, 2);
+    v_make_list(slst+1, &stmt);
+
+    v_ast_make_stmt_call(&stmt, 0, q_free, expr, 1);
+    v_list_append(slst+1, slst+1, &stmt);
+
+    v_ast_make_stmt_block(&stmt, slst+1, false);
+    v_ast_make_stmt_defer(&stmt, &stmt);
+    v_list_append(slst+0, slst+0, &stmt);
+
+    for (i: &int := 1; i < n; ++i)
+    {
+        v_ast_make_expr_integer(expr+1, i);
+
+        v_ast_make_stmt_call(&stmt, ctx.cast_var(i, q_base), q_getelementptr, expr, 2);
+        v_list_append(slst+0, slst+0, &stmt);
+    }
+
+    for (N = v_list_get_size(&ctx.gen_list), i: &int := 0; i < N; ++i)
+    {
+        item = v_list_get_item(&ctx.gen_list, i);
+
+        v_list_append(slst+0, slst+0, item);
+    }
+
+    v_ast_make_expr_identifier_q(expr+0, ctx.ret_var);
+
+    elst: &v_ast_expr_list_t := {};
+
+    v_make_list(&elst, expr+0);
+
+    v_ast_make_expr_identifier_q(expr+0, q_reference);
+
+    v_ast_make_expr_call(expr+0, expr+0, &elst);
+
+    v_ast_make_stmt_call(&stmt, 0, q_break, expr, 1);
+    v_list_append(slst+0, slst+0, &stmt);
+
+    v_ast_make_stmt_block(&stmt, slst+0, true);
+
+    v_ast_make_expr_stmt(expr+0, &stmt);
+
+    v_terminate(&ctx);
+
+    v_std_any_set_pointer(ret, expr+0);
 }
 
 //---------------------------------------------------------------------
@@ -1223,10 +1371,12 @@ printf("\n");
     actions:
         mk_gen_ast = mk_gen_ast_grammar_action;
 
-    parsers:
-        gen_ast = "$gen_ast";
+        mk_quote_ast = mk_quote_ast_grammar_action;
 
-        stmt += gen_ast _ <'@' i:identifier> _ { mk_gen_ast(i) } _ $1;
+    parsers:
+        stmt += "$gen_ast" _ <'@' i:identifier> _ { mk_gen_ast(i) } _ $1;
+
+        prim =+ '{' <'\'' i:identifier (![\n\r\t\'] .)* '\''> _ e:{ mk_quote_ast(i) } _ $1 '}' { e };
     }
 
     v_peg_set_grammar(gr0);
@@ -1235,6 +1385,7 @@ printf("\n");
 
 //=====================================================================
 {
+
 
 //$gen_ast
 //@expr
@@ -1365,28 +1516,95 @@ printf("\n");
 //    }
 //}
 //@stmt
+//
+//
+//
+//$gen_ast
+//@stmt
+//{
+//    (_/__): (int, int) ~> int;
+//}
+//@stmt
+//
+//
+//$gen_ast
+//@unit
+//
+//hzhzhz: () ~> void;
+//
+//(_/__): (int, int) ~> int;
+//
+//@unit
+//
+//$gen_ast
+//@unit
+//
+//hzhzhz: () ~> void;
+//
+//(_/__): (int, int) ~> int;
+//
+//@unit
 
 
 
-$gen_ast
-@stmt
+}
+
+
+//---------------------------------------------------------------------
+voidc_compile_quark: (q: v_quark_t) ~> v_quark_t
 {
-    (_/__): (int, int) ~> int;      //- ?!?!?!?!?!?!?!?!?!?!?!?!?!?!?!?
+//  printf("[%s]\n", v_quark_to_string(q));
+
+    v_return(q);
 }
-@stmt
 
 
-$gen_ast
-@unit
+//---------------------------------------------------------------------
+{ voidc_verify_jit_module_optimized(true); }
+{ v_debug_print_module(99); }
+//{
+//
+//
+////  ast: &v_ast_expr_t := {'expr'  2 + 2  'expr'};
+//
+////  ast: v_ast_stmt_t = {'stmt'  l = printf("Hello world!\n");  'stmt'};
+//
+//    ast: v_ast_generic_list_t =
+//    {'unit'
+//
+//        hzhzhz: () ~> void;
+//
+//        (_/__): (int, int) ~> int;
+//
+//    'unit'};
+//
+////    ast: &v_ast_unit_t := {'unit'  { a = 1; }  'unit'};
+//
+//}
 
-hzhzhz: () ~> void;
 
-(_/__): (int, int) ~> int;
+ast: v_ast_generic_list_t =
+{'unit'
 
-@unit
+    hzhzhz: () ~> void;
+
+    (_/__): (int, int) ~> int;
+
+    ast: v_ast_generic_list_t =
+    {'unit'
+
+        hzhzhz: () ~> void;
+
+        (_/__): (int, int) ~> int;
+
+    'unit'};
+
+'unit'};
 
 
-}
+
+
+
 
 
 
