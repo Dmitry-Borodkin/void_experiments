@@ -416,6 +416,7 @@ README                                                         │README.md
 MIT                                                            │LICENSE
 ═══════════════════════════════════════════════════════════════│
 .hgignore                                                      │.hgignore
+.gitattributes                                                 │.gitattributes
                                                                │
 hg bookmark -f master                   WTF?                   │hg bookmark -f master
 ───────────────────────────────────────────────────────────────│

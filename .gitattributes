@@ -1,0 +1,4 @@
+*.void linguist-language=C
+
+micros.dir linguist-documentation
+
