@@ -1510,7 +1510,7 @@ private
 alwaysinline
 get_data: (p: *T) ~> &data_t
 {
-//  v_assert(p);        //- WTF ?!?!?!?!?!?!?
+    v_assert(p);
 
     r = *((p: *char) - (&(0: *data_t)->data : intptr_t) : *data_t);
 
@@ -1618,6 +1618,9 @@ alwaysinline
     v_return(dst);
 }
 
+
+alwaysinline
+(_.use_count): (sp: &const refcnt_ptr(T)) ~> size_t  =  refcnt_ptr_ns(T).get_data(sp.get()).count;
 
 alwaysinline
 (_.use_count): (sp: refcnt_ptr(T)) ~> size_t  =  refcnt_ptr_ns(T).get_data(sp.get()).count;
@@ -1827,8 +1830,10 @@ some = my.make_refcnt(int);
 {   printf("some.use_count: %zd\n", some.use_count);
 }
 
+{   foo: &my.refcnt_ptr(int) := {};
 
-
+    printf("foo.use_count: %zd\n", foo.use_count);
+}
 
 
 
