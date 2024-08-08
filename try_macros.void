@@ -1,0 +1,99 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
+
+
+//---------------------------------------------------------------------
+//- Grammar actions ...
+//---------------------------------------------------------------------
+mk_macro_hdr_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
+{
+
+    v_std_any_set_value(ret, 1);
+}
+
+//---------------------------------------------------------------------
+mk_macro_stmt_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
+{
+
+    v_std_any_set_value(ret, 1);
+}
+
+//---------------------------------------------------------------------
+mk_macro_define_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
+{
+//  glst = v_std_any_get_pointer(v_ast_generic_list_t, any+0);
+
+    list = v_alloca(v_ast_generic_list_t);
+    v_initialize(list);
+    defer v_terminate(list);
+
+//  v_make_list(list, cc_do_q, (elst: *v_ast_base_t));
+    v_make_list_nil(list, 0);
+
+    kind = v_std_any_get_value(intptr_t, any+1);
+
+    if (kind) v_std_any_set_pointer(ret, (list : *v_ast_stmt_t));       //- stmt
+    else      v_std_any_set_pointer(ret, (list : *v_ast_base_t));       //- unit_defn
+}
+
+
+
+
+
+
+//---------------------------------------------------------------------
+{
+    gr0: &v_peg_grammar_t := {};        gr0 = &gr0;
+
+    v_peg_get_grammar(gr0);
+
+    grammar gr0
+    {
+    actions:
+        mk_macro_hdr    = mk_macro_hdr_grammar_action;
+        mk_macro_stmt   = mk_macro_stmt_grammar_action;
+        mk_macro_define = mk_macro_define_grammar_action;
+
+    parsers:
+        macro_hdr = qf:(qlf_ident / qlf_spec_ident) b:(_ bracketed)? r:(_"~>"_ expr)?  { mk_macro_hdr(qf, b, r) };
+
+        macro_stmt = h:macro_hdr _'='_ e:expr _';'    { mk_macro_stmt(h, e) };
+
+        unit_defn =+ "#define" !ident_cont _ m:macro_stmt   { mk_macro_define(m, 0) };
+        stmt      =+ "#define" !ident_cont _ m:macro_stmt   { mk_macro_define(m, 1) };
+    }
+
+    v_peg_set_grammar(gr0);
+}
+
+
+
+
+//---------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
