@@ -51,7 +51,7 @@ mk_macro_hdr_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_
 
     v_make_list(&list, quark, ast, 4);
 
-      v_std_any_set_pointer(ret, &list);
+    v_std_any_set_pointer(ret, &list);
 }
 
 //---------------------------------------------------------------------
@@ -229,9 +229,7 @@ macro_expand_intrinsic: (aux: *void, vis: *voidc_visitor_t, self:*v_ast_base_t) 
 
     t = (v_get_result_value() : *v_type_t);
 
-    t_initializable = v_type_is_special(t, q_initialize);
-
-    if (t_initializable)
+    if (v_type_is_special(t, q_initialize))
     {
         v_set_result_type(ttag);
         v_set_result_value(vtag);
@@ -397,15 +395,80 @@ compile_macro_define: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> voi
     }
     else            //- Special identifier
     {
+        types: &*v_type_t := 0;
+        defer if (types)  delete[] types;
+
+        n = v_list_get_size(&ctx->args);
+
+        if (n)
+        {
+            types := new (*v_type_t)[n];
+
+            for (i: &int := 0; i < n; ++i)
+            {
+                par = v_list_get_item(&ctx->args, i);
+                typ = v_ast_stmt_get_expr(par);
+
+                if (v_empty(typ))
+                {
+                    types[i] := v_void_type();
+
+                    v_continue();
+                }
+
+                v_set_result_type(INVIOLABLE_TAG);
+                v_set_result_value(0);
+
+                v_ast_accept_visitor(typ, vis);
+
+                types[i] := (v_get_result_value() : *v_type_t);
+            }
+        }
+
+        rtype: &*v_type_t := v_undef();
+
+        if (v_empty(&ctx->type))
+        {
+            rtype := v_void_type();
+        }
+        else
+        {
+            v_set_result_type(INVIOLABLE_TAG);
+            v_set_result_value(0);
+
+            v_ast_accept_visitor(&ctx->type, vis);
+
+            rtype := (v_get_result_value() : *v_type_t);
+        }
+
+        ft = v_function_type(rtype, types, n, false);       //- Proto-type ...
+
+        quark: &v_quark_t := v_ast_expr_identifier_get_name_q(name);
+
+        ktype = v_compute_key_quark_type(vis, ft, quark);
+
+        sstr: &v_std_string_t := {};
+
+        v_std_string_set(&sstr, "v.macro.");
+
+        v_std_string_append(&sstr, v_quark_to_string(quark));
+
+        v_std_string_append(&sstr, ", ");
+
+        voidc_internal_std_string_append_type(&sstr, ktype);
+
+        qname = v_quark_from_string(v_std_string_get(sstr));
+
+        v_add_overload_q(quark, ktype, qname);
 
 
+        v_assert(false);        //- ?!?!?!?!?!?!?!?!?!
 
 
+//      v_add_intrinsic_q(qname, macro_expand_intrinsic, ctx);      ????????????????????????????????????????????????
     }
 
-
-
-
+    //- ...
 }
 
 
@@ -445,8 +508,7 @@ compile_macro_define: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> voi
 
 
 
-
-//---------------------------------------------------------------------
+//=====================================================================
 
 
 #define foo: (x, y) = x*y;
@@ -479,9 +541,9 @@ compile_macro_define: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> voi
 }
 
 
-#define map: (t, z: t, f, n: int) ~> t  =
+#define map: (t, z: t, f, n: unsigned) ~> t  =
 (
-    #if (n <= 0)    z
+    #if (n == 0)    z
     #else           f(map(t, z, f, n-1))
     #endif
 );
@@ -528,10 +590,6 @@ inlinehint
 
     printf("v: %p (%d, %d)\n", &v, v.x, v.y);
 }
-
-
-
-
 
 
 
@@ -585,6 +643,44 @@ block
 
     printf("v: %s\n", v_std_string_get(&v));
 }
+
+
+//---------------------------------------------------------------------
+{   #define asd: (x) = x+1;
+
+    v = map(int, 0, asd, 7);
+
+    printf("v: %d\n", v);
+}
+
+
+//---------------------------------------------------------------------
+{   #define zxc: (x) =
+    block
+    {
+        #note ("Hi!")
+
+        v_break(x+1);
+    };
+
+    v = map(int, 0, zxc, 7);
+
+    printf("v: %d\n", v);
+
+    #if (v_defined(zxc))    #note ("zxc found")
+    #else                   #note ("zxc not found")
+    #endif
+}
+
+#if (v_defined(zxc))    #note ("zxc found")
+#else                   #note ("zxc not found")
+#endif
+
+
+//---------------------------------------------------------------------
+#if (v_defined(map))    #note ("map found")
+#else                   #note ("map not found")
+#endif
 
 
 
