@@ -44,8 +44,8 @@ mk_macro_hdr_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_
 
     quark: &v_quark_t := v_undef();
 
-    if (v_ast_base_get_visitor_method_tag(q_id) == 0)   quark := macro_defn_q;
-    else                                                quark := macro_spec_defn_q;
+    if (v_ast_base_get_tag(q_id) == 0)  quark := macro_defn_q;
+    else                                quark := macro_spec_defn_q;
 
     list: &v_ast_generic_list_t := {};
 
@@ -276,7 +276,7 @@ compile_macro_define: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> voi
     args = v_ast_expr_call_get_arg_list(args);
     args = (v_list_get_item(args, 1) : *v_ast_generic_list_t);
 
-    spec = v_ast_base_get_visitor_method_tag(self) == macro_spec_defn_q;
+    spec = v_ast_base_get_tag(self) == macro_spec_defn_q;
 
     ctx = new macro_defn_ctx_t;
 
@@ -327,11 +327,11 @@ compile_macro_define: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> voi
 
         block
         {
-            tag = v_ast_base_get_visitor_method_tag(name);
+            tag = v_ast_base_get_tag(name);
 
-            if (tag != v_ast_expr_call_visitor_method_tag)
+            if (tag != v_ast_expr_call_tag)
             {
-                v_assert(tag == v_ast_expr_identifier_visitor_method_tag);
+                v_assert(tag == v_ast_expr_identifier_tag);
 
                 quark := v_ast_expr_identifier_get_name_q(name);
 
@@ -395,7 +395,7 @@ compile_macro_define: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> voi
     }
     else            //- Special identifier
     {
-        types: &*v_type_t := 0;
+        types: &**v_type_t := 0;
         defer if (types)  delete[] types;
 
         n = v_list_get_size(&ctx->args);
@@ -441,11 +441,11 @@ compile_macro_define: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> voi
             rtype := (v_get_result_value() : *v_type_t);
         }
 
-        ft = v_function_type(rtype, types, n, false);       //- Proto-type ...
+        ft = v_function_type(rtype, types, (n: unsigned), false);       //- Proto-type ...
 
         quark: &v_quark_t := v_ast_expr_identifier_get_name_q(name);
 
-        ktype = v_compute_key_quark_type(vis, ft, quark);
+        ktype = v_compute_key_quark_type(ft, quark);
 
         sstr: &v_std_string_t := {};
 
@@ -457,7 +457,7 @@ compile_macro_define: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> voi
 
         voidc_internal_std_string_append_type(&sstr, ktype);
 
-        qname = v_quark_from_string(v_std_string_get(sstr));
+        qname = v_quark_from_string(v_std_string_get(&sstr));
 
         v_add_overload_q(quark, ktype, qname);
 
@@ -541,10 +541,10 @@ compile_macro_define: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> voi
 }
 
 
-#define map: (t, z: t, f, n: unsigned) ~> t  =
+#define map: (z, f, n: unsigned)  =
 (
     #if (n == 0)    z
-    #else           f(map(t, z, f, n-1))
+    #else           f(map(z, f, n-1))
     #endif
 );
 
@@ -613,7 +613,7 @@ block
 //{ v_debug_print_module(9); }
 {   z: some_t = {0, 0};
 
-    v = map(some_t, z, fun, 3);
+    v = map(z, fun, 3);
 
     printf("v: %p (%d, %d)\n", &v, v.x, v.y);
 }
@@ -639,7 +639,7 @@ block
 
     v_std_string_set(&z, "*");
 
-    v: &v_std_string_t := map(v_std_string_t, z, qwe, 20);
+    v: &v_std_string_t := map(z, qwe, 20);
 
     printf("v: %s\n", v_std_string_get(&v));
 }
@@ -648,14 +648,14 @@ block
 //---------------------------------------------------------------------
 {   #define asd: (x) = x+1;
 
-    v = map(int, 0, asd, 7);
+    v = map(0, asd, 7);
 
     printf("v: %d\n", v);
 }
 
 
 //---------------------------------------------------------------------
-{   #define zxc: (x) =
+{   #define zxc: (x) ~> int  =
     block
     {
         #note ("Hi!")
@@ -663,7 +663,7 @@ block
         v_break(x+1);
     };
 
-    v = map(int, 0, zxc, 7);
+    v = map(0, zxc, 7);
 
     printf("v: %d\n", v);
 
