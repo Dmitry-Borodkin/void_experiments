@@ -257,6 +257,120 @@ macro_expand_intrinsic: (aux: *void, vis: *voidc_visitor_t, self:*v_ast_base_t) 
 }
 
 //---------------------------------------------------------------------
+macro_spec_expand_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                              arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                             ) ~> void
+{
+    ctx = *(aux: *macro_defn_ctx_t);
+
+    ttag = v_get_result_type();
+    vtag = v_get_result_value();
+
+    //-------------------------------------------------------------
+    v_assert(vis == v_get_compiler());
+
+    saved_vis: &voidc_visitor_t := {};
+
+    v_copy(&saved_vis, vis);
+    defer v_copy(vis, &saved_vis);
+
+    bind: &macro_expr_identifier_ctx_t := {};
+
+    q = expr_identifier_q;
+
+    bind.fun := voidc_visitor_get_method(vis, q, &bind.aux);
+
+    voidc_visitor_set_method(vis, vis, q, macro_compile_expr_identifier, &bind);
+
+    bmap = &bind.map;
+
+    v_make_map(bmap);
+
+    for(i: &int := 0; i < arg_count; ++i)
+    {
+        par = v_list_get_item(&ctx.args, i);
+        arg = arg_ptrs[i];
+
+        qvar = v_ast_stmt_get_name_q(par);
+        tvar = v_ast_stmt_get_expr(par);
+
+        v_set_result_type(INVIOLABLE_TAG);
+        v_set_result_value(0);
+
+        if (!v_empty(tvar))
+        {
+            v_ast_accept_visitor(tvar, vis);
+
+            t = (v_get_result_value() : *v_type_t);
+
+            v_set_result_type(t);
+            v_set_result_value(0);
+        }
+
+        v_ast_accept_visitor(arg, vis);
+
+        t = v_get_result_type();
+        v = v_get_result_value();
+
+        expr: &v_ast_expr_t := {};
+
+        v_ast_make_expr_compiled(&expr, t, v);
+
+        any: &v_std_any_t := {};
+
+        v_std_any_set_pointer(&any, &expr);
+
+        v_map_insert(bmap, bmap, (qvar: intptr_t), &any);
+    }
+
+    if (v_empty(&ctx.type))
+    {
+        v_set_result_type(ttag);
+        v_set_result_value(vtag);
+
+        v_ast_accept_visitor(&ctx.body, vis);
+
+        v_return();         //- Sic !!!
+    }
+
+    v_assert(!v_empty(&ctx.type));
+
+    v_set_result_type(INVIOLABLE_TAG);
+    v_set_result_value(0);
+
+    v_ast_accept_visitor(&ctx.type, vis);
+
+    t = (v_get_result_value() : *v_type_t);
+
+    if (v_type_is_special(t, q_initialize))
+    {
+        v_set_result_type(ttag);
+        v_set_result_value(vtag);
+
+        v = v_obtain_special_result_value(vis, t);
+
+        v_set_result_value(v);
+    }
+    else
+    {
+        v_set_result_value(0);
+    }
+
+    v_set_result_type(t);
+
+    v_ast_accept_visitor(&ctx.body, vis);
+
+    t = v_get_result_type();
+    v = v_get_result_value();
+
+    v_set_result_type(ttag);
+    v_set_result_value(vtag);
+
+    v_adopt_result(t, v);
+}
+
+
+//---------------------------------------------------------------------
 compile_macro_define: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
 //printf("compile_macro_define start\n");
@@ -461,11 +575,7 @@ compile_macro_define: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> voi
 
         v_add_overload_q(quark, ktype, qname);
 
-
-        v_assert(false);        //- ?!?!?!?!?!?!?!?!?!
-
-
-//      v_add_intrinsic_q(qname, macro_expand_intrinsic, ctx);      ????????????????????????????????????????????????
+        v_add_intrinsic_q(qname, macro_spec_expand_intrinsic, ctx);
     }
 
     //- ...
@@ -685,8 +795,86 @@ block
 
 
 //---------------------------------------------------------------------
-//#define (_*_): (a: int, b) = qwe(a, b);
-//
+#define (_*_): (s: v_std_string_t, n) ~> v_std_string_t  =
+block
+{
+    r: &v_std_string_t := {};
+
+    str = v_std_string_get(&s);
+
+    for (i: &int := 0; i < n; ++i)
+    {
+        v_std_string_append(&r, str);
+    }
+
+    v_break(r);
+};
+
+#define (_.str): (s: *const char) ~> v_std_string_t  =
+block
+{
+    r: &v_std_string_t := {};
+
+    v_std_string_set(&r, s);
+
+    v_break(r);
+};
+
+
+{   ns = ("Qwe" : *const char).str * 20;
+
+    printf("ns: %s\n", v_std_string_get(&ns));
+}
+
+
+#define (_*_): (a: char[4], n) ~> v_std_string_t  =  (a: *const char).str * 20;
+
+{   ns = "Asd" * 20;
+
+    printf("ns: %s\n", v_std_string_get(&ns));
+}
+
+#define (_.c_str): (s: &v_std_string_t) ~>       *char  =  v_std_string_get(&s);
+#define (_.c_str): (s:  v_std_string_t) ~> *const char  =  v_std_string_get(&s);
+
+{   ns = "Zxc" * 20;
+
+    printf("ns: %s\n", ns.c_str);
+}
+
+
+#define (_[]): (s: &v_std_string_t, i) ~> &char  =  s.c_str[i];
+#define (_[]): (s:  v_std_string_t, i) ~>  char  =  s.c_str[i];
+
+{   ns = "Zxc" * 20;
+
+    for (i: &int := 0; i < 10; ++i)   printf("ns[%d]: %c\n", i, ns[i]);
+}
+
+
+#define (_:=_): (lhs: &some_t, rhs: some_t) ~> &some_t  =
+block
+{
+    v_copy(&lhs, &rhs);
+
+    v_break(lhs);
+};
+
+{   r: &some_t := {1, 2};
+    v: some_t = {3, 4};
+
+    printf("r: (%d, %d)\n", r.x, r.y);
+
+    r := v;
+
+    printf("r: (%d, %d)\n", r.x, r.y);
+}
+
+
+
+
+
+
 //#define (new _): (fixed: size_t) ~> *some_t  =
 //block
 //{
