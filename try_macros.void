@@ -1,5 +1,8 @@
-{ v_import("mainline.void"); }
-{ v_enable_mainline(); }
+{   v_import("mainline.void");
+
+    v_import("llvm-c/Core.void");
+}
+{   v_enable_mainline(); }
 
 //---------------------------------------------------------------------
 printf: (*const char, ...) ~> int;
@@ -392,6 +395,8 @@ compile_macro_define: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> voi
 
     spec = v_ast_base_get_tag(self) == macro_spec_defn_q;
 
+    kind = v_ast_expr_integer_get_number(kind);
+
     ctx = new macro_defn_ctx_t;
 
     v_add_local_cleaner(macro_defn_ctx_cleaner, ctx);
@@ -503,7 +508,8 @@ compile_macro_define: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> voi
 
         qintr = v_quark_from_string(v_std_string_get(&sstr));
 
-        v_add_constant_q(quark, v_object_intrinsic_t, (qintr: LLVMValueRef));
+        if (kind) v_add_variable_q(quark, v_object_intrinsic_t, (qintr: LLVMValueRef));
+        else      v_add_constant_q(quark, v_object_intrinsic_t, (qintr: LLVMValueRef));
 
         v_add_intrinsic_q(qintr, macro_expand_intrinsic, ctx);
     }
@@ -587,8 +593,6 @@ compile_macro_define: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> voi
 
     voidc_visitor_set_method(vis, vis, macro_defn_q,      compile_macro_define, 0);
     voidc_visitor_set_method(vis, vis, macro_spec_defn_q, compile_macro_define, 0);
-
-
 }
 
 //---------------------------------------------------------------------
@@ -702,11 +706,8 @@ inlinehint
 }
 
 
-
-
 //---------------------------------------------------------------------
 #define fun: (s: some_t) ~> some_t  =
-block
 {
     r: &some_t := s;
 
@@ -715,12 +716,20 @@ block
 
     printf("fun  some_t %p %p\n", &s, &r);
 
-    v_break(r);
+    r
 };
 
 
 //{ voidc_verify_jit_module_optimized(true); }
 //{ v_debug_print_module(9); }
+//---------------------------------------------------------------------
+{   v: some_t = {7, 8};
+
+    r = fun(fun(v));
+
+    printf("r: %p (%d, %d)\n", &r, r.x, r.y);
+}
+
 {   z: some_t = {0, 0};
 
     v = map(z, fun, 3);
@@ -730,8 +739,8 @@ block
 
 
 
+//---------------------------------------------------------------------
 #define qwe: (s: v_std_string_t) ~> v_std_string_t  =
-block
 {
     r: &v_std_string_t := {};
 
@@ -739,13 +748,14 @@ block
 
     v_std_string_append(&r, "A");
 
-    v_break(r);
+    r
 };
 
 
 //{ voidc_verify_jit_module_optimized(true); }
 //{ v_debug_print_module(9); }
-{   z: &v_std_string_t := {};
+{
+    z: &v_std_string_t := {};
 
     v_std_string_set(&z, "*");
 
@@ -796,7 +806,6 @@ block
 
 //---------------------------------------------------------------------
 #define (_*_): (s: v_std_string_t, n) ~> v_std_string_t  =
-block
 {
     r: &v_std_string_t := {};
 
@@ -807,17 +816,16 @@ block
         v_std_string_append(&r, str);
     }
 
-    v_break(r);
+    r
 };
 
 #define (_.str): (s: *const char) ~> v_std_string_t  =
-block
 {
     r: &v_std_string_t := {};
 
     v_std_string_set(&r, s);
 
-    v_break(r);
+    r
 };
 
 
@@ -853,11 +861,10 @@ block
 
 
 #define (_:=_): (lhs: &some_t, rhs: some_t) ~> &some_t  =
-block
 {
     v_copy(&lhs, &rhs);
 
-    v_break(lhs);
+    lhs
 };
 
 {   r: &some_t := {1, 2};
@@ -871,19 +878,104 @@ block
 }
 
 
+#define str: (s)  =  (s: *const char);
+
+{
+    printf("[%s]\n", (str("Qwerty").str * 5).c_str);
+}
+
+
+//---------------------------------------------------------------------
+v_typeof_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    v_set_result_type(INVIOLABLE_TAG);
+    v_set_result_value(0);
+
+    v_ast_accept_visitor(v_list_get_item(args, 0), vis);        //- Sic !!!
+
+    t = v_get_result_type();
+
+    v_set_result_type(v_static_type_t);
+    v_set_result_value((t: LLVMValueRef));
+}
+
+//---------------------------------------------------------------------
+eq_types_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+//printf("eq_types_intrinsic start\n");
+//defer printf("eq_types_intrinsic stop\n");
+
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    ttag = v_get_result_type();
+    vtag = v_get_result_value();
+
+    v_set_result_type(INVIOLABLE_TAG);
+    v_set_result_value(0);
+
+    v_ast_accept_visitor(v_list_get_item(args, 0), vis);
+
+    v_assert(v_get_result_type() == v_static_type_t);
+
+    v0 = v_get_result_value();
+
+    v_set_result_type(INVIOLABLE_TAG);
+    v_set_result_value(0);
+
+    v_ast_accept_visitor(v_list_get_item(args, 1), vis);
+
+    v_assert(v_get_result_type() == v_static_type_t);
+
+    v1 = v_get_result_value();
+
+    tr = v_uint_type(1);
+    vr = LLVMConstInt(v_type_get_llvm_type(tr), v0 == v1, false);
+
+    v_set_result_type(ttag);
+    v_set_result_value(vtag);
+
+    v_adopt_result(tr, vr);
+}
+
+{   v_add_intrinsic("v_typeof", v_typeof_intrinsic, 0);
+    v_add_intrinsic("eq_types", eq_types_intrinsic, 0);
+}
+
+
+//---------------------------------------------------------------------
+type_t = v_typeof(int);
+
+#define (_==_): (a: type_t, b: type_t) ~> bool  =  eq_types(a, b);
+
+
+//---------------------------------------------------------------------
+#define check: (t, v) ~> bool  =  t == v_typeof(v);
+
+{
+//  ok = check(int, 5);
+
+//  ok = check(float(64), 5.0);
+
+//  ok = check(char[2], "q");
+
+    ok = check(type_t, int);
+
+    printf("ok: %d\n", (ok: int));
+}
+
+
+
+//---------------------------------------------------------------------
 
 
 
 
-//#define (new _): (fixed: size_t) ~> *some_t  =
-//block
-//{
-//    ret = v_malloc(some_t, fixed);
-//
-//    v_initialize(ret, fixed);
-//
-//    v_break(ret);
-//};
+
+
+
+
 
 
 
