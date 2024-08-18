@@ -138,7 +138,7 @@ try_inline.void                                                │try_inline.voi
                                                                │
 try_print_ast.void                                             │try_print_ast.void
                                                                │
-try_introspect2.void    ... visitor methods ...                │try_introspect2.void
+try_introspect2.void    ... visitor methods ...                │try_introspect2.void | sort
                                                                │
 ───────────────────────────────────────────────────────────────│
 try_hz5.void        ... mangling ...                           │try_hz5.void

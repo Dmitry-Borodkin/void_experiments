@@ -1,6 +1,4 @@
-{   v_import("level-00");
-    v_import("level-01");
-    v_import("level-02");
+{   v_import("mainline.void");
 
     v_import("llvm-c/Core.void");
 }
@@ -8,27 +6,26 @@
 {   v_import("printf.void");
 }
 
-{   v_enable_level_01();
-    v_enable_level_02();
+{   v_enable_mainline();
 }
 
 
 //---------------------------------------------------------------------
 FILE = v_struct("FILE");
 
-v_popen: (command: *const char, prop: *const char) -> *FILE;
+v_popen: (command: *const char, prop: *const char) ~> *FILE;
 
-v_pclose: (*FILE) -> int;
+v_pclose: (*FILE) ~> int;
 
-fprintf: (stream: *FILE, format: *const char, ...) -> int;
+fprintf: (stream: *FILE, format: *const char, ...) ~> int;
 
-fscanf: (stream: *FILE, format: *const char, ...) -> int;
+fscanf: (stream: *FILE, format: *const char, ...) ~> int;
 
-fputs: (buf: *char, stream: *FILE) -> int;
+fputs: (buf: *char, stream: *FILE) ~> int;
 
-sprintf: (str: *char, format: *const char, ...) -> int;
+sprintf: (str: *char, format: *const char, ...) ~> int;
 
-system: (cmd: *const char) -> int;
+system: (cmd: *const char) ~> int;
 
 
 //{ v_debug_print_module(99); }
@@ -127,15 +124,15 @@ buffer: &*char := 0;
 
 
 //---------------------------------------------------------------------
-parsers_count: (*v_peg_grammar_t) -> size_t;
+parsers_count: (*v_peg_grammar_t) ~> size_t;
 
-item_ft = *((*void, *const char) -> void);
+item_ft = *((*void, *const char) ~> void);
 
-parsers_iter: (*v_peg_grammar_t, item_ft, *void) -> void;
+parsers_iter: (*v_peg_grammar_t, item_ft, *void) ~> void;
 
 
 //---------------------------------------------------------------------
-item_fun: (aux: *void, name: *const char) -> void
+item_fun: (aux: *void, name: *const char) ~> void
 {
     printf("%s\n", name);
 }
