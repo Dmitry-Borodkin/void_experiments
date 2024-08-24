@@ -1,0 +1,235 @@
+{   v_import("mainline.void");
+
+    v_import("llvm-c/Core.void");
+}
+{   v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
+
+//---------------------------------------------------------------------
+#if (v_defined(NDEBUG))   #error ("Need debug mode...")   #endif
+
+
+//---------------------------------------------------------------------
+{   q_ref = v_reference_type(v_quark_t, 0);
+
+    q = v_quark_ptr_from_string;
+
+    v_add_symbol("pos_start_q", q_ref, q("pos_start"));
+    v_add_symbol("pos_end_q",   q_ref, q("pos_end"));
+}
+
+
+//---------------------------------------------------------------------
+my_trace_grammar_ctx_t = struct
+{
+    fun: *((*void, *v_std_any_t, *v_peg_grammar_t, v_quark_t, *v_peg_context_t) ~> void);
+    aux: *void;
+};
+
+//---------------------------------------------------------------------
+my_trace_grammar: (aux: *void, ret: *v_std_any_t, grm: *v_peg_grammar_t, q: v_quark_t, ctx: *v_peg_context_t) ~> void
+{
+    my_ctx = *(aux: *my_trace_grammar_ctx_t);
+
+    ps = v_peg_get_position();
+
+    line:   &size_t := v_undef();
+    column: &size_t := v_undef();
+
+    v_peg_get_line_column(ps, line, column);
+
+    printf("parse? (%zd, %zd) %s\n", line, column, v_quark_to_string(q));
+
+    my_ctx.fun(my_ctx.aux, ret, grm, q, ctx);
+
+    printf("parse! (%zd, %zd) %s: ", line, column, v_quark_to_string(q));
+
+    if (v_empty(ret))
+    {
+        printf("Fail\n");
+    }
+    else
+    {
+        pe = v_peg_get_position();
+
+        v_peg_get_line_column(pe, line, column);
+
+        printf("OK (%zd, %zd)", line, column);
+
+        ast = v_ast_std_any_get_base(ret);
+
+        if (ast)    printf(" %s\n", v_quark_to_string(v_ast_base_get_tag(ast)));
+        else        printf("\n");
+    }
+}
+
+
+//---------------------------------------------------------------------
+struct my_trace_visitor_item_t
+{
+    ast: *v_ast_base_t;
+
+    nxt: *my_trace_visitor_item_t;
+};
+
+my_trace_visitor_item_root: &*my_trace_visitor_item_t := 0;
+
+//---------------------------------------------------------------------
+my_trace_visitor_ctx_t = struct
+{
+    fun: *((*void, *voidc_visitor_t, *v_ast_base_t) ~> void);
+    aux: *void;
+};
+
+//---------------------------------------------------------------------
+my_trace_visitor: (aux: *void, vis: *voidc_visitor_t, ast: *v_ast_base_t) ~> void
+{
+    ctx = *(aux: *my_trace_visitor_ctx_t);
+
+    this: &my_trace_visitor_item_t := { ast, my_trace_visitor_item_root };
+
+    my_trace_visitor_item_root := &this;
+
+    ctx.fun(ctx.aux, vis, ast);
+
+    my_trace_visitor_item_root := this.nxt;
+}
+
+
+//---------------------------------------------------------------------
+print_trace: () ~> void
+{
+    item: &*my_trace_visitor_item_t := my_trace_visitor_item_root;
+
+    if (item)
+    {
+        printf("\nVisitor trace:\n");
+
+        filename = v_target_local_ctx_get_filename(v_target_get_local_ctx());
+
+        printf("%s\n", filename);
+
+        for (i: &int := 1; item; item := item->nxt, ++i)
+        {
+            tag = v_quark_to_string(v_ast_base_get_tag(item->ast));
+
+            printf("  #%d: %s", i, tag);
+
+            pps = v_std_any_get_pointer(size_t, v_ast_get_property(item->ast, pos_start_q));
+            ppe = v_std_any_get_pointer(size_t, v_ast_get_property(item->ast, pos_end_q));
+
+            line:   &size_t := v_undef();
+            column: &size_t := v_undef();
+
+            if (pps)
+            {
+                v_peg_get_line_column(*pps, line, column);
+
+                printf(": (%zd, %zd)", line, column);
+            }
+
+            if (ppe)
+            {
+                v_peg_get_line_column(*ppe, line, column);
+
+                printf(" - (%zd, %zd)", line, column);
+            }
+
+            printf("\n");
+        }
+
+        printf("\n");
+    }
+}
+
+//---------------------------------------------------------------------
+ctx_g: &my_trace_grammar_ctx_t := v_undef();
+ctx_v: &my_trace_visitor_ctx_t := v_undef();
+
+//---------------------------------------------------------------------
+{   __sanitizer_set_death_callback: (*(() ~> void)) ~> void;
+
+    __sanitizer_set_death_callback(print_trace);
+
+
+    grm: &v_peg_grammar_t := {};
+
+    v_peg_get_grammar(&grm);
+
+    ctx_g.fun := v_peg_grammar_get_parse_hook(&grm, &ctx_g.aux);
+
+    v_peg_grammar_set_parse_hook(&grm, &grm, my_trace_grammar, &ctx_g);
+
+    v_peg_set_grammar(&grm);
+
+
+    vis = v_get_compiler();
+
+    ctx_v.fun := voidc_visitor_get_visit_hook(vis, &ctx_v.aux);
+
+    voidc_visitor_set_visit_hook(vis, vis, my_trace_visitor, &ctx_v);
+}
+
+
+//---------------------------------------------------------------------
+print_trace_test: () ~> void
+{
+    item: &*my_trace_visitor_item_t := my_trace_visitor_item_root;
+
+    if (item)
+    {
+        printf("\nVisitor trace:\n");
+
+        filename = v_target_local_ctx_get_filename(v_target_get_local_ctx());
+
+        printf("%s\n", filename);
+
+        for (i: &int := 1; item; item := item->nxt, ++i)
+        {
+            tag = v_quark_to_string(v_ast_base_get_tag(item->ast));
+
+            printf("  #%d: %s", i, tag);
+
+            pps = v_std_any_get_pointer(size_t, v_ast_get_property(item->ast, pos_start_q));
+            ppe = v_std_any_get_pointer(size_t, v_ast_get_property(item->ast, pos_end_q));
+
+            line:   &size_t := v_undef();
+            column: &size_t := v_undef();
+
+            if (pps)
+            {
+                v_peg_get_line_column(*pps, line, column);
+
+                printf(": (%zd, %zd)", line, column);
+            }
+
+            if (ppe)
+            {
+                v_peg_get_line_column(*ppe, line, column);
+
+                printf(" - (%zd, %zd)", line, column);
+            }
+
+            printf("\n");
+        }
+
+        printf("\n");
+    }
+}
+
+
+
+//---------------------------------------------------------------------
+{
+    zero: &*int := 0;
+
+    *zero := 666;
+}
+
+
+
+
+
+

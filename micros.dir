@@ -2,6 +2,8 @@
                                                                │
                                                                │
                                                                │
+try_stack_trace.void                                           │try_stack_trace.void
+                                                               │
 try_macros.void                                                │try_macros.void
                                                                │
 try_generate_ast.void                                          │try_generate_ast.void
