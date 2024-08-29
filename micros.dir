@@ -2,6 +2,8 @@
                                                                │
                                                                │
                                                                │
+try_type_traits.void                                           │try_type_traits.void
+                                                               │
 try_stack_trace.void                                           │try_stack_trace.void
                                                                │
 try_macros.void                                                │try_macros.void
@@ -156,7 +158,7 @@ try_compression3.void   ???                                    │try_compressio
 try_compression2.void                                          │try_compression2.void
 try_compression.void                                           │try_compression.void
                                                                │
-try_introspect.void     ... parsers ...                        │try_introspect.void
+try_introspect.void     ... parsers ...                        │try_introspect.void | LC_ALL=C sort
                                                                │
 try_geometry.void                                              │try_geometry.void
                                                                │

@@ -147,7 +147,7 @@ item_fun: (aux: *void, name: *const char) ~> void
 
     sz = parsers_count(gr);
 
-    printf("sz: %d\n\n", (sz: int));
+    printf(" sz: %d\n\n", (sz: int));
 
     parsers_iter(gr, item_fun, 0);
 }

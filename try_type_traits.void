@@ -1,0 +1,389 @@
+{   v_import("mainline.void");
+
+    v_import("llvm-c/Core.void");
+}
+{   v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
+
+
+//=====================================================================
+
+
+//---------------------------------------------------------------------
+static_type_kind_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    type = v_list_get_item(args, 0);
+
+    ttag = v_get_result_type();
+    vtag = v_get_result_value();
+
+    v_set_result_type(INVIOLABLE_TAG);
+    v_set_result_value(0);
+
+    v_ast_accept_visitor(type, vis);
+
+    type = (v_get_result_value() : *v_type_t);
+
+    k = v_kind(type);
+
+    t = v_find_type("int");
+    v = LLVMConstInt(v_type_get_llvm_type(t), k, 0);
+
+    v_set_result_type(ttag);
+    v_set_result_value(vtag);
+
+    v_adopt_result(t, v);
+}
+
+////---------------------------------------------------------------------
+//v_typeof_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+//{
+//    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+//
+//    v_set_result_type(INVIOLABLE_TAG);
+//    v_set_result_value(0);
+//
+//    v_ast_accept_visitor(v_list_get_item(args, 0), vis);        //- Sic !!!
+//
+//    t = v_get_result_type();
+//
+//    v_set_result_type(v_static_type_t);
+//    v_set_result_value((t: LLVMValueRef));
+//}
+
+//---------------------------------------------------------------------
+{   v_add_intrinsic("v_static_type_kind", static_type_kind_intrinsic, 0);
+
+//  v_add_intrinsic("v_typeof", v_typeof_intrinsic, 0);
+}
+
+//---------------------------------------------------------------------
+{   v_add_constant("v_static_type_t", v_static_type_t, (v_static_type_t: LLVMValueRef));
+}
+
+//---------------------------------------------------------------------
+#define (_.is_void): (t: v_static_type_t) ~> bool  =  v_static_type_kind(t) == v_type_kind_void;
+
+#define (_.is_floating_point): (t: v_static_type_t) ~> bool  =
+{
+    k = v_static_type_kind(t);
+
+    k == v_type_kind_f16  ||
+    k == v_type_kind_f32  ||
+    k == v_type_kind_f64  ||
+    k == v_type_kind_f128
+};
+
+#define (_.is_integer): (t: v_static_type_t) ~> bool  =
+{
+    k = v_static_type_kind(t);
+
+    k == v_type_kind_int  ||
+    k == v_type_kind_uint
+};
+
+#define (_.is_function): (t: v_static_type_t) ~> bool  =  v_static_type_kind(t) == v_type_kind_function;
+
+#define (_.is_pointer):   (t: v_static_type_t) ~> bool  =  v_static_type_kind(t) == v_type_kind_pointer;
+#define (_.is_reference): (t: v_static_type_t) ~> bool  =  v_static_type_kind(t) == v_type_kind_reference;
+
+#define (_.is_struct): (t: v_static_type_t) ~> bool  =  v_static_type_kind(t) == v_type_kind_struct;
+
+#define (_.is_array): (t: v_static_type_t) ~> bool  =  v_static_type_kind(t) == v_type_kind_array;
+
+#define (_.is_vector): (t: v_static_type_t) ~> bool  =
+{
+    k = v_static_type_kind(t);
+
+    k == v_type_kind_vector  ||
+    k == v_type_kind_svector
+};
+
+#define (_.is_generic): (t: v_static_type_t) ~> bool  =  v_static_type_kind(t) == v_type_kind_generic;
+
+
+//---------------------------------------------------------------------
+static_arg_kind_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    garg = v_list_get_item(args, 0);
+
+    ttag = v_get_result_type();
+    vtag = v_get_result_value();
+
+    v_set_result_type(INVIOLABLE_TAG);
+    v_set_result_value(0);
+
+    v_ast_accept_visitor(garg, vis);
+
+    garg = (v_get_result_value() : *v_type_generic_arg_t);
+
+    k = v_kind(garg);
+
+    t = v_find_type("int");
+    v = LLVMConstInt(v_type_get_llvm_type(t), k, 0);
+
+    v_set_result_type(ttag);
+    v_set_result_value(vtag);
+
+    v_adopt_result(t, v);
+}
+
+//---------------------------------------------------------------------
+{   v_add_type("v_static_generic_arg_t", v_generic_type(v_quark_from_string("v_static_generic_arg_t"), 0, 0));
+}
+
+//---------------------------------------------------------------------
+{   v_add_intrinsic("v_static_arg_kind", static_arg_kind_intrinsic, 0);
+}
+
+//---------------------------------------------------------------------
+#define (_.is_number): (a: v_static_generic_arg_t) ~> bool  =  v_static_arg_kind(a) == v_type_generic_arg_kind_number;
+#define (_.is_string): (a: v_static_generic_arg_t) ~> bool  =  v_static_arg_kind(a) == v_type_generic_arg_kind_string;
+#define (_.is_quark):  (a: v_static_generic_arg_t) ~> bool  =  v_static_arg_kind(a) == v_type_generic_arg_kind_quark;
+#define (_.is_type):   (a: v_static_generic_arg_t) ~> bool  =  v_static_arg_kind(a) == v_type_generic_arg_kind_type;
+#define (_.is_cons):   (a: v_static_generic_arg_t) ~> bool  =  v_static_arg_kind(a) == v_type_generic_arg_kind_cons;
+
+
+//---------------------------------------------------------------------
+static_type_width_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    type = v_list_get_item(args, 0);
+
+    ttag = v_get_result_type();
+    vtag = v_get_result_value();
+
+    v_set_result_type(INVIOLABLE_TAG);
+    v_set_result_value(0);
+
+    v_ast_accept_visitor(type, vis);
+
+    type = (v_get_result_value() : *v_type_t);
+
+    w: &unsigned := 0;
+
+    if (v_type_is_floating_point(type)) w := v_type_floating_point_get_width(type);
+    if (v_type_is_integer(type))        w := v_type_integer_get_width(type);
+
+    v_assert(w);
+
+    t = v_find_type("unsigned");
+    v = LLVMConstInt(v_type_get_llvm_type(t), w, 0);
+
+    v_set_result_type(ttag);
+    v_set_result_value(vtag);
+
+    v_adopt_result(t, v);
+}
+
+//---------------------------------------------------------------------
+{   v_add_intrinsic("v_static_type_width", static_type_width_intrinsic, 0);
+}
+
+//---------------------------------------------------------------------
+#define (_.width): (t: v_static_type_t) ~> unsigned  =  v_static_type_width(t);
+
+//---------------------------------------------------------------------
+#define (_.is_signed):   (t: v_static_type_t) ~> bool  =  v_static_type_kind(t) == v_type_kind_int;
+#define (_.is_unsigned): (t: v_static_type_t) ~> bool  =  v_static_type_kind(t) == v_type_kind_uint;
+
+
+//---------------------------------------------------------------------
+static_function_type_is_var_arg_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    type = v_list_get_item(args, 0);
+
+    ttag = v_get_result_type();
+    vtag = v_get_result_value();
+
+    v_set_result_type(INVIOLABLE_TAG);
+    v_set_result_value(0);
+
+    v_ast_accept_visitor(type, vis);
+
+    type = (v_get_result_value() : *v_type_t);
+
+    v_assert(v_type_is_function(type));
+
+    v = v_type_function_is_var_arg(type);
+
+    t = v_uint_type(1);
+    v = LLVMConstInt(v_type_get_llvm_type(t), v, 0);
+
+    v_set_result_type(ttag);
+    v_set_result_value(vtag);
+
+    v_adopt_result(t, v);
+}
+
+//---------------------------------------------------------------------
+static_function_type_return_type_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    type = v_list_get_item(args, 0);
+
+    v_set_result_type(INVIOLABLE_TAG);
+    v_set_result_value(0);
+
+    v_ast_accept_visitor(type, vis);
+
+    type = (v_get_result_value() : *v_type_t);
+
+    v_assert(v_type_is_function(type));
+
+    r = v_type_function_get_return_type(type);
+
+    v_set_result_type(v_static_type_t);
+    v_set_result_value((r: LLVMValueRef));
+}
+
+//---------------------------------------------------------------------
+static_function_type_param_count_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    type = v_list_get_item(args, 0);
+
+    ttag = v_get_result_type();
+    vtag = v_get_result_value();
+
+    v_set_result_type(INVIOLABLE_TAG);
+    v_set_result_value(0);
+
+    v_ast_accept_visitor(type, vis);
+
+    type = (v_get_result_value() : *v_type_t);
+
+    v_assert(v_type_is_function(type));
+
+    w = v_type_function_get_param_count(type);
+
+    t = v_find_type("unsigned");
+    v = LLVMConstInt(v_type_get_llvm_type(t), w, 0);
+
+    v_set_result_type(ttag);
+    v_set_result_value(vtag);
+
+    v_adopt_result(t, v);
+}
+
+//---------------------------------------------------------------------
+static_function_type_param_type_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    type = v_list_get_item(args, 0);
+    idx  = v_list_get_item(args, 1);
+
+    v_set_result_type(INVIOLABLE_TAG);
+    v_set_result_value(0);
+
+    v_ast_accept_visitor(type, vis);
+
+    type = (v_get_result_value() : *v_type_t);
+
+    v_assert(v_type_is_function(type));
+
+    w = v_type_function_get_param_count(type);
+
+    v_set_result_type(v_find_type("unsigned"));
+    v_set_result_value(0);
+
+    v_ast_accept_visitor(idx, vis);
+
+    i = v_get_result_value();
+
+    i = LLVMConstIntGetZExtValue(i);
+
+    v_assert(i < w);
+
+    t = v_type_function_get_param_types(type)[i];
+
+    v_set_result_type(v_static_type_t);
+    v_set_result_value((t: LLVMValueRef));
+}
+
+//---------------------------------------------------------------------
+{   v_add_intrinsic("v_static_function_type_is_var_arg",  static_function_type_is_var_arg_intrinsic,  0);
+    v_add_intrinsic("v_static_function_type_return_type", static_function_type_return_type_intrinsic, 0);
+    v_add_intrinsic("v_static_function_type_param_count", static_function_type_param_count_intrinsic, 0);
+    v_add_intrinsic("v_static_function_type_param_type",  static_function_type_param_type_intrinsic,  0);
+}
+
+//---------------------------------------------------------------------
+#define (_.is_var_arg):  (t: v_static_type_t) ~> bool                          =  v_static_function_type_is_var_arg(t);
+#define (_.return_type): (t: v_static_type_t) ~> v_static_type_t               =  v_static_function_type_return_type(t);
+#define (_.param_count): (t: v_static_type_t) ~> unsigned                      =  v_static_function_type_param_count(t);
+#define (_.param_type):  (t: v_static_type_t, i: unsigned) ~> v_static_type_t  =  v_static_function_type_param_type(t, i);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------
+{
+    printf("void.is_void = %d\n", (void.is_void : int));
+    printf("long.is_void = %d\n", (long.is_void : int));
+
+    printf("int(17).is_integer = %d\n", (int(17).is_integer : int));
+
+    printf("int(17).width = %u\n", int(17).width);
+
+}
+
+
+//---------------------------------------------------------------------
+{   s: &v_std_string_t := {};
+
+    a0 = v_type_generic_number_arg(777);
+    a1 = v_type_generic_string_arg(&s);
+    a2 = v_type_generic_quark_arg(v_quark_from_string("qwerty"));
+
+    v_add_constant("a777", v_static_generic_arg_t, (a0: LLVMValueRef));
+    v_add_constant("aSSS", v_static_generic_arg_t, (a1: LLVMValueRef));
+    v_add_constant("aQQQ", v_static_generic_arg_t, (a2: LLVMValueRef));
+}
+
+//---------------------------------------------------------------------
+{
+    printf("a777.is_number = %d\n", a777.is_number);
+    printf("a777.is_string = %d\n", a777.is_string);
+    printf("a777.is_quark  = %d\n", a777.is_quark);
+
+    printf("aSSS.is_number = %d\n", aSSS.is_number);
+    printf("aSSS.is_string = %d\n", aSSS.is_string);
+    printf("aSSS.is_quark  = %d\n", aSSS.is_quark);
+
+    printf("aQQQ.is_number = %d\n", aQQQ.is_number);
+    printf("aQQQ.is_string = %d\n", aQQQ.is_string);
+    printf("aQQQ.is_quark  = %d\n", aQQQ.is_quark);
+
+    printf("v_static_arg_kind(a777) = %d\n", v_static_arg_kind(a777));
+    printf("v_static_arg_kind(aSSS) = %d\n", v_static_arg_kind(aSSS));
+    printf("v_static_arg_kind(aQQQ) = %d\n", v_static_arg_kind(aQQQ));
+}
+
+
+
