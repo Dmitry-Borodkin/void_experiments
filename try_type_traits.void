@@ -12,124 +12,93 @@ printf: (*const char, ...) ~> int;
 
 
 //---------------------------------------------------------------------
-static_type_kind_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+my_static_type_kind_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                               ) ~> void
 {
-    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
-
-    type = v_list_get_item(args, 0);
-
-    ttag = v_get_result_type();
-    vtag = v_get_result_value();
-
-    v_set_result_type(INVIOLABLE_TAG);
-    v_set_result_value(0);
-
-    v_ast_accept_visitor(type, vis);
-
-    type = (v_get_result_value() : *v_type_t);
+    type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
 
     k = v_kind(type);
 
     t = v_find_type("int");
     v = LLVMConstInt(v_type_get_llvm_type(t), k, 0);
 
-    v_set_result_type(ttag);
-    v_set_result_value(vtag);
+    v_adopt_result(t, v);
+}
+
+//---------------------------------------------------------------------
+{   v_add_overload(".kind", v_static_type_t, "my.static_type_kind");
+
+    v_add_intrinsic("my.static_type_kind", my_static_type_kind_intrinsic, 0);
+}
+
+//---------------------------------------------------------------------
+{   v_add_constant("v_static_type_t", v_static_type_t, (v_static_type_t: LLVMValueRef));        //- Sic !?!
+}
+
+
+//---------------------------------------------------------------------
+my_static_type_predicate_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                     arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                                    ) ~> void
+{
+    type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
+
+    fun = (aux: *((*v_type_t) ~> bool));
+
+    v = fun(type);
+
+    t = v_uint_type(1);
+    v = LLVMConstInt(v_type_get_llvm_type(t), v, 0);
 
     v_adopt_result(t, v);
 }
 
-////---------------------------------------------------------------------
-//v_typeof_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
-//{
-//    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
-//
-//    v_set_result_type(INVIOLABLE_TAG);
-//    v_set_result_value(0);
-//
-//    v_ast_accept_visitor(v_list_get_item(args, 0), vis);        //- Sic !!!
-//
-//    t = v_get_result_type();
-//
-//    v_set_result_type(v_static_type_t);
-//    v_set_result_value((t: LLVMValueRef));
-//}
+{   v_add_overload(".is_void",           v_static_type_t, "my.static_type_is_void");
+    v_add_overload(".is_floating_point", v_static_type_t, "my.static_type_is_floating_point");
+    v_add_overload(".is_integer",        v_static_type_t, "my.static_type_is_integer");
+    v_add_overload(".is_signed",         v_static_type_t, "my.static_type_is_signed");
+    v_add_overload(".is_function",       v_static_type_t, "my.static_type_is_function");
+    v_add_overload(".is_var_arg",        v_static_type_t, "my.static_type_is_var_arg");
+    v_add_overload(".is_pointer",        v_static_type_t, "my.static_type_is_pointer");
+    v_add_overload(".is_reference",      v_static_type_t, "my.static_type_is_reference");
+    v_add_overload(".is_struct",         v_static_type_t, "my.static_type_is_struct");
+    v_add_overload(".is_opaque",         v_static_type_t, "my.static_type_is_opaque");
+    v_add_overload(".is_packed",         v_static_type_t, "my.static_type_is_packed");
+    v_add_overload(".is_array",          v_static_type_t, "my.static_type_is_array");
+    v_add_overload(".is_vector",         v_static_type_t, "my.static_type_is_vector");
+    v_add_overload(".is_scalable",       v_static_type_t, "my.static_type_is_scalable");
+    v_add_overload(".is_generic",        v_static_type_t, "my.static_type_is_generic");
 
-//---------------------------------------------------------------------
-{   v_add_intrinsic("v_static_type_kind", static_type_kind_intrinsic, 0);
-
-//  v_add_intrinsic("v_typeof", v_typeof_intrinsic, 0);
+    v_add_intrinsic("my.static_type_is_void",           my_static_type_predicate_intrinsic, v_type_is_void);
+    v_add_intrinsic("my.static_type_is_floating_point", my_static_type_predicate_intrinsic, v_type_is_floating_point);
+    v_add_intrinsic("my.static_type_is_integer",        my_static_type_predicate_intrinsic, v_type_is_integer);
+    v_add_intrinsic("my.static_type_is_signed",         my_static_type_predicate_intrinsic, v_type_integer_is_signed);
+    v_add_intrinsic("my.static_type_is_function",       my_static_type_predicate_intrinsic, v_type_is_function);
+    v_add_intrinsic("my.static_type_is_var_arg",        my_static_type_predicate_intrinsic, v_type_function_is_var_arg);
+    v_add_intrinsic("my.static_type_is_pointer",        my_static_type_predicate_intrinsic, v_type_is_pointer);
+    v_add_intrinsic("my.static_type_is_reference",      my_static_type_predicate_intrinsic, v_type_is_reference);
+    v_add_intrinsic("my.static_type_is_struct",         my_static_type_predicate_intrinsic, v_type_is_struct);
+    v_add_intrinsic("my.static_type_is_opaque",         my_static_type_predicate_intrinsic, v_type_struct_is_opaque);
+    v_add_intrinsic("my.static_type_is_packed",         my_static_type_predicate_intrinsic, v_type_struct_is_packed);
+    v_add_intrinsic("my.static_type_is_array",          my_static_type_predicate_intrinsic, v_type_is_array);
+    v_add_intrinsic("my.static_type_is_vector",         my_static_type_predicate_intrinsic, v_type_is_vector);
+    v_add_intrinsic("my.static_type_is_scalable",       my_static_type_predicate_intrinsic, v_type_vector_is_scalable);
+    v_add_intrinsic("my.static_type_is_generic",        my_static_type_predicate_intrinsic, v_type_is_generic);
 }
 
-//---------------------------------------------------------------------
-{   v_add_constant("v_static_type_t", v_static_type_t, (v_static_type_t: LLVMValueRef));
-}
 
 //---------------------------------------------------------------------
-#define (_.is_void): (t: v_static_type_t) ~> bool  =  v_static_type_kind(t) == v_type_kind_void;
-
-#define (_.is_floating_point): (t: v_static_type_t) ~> bool  =
+my_static_arg_kind_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                               ) ~> void
 {
-    k = v_static_type_kind(t);
-
-    k == v_type_kind_f16  ||
-    k == v_type_kind_f32  ||
-    k == v_type_kind_f64  ||
-    k == v_type_kind_f128
-};
-
-#define (_.is_integer): (t: v_static_type_t) ~> bool  =
-{
-    k = v_static_type_kind(t);
-
-    k == v_type_kind_int  ||
-    k == v_type_kind_uint
-};
-
-#define (_.is_function): (t: v_static_type_t) ~> bool  =  v_static_type_kind(t) == v_type_kind_function;
-
-#define (_.is_pointer):   (t: v_static_type_t) ~> bool  =  v_static_type_kind(t) == v_type_kind_pointer;
-#define (_.is_reference): (t: v_static_type_t) ~> bool  =  v_static_type_kind(t) == v_type_kind_reference;
-
-#define (_.is_struct): (t: v_static_type_t) ~> bool  =  v_static_type_kind(t) == v_type_kind_struct;
-
-#define (_.is_array): (t: v_static_type_t) ~> bool  =  v_static_type_kind(t) == v_type_kind_array;
-
-#define (_.is_vector): (t: v_static_type_t) ~> bool  =
-{
-    k = v_static_type_kind(t);
-
-    k == v_type_kind_vector  ||
-    k == v_type_kind_svector
-};
-
-#define (_.is_generic): (t: v_static_type_t) ~> bool  =  v_static_type_kind(t) == v_type_kind_generic;
-
-
-//---------------------------------------------------------------------
-static_arg_kind_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
-{
-    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
-
-    garg = v_list_get_item(args, 0);
-
-    ttag = v_get_result_type();
-    vtag = v_get_result_value();
-
-    v_set_result_type(INVIOLABLE_TAG);
-    v_set_result_value(0);
-
-    v_ast_accept_visitor(garg, vis);
-
-    garg = (v_get_result_value() : *v_type_generic_arg_t);
+    garg = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_generic_arg_t);
 
     k = v_kind(garg);
 
     t = v_find_type("int");
     v = LLVMConstInt(v_type_get_llvm_type(t), k, 0);
-
-    v_set_result_type(ttag);
-    v_set_result_value(vtag);
 
     v_adopt_result(t, v);
 }
@@ -139,107 +108,75 @@ static_arg_kind_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~
 }
 
 //---------------------------------------------------------------------
-{   v_add_intrinsic("v_static_arg_kind", static_arg_kind_intrinsic, 0);
+{   v_add_overload(".kind", v_static_generic_arg_t, "my.static_arg_kind");
+
+    v_add_intrinsic("my.static_arg_kind", my_static_arg_kind_intrinsic, 0);
+}
+
+
+//---------------------------------------------------------------------
+my_static_arg_predicate_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                    arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                                   ) ~> void
+{
+    garg = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_generic_arg_t);
+
+    fun = (aux: *((*v_type_generic_arg_t) ~> bool));
+
+    v = fun(garg);
+
+    t = v_uint_type(1);
+    v = LLVMConstInt(v_type_get_llvm_type(t), v, 0);
+
+    v_adopt_result(t, v);
 }
 
 //---------------------------------------------------------------------
-#define (_.is_number): (a: v_static_generic_arg_t) ~> bool  =  v_static_arg_kind(a) == v_type_generic_arg_kind_number;
-#define (_.is_string): (a: v_static_generic_arg_t) ~> bool  =  v_static_arg_kind(a) == v_type_generic_arg_kind_string;
-#define (_.is_quark):  (a: v_static_generic_arg_t) ~> bool  =  v_static_arg_kind(a) == v_type_generic_arg_kind_quark;
-#define (_.is_type):   (a: v_static_generic_arg_t) ~> bool  =  v_static_arg_kind(a) == v_type_generic_arg_kind_type;
-#define (_.is_cons):   (a: v_static_generic_arg_t) ~> bool  =  v_static_arg_kind(a) == v_type_generic_arg_kind_cons;
+{   v_add_overload(".is_number", v_static_generic_arg_t, "my.static_arg_is_number");
+    v_add_overload(".is_string", v_static_generic_arg_t, "my.static_arg_is_string");
+    v_add_overload(".is_quark",  v_static_generic_arg_t, "my.static_arg_is_quark");
+    v_add_overload(".is_type",   v_static_generic_arg_t, "my.static_arg_is_type");
+    v_add_overload(".is_cons",   v_static_generic_arg_t, "my.static_arg_is_cons");
+
+    v_add_intrinsic("my.static_arg_is_number", my_static_arg_predicate_intrinsic, v_type_generic_arg_is_number);
+    v_add_intrinsic("my.static_arg_is_string", my_static_arg_predicate_intrinsic, v_type_generic_arg_is_string);
+    v_add_intrinsic("my.static_arg_is_quark",  my_static_arg_predicate_intrinsic, v_type_generic_arg_is_quark);
+    v_add_intrinsic("my.static_arg_is_type",   my_static_arg_predicate_intrinsic, v_type_generic_arg_is_type);
+    v_add_intrinsic("my.static_arg_is_cons",   my_static_arg_predicate_intrinsic, v_type_generic_arg_is_cons);
+}
 
 
 //---------------------------------------------------------------------
-static_type_width_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+my_static_type_width_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                 arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                                ) ~> void
 {
-    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
-
-    type = v_list_get_item(args, 0);
-
-    ttag = v_get_result_type();
-    vtag = v_get_result_value();
-
-    v_set_result_type(INVIOLABLE_TAG);
-    v_set_result_value(0);
-
-    v_ast_accept_visitor(type, vis);
-
-    type = (v_get_result_value() : *v_type_t);
+    type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
 
     w: &unsigned := 0;
 
     if (v_type_is_floating_point(type)) w := v_type_floating_point_get_width(type);
     if (v_type_is_integer(type))        w := v_type_integer_get_width(type);
 
-    v_assert(w);
-
     t = v_find_type("unsigned");
     v = LLVMConstInt(v_type_get_llvm_type(t), w, 0);
 
-    v_set_result_type(ttag);
-    v_set_result_value(vtag);
-
     v_adopt_result(t, v);
 }
 
 //---------------------------------------------------------------------
-{   v_add_intrinsic("v_static_type_width", static_type_width_intrinsic, 0);
+{   v_add_overload(".width", v_static_type_t, "my.static_type_width");
+
+    v_add_intrinsic("my.static_type_width", my_static_type_width_intrinsic, 0);
 }
 
-//---------------------------------------------------------------------
-#define (_.width): (t: v_static_type_t) ~> unsigned  =  v_static_type_width(t);
 
 //---------------------------------------------------------------------
-#define (_.is_signed):   (t: v_static_type_t) ~> bool  =  v_static_type_kind(t) == v_type_kind_int;
-#define (_.is_unsigned): (t: v_static_type_t) ~> bool  =  v_static_type_kind(t) == v_type_kind_uint;
-
-
-//---------------------------------------------------------------------
-static_function_type_is_var_arg_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+my_static_type_function_return_type_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                                arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                                               ) ~> void
 {
-    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
-
-    type = v_list_get_item(args, 0);
-
-    ttag = v_get_result_type();
-    vtag = v_get_result_value();
-
-    v_set_result_type(INVIOLABLE_TAG);
-    v_set_result_value(0);
-
-    v_ast_accept_visitor(type, vis);
-
-    type = (v_get_result_value() : *v_type_t);
-
-    v_assert(v_type_is_function(type));
-
-    v = v_type_function_is_var_arg(type);
-
-    t = v_uint_type(1);
-    v = LLVMConstInt(v_type_get_llvm_type(t), v, 0);
-
-    v_set_result_type(ttag);
-    v_set_result_value(vtag);
-
-    v_adopt_result(t, v);
-}
-
-//---------------------------------------------------------------------
-static_function_type_return_type_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
-{
-    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
-
-    type = v_list_get_item(args, 0);
-
-    v_set_result_type(INVIOLABLE_TAG);
-    v_set_result_value(0);
-
-    v_ast_accept_visitor(type, vis);
-
-    type = (v_get_result_value() : *v_type_t);
-
-    v_assert(v_type_is_function(type));
+    type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
 
     r = v_type_function_get_return_type(type);
 
@@ -248,64 +185,35 @@ static_function_type_return_type_intrinsic: (*void, vis: *voidc_visitor_t, self:
 }
 
 //---------------------------------------------------------------------
-static_function_type_param_count_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+my_static_type_function_param_count_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                                arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                                               ) ~> void
 {
-    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
-
-    type = v_list_get_item(args, 0);
-
-    ttag = v_get_result_type();
-    vtag = v_get_result_value();
-
-    v_set_result_type(INVIOLABLE_TAG);
-    v_set_result_value(0);
-
-    v_ast_accept_visitor(type, vis);
-
-    type = (v_get_result_value() : *v_type_t);
-
-    v_assert(v_type_is_function(type));
+    type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
 
     w = v_type_function_get_param_count(type);
 
     t = v_find_type("unsigned");
     v = LLVMConstInt(v_type_get_llvm_type(t), w, 0);
 
-    v_set_result_type(ttag);
-    v_set_result_value(vtag);
-
     v_adopt_result(t, v);
 }
 
 //---------------------------------------------------------------------
-static_function_type_param_type_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+my_static_type_function_param_type_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                               arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                                              ) ~> void
 {
-    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
-
-    type = v_list_get_item(args, 0);
-    idx  = v_list_get_item(args, 1);
-
-    v_set_result_type(INVIOLABLE_TAG);
-    v_set_result_value(0);
-
-    v_ast_accept_visitor(type, vis);
-
-    type = (v_get_result_value() : *v_type_t);
-
-    v_assert(v_type_is_function(type));
-
-    w = v_type_function_get_param_count(type);
+    type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
 
     v_set_result_type(v_find_type("unsigned"));
     v_set_result_value(0);
 
-    v_ast_accept_visitor(idx, vis);
+    v_ast_accept_visitor(arg_ptrs[1], vis);
 
     i = v_get_result_value();
 
     i = LLVMConstIntGetZExtValue(i);
-
-    v_assert(i < w);
 
     t = v_type_function_get_param_types(type)[i];
 
@@ -314,22 +222,161 @@ static_function_type_param_type_intrinsic: (*void, vis: *voidc_visitor_t, self: 
 }
 
 //---------------------------------------------------------------------
-{   v_add_intrinsic("v_static_function_type_is_var_arg",  static_function_type_is_var_arg_intrinsic,  0);
-    v_add_intrinsic("v_static_function_type_return_type", static_function_type_return_type_intrinsic, 0);
-    v_add_intrinsic("v_static_function_type_param_count", static_function_type_param_count_intrinsic, 0);
-    v_add_intrinsic("v_static_function_type_param_type",  static_function_type_param_type_intrinsic,  0);
+{   v_add_overload(".return_type",  v_static_type_t, "my.static_type_function_return_type");
+    v_add_overload(".param_count",  v_static_type_t, "my.static_type_function_param_count");
+    v_add_overload(".param_type()", v_static_type_t, "my.static_type_function_param_type");
+
+    v_add_intrinsic("my.static_type_function_return_type", my_static_type_function_return_type_intrinsic, 0);
+    v_add_intrinsic("my.static_type_function_param_count", my_static_type_function_param_count_intrinsic, 0);
+    v_add_intrinsic("my.static_type_function_param_type",  my_static_type_function_param_type_intrinsic,  0);
+}
+
+
+//---------------------------------------------------------------------
+my_static_type_refptr_element_type_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                               arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                                              ) ~> void
+{
+    type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
+
+    t: &*v_type_t := 0;
+
+    if (v_type_is_array(type))  t := v_type_array_get_element_type(type);
+    if (v_type_is_vector(type)) t := v_type_vector_get_element_type(type);
+    else                        t := v_type_refptr_get_element_type(type);      //- Sic !!!
+
+    v_set_result_type(v_static_type_t);
+    v_set_result_value((t: LLVMValueRef));
 }
 
 //---------------------------------------------------------------------
-#define (_.is_var_arg):  (t: v_static_type_t) ~> bool                          =  v_static_function_type_is_var_arg(t);
-#define (_.return_type): (t: v_static_type_t) ~> v_static_type_t               =  v_static_function_type_return_type(t);
-#define (_.param_count): (t: v_static_type_t) ~> unsigned                      =  v_static_function_type_param_count(t);
-#define (_.param_type):  (t: v_static_type_t, i: unsigned) ~> v_static_type_t  =  v_static_function_type_param_type(t, i);
+my_static_type_refptr_address_space_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                                arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                                               ) ~> void
+{
+    type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
+
+    w = v_type_refptr_get_address_space(type);
+
+    t = v_find_type("unsigned");
+    v = LLVMConstInt(v_type_get_llvm_type(t), w, 0);
+
+    v_adopt_result(t, v);
+}
+
+//---------------------------------------------------------------------
+{   v_add_overload(".element_type",  v_static_type_t, "my.static_type_refptr_element_type");
+    v_add_overload(".address_space", v_static_type_t, "my.static_type_refptr_address_space");
+
+    v_add_intrinsic("my.static_type_refptr_element_type",  my_static_type_refptr_element_type_intrinsic,  0);
+    v_add_intrinsic("my.static_type_refptr_address_space", my_static_type_refptr_address_space_intrinsic, 0);
+}
 
 
+//---------------------------------------------------------------------
+my_static_type_array_length_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                        arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                                       ) ~> void
+{
+    type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
+
+    l = v_type_array_get_length(type);
+
+    t = v_uint_type(64);
+    v = LLVMConstInt(v_type_get_llvm_type(t), l, 0);
+
+    v_adopt_result(t, v);
+}
+
+//---------------------------------------------------------------------
+my_static_type_vector_size_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                       arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                                      ) ~> void
+{
+    type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
+
+    s = v_type_vector_get_size(type);
+
+    t = v_find_type("unsigned");
+    v = LLVMConstInt(v_type_get_llvm_type(t), s, 0);
+
+    v_adopt_result(t, v);
+}
+
+//---------------------------------------------------------------------
+{   v_add_overload(".length", v_static_type_t, "my.static_type_array_length");
+    v_add_overload(".vsize",  v_static_type_t, "my.static_type_vector_size");
+
+    v_add_intrinsic("my.static_type_array_length", my_static_type_array_length_intrinsic, 0);
+    v_add_intrinsic("my.static_type_vector_size",  my_static_type_vector_size_intrinsic,  0);
+}
 
 
+//---------------------------------------------------------------------
+{   v_add_type("v_static_quark_t",  v_generic_type(v_quark_from_string("v_static_quark_t"),  0, 0));
+    v_add_type("v_static_string_t", v_generic_type(v_quark_from_string("v_static_string_t"), 0, 0));
+}
 
+
+//---------------------------------------------------------------------
+my_static_type_struct_name_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                       arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                                      ) ~> void
+{
+    type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
+
+    q = v_type_struct_get_name_q(type);
+
+    v_set_result_type(v_static_quark_t);
+    v_set_result_value((q: LLVMValueRef));
+}
+
+//---------------------------------------------------------------------
+my_static_type_struct_element_count_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                                arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                                               ) ~> void
+{
+    type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
+
+    n = v_type_struct_get_element_count(type);
+
+    t = v_find_type("unsigned");
+    v = LLVMConstInt(v_type_get_llvm_type(t), n, 0);
+
+    v_adopt_result(t, v);
+}
+
+//---------------------------------------------------------------------
+my_static_type_struct_element_type_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                               arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                                              ) ~> void
+{
+    type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
+
+    v_set_result_type(v_find_type("unsigned"));
+    v_set_result_value(0);
+
+    v_ast_accept_visitor(arg_ptrs[1], vis);
+
+    i = v_get_result_value();
+
+    i = LLVMConstIntGetZExtValue(i);
+
+    t = v_type_struct_get_element_types(type)[i];
+
+    v_set_result_type(v_static_type_t);
+    v_set_result_value((t: LLVMValueRef));
+}
+
+//---------------------------------------------------------------------
+{   v_add_overload(".name",           v_static_type_t, "my.static_type_struct_name");
+    v_add_overload(".element_count",  v_static_type_t, "my.static_type_struct_element_count");
+    v_add_overload(".element_type()", v_static_type_t, "my.static_type_struct_element_type");
+
+    v_add_intrinsic("my.static_type_struct_name",           my_static_type_struct_name_intrinsic,          0);
+    v_add_intrinsic("my.static_type_struct_element_count",  my_static_type_struct_element_count_intrinsic, 0);
+    v_add_intrinsic("my.static_type_struct_element_type",   my_static_type_struct_element_type_intrinsic,  0);
+}
 
 
 
@@ -380,10 +427,38 @@ static_function_type_param_type_intrinsic: (*void, vis: *voidc_visitor_t, self: 
     printf("aQQQ.is_string = %d\n", aQQQ.is_string);
     printf("aQQQ.is_quark  = %d\n", aQQQ.is_quark);
 
-    printf("v_static_arg_kind(a777) = %d\n", v_static_arg_kind(a777));
-    printf("v_static_arg_kind(aSSS) = %d\n", v_static_arg_kind(aSSS));
-    printf("v_static_arg_kind(aQQQ) = %d\n", v_static_arg_kind(aQQQ));
+    printf("a777.kind = %d\n", a777.kind);
+    printf("aSSS.kind = %d\n", aSSS.kind);
+    printf("aQQQ.kind = %d\n", aQQQ.kind);
 }
+
+
+//---------------------------------------------------------------------
+{   ft = (*const char, ...) ~> int;
+
+    printf("ft.is_var_arg  = %d\n", (ft.is_var_arg : int));
+    printf("ft.param_count = %u\n", ft.param_count);
+
+    printf("ft.param_type(0).is_pointer = %d\n", (ft.param_type(0).is_pointer : int));
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
