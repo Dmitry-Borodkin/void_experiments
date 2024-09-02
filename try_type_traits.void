@@ -12,6 +12,8 @@ printf: (*const char, ...) ~> int;
 
 
 //---------------------------------------------------------------------
+//- (_.kind): (v_static_type_t) ~> int;
+//---------------------------------------------------------------------
 my_static_type_kind_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
                                 arg_ptrs: **v_ast_expr_t, arg_count: unsigned
                                ) ~> void
@@ -38,6 +40,89 @@ my_static_type_kind_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_
 
 
 //---------------------------------------------------------------------
+static_types_table: &(*const char)[][2] :=
+{
+    { "", "" },                     //- Sic!
+    { "_void", "" },
+    { "_floating_point", "" },
+        { "_f16",  "_floating_point" },
+        { "_f32",  "_floating_point" },
+        { "_f64",  "_floating_point" },
+        { "_f128", "_floating_point" },
+    { "_integer", "" },
+        { "_int",  "_integer" },
+        { "_uint", "_integer" },
+    { "_function", "" },
+    { "_refptr", "" },
+        { "_pointer",   "_refptr" },
+        { "_reference", "_refptr" },
+    { "_struct", "" },
+    { "_array", "" },
+    { "_vector_base", "" },
+        { "_vector",  "_vector_base" },
+        { "_svector", "_vector_base" },
+    { "_generic", "" },
+};
+
+//---------------------------------------------------------------------
+{
+    t = v_find_symbol_type("static_types_table");
+
+    t = v_type_refptr_get_element_type(t);
+
+    N = v_type_array_get_length(t);
+
+    quarks = new v_quark_t[N];      defer delete[] quarks;
+    types  = new (*v_type_t)[N];    defer delete[] types;
+
+    sstr: &v_std_string_t := {};
+
+    for (i: &int := 0; i < N; ++i)
+    {
+        for (j: &int := 0; j < 2; ++j)
+        {
+            if (i == 0  &&  j == 1) v_continue();           //- Sic!
+
+            v_std_string_set(&sstr, "v_static_type");
+
+            v_std_string_append(&sstr, static_types_table[i][j]);
+            v_std_string_append(&sstr, "_t");
+
+            qname = v_quark_from_string(v_std_string_get(&sstr));
+
+            type = v_generic_type(qname, 0, 0);
+
+            v_std_string_set(&sstr, "v.convert_to_static_type");
+
+            v_std_string_append(&sstr, static_types_table[i][j]);
+            v_std_string_append(&sstr, "_t");
+
+            quark = v_quark_from_string(v_std_string_get(&sstr));
+
+            if (j == 0)             //- Derived
+            {
+                types[i] := type;
+
+                if (i != 0) v_add_type_q(qname, type);
+
+                quarks[i] := quark;
+
+                v_add_intrinsic_q(quark, voidc_trivial_coercion_intrinsic, type);
+            }
+            else    //- j == 1        - Base
+            {
+                v_assert(i != 0);
+
+                v_add_coercion(v_coe_projective, quark, quarks[i], types[i], type);
+
+//printf("coe: %s - %s\n", v_quark_to_string(quark), v_quark_to_string(quarks[i]));
+            }
+        }
+    }
+}
+
+
+//---------------------------------------------------------------------
 my_static_type_predicate_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t,
                                      arg_ptrs: **v_ast_expr_t, arg_count: unsigned
                                     ) ~> void
@@ -54,38 +139,86 @@ my_static_type_predicate_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v
     v_adopt_result(t, v);
 }
 
-{   v_add_overload(".is_void",           v_static_type_t, "my.static_type_is_void");
-    v_add_overload(".is_floating_point", v_static_type_t, "my.static_type_is_floating_point");
-    v_add_overload(".is_integer",        v_static_type_t, "my.static_type_is_integer");
-    v_add_overload(".is_signed",         v_static_type_t, "my.static_type_is_signed");
-    v_add_overload(".is_function",       v_static_type_t, "my.static_type_is_function");
-    v_add_overload(".is_var_arg",        v_static_type_t, "my.static_type_is_var_arg");
-    v_add_overload(".is_pointer",        v_static_type_t, "my.static_type_is_pointer");
-    v_add_overload(".is_reference",      v_static_type_t, "my.static_type_is_reference");
-    v_add_overload(".is_struct",         v_static_type_t, "my.static_type_is_struct");
-    v_add_overload(".is_opaque",         v_static_type_t, "my.static_type_is_opaque");
-    v_add_overload(".is_packed",         v_static_type_t, "my.static_type_is_packed");
-    v_add_overload(".is_array",          v_static_type_t, "my.static_type_is_array");
-    v_add_overload(".is_vector",         v_static_type_t, "my.static_type_is_vector");
-    v_add_overload(".is_scalable",       v_static_type_t, "my.static_type_is_scalable");
-    v_add_overload(".is_generic",        v_static_type_t, "my.static_type_is_generic");
+{   v_add_overload(".is_void",           v_static_type_t,             "my.static_type_is_void");
+    v_add_overload(".is_floating_point", v_static_type_t,             "my.static_type_is_floating_point");
+    v_add_overload(".is_integer",        v_static_type_t,             "my.static_type_is_integer");
+    v_add_overload(".is_signed",         v_static_type_integer_t,     "my.static_type_is_signed");
+    v_add_overload(".is_function",       v_static_type_t,             "my.static_type_is_function");
+    v_add_overload(".is_var_arg",        v_static_type_function_t,    "my.static_type_is_var_arg");
+    v_add_overload(".is_pointer",        v_static_type_refptr_t,      "my.static_type_is_pointer");
+    v_add_overload(".is_reference",      v_static_type_refptr_t,      "my.static_type_is_reference");
+    v_add_overload(".is_struct",         v_static_type_t,             "my.static_type_is_struct");
+    v_add_overload(".is_opaque",         v_static_type_struct_t,      "my.static_type_is_opaque");
+    v_add_overload(".is_packed",         v_static_type_struct_t,      "my.static_type_is_packed");
+    v_add_overload(".is_array",          v_static_type_t,             "my.static_type_is_array");
+    v_add_overload(".is_vector",         v_static_type_t,             "my.static_type_is_vector");
+    v_add_overload(".is_scalable",       v_static_type_vector_base_t, "my.static_type_is_scalable");
+    v_add_overload(".is_generic",        v_static_type_t,             "my.static_type_is_generic");
 
-    v_add_intrinsic("my.static_type_is_void",           my_static_type_predicate_intrinsic, v_type_is_void);
-    v_add_intrinsic("my.static_type_is_floating_point", my_static_type_predicate_intrinsic, v_type_is_floating_point);
-    v_add_intrinsic("my.static_type_is_integer",        my_static_type_predicate_intrinsic, v_type_is_integer);
-    v_add_intrinsic("my.static_type_is_signed",         my_static_type_predicate_intrinsic, v_type_integer_is_signed);
-    v_add_intrinsic("my.static_type_is_function",       my_static_type_predicate_intrinsic, v_type_is_function);
-    v_add_intrinsic("my.static_type_is_var_arg",        my_static_type_predicate_intrinsic, v_type_function_is_var_arg);
-    v_add_intrinsic("my.static_type_is_pointer",        my_static_type_predicate_intrinsic, v_type_is_pointer);
-    v_add_intrinsic("my.static_type_is_reference",      my_static_type_predicate_intrinsic, v_type_is_reference);
-    v_add_intrinsic("my.static_type_is_struct",         my_static_type_predicate_intrinsic, v_type_is_struct);
-    v_add_intrinsic("my.static_type_is_opaque",         my_static_type_predicate_intrinsic, v_type_struct_is_opaque);
-    v_add_intrinsic("my.static_type_is_packed",         my_static_type_predicate_intrinsic, v_type_struct_is_packed);
-    v_add_intrinsic("my.static_type_is_array",          my_static_type_predicate_intrinsic, v_type_is_array);
-    v_add_intrinsic("my.static_type_is_vector",         my_static_type_predicate_intrinsic, v_type_is_vector);
-    v_add_intrinsic("my.static_type_is_scalable",       my_static_type_predicate_intrinsic, v_type_vector_is_scalable);
-    v_add_intrinsic("my.static_type_is_generic",        my_static_type_predicate_intrinsic, v_type_is_generic);
+    f = my_static_type_predicate_intrinsic;
+
+    v_add_intrinsic("my.static_type_is_void",           f, v_type_is_void);
+    v_add_intrinsic("my.static_type_is_floating_point", f, v_type_is_floating_point);
+    v_add_intrinsic("my.static_type_is_integer",        f, v_type_is_integer);
+    v_add_intrinsic("my.static_type_is_signed",         f, v_type_integer_is_signed);
+    v_add_intrinsic("my.static_type_is_function",       f, v_type_is_function);
+    v_add_intrinsic("my.static_type_is_var_arg",        f, v_type_function_is_var_arg);
+    v_add_intrinsic("my.static_type_is_pointer",        f, v_type_is_pointer);
+    v_add_intrinsic("my.static_type_is_reference",      f, v_type_is_reference);
+    v_add_intrinsic("my.static_type_is_struct",         f, v_type_is_struct);
+    v_add_intrinsic("my.static_type_is_opaque",         f, v_type_struct_is_opaque);
+    v_add_intrinsic("my.static_type_is_packed",         f, v_type_struct_is_packed);
+    v_add_intrinsic("my.static_type_is_array",          f, v_type_is_array);
+    v_add_intrinsic("my.static_type_is_vector",         f, v_type_is_vector);
+    v_add_intrinsic("my.static_type_is_scalable",       f, v_type_vector_is_scalable);
+    v_add_intrinsic("my.static_type_is_generic",        f, v_type_is_generic);
 }
+
+
+//---------------------------------------------------------------------
+#define (_.is_refptr): (t: v_static_type_t) ~> bool  =  t.kind == v_type_kind_pointer  ||  t.kind == v_type_kind_reference;
+
+//---------------------------------------------------------------------
+#define (_.as_void):           (t: v_static_type_t) ~> v_static_type_void_t            =  (t: v_static_type_void_t);
+#define (_.as_floating_point): (t: v_static_type_t) ~> v_static_type_floating_point_t  =  (t: v_static_type_floating_point_t);
+
+#define (_.as_f16):  (t: v_static_type_floating_point_t) ~> v_static_type_f16_t   =  (t: v_static_type_f16_t);
+#define (_.as_f16):  (t: v_static_type_t)                ~> v_static_type_f16_t   =  (t: v_static_type_f16_t);
+#define (_.as_f32):  (t: v_static_type_floating_point_t) ~> v_static_type_f32_t   =  (t: v_static_type_f32_t);
+#define (_.as_f32):  (t: v_static_type_t)                ~> v_static_type_f32_t   =  (t: v_static_type_f32_t);
+#define (_.as_f64):  (t: v_static_type_floating_point_t) ~> v_static_type_f64_t   =  (t: v_static_type_f64_t);
+#define (_.as_f64):  (t: v_static_type_t)                ~> v_static_type_f64_t   =  (t: v_static_type_f64_t);
+#define (_.as_f128): (t: v_static_type_floating_point_t) ~> v_static_type_f128_t  =  (t: v_static_type_f128_t);
+#define (_.as_f128): (t: v_static_type_t)                ~> v_static_type_f128_t  =  (t: v_static_type_f128_t);
+
+#define (_.as_integer): (t: v_static_type_t) ~> v_static_type_integer_t  =  (t: v_static_type_integer_t);
+
+#define (_.as_int):  (t: v_static_type_integer_t) ~> v_static_type_int_t   =  (t: v_static_type_int_t);
+#define (_.as_int):  (t: v_static_type_t)         ~> v_static_type_int_t   =  (t: v_static_type_int_t);
+#define (_.as_uint): (t: v_static_type_integer_t) ~> v_static_type_uint_t  =  (t: v_static_type_uint_t);
+#define (_.as_uint): (t: v_static_type_t)         ~> v_static_type_uint_t  =  (t: v_static_type_uint_t);
+
+#define (_.as_function): (t: v_static_type_t) ~> v_static_type_function_t  =  (t: v_static_type_function_t);
+
+#define (_.as_refptr): (t: v_static_type_t) ~> v_static_type_refptr_t  =  (t: v_static_type_refptr_t);
+
+#define (_.as_pointer):   (t: v_static_type_refptr_t) ~> v_static_type_pointer_t    =  (t: v_static_type_pointer_t);
+#define (_.as_pointer):   (t: v_static_type_t)        ~> v_static_type_pointer_t    =  (t: v_static_type_pointer_t);
+#define (_.as_reference): (t: v_static_type_refptr_t) ~> v_static_type_reference_t  =  (t: v_static_type_reference_t);
+#define (_.as_reference): (t: v_static_type_t)        ~> v_static_type_reference_t  =  (t: v_static_type_reference_t);
+
+#define (_.as_struct): (t: v_static_type_t) ~> v_static_type_struct_t  =  (t: v_static_type_struct_t);
+
+#define (_.as_array): (t: v_static_type_t) ~> v_static_type_array_t  =  (t: v_static_type_array_t);
+
+#define (_.as_vector_base): (t: v_static_type_t) ~> v_static_type_vector_base_t  =  (t: v_static_type_vector_base_t);
+
+#define (_.as_vector):  (t: v_static_type_vector_base_t) ~> v_static_type_vector_t   =  (t: v_static_type_vector_t);
+#define (_.as_vector):  (t: v_static_type_t)             ~> v_static_type_vector_t   =  (t: v_static_type_vector_t);
+#define (_.as_svector): (t: v_static_type_vector_base_t) ~> v_static_type_svector_t  =  (t: v_static_type_svector_t);
+#define (_.as_svector): (t: v_static_type_t)             ~> v_static_type_svector_t  =  (t: v_static_type_svector_t);
+
+#define (_.as_generic): (t: v_static_type_t) ~> v_static_type_generic_t  =  (t: v_static_type_generic_t);
 
 
 //---------------------------------------------------------------------
@@ -115,6 +248,75 @@ my_static_arg_kind_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t
 
 
 //---------------------------------------------------------------------
+static_generic_args_table: &(*const char)[][2] :=
+{
+    { "", "" },                     //- Sic!
+    { "_number", "" },
+    { "_string", "" },
+    { "_quark", "" },
+    { "_type", "" },
+    { "_cons", "" },
+};
+
+//---------------------------------------------------------------------
+{
+    t = v_find_symbol_type("static_generic_args_table");
+
+    t = v_type_refptr_get_element_type(t);
+
+    N = v_type_array_get_length(t);
+
+    quarks = new v_quark_t[N];      defer delete[] quarks;
+    types  = new (*v_type_t)[N];    defer delete[] types;
+
+    sstr: &v_std_string_t := {};
+
+    for (i: &int := 0; i < N; ++i)
+    {
+        for (j: &int := 0; j < 2; ++j)
+        {
+            if (i == 0  &&  j == 1) v_continue();           //- Sic!
+
+            v_std_string_set(&sstr, "v_static_generic_arg");
+
+            v_std_string_append(&sstr, static_generic_args_table[i][j]);
+            v_std_string_append(&sstr, "_t");
+
+            qname = v_quark_from_string(v_std_string_get(&sstr));
+
+            type = v_generic_type(qname, 0, 0);
+
+            v_std_string_set(&sstr, "v.convert_to_static_generic_arg");
+
+            v_std_string_append(&sstr, static_generic_args_table[i][j]);
+            v_std_string_append(&sstr, "_t");
+
+            quark = v_quark_from_string(v_std_string_get(&sstr));
+
+            if (j == 0)             //- Derived
+            {
+                types[i] := type;
+
+                if (i != 0) v_add_type_q(qname, type);
+
+                quarks[i] := quark;
+
+                v_add_intrinsic_q(quark, voidc_trivial_coercion_intrinsic, type);
+            }
+            else    //- j == 1        - Base
+            {
+                v_assert(i != 0);
+
+                v_add_coercion(v_coe_projective, quark, quarks[i], types[i], type);
+
+//printf("coe: %s - %s\n", v_quark_to_string(quark), v_quark_to_string(quarks[i]));
+            }
+        }
+    }
+}
+
+
+//---------------------------------------------------------------------
 my_static_arg_predicate_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t,
                                     arg_ptrs: **v_ast_expr_t, arg_count: unsigned
                                    ) ~> void
@@ -138,25 +340,34 @@ my_static_arg_predicate_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_
     v_add_overload(".is_type",   v_static_generic_arg_t, "my.static_arg_is_type");
     v_add_overload(".is_cons",   v_static_generic_arg_t, "my.static_arg_is_cons");
 
-    v_add_intrinsic("my.static_arg_is_number", my_static_arg_predicate_intrinsic, v_type_generic_arg_is_number);
-    v_add_intrinsic("my.static_arg_is_string", my_static_arg_predicate_intrinsic, v_type_generic_arg_is_string);
-    v_add_intrinsic("my.static_arg_is_quark",  my_static_arg_predicate_intrinsic, v_type_generic_arg_is_quark);
-    v_add_intrinsic("my.static_arg_is_type",   my_static_arg_predicate_intrinsic, v_type_generic_arg_is_type);
-    v_add_intrinsic("my.static_arg_is_cons",   my_static_arg_predicate_intrinsic, v_type_generic_arg_is_cons);
+    f = my_static_arg_predicate_intrinsic;
+
+    v_add_intrinsic("my.static_arg_is_number", f, v_type_generic_arg_is_number);
+    v_add_intrinsic("my.static_arg_is_string", f, v_type_generic_arg_is_string);
+    v_add_intrinsic("my.static_arg_is_quark",  f, v_type_generic_arg_is_quark);
+    v_add_intrinsic("my.static_arg_is_type",   f, v_type_generic_arg_is_type);
+    v_add_intrinsic("my.static_arg_is_cons",   f, v_type_generic_arg_is_cons);
 }
 
 
 //---------------------------------------------------------------------
-my_static_type_width_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
-                                 arg_ptrs: **v_ast_expr_t, arg_count: unsigned
-                                ) ~> void
+#define (_.as_number): (t: v_static_generic_arg_t) ~> v_static_generic_arg_number_t  =  (t: v_static_generic_arg_number_t);
+#define (_.as_string): (t: v_static_generic_arg_t) ~> v_static_generic_arg_string_t  =  (t: v_static_generic_arg_string_t);
+#define (_.as_quark):  (t: v_static_generic_arg_t) ~> v_static_generic_arg_quark_t   =  (t: v_static_generic_arg_quark_t);
+#define (_.as_type):   (t: v_static_generic_arg_t) ~> v_static_generic_arg_type_t    =  (t: v_static_generic_arg_type_t);
+#define (_.as_cons):   (t: v_static_generic_arg_t) ~> v_static_generic_arg_cons_t    =  (t: v_static_generic_arg_cons_t);
+
+
+//---------------------------------------------------------------------
+my_static_type_get_unsigned_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                        arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                                       ) ~> void
 {
     type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
 
-    w: &unsigned := 0;
+    fun = (aux: *((*v_type_t) ~> unsigned));
 
-    if (v_type_is_floating_point(type)) w := v_type_floating_point_get_width(type);
-    if (v_type_is_integer(type))        w := v_type_integer_get_width(type);
+    w = fun(type);
 
     t = v_find_type("unsigned");
     v = LLVMConstInt(v_type_get_llvm_type(t), w, 0);
@@ -165,46 +376,94 @@ my_static_type_width_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base
 }
 
 //---------------------------------------------------------------------
-{   v_add_overload(".width", v_static_type_t, "my.static_type_width");
+{   v_add_overload(".width",         v_static_type_floating_point_t, "my.static_type_floating_point_width");
+    v_add_overload(".width",         v_static_type_integer_t,        "my.static_type_integer_width");
+    v_add_overload(".param_count",   v_static_type_function_t,       "my.static_type_function_param_count");
+    v_add_overload(".address_space", v_static_type_refptr_t,         "my.static_type_refptr_address_space");
+    v_add_overload(".vsize",         v_static_type_vector_base_t,    "my.static_type_vector_size");
+    v_add_overload(".element_count", v_static_type_struct_t,         "my.static_type_struct_element_count");
+    v_add_overload(".arg_count",     v_static_type_generic_t,        "my.static_type_generic_arg_count");
 
-    v_add_intrinsic("my.static_type_width", my_static_type_width_intrinsic, 0);
+    f = my_static_type_get_unsigned_intrinsic;
+
+    v_add_intrinsic("my.static_type_floating_point_width", f, v_type_floating_point_get_width);
+    v_add_intrinsic("my.static_type_integer_width",        f, v_type_integer_get_width);
+    v_add_intrinsic("my.static_type_function_param_count", f, v_type_function_get_param_count);
+    v_add_intrinsic("my.static_type_refptr_address_space", f, v_type_refptr_get_address_space);
+    v_add_intrinsic("my.static_type_vector_size",          f, v_type_vector_get_size);
+    v_add_intrinsic("my.static_type_struct_element_count", f, v_type_struct_get_element_count);
+    v_add_intrinsic("my.static_type_generic_arg_count",    f, v_type_generic_get_arg_count);
 }
 
 
 //---------------------------------------------------------------------
-my_static_type_function_return_type_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
-                                                arg_ptrs: **v_ast_expr_t, arg_count: unsigned
-                                               ) ~> void
+my_static_type_get_type_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                    arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                                   ) ~> void
 {
     type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
 
-    r = v_type_function_get_return_type(type);
+    fun = (aux: *((*v_type_t) ~> *v_type_t));
+
+    t = fun(type);
 
     v_set_result_type(v_static_type_t);
-    v_set_result_value((r: LLVMValueRef));
+    v_set_result_value((t: LLVMValueRef));
 }
 
 //---------------------------------------------------------------------
-my_static_type_function_param_count_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
-                                                arg_ptrs: **v_ast_expr_t, arg_count: unsigned
-                                               ) ~> void
-{
-    type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
+{   v_add_overload(".return_type",   v_static_type_function_t,       "my.static_type_function_return_type");
+    v_add_overload(".element_type",  v_static_type_refptr_t,         "my.static_type_refptr_element_type");
+    v_add_overload(".element_type",  v_static_type_array_t,          "my.static_type_array_element_type");
+    v_add_overload(".element_type",  v_static_type_vector_base_t,    "my.static_type_vector_element_type");
+    v_add_overload(".scalar_type",   v_static_type_t,                "my.static_type_scalar_tyype");
 
-    w = v_type_function_get_param_count(type);
+    f = my_static_type_get_type_intrinsic;
 
-    t = v_find_type("unsigned");
-    v = LLVMConstInt(v_type_get_llvm_type(t), w, 0);
+    v_add_intrinsic("my.static_type_function_return_type", f, v_type_function_get_return_type);
+    v_add_intrinsic("my.static_type_refptr_element_type",  f, v_type_refptr_get_element_type);
+    v_add_intrinsic("my.static_type_array_element_type",   f, v_type_array_get_element_type);
+    v_add_intrinsic("my.static_type_vector_element_type",  f, v_type_vector_get_element_type);
+    v_add_intrinsic("my.static_type_scalar_type",          f, v_type_get_scalar_type);
+}
 
-    v_adopt_result(t, v);
+
+//---------------------------------------------------------------------
+{   v_add_type("v_static_array_of_types_t", v_generic_type(v_quark_from_string("v_static_array_of_types_t"), 0, 0));
 }
 
 //---------------------------------------------------------------------
-my_static_type_function_param_type_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
-                                               arg_ptrs: **v_ast_expr_t, arg_count: unsigned
-                                              ) ~> void
+my_static_type_get_types_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                     arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                                    ) ~> void
 {
     type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
+
+    fun = (aux: *((*v_type_t) ~> **v_type_t));
+
+    ts = fun(type);
+
+    v_set_result_type(v_static_array_of_types_t);
+    v_set_result_value((ts: LLVMValueRef));
+}
+
+//---------------------------------------------------------------------
+{   v_add_overload(".param_types",   v_static_type_function_t, "my.static_type_function_param_types");
+    v_add_overload(".element_types", v_static_type_struct_t,   "my.static_type_struct_element_types");
+
+    f = my_static_type_get_types_intrinsic;
+
+    v_add_intrinsic("my.static_type_function_param_types", f, v_type_function_get_param_types);
+    v_add_intrinsic("my.static_type_struct_element_types", f, v_type_struct_get_element_types);
+}
+
+
+//---------------------------------------------------------------------
+my_static_array_of_types_index_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                           arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                                          ) ~> void
+{
+    types = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : **v_type_t);
 
     v_set_result_type(v_find_type("unsigned"));
     v_set_result_value(0);
@@ -215,78 +474,17 @@ my_static_type_function_param_type_intrinsic: (*void, vis: *voidc_visitor_t, sel
 
     i = LLVMConstIntGetZExtValue(i);
 
-    t = v_type_function_get_param_types(type)[i];
+    t = types[i];
 
     v_set_result_type(v_static_type_t);
     v_set_result_value((t: LLVMValueRef));
 }
 
 //---------------------------------------------------------------------
-{   v_add_overload(".return_type",  v_static_type_t, "my.static_type_function_return_type");
-    v_add_overload(".param_count",  v_static_type_t, "my.static_type_function_param_count");
-    v_add_overload(".param_type()", v_static_type_t, "my.static_type_function_param_type");
+{   v_add_overload("v.op_postfix_index", v_static_array_of_types_t, "my.static_array_of_types_index");
 
-    v_add_intrinsic("my.static_type_function_return_type", my_static_type_function_return_type_intrinsic, 0);
-    v_add_intrinsic("my.static_type_function_param_count", my_static_type_function_param_count_intrinsic, 0);
-    v_add_intrinsic("my.static_type_function_param_type",  my_static_type_function_param_type_intrinsic,  0);
+    v_add_intrinsic("my.static_array_of_types_index", my_static_array_of_types_index_intrinsic,  0);
 }
-
-
-//---------------------------------------------------------------------
-my_static_type_element_type_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
-                                        arg_ptrs: **v_ast_expr_t, arg_count: unsigned
-                                       ) ~> void
-{
-    type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
-
-    t: &*v_type_t := 0;
-
-    if (v_type_is_array(type))  t := v_type_array_get_element_type(type);
-    if (v_type_is_vector(type)) t := v_type_vector_get_element_type(type);
-    else                        t := v_type_refptr_get_element_type(type);      //- Sic !!!
-
-    v_set_result_type(v_static_type_t);
-    v_set_result_value((t: LLVMValueRef));
-}
-
-//---------------------------------------------------------------------
-my_static_type_address_space_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
-                                         arg_ptrs: **v_ast_expr_t, arg_count: unsigned
-                                        ) ~> void
-{
-    type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
-
-    w = v_type_refptr_get_address_space(type);
-
-    t = v_find_type("unsigned");
-    v = LLVMConstInt(v_type_get_llvm_type(t), w, 0);
-
-    v_adopt_result(t, v);
-}
-
-//---------------------------------------------------------------------
-my_static_type_scalar_type_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
-                                       arg_ptrs: **v_ast_expr_t, arg_count: unsigned
-                                      ) ~> void
-{
-    type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
-
-    t = v_type_get_scalar_type(type);
-
-    v_set_result_type(v_static_type_t);
-    v_set_result_value((t: LLVMValueRef));
-}
-
-//---------------------------------------------------------------------
-{   v_add_overload(".element_type",  v_static_type_t, "my.static_type_element_type");
-    v_add_overload(".address_space", v_static_type_t, "my.static_type_address_space");
-    v_add_overload(".scalar_type",   v_static_type_t, "my.static_type_scalar_type");
-
-    v_add_intrinsic("my.static_type_element_type",  my_static_type_element_type_intrinsic,  0);
-    v_add_intrinsic("my.static_type_address_space", my_static_type_address_space_intrinsic, 0);
-    v_add_intrinsic("my.static_type_scalar_type",   my_static_type_scalar_type_intrinsic,   0);
-}
-
 
 //---------------------------------------------------------------------
 my_static_type_array_length_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
@@ -304,26 +502,9 @@ my_static_type_array_length_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_a
 }
 
 //---------------------------------------------------------------------
-my_static_type_vector_size_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
-                                       arg_ptrs: **v_ast_expr_t, arg_count: unsigned
-                                      ) ~> void
-{
-    type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
-
-    s = v_type_vector_get_size(type);
-
-    t = v_find_type("unsigned");
-    v = LLVMConstInt(v_type_get_llvm_type(t), s, 0);
-
-    v_adopt_result(t, v);
-}
-
-//---------------------------------------------------------------------
-{   v_add_overload(".length", v_static_type_t, "my.static_type_array_length");
-    v_add_overload(".vsize",  v_static_type_t, "my.static_type_vector_size");
+{   v_add_overload(".length", v_static_type_array_t, "my.static_type_array_length");
 
     v_add_intrinsic("my.static_type_array_length", my_static_type_array_length_intrinsic, 0);
-    v_add_intrinsic("my.static_type_vector_size",  my_static_type_vector_size_intrinsic,  0);
 }
 
 
@@ -334,100 +515,63 @@ my_static_type_vector_size_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_as
 
 
 //---------------------------------------------------------------------
-my_static_type_struct_name_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
-                                       arg_ptrs: **v_ast_expr_t, arg_count: unsigned
-                                      ) ~> void
+my_static_type_get_quark_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                     arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                                    ) ~> void
 {
     type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
 
-    q = v_type_struct_get_name_q(type);
+    fun = (aux: *((*v_type_t) ~> v_quark_t));
+
+    q = fun(type);
 
     v_set_result_type(v_static_quark_t);
     v_set_result_value((q: LLVMValueRef));
 }
 
 //---------------------------------------------------------------------
-my_static_type_struct_element_count_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
-                                                arg_ptrs: **v_ast_expr_t, arg_count: unsigned
-                                               ) ~> void
-{
-    type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
+{   v_add_overload(".name", v_static_type_struct_t,  "my.static_type_struct_name");
+    v_add_overload(".cons", v_static_type_generic_t, "my.static_type_generic_cons");
 
-    n = v_type_struct_get_element_count(type);
+    f = my_static_type_get_quark_intrinsic;
 
-    t = v_find_type("unsigned");
-    v = LLVMConstInt(v_type_get_llvm_type(t), n, 0);
-
-    v_adopt_result(t, v);
-}
-
-//---------------------------------------------------------------------
-my_static_type_struct_element_type_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
-                                               arg_ptrs: **v_ast_expr_t, arg_count: unsigned
-                                              ) ~> void
-{
-    type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
-
-    v_set_result_type(v_find_type("unsigned"));
-    v_set_result_value(0);
-
-    v_ast_accept_visitor(arg_ptrs[1], vis);
-
-    i = v_get_result_value();
-
-    i = LLVMConstIntGetZExtValue(i);
-
-    t = v_type_struct_get_element_types(type)[i];
-
-    v_set_result_type(v_static_type_t);
-    v_set_result_value((t: LLVMValueRef));
-}
-
-//---------------------------------------------------------------------
-{   v_add_overload(".name",           v_static_type_t, "my.static_type_struct_name");
-    v_add_overload(".element_count",  v_static_type_t, "my.static_type_struct_element_count");
-    v_add_overload(".element_type()", v_static_type_t, "my.static_type_struct_element_type");
-
-    v_add_intrinsic("my.static_type_struct_name",           my_static_type_struct_name_intrinsic,          0);
-    v_add_intrinsic("my.static_type_struct_element_count",  my_static_type_struct_element_count_intrinsic, 0);
-    v_add_intrinsic("my.static_type_struct_element_type",   my_static_type_struct_element_type_intrinsic,  0);
+    v_add_intrinsic("my.static_type_struct_name",  f, v_type_struct_get_name_q);
+    v_add_intrinsic("my.static_type_generic_cons", f, v_type_generic_get_cons);
 }
 
 
 //---------------------------------------------------------------------
-my_static_type_generic_cons_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+{   name = "v_static_array_of_generic_args_t";
+
+    v_add_type(name, v_generic_type(v_quark_from_string(name), 0, 0));
+}
+
+//---------------------------------------------------------------------
+my_static_type_generic_args_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
                                         arg_ptrs: **v_ast_expr_t, arg_count: unsigned
                                        ) ~> void
 {
     type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
 
-    q = v_type_generic_get_cons(type);
+    args = v_type_generic_get_args(type);
 
-    v_set_result_type(v_static_quark_t);
-    v_set_result_value((q: LLVMValueRef));
+    v_set_result_type(v_static_array_of_generic_args_t);
+    v_set_result_value((args: LLVMValueRef));
 }
 
 //---------------------------------------------------------------------
-my_static_type_generic_arg_count_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
-                                             arg_ptrs: **v_ast_expr_t, arg_count: unsigned
-                                            ) ~> void
-{
-    type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
+{   v_add_overload(".args", v_static_type_generic_t, "my.static_type_generic_args");
 
-    n = v_type_generic_get_arg_count(type);
-
-    t = v_find_type("unsigned");
-    v = LLVMConstInt(v_type_get_llvm_type(t), n, 0);
-
-    v_adopt_result(t, v);
+    v_add_intrinsic("my.static_type_generic_args", my_static_type_generic_args_intrinsic, 0);
 }
 
+
 //---------------------------------------------------------------------
-my_static_type_generic_arg_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
-                                       arg_ptrs: **v_ast_expr_t, arg_count: unsigned
-                                      ) ~> void
+my_static_array_of_generic_args_index_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                                  arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                                                 ) ~> void
 {
-    type = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_t);
+    args = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : **v_type_generic_arg_t);
 
     v_set_result_type(v_find_type("unsigned"));
     v_set_result_value(0);
@@ -438,20 +582,16 @@ my_static_type_generic_arg_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_as
 
     i = LLVMConstIntGetZExtValue(i);
 
-    a = v_type_generic_get_args(type)[i];
+    a = args[i];
 
     v_set_result_type(v_static_generic_arg_t);
     v_set_result_value((a: LLVMValueRef));
 }
 
 //---------------------------------------------------------------------
-{   v_add_overload(".cons",      v_static_type_t, "my.static_type_generic_cons");
-    v_add_overload(".arg_count", v_static_type_t, "my.static_type_generic_arg_count");
-    v_add_overload(".arg()",     v_static_type_t, "my.static_type_generic_arg");
+{   v_add_overload("v.op_postfix_index", v_static_array_of_generic_args_t, "my.static_array_of_genereic_args_index");
 
-    v_add_intrinsic("my.static_type_generic_cons",      my_static_type_generic_cons_intrinsic,      0);
-    v_add_intrinsic("my.static_type_generic_arg_count", my_static_type_generic_arg_count_intrinsic, 0);
-    v_add_intrinsic("my.static_type_generic_arg",       my_static_type_generic_arg_intrinsic,       0);
+    v_add_intrinsic("my.static_array_of_generic_args_index", my_static_array_of_generic_args_index_intrinsic,  0);
 }
 
 
@@ -538,11 +678,43 @@ my_static_generic_arg_count_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_a
 }
 
 //---------------------------------------------------------------------
-my_static_generic_arg_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
-                                  arg_ptrs: **v_ast_expr_t, arg_count: unsigned
-                                 ) ~> void
+my_static_generic_args_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                   arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                                  ) ~> void
 {
     garg = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : *v_type_generic_arg_t);
+
+    args = v_type_generic_arg_cons_get_args(garg);
+
+    v_set_result_type(v_static_array_of_generic_args_t);
+    v_set_result_value((args: LLVMValueRef));
+}
+
+//---------------------------------------------------------------------
+{   v_add_overload(".number",    v_static_generic_arg_number_t, "my.static_generic_arg_number");
+    v_add_overload(".string",    v_static_generic_arg_string_t, "my.static_generic_arg_string");
+    v_add_overload(".quark",     v_static_generic_arg_quark_t,  "my.static_generic_arg_quark");
+    v_add_overload(".type",      v_static_generic_arg_type_t,   "my.static_generic_arg_type");
+    v_add_overload(".cons",      v_static_generic_arg_cons_t,   "my.static_generic_arg_cons");
+    v_add_overload(".arg_count", v_static_generic_arg_cons_t,   "my.static_generic_arg_count");
+    v_add_overload(".args",      v_static_generic_arg_cons_t,   "my.static_generic_args");
+
+    v_add_intrinsic("my.static_generic_arg_number", my_static_generic_arg_number_intrinsic, 0);
+    v_add_intrinsic("my.static_generic_arg_string", my_static_generic_arg_string_intrinsic, 0);
+    v_add_intrinsic("my.static_generic_arg_quark",  my_static_generic_arg_quark_intrinsic,  0);
+    v_add_intrinsic("my.static_generic_arg_type",   my_static_generic_arg_type_intrinsic,   0);
+    v_add_intrinsic("my.static_generic_arg_cons",   my_static_generic_arg_cons_intrinsic,   0);
+    v_add_intrinsic("my.static_generic_arg_count",  my_static_generic_arg_count_intrinsic,  0);
+    v_add_intrinsic("my.static_generic_args",       my_static_generic_args_intrinsic,       0);
+}
+
+
+//---------------------------------------------------------------------
+my_static_array_of_generic_args_index_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                                                  arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                                                 ) ~> void
+{
+    args = (v_ast_expr_compiled_get_value(arg_ptrs[0]) : **v_type_generic_arg_t);
 
     v_set_result_type(v_find_type("unsigned"));
     v_set_result_value(0);
@@ -553,28 +725,16 @@ my_static_generic_arg_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_bas
 
     i = LLVMConstIntGetZExtValue(i);
 
-    a = v_type_generic_arg_cons_get_args(garg)[i];
+    a = args[i];
 
     v_set_result_type(v_static_generic_arg_t);
     v_set_result_value((a: LLVMValueRef));
 }
 
 //---------------------------------------------------------------------
-{   v_add_overload(".number",    v_static_generic_arg_t, "my.static_generic_arg_number");
-    v_add_overload(".string",    v_static_generic_arg_t, "my.static_generic_arg_string");
-    v_add_overload(".quark",     v_static_generic_arg_t, "my.static_generic_arg_quark");
-    v_add_overload(".type",      v_static_generic_arg_t, "my.static_generic_arg_type");
-    v_add_overload(".cons",      v_static_generic_arg_t, "my.static_generic_arg_cons");
-    v_add_overload(".arg_count", v_static_generic_arg_t, "my.static_generic_arg_count");
-    v_add_overload(".arg()",     v_static_generic_arg_t, "my.static_generic_arg");
+{   v_add_overload("v.op_postfix_index", v_static_array_of_generic_args_t, "my.static_array_of_generic_args_index");
 
-    v_add_intrinsic("my.static_generic_arg_number", my_static_generic_arg_number_intrinsic, 0);
-    v_add_intrinsic("my.static_generic_arg_string", my_static_generic_arg_string_intrinsic, 0);
-    v_add_intrinsic("my.static_generic_arg_quark",  my_static_generic_arg_quark_intrinsic,  0);
-    v_add_intrinsic("my.static_generic_arg_type",   my_static_generic_arg_type_intrinsic,   0);
-    v_add_intrinsic("my.static_generic_arg_cons",   my_static_generic_arg_cons_intrinsic,   0);
-    v_add_intrinsic("my.static_generic_arg_count",  my_static_generic_arg_count_intrinsic,  0);
-    v_add_intrinsic("my.static_generic_arg",        my_static_generic_arg_intrinsic,        0);
+    v_add_intrinsic("my.static_array_of_generic_argss_index", my_static_array_of_generic_args_index_intrinsic,  0);
 }
 
 
@@ -626,7 +786,7 @@ my_static_string_string_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_b
 
     printf("int(17).is_integer = %d\n", (int(17).is_integer : int));
 
-    printf("int(17).width = %u\n", int(17).width);
+    printf("int(17).as_integer.width = %u\n", int(17).as_integer.width);
 
 }
 
@@ -666,11 +826,14 @@ my_static_string_string_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_b
 //---------------------------------------------------------------------
 {   ft = (*const char, ...) ~> int;
 
-    printf("ft.is_var_arg  = %d\n", (ft.is_var_arg : int));
-    printf("ft.param_count = %u\n", ft.param_count);
+    printf("ft.as_function.is_var_arg  = %d\n", (ft.as_function.is_var_arg : int));
+    printf("ft.as_function.param_count = %u\n", ft.as_function.param_count);
 
-    printf("ft.param_type(0).is_pointer = %d\n", (ft.param_type(0).is_pointer : int));
+    printf("ft.as_function.param_types[0].is_refptr = %d\n",
+           (ft.as_function.param_types[0].is_refptr : int));
 
+    printf("ft.as_function.param_types[0].as_refptr.is_pointer = %d\n",
+           (ft.as_function.param_types[0].as_refptr.is_pointer : int));
 }
 
 
@@ -740,9 +903,9 @@ eq_types_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     printf("t.is_array = %d\n", (t.is_array : int));
 
-    printf("t.element_type == char = %d\n", (t.element_type == char : int));
+    printf("t.as_array.element_type == char = %d\n", (t.as_array.element_type == char : int));
 
-    printf("t.length = %u\n", t.length);
+    printf("t.as_array.length = %u\n", t.as_array.length);
 
 }
 
@@ -755,8 +918,8 @@ eq_types_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     printf("t.is_generic = %d\n", (t.is_generic : int));
 
-    printf("t.cons.string = %s\n", t.cons.string);
-    printf("t.arg_count = %u\n", t.arg_count);
+    printf("t.as_generic.cons.string = %s\n", t.as_generic.cons.string);
+    printf("t.as_generic.arg_count = %u\n",   t.as_generic.arg_count);
 
     t = int[];
 
@@ -764,31 +927,12 @@ eq_types_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     printf("t.is_generic = %d\n", (t.is_generic : int));
 
-    printf("t.cons.string = %s\n", t.cons.string);
-    printf("t.arg_count = %u\n", t.arg_count);
+    printf("t.as_generic.cons.string = %s\n", t.as_generic.cons.string);
+    printf("t.as_generic.arg_count = %u\n",   t.as_generic.arg_count);
 
-    printf("t.arg(0).type == int  =  %d\n", (t.arg(0).type == int : int));
-
+    printf("t.as_generic.args[0].as_type.type == int  =  %d\n",
+           (t.as_generic.args[0].as_type.type == int : int));
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
