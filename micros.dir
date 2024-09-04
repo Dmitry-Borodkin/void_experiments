@@ -160,7 +160,7 @@ try_compression.void                                           │try_compressio
                                                                │
 try_introspect.void     ... parsers ...                        │try_introspect.void | LC_ALL=C sort
                                                                │
-try_geometry.void                                              │try_geometry.void
+try_geometry.void       ... ! ...                              │try_geometry.void
                                                                │
 try_mangle.void                                                │try_mangle.void
                                                                │

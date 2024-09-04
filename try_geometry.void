@@ -7,21 +7,6 @@
 
 printf: (*const char, ...) ~> int;
 
-//---------------------------------------------------------------------
-//{   v_import("level-00");
-//    v_import("level-01");
-//    v_import("level-02");
-//
-//    v_import("llvm-c/Core.void");
-//}
-//
-//{   v_import("printf.void");
-//}
-//
-//{   v_enable_level_01();
-//    v_enable_level_02();
-//}
-
 
 //---------------------------------------------------------------------
 double = float(64);
@@ -37,12 +22,14 @@ M_PI = 3.14159265358979323846264338327950288419716939937510582;
 
 
 //---------------------------------------------------------------------
-{   if (v_find_constant("_WIN32", 0, 0))
-    {
-        v_add_symbol("_snprintf", v_find_symbol_type("snprintf"), 0);
+{
+#if (v_defined(_WIN32))
 
-        v_add_alias("snprintf", "_snprintf");
-    }
+    v_add_symbol("_snprintf", v_find_symbol_type("snprintf"), 0);
+
+    v_add_alias("snprintf", "_snprintf");
+
+#endif
 }
 
 
@@ -103,6 +90,16 @@ seq_equal: (a: *double, b: *double, n: int) ~> bool
 }
 
 
+//---------------------------------------------------------------------
+#define (_<<_): (s: &v_std_string_t, v) ~> &v_std_string_t  =
+{
+    v.append_to_string(s);
+
+    s
+};
+
+
+
 //=====================================================================
 //- Vector (2D)
 //=====================================================================
@@ -113,7 +110,7 @@ struct Vector
 };
 
 //---------------------------------------------------------------------
-(_<<__): (s: &v_std_string_ptr, v: Vector) ~> &v_std_string_ptr
+(_.append_to_string()): (v: Vector, s: &v_std_string_t) ~> void
 {
     n = 1 + snprintf(0, 0, "(%g, %g)", v.x, v.y);
 
@@ -121,7 +118,7 @@ struct Vector
 
     snprintf(buf, n, "(%g, %g)", v.x, v.y);
 
-    v_std_string_append(s, buf);
+    v_std_string_append(&s, buf);
 }
 
 //---------------------------------------------------------------------
@@ -215,7 +212,7 @@ struct Point
 };
 
 //---------------------------------------------------------------------
-(_<<__): (s: &v_std_string_ptr, p: Point) ~> &v_std_string_ptr
+(_.append_to_string()): (p: Point, s: &v_std_string_t) ~> void
 {
     n = 1 + snprintf(0, 0, "(%g, %g, %g)", p.x, p.y, p.w);
 
@@ -223,7 +220,7 @@ struct Point
 
     snprintf(buf, n, "(%g, %g, %g)", p.x, p.y, p.w);
 
-    v_std_string_append(s, buf);
+    v_std_string_append(&s, buf);
 }
 
 //---------------------------------------------------------------------
@@ -307,7 +304,7 @@ struct Line
 };
 
 //---------------------------------------------------------------------
-(_<<__): (s: &v_std_string_ptr, l: Line) ~> &v_std_string_ptr
+(_.append_to_string()): (l: Line, s: &v_std_string_t) ~> void
 {
     n = 1 + snprintf(0, 0, "(%g, %g, %g)", l.cx, l.cy, l.cw);
 
@@ -315,7 +312,7 @@ struct Line
 
     snprintf(buf, n, "(%g, %g, %g)", l.cx, l.cy, l.cw);
 
-    v_std_string_append(s, buf);
+    v_std_string_append(&s, buf);
 }
 
 //---------------------------------------------------------------------
@@ -412,7 +409,7 @@ struct Transform
 };
 
 //---------------------------------------------------------------------
-(_<<__): (s: &v_std_string_ptr, t: Transform) ~> &v_std_string_ptr
+(_.append_to_string()): (t: &Transform, s: &v_std_string_t) ~> void
 {
     t = t[0];
 
@@ -422,7 +419,7 @@ struct Transform
 
     snprintf(buf, n, "(%g, %g, %g, %g, %g, %g, %g, %g, %g)", t[0], t[1], t[2], t[3], t[4], t[5], t[6], t[7], t[8]);
 
-    v_std_string_append(s, buf);
+    v_std_string_append(&s, buf);
 }
 
 //---------------------------------------------------------------------
@@ -493,95 +490,11 @@ alwaysinline
 
 
 //---------------------------------------------------------------------
-Transform_op_postfix_call_intrinsic: (aux: *void, vis: voidc_visitor_ptr,
-                                      self: v_ast_base_ptr,
-                                      args: v_ast_expr_list_ptr,
-                                      t0: v_type_ptr, v0: LLVMValueRef
-                                     ) ~> void
-{
-    arg = v_list_get_item(args, 0);
+#define (_()): (t: Transform, v)  =  v.transform_by(t);
 
-    ttag = v_get_result_type();
-    vtag = v_get_result_value();
-
-    v_set_result_type(INVIOLABLE_TAG);
-    v_set_result_value(0);
-
-    v_ast_accept_visitor((arg: v_ast_base_ptr), vis);
-
-    t1 = v_get_result_type();
-    v1 = v_get_result_value();
-
-    q = v_quark_from_string(".transform()");
-
-    void_fun: &*void := 0;
-    void_aux: &*void := 0;
-
-    ft: &v_type_ptr   := 0;
-    fv: &LLVMValueRef := 0;
-
-    ok = v_util_lookup_function_dict(q, t1, void_fun, void_aux, ft, fv);
-    //- assert(ok);
-
-    intrinsic_t = (aux: *void, vis: voidc_visitor_ptr,
-                   self: v_ast_base_ptr,
-                   args: v_ast_expr_list_ptr,
-                   t0: v_type_ptr, v0: LLVMValueRef,
-                   t1: v_type_ptr, v1: LLVMValueRef
-                  ) ~> void;
-
-    if (fun = (void_fun: *intrinsic_t))
-    {
-        v_set_result_type(ttag);
-        v_set_result_value(vtag);
-
-        fun(void_aux, vis, self, args, t1, v1, t0, v0);         //- Sic!!!
-    }
-    else
-    {
-        val: &LLVMValueRef[2] := v_undef();
-
-        fpar = v_type_function_get_param_types(ft);
-
-        v_set_result_type(fpar[0]);
-        v_set_result_value(0);
-
-        v_adopt_result(t1, v1);                         //- 1 !!!
-
-        val[0] := v_get_result_value();
-
-        v_set_result_type(fpar[1]);
-        v_set_result_value(0);
-
-        v_adopt_result(t0, v0);                         //- 0 !!!
-
-        val[1] := v_get_result_value();
-
-        ft_ = v_type_get_llvm_type(ft);
-
-        builder = v_target_get_builder();
-
-        vr = LLVMBuildCall2(builder, ft_, fv, &val[0], 2, "");
-
-        v_set_result_type(ttag);
-        v_set_result_value(vtag);
-
-        v_adopt_result(v_type_function_get_return_type(ft), vr);
-    }
-}
-
-{   Transform_ref = v_reference_type(Transform, 0);
-
-    q = v_quark_from_string;
-
-    v_util_function_dict_set(q("v.op_postfix_call"), Transform_ref, q("Transform.op_postfix_call_intrinsic"));
-    v_util_function_dict_set(q("v.op_postfix_call"), Transform,     q("Transform.op_postfix_call_intrinsic"));
-
-    v_add_intrinsic("Transform.op_postfix_call_intrinsic", Transform_op_postfix_call_intrinsic, 0);
-}
 
 //---------------------------------------------------------------------
-(_.transform()): (v: Vector, t: Transform) ~> Vector
+(_.transform_by()): (v: Vector, t: Transform) ~> Vector
 {
     t = t[0];
 
@@ -592,7 +505,7 @@ Transform_op_postfix_call_intrinsic: (aux: *void, vis: voidc_visitor_ptr,
     v_return({ x/w, y/w });
 }
 
-(_.transform()): (p: Point, t: Transform) ~> Point
+(_.transform_by()): (p: Point, t: Transform) ~> Point
 {
     t = t[0];
 
@@ -603,7 +516,7 @@ Transform_op_postfix_call_intrinsic: (aux: *void, vis: voidc_visitor_ptr,
     v_return({ x, y, w });
 }
 
-(_.transform()): (l: Line, t: Transform) ~> Line
+(_.transform_by()): (l: Line, t: Transform) ~> Line
 {
     t = t[0];
 
@@ -838,18 +751,16 @@ Transform_flip_y:   Transform = {{ 1, 0, 0,  0,-1, 0,  0, 0, 1 }};
 //{ voidc_verify_jit_module_optimized(true); }
 //{ v_debug_print_module(2); }
 {
-    sstr = v_alloca(v_std_string_t);
-    v_initialize(sstr);
-    defer v_terminate(sstr);
+    sstr: &v_std_string_t := {};
 
     v: Vector = {1, 2};
 
     sstr << v + 2*v;
 
-    printf("s: %s\n", v_std_string_get(sstr));
+    printf("s: %s\n", v_std_string_get(&sstr));
 
 
-    v_std_string_set(sstr, "");
+    v_std_string_set(&sstr, "");
 
     u = Point_unit_x - Point_unit_y;
 
@@ -857,10 +768,10 @@ Transform_flip_y:   Transform = {{ 1, 0, 0,  0,-1, 0,  0, 0, 1 }};
 
     sstr << p;
 
-    printf("p: %s\n", v_std_string_get(sstr));
+    printf("p: %s\n", v_std_string_get(&sstr));
 
 
-    v_std_string_set(sstr, "");
+    v_std_string_set(&sstr, "");
 
     p_inf_x = Line_abscissa & Line_infinity;
 
@@ -868,7 +779,7 @@ Transform_flip_y:   Transform = {{ 1, 0, 0,  0,-1, 0,  0, 0, 1 }};
 
     sstr << l;
 
-    printf("l: %s\n", v_std_string_get(sstr));
+    printf("l: %s\n", v_std_string_get(&sstr));
 
 
     //-----------------------------------------------------------------
@@ -877,38 +788,36 @@ Transform_flip_y:   Transform = {{ 1, 0, 0,  0,-1, 0,  0, 0, 1 }};
     v = t(Vector_unit_x);
 //  v = Vector_unit_x.transform(t);
 
-    v_std_string_set(sstr, "");     sstr << v;
+    v_std_string_set(&sstr, "");    sstr << v;
 
-    printf("v: %s\n", v_std_string_get(sstr));
+    printf("v: %s\n", v_std_string_get(&sstr));
 
     p = t(Point_unit_x);
 
-    v_std_string_set(sstr, "");     sstr << p;
+    v_std_string_set(&sstr, "");    sstr << p;
 
-    printf("p: %s\n", v_std_string_get(sstr));
+    printf("p: %s\n", v_std_string_get(&sstr));
 
     l = t(Line_ordinate);
 
-    v_std_string_set(sstr, "");     sstr << l;
+    v_std_string_set(&sstr, "");    sstr << l;
 
-    printf("l: %s\n", v_std_string_get(sstr));
+    printf("l: %s\n", v_std_string_get(&sstr));
 }
 
 //---------------------------------------------------------------------
 //{ v_debug_print_module(2); }
 {
-    sstr = v_alloca(v_std_string_t);
-    v_initialize(sstr);
-    defer v_terminate(sstr);
+    sstr: &v_std_string_t := {};
 
     r = Transform_identity.rotated(45);
 
 //  v = r(Vector_unit_x);
     v = r(Vector_unit_y);
 
-    v_std_string_set(sstr, "");     sstr << v;
+    v_std_string_set(&sstr, "");    sstr << v;
 
-    printf("v: %s\n", v_std_string_get(sstr));
+    printf("v: %s\n", v_std_string_get(&sstr));
 
 }
 

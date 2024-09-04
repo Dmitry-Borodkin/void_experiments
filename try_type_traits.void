@@ -34,10 +34,6 @@ my_static_type_kind_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_
     v_add_intrinsic("my.static_type_kind", my_static_type_kind_intrinsic, 0);
 }
 
-//---------------------------------------------------------------------
-{   v_add_constant("v_static_type_t", v_static_type_t, (v_static_type_t: LLVMValueRef));        //- Sic !?!
-}
-
 
 //---------------------------------------------------------------------
 static_types_table: &(*const char)[][2] :=
@@ -416,7 +412,7 @@ my_static_type_get_type_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_
     v_add_overload(".element_type",  v_static_type_refptr_t,         "my.static_type_refptr_element_type");
     v_add_overload(".element_type",  v_static_type_array_t,          "my.static_type_array_element_type");
     v_add_overload(".element_type",  v_static_type_vector_base_t,    "my.static_type_vector_element_type");
-    v_add_overload(".scalar_type",   v_static_type_t,                "my.static_type_scalar_tyype");
+    v_add_overload(".scalar_type",   v_static_type_t,                "my.static_type_scalar_type");
 
     f = my_static_type_get_type_intrinsic;
 
