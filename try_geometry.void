@@ -13,8 +13,6 @@ double = float(64);
 
 fabs: (double) ~> double;
 
-snprintf: (s: *char, l: size_t, f: *const char, ...) ~> int;
-
 sin: (double) ~> double;
 cos: (double) ~> double;
 
@@ -22,15 +20,20 @@ M_PI = 3.14159265358979323846264338327950288419716939937510582;
 
 
 //---------------------------------------------------------------------
+struct FILE;
+
+stdout: &*FILE;
+
+fprintf: (*FILE, *const char, ...) ~> int;
+
+//---------------------------------------------------------------------
+#define (_<<_): (f: &*FILE, v) ~> &*FILE  =
 {
-#if (v_defined(_WIN32))
+    v.print_to_file(f);
 
-    v_add_symbol("_snprintf", v_find_symbol_type("snprintf"), 0);
+    f
+};
 
-    v_add_alias("snprintf", "_snprintf");
-
-#endif
-}
 
 
 //---------------------------------------------------------------------
@@ -90,16 +93,6 @@ seq_equal: (a: *double, b: *double, n: int) ~> bool
 }
 
 
-//---------------------------------------------------------------------
-#define (_<<_): (s: &v_std_string_t, v) ~> &v_std_string_t  =
-{
-    v.append_to_string(s);
-
-    s
-};
-
-
-
 //=====================================================================
 //- Vector (2D)
 //=====================================================================
@@ -110,15 +103,9 @@ struct Vector
 };
 
 //---------------------------------------------------------------------
-(_.append_to_string()): (v: Vector, s: &v_std_string_t) ~> void
+(_.print_to_file()): (v: Vector, f: *FILE) ~> void
 {
-    n = 1 + snprintf(0, 0, "(%g, %g)", v.x, v.y);
-
-    buf = v_alloca(char, n);
-
-    snprintf(buf, n, "(%g, %g)", v.x, v.y);
-
-    v_std_string_append(&s, buf);
+    fprintf(f, "(%g, %g)", v.x, v.y);
 }
 
 //---------------------------------------------------------------------
@@ -212,15 +199,9 @@ struct Point
 };
 
 //---------------------------------------------------------------------
-(_.append_to_string()): (p: Point, s: &v_std_string_t) ~> void
+(_.print_to_file()): (p: Point, f: *FILE) ~> void
 {
-    n = 1 + snprintf(0, 0, "(%g, %g, %g)", p.x, p.y, p.w);
-
-    buf = v_alloca(char, n);
-
-    snprintf(buf, n, "(%g, %g, %g)", p.x, p.y, p.w);
-
-    v_std_string_append(&s, buf);
+    fprintf(f, "(%g, %g, %g)", p.x, p.y, p.w);
 }
 
 //---------------------------------------------------------------------
@@ -304,15 +285,9 @@ struct Line
 };
 
 //---------------------------------------------------------------------
-(_.append_to_string()): (l: Line, s: &v_std_string_t) ~> void
+(_.print_to_file()): (l: Line, f: *FILE) ~> void
 {
-    n = 1 + snprintf(0, 0, "(%g, %g, %g)", l.cx, l.cy, l.cw);
-
-    buf = v_alloca(char, n);
-
-    snprintf(buf, n, "(%g, %g, %g)", l.cx, l.cy, l.cw);
-
-    v_std_string_append(&s, buf);
+    fprintf(f, "(%g, %g, %g)", l.cx, l.cy, l.cw);
 }
 
 //---------------------------------------------------------------------
@@ -409,17 +384,11 @@ struct Transform
 };
 
 //---------------------------------------------------------------------
-(_.append_to_string()): (t: &Transform, s: &v_std_string_t) ~> void
+(_.print_to_file()): (t: &Transform, f: *FILE) ~> void
 {
     t = t[0];
 
-    n = 1 + snprintf(0, 0, "(%g, %g, %g, %g, %g, %g, %g, %g, %g)", t[0], t[1], t[2], t[3], t[4], t[5], t[6], t[7], t[8]);
-
-    buf = v_alloca(char, n);
-
-    snprintf(buf, n, "(%g, %g, %g, %g, %g, %g, %g, %g, %g)", t[0], t[1], t[2], t[3], t[4], t[5], t[6], t[7], t[8]);
-
-    v_std_string_append(&s, buf);
+    fprintf(f, "(%g, %g, %g, %g, %g, %g, %g, %g, %g)", t[0], t[1], t[2], t[3], t[4], t[5], t[6], t[7], t[8]);
 }
 
 //---------------------------------------------------------------------
@@ -751,35 +720,23 @@ Transform_flip_y:   Transform = {{ 1, 0, 0,  0,-1, 0,  0, 0, 1 }};
 //{ voidc_verify_jit_module_optimized(true); }
 //{ v_debug_print_module(2); }
 {
-    sstr: &v_std_string_t := {};
-
     v: Vector = {1, 2};
 
-    sstr << v + 2*v;
+    printf("s: ");  stdout << v + 2*v;  printf("\n");
 
-    printf("s: %s\n", v_std_string_get(&sstr));
-
-
-    v_std_string_set(&sstr, "");
 
     u = Point_unit_x - Point_unit_y;
 
     p = Point_zero + u/3;
 
-    sstr << p;
+    printf("p: ");  stdout << p;  printf("\n");
 
-    printf("p: %s\n", v_std_string_get(&sstr));
-
-
-    v_std_string_set(&sstr, "");
 
     p_inf_x = Line_abscissa & Line_infinity;
 
     l = Point_unit_y & p_inf_x;
 
-    sstr << l;
-
-    printf("l: %s\n", v_std_string_get(&sstr));
+    printf("l: ");  stdout << l;  printf("\n");
 
 
     //-----------------------------------------------------------------
@@ -788,36 +745,26 @@ Transform_flip_y:   Transform = {{ 1, 0, 0,  0,-1, 0,  0, 0, 1 }};
     v = t(Vector_unit_x);
 //  v = Vector_unit_x.transform(t);
 
-    v_std_string_set(&sstr, "");    sstr << v;
-
-    printf("v: %s\n", v_std_string_get(&sstr));
+    printf("v: ");  stdout << v;  printf("\n");
 
     p = t(Point_unit_x);
 
-    v_std_string_set(&sstr, "");    sstr << p;
-
-    printf("p: %s\n", v_std_string_get(&sstr));
+    printf("p: ");  stdout << p;  printf("\n");
 
     l = t(Line_ordinate);
 
-    v_std_string_set(&sstr, "");    sstr << l;
-
-    printf("l: %s\n", v_std_string_get(&sstr));
+    printf("l: ");  stdout << l;  printf("\n");
 }
 
 //---------------------------------------------------------------------
 //{ v_debug_print_module(2); }
 {
-    sstr: &v_std_string_t := {};
+    r = Transform_identity.rotated(30);
 
-    r = Transform_identity.rotated(45);
+    v = r(Vector_unit_x);
+//  v = r(Vector_unit_y);
 
-//  v = r(Vector_unit_x);
-    v = r(Vector_unit_y);
-
-    v_std_string_set(&sstr, "");    sstr << v;
-
-    printf("v: %s\n", v_std_string_get(&sstr));
+    printf("v: ");  stdout << v;  printf("\n");
 
 }
 
