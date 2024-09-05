@@ -175,46 +175,46 @@ my_static_type_predicate_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v
 #define (_.is_refptr): (t: v_static_type_t) ~> bool  =  t.kind == v_type_kind_pointer  ||  t.kind == v_type_kind_reference;
 
 //---------------------------------------------------------------------
-#define (_.as_void):           (t: v_static_type_t) ~> v_static_type_void_t            =  (t: v_static_type_void_t);
-#define (_.as_floating_point): (t: v_static_type_t) ~> v_static_type_floating_point_t  =  (t: v_static_type_floating_point_t);
+#define (_.as_void):           (t: v_static_type_t)  =  (t: v_static_type_void_t);
+#define (_.as_floating_point): (t: v_static_type_t)  =  (t: v_static_type_floating_point_t);
 
-#define (_.as_f16):  (t: v_static_type_floating_point_t) ~> v_static_type_f16_t   =  (t: v_static_type_f16_t);
-#define (_.as_f16):  (t: v_static_type_t)                ~> v_static_type_f16_t   =  (t: v_static_type_f16_t);
-#define (_.as_f32):  (t: v_static_type_floating_point_t) ~> v_static_type_f32_t   =  (t: v_static_type_f32_t);
-#define (_.as_f32):  (t: v_static_type_t)                ~> v_static_type_f32_t   =  (t: v_static_type_f32_t);
-#define (_.as_f64):  (t: v_static_type_floating_point_t) ~> v_static_type_f64_t   =  (t: v_static_type_f64_t);
-#define (_.as_f64):  (t: v_static_type_t)                ~> v_static_type_f64_t   =  (t: v_static_type_f64_t);
-#define (_.as_f128): (t: v_static_type_floating_point_t) ~> v_static_type_f128_t  =  (t: v_static_type_f128_t);
-#define (_.as_f128): (t: v_static_type_t)                ~> v_static_type_f128_t  =  (t: v_static_type_f128_t);
+#define (_.as_f16):  (t: v_static_type_floating_point_t)  =  (t: v_static_type_f16_t);
+#define (_.as_f16):  (t: v_static_type_t)                 =  (t: v_static_type_f16_t);
+#define (_.as_f32):  (t: v_static_type_floating_point_t)  =  (t: v_static_type_f32_t);
+#define (_.as_f32):  (t: v_static_type_t)                 =  (t: v_static_type_f32_t);
+#define (_.as_f64):  (t: v_static_type_floating_point_t)  =  (t: v_static_type_f64_t);
+#define (_.as_f64):  (t: v_static_type_t)                 =  (t: v_static_type_f64_t);
+#define (_.as_f128): (t: v_static_type_floating_point_t)  =  (t: v_static_type_f128_t);
+#define (_.as_f128): (t: v_static_type_t)                 =  (t: v_static_type_f128_t);
 
-#define (_.as_integer): (t: v_static_type_t) ~> v_static_type_integer_t  =  (t: v_static_type_integer_t);
+#define (_.as_integer): (t: v_static_type_t)  =  (t: v_static_type_integer_t);
 
-#define (_.as_int):  (t: v_static_type_integer_t) ~> v_static_type_int_t   =  (t: v_static_type_int_t);
-#define (_.as_int):  (t: v_static_type_t)         ~> v_static_type_int_t   =  (t: v_static_type_int_t);
-#define (_.as_uint): (t: v_static_type_integer_t) ~> v_static_type_uint_t  =  (t: v_static_type_uint_t);
-#define (_.as_uint): (t: v_static_type_t)         ~> v_static_type_uint_t  =  (t: v_static_type_uint_t);
+#define (_.as_int):  (t: v_static_type_integer_t)  =  (t: v_static_type_int_t);
+#define (_.as_int):  (t: v_static_type_t)          =  (t: v_static_type_int_t);
+#define (_.as_uint): (t: v_static_type_integer_t)  =  (t: v_static_type_uint_t);
+#define (_.as_uint): (t: v_static_type_t)          =  (t: v_static_type_uint_t);
 
-#define (_.as_function): (t: v_static_type_t) ~> v_static_type_function_t  =  (t: v_static_type_function_t);
+#define (_.as_function): (t: v_static_type_t)  =  (t: v_static_type_function_t);
 
-#define (_.as_refptr): (t: v_static_type_t) ~> v_static_type_refptr_t  =  (t: v_static_type_refptr_t);
+#define (_.as_refptr): (t: v_static_type_t)  =  (t: v_static_type_refptr_t);
 
-#define (_.as_pointer):   (t: v_static_type_refptr_t) ~> v_static_type_pointer_t    =  (t: v_static_type_pointer_t);
-#define (_.as_pointer):   (t: v_static_type_t)        ~> v_static_type_pointer_t    =  (t: v_static_type_pointer_t);
-#define (_.as_reference): (t: v_static_type_refptr_t) ~> v_static_type_reference_t  =  (t: v_static_type_reference_t);
-#define (_.as_reference): (t: v_static_type_t)        ~> v_static_type_reference_t  =  (t: v_static_type_reference_t);
+#define (_.as_pointer):   (t: v_static_type_refptr_t)  =  (t: v_static_type_pointer_t);
+#define (_.as_pointer):   (t: v_static_type_t)         =  (t: v_static_type_pointer_t);
+#define (_.as_reference): (t: v_static_type_refptr_t)  =  (t: v_static_type_reference_t);
+#define (_.as_reference): (t: v_static_type_t)         =  (t: v_static_type_reference_t);
 
-#define (_.as_struct): (t: v_static_type_t) ~> v_static_type_struct_t  =  (t: v_static_type_struct_t);
+#define (_.as_struct): (t: v_static_type_t)  =  (t: v_static_type_struct_t);
 
-#define (_.as_array): (t: v_static_type_t) ~> v_static_type_array_t  =  (t: v_static_type_array_t);
+#define (_.as_array): (t: v_static_type_t)  =  (t: v_static_type_array_t);
 
-#define (_.as_vector_base): (t: v_static_type_t) ~> v_static_type_vector_base_t  =  (t: v_static_type_vector_base_t);
+#define (_.as_vector_base): (t: v_static_type_t)  =  (t: v_static_type_vector_base_t);
 
-#define (_.as_vector):  (t: v_static_type_vector_base_t) ~> v_static_type_vector_t   =  (t: v_static_type_vector_t);
-#define (_.as_vector):  (t: v_static_type_t)             ~> v_static_type_vector_t   =  (t: v_static_type_vector_t);
-#define (_.as_svector): (t: v_static_type_vector_base_t) ~> v_static_type_svector_t  =  (t: v_static_type_svector_t);
-#define (_.as_svector): (t: v_static_type_t)             ~> v_static_type_svector_t  =  (t: v_static_type_svector_t);
+#define (_.as_vector):  (t: v_static_type_vector_base_t)  =  (t: v_static_type_vector_t);
+#define (_.as_vector):  (t: v_static_type_t)              =  (t: v_static_type_vector_t);
+#define (_.as_svector): (t: v_static_type_vector_base_t)  =  (t: v_static_type_svector_t);
+#define (_.as_svector): (t: v_static_type_t)              =  (t: v_static_type_svector_t);
 
-#define (_.as_generic): (t: v_static_type_t) ~> v_static_type_generic_t  =  (t: v_static_type_generic_t);
+#define (_.as_generic): (t: v_static_type_t)  =  (t: v_static_type_generic_t);
 
 
 //---------------------------------------------------------------------
@@ -347,11 +347,11 @@ my_static_arg_predicate_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_
 
 
 //---------------------------------------------------------------------
-#define (_.as_number): (t: v_static_generic_arg_t) ~> v_static_generic_arg_number_t  =  (t: v_static_generic_arg_number_t);
-#define (_.as_string): (t: v_static_generic_arg_t) ~> v_static_generic_arg_string_t  =  (t: v_static_generic_arg_string_t);
-#define (_.as_quark):  (t: v_static_generic_arg_t) ~> v_static_generic_arg_quark_t   =  (t: v_static_generic_arg_quark_t);
-#define (_.as_type):   (t: v_static_generic_arg_t) ~> v_static_generic_arg_type_t    =  (t: v_static_generic_arg_type_t);
-#define (_.as_cons):   (t: v_static_generic_arg_t) ~> v_static_generic_arg_cons_t    =  (t: v_static_generic_arg_cons_t);
+#define (_.as_number): (t: v_static_generic_arg_t)  =  (t: v_static_generic_arg_number_t);
+#define (_.as_string): (t: v_static_generic_arg_t)  =  (t: v_static_generic_arg_string_t);
+#define (_.as_quark):  (t: v_static_generic_arg_t)  =  (t: v_static_generic_arg_quark_t);
+#define (_.as_type):   (t: v_static_generic_arg_t)  =  (t: v_static_generic_arg_type_t);
+#define (_.as_cons):   (t: v_static_generic_arg_t)  =  (t: v_static_generic_arg_cons_t);
 
 
 //---------------------------------------------------------------------
@@ -929,6 +929,65 @@ eq_types_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
     printf("t.as_generic.args[0].as_type.type == int  =  %d\n",
            (t.as_generic.args[0].as_type.type == int : int));
 }
+
+
+
+//---------------------------------------------------------------------
+struct FILE;
+
+stdout: &*FILE;
+
+fprintf: (*FILE, *const char, ...) ~> int;
+
+//---------------------------------------------------------------------
+#define (_<<_): (f: &*FILE, v) ~> &*FILE  =
+{
+    t = v_typeof(v);
+
+#if (t.is_array  &&  t.as_array.element_type == char)
+
+    fprintf(f, "%s", v);
+
+#else
+
+    v.print_to_file(f);
+
+#endif
+
+    f
+};
+
+//---------------------------------------------------------------------
+#define (_.print_to_file()): (v: int, f: *FILE)  =  fprintf(f, "%d", v);
+
+#define (_.print_to_file()): (v: unsigned, f: *FILE)  =  fprintf(f, "%u", v);
+
+#define (_.print_to_file()): (v: bool, f: *FILE)  =
+{
+    s: &*const char := v_undef();
+
+    if (v)  s := "true";
+    else    s := "false";
+
+    fprintf(f, s)
+};
+
+
+//{ v_debug_print_module(1); }
+//---------------------------------------------------------------------
+{
+    v: int = 777;
+
+    stdout << "v: " << v << "\n";
+
+    stdout << "(0 > v): " << (0 > v) << "\n";
+}
+
+
+
+
+
+
 
 
 
