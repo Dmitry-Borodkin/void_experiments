@@ -232,62 +232,81 @@ ctx_v: &my_trace_visitor_ctx_t := v_undef();
 
 
 
-//---------------------------------------------------------------------
-print_trace_test: () ~> void
-{
-    item: &*my_trace_visitor_item_t := my_trace_visitor_item_root;
+////---------------------------------------------------------------------
+//print_trace_test: () ~> void
+//{
+//    item: &*my_trace_visitor_item_t := my_trace_visitor_item_root;
+//
+//    if (item)
+//    {
+//        printf("\nVisitor trace:\n");
+//
+//        filename = v_target_local_ctx_get_filename(v_target_get_local_ctx());
+//
+//        printf("%s\n", filename);
+//
+//        for (i: &int := 1; item; item := item->nxt, ++i)
+//        {
+//            tag = v_quark_to_string(v_ast_base_get_tag(item->ast));
+//
+//            printf("  #%d: %s", i, tag);
+//
+//            pps = v_std_any_get_pointer(size_t, v_ast_get_property(item->ast, pos_start_q));
+//            ppe = v_std_any_get_pointer(size_t, v_ast_get_property(item->ast, pos_end_q));
+//
+//            line:   &size_t := v_undef();
+//            column: &size_t := v_undef();
+//
+//            if (pps)
+//            {
+//                v_peg_get_line_column(*pps, line, column);
+//
+//                printf(": (%zd, %zd)", line, column);
+//            }
+//
+//            if (ppe)
+//            {
+//                v_peg_get_line_column(*ppe, line, column);
+//
+//                printf(" - (%zd, %zd)", line, column);
+//            }
+//
+//            printf("\n");
+//        }
+//a;
+//        printf("\n");
+//    }
+//}
+//
+//
+//
+////---------------------------------------------------------------------
+//{
+//    zero: &*int := 0;
+//
+//    *zero := 666;
+//}
 
-    if (item)
-    {
-        printf("\nVisitor trace:\n");
 
-        filename = v_target_local_ctx_get_filename(v_target_get_local_ctx());
 
-        printf("%s\n", filename);
 
-        for (i: &int := 1; item; item := item->nxt, ++i)
-        {
-            tag = v_quark_to_string(v_ast_base_get_tag(item->ast));
 
-            printf("  #%d: %s", i, tag);
 
-            pps = v_std_any_get_pointer(size_t, v_ast_get_property(item->ast, pos_start_q));
-            ppe = v_std_any_get_pointer(size_t, v_ast_get_property(item->ast, pos_end_q));
+    {   stmt: &v_ast_generic_list_t :=
+        {'stmt'
 
-            line:   &size_t := v_undef();
-            column: &size_t := v_undef();
+            #define my_step: (lst, v)
+            {'stmt_list'
 
-            if (pps)
-            {
-                v_peg_get_line_column(*pps, line, column);
+                v_std_any_set_value(&my_any, v);
 
-                printf(": (%zd, %zd)", line, column);
-            }
+                v_list_append(lst, lst, &my_any);
 
-            if (ppe)
-            {
-                v_peg_get_line_column(*ppe, line, column);
+            'stmt_list'}
 
-                printf(" - (%zd, %zd)", line, column);
-            }
+        'stmt'};
 
-            printf("\n");
-        }
-a;
-        printf("\n");
     }
-}
-
-
-
-//---------------------------------------------------------------------
-{
-    zero: &*int := 0;
-
-    *zero := 666;
-}
-
-
 
 
 
