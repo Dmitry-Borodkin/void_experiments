@@ -109,20 +109,20 @@ __gmpz_cmp: (*const mpz_t, *const mpz_t) ~> int;
 
 
 //---------------------------------------------------------------------
-alwaysinline
+inlinehint
 (v_initialize(_)): (p: *mpz_t, n: size_t) ~> void
 {
     for (i: &size_t := 0; i < n; ++i)  __gmpz_init(p+i);
 }
 
-alwaysinline
+inlinehint
 (v_terminate(_)): (p: *mpz_t, n: size_t) ~> void
 {
     for (i: &size_t := 0; i < n; ++i)  __gmpz_clear(p+i);
 }
 
 //---------------------------------------------------------------------
-alwaysinline
+inlinehint
 (v_copy(_)): (d: *mpz_t, s: *const mpz_t, n: size_t) ~> void
 {
     for (i: &size_t := 0; i < n; ++i)  __gmpz_set(d+i, s+i);
@@ -403,309 +403,91 @@ convert_to_type_ctx: &convert_to_type_ctx_t := v_undef();
 //---------------------------------------------------------------------
 //- ...
 //---------------------------------------------------------------------
-alwaysinline
-(_+_): (a: mpz_t, b: mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
+#define
+gmpz_binary_helper: (f, a, b)  =  f(&v_get_return_value(), a, b);
 
-    __gmpz_add(&r, &a, &b);
-}
+#define
+gmpz_unary_helper: (f, a)  =  f(&v_get_return_value(), a);
+
+
+//---------------------------------------------------------------------
+alwaysinline
+(_+_): (a: mpz_t, b: mpz_t) ~> mpz_t  { gmpz_binary_helper(__gmpz_add, &a, &b); }
 
 alwaysinline
 (_+__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a + b;
 
-alwaysinline
-(_+_): (a: &mpz_t, b: mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_add(&r, &a, &b);
-}
-
-alwaysinline
-(_+__): (a: mpz_t, b: &mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_add(&r, &a, &b);
-}
-
 //---------------------------------------------------------------------
 alwaysinline
-(_-_): (a: mpz_t, b: mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_sub(&r, &a, &b);
-}
+(_-_): (a: mpz_t, b: mpz_t) ~> mpz_t  { gmpz_binary_helper(__gmpz_sub, &a, &b); }
 
 alwaysinline
 (_-__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a - b;
 
-alwaysinline
-(_-_): (a: &mpz_t, b: mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_sub(&r, &a, &b);
-}
-
-alwaysinline
-(_-__): (a: mpz_t, b: &mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_sub(&r, &a, &b);
-}
-
 //---------------------------------------------------------------------
 alwaysinline
-(_*_): (a: mpz_t, b: mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_mul(&r, &a, &b);
-}
+(_*_): (a: mpz_t, b: mpz_t) ~> mpz_t  { gmpz_binary_helper(__gmpz_mul, &a, &b); }
 
 alwaysinline
 (_*__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a * b;
 
-alwaysinline
-(_*_): (a: &mpz_t, b: mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_mul(&r, &a, &b);
-}
-
-alwaysinline
-(_*__): (a: mpz_t, b: &mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_mul(&r, &a, &b);
-}
-
 //---------------------------------------------------------------------
 alwaysinline
-(_/_): (a: mpz_t, b: mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_tdiv_q(&r, &a, &b);
-}
+(_/_): (a: mpz_t, b: mpz_t) ~> mpz_t  { gmpz_binary_helper(__gmpz_tdiv_q, &a, &b); }
 
 alwaysinline
 (_/__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a / b;
 
-alwaysinline
-(_/_): (a: &mpz_t, b: mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_tdiv_q(&r, &a, &b);
-}
-
-alwaysinline
-(_/__): (a: mpz_t, b: &mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_tdiv_q(&r, &a, &b);
-}
-
 //---------------------------------------------------------------------
 alwaysinline
-(_%_): (a: mpz_t, b: mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_tdiv_r(&r, &a, &b);
-}
+(_%_): (a: mpz_t, b: mpz_t) ~> mpz_t  { gmpz_binary_helper(__gmpz_tdiv_r, &a, &b); }
 
 alwaysinline
 (_%__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a % b;
 
-alwaysinline
-(_%_): (a: &mpz_t, b: mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_tdiv_r(&r, &a, &b);
-}
-
-alwaysinline
-(_%__): (a: mpz_t, b: &mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_tdiv_r(&r, &a, &b);
-}
-
 //---------------------------------------------------------------------
 alwaysinline
-(_&_): (a: mpz_t, b: mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_and(&r, &a, &b);
-}
+(_&_): (a: mpz_t, b: mpz_t) ~> mpz_t  { gmpz_binary_helper(__gmpz_and, &a, &b); }
 
 alwaysinline
 (_&__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a & b;
 
-alwaysinline
-(_&_): (a: &mpz_t, b: mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_and(&r, &a, &b);
-}
-
-alwaysinline
-(_&__): (a: mpz_t, b: &mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_and(&r, &a, &b);
-}
-
 //---------------------------------------------------------------------
 alwaysinline
-(_|_): (a: mpz_t, b: mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_ior(&r, &a, &b);
-}
+(_|_): (a: mpz_t, b: mpz_t) ~> mpz_t  { gmpz_binary_helper(__gmpz_ior, &a, &b); }
 
 alwaysinline
 (_|__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a | b;
 
-alwaysinline
-(_|_): (a: &mpz_t, b: mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_ior(&r, &a, &b);
-}
-
-alwaysinline
-(_|__): (a: mpz_t, b: &mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_ior(&r, &a, &b);
-}
-
 //---------------------------------------------------------------------
 alwaysinline
-(_^_): (a: mpz_t, b: mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_xor(&r, &a, &b);
-}
+(_^_): (a: mpz_t, b: mpz_t) ~> mpz_t  { gmpz_binary_helper(__gmpz_xor, &a, &b); }
 
 alwaysinline
 (_^__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a ^ b;
 
+//---------------------------------------------------------------------
 alwaysinline
-(_^_): (a: &mpz_t, b: mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_xor(&r, &a, &b);
-}
-
-alwaysinline
-(_^__): (a: mpz_t, b: &mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_xor(&r, &a, &b);
-}
+(_<<_): (a: mpz_t, u: ulong) ~> mpz_t  { gmpz_binary_helper(__gmpz_mul_2exp, &a, u); }
 
 //---------------------------------------------------------------------
 alwaysinline
-(_<<_): (a: mpz_t, u: ulong) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_mul_2exp(&r, &a, u);
-}
-
-alwaysinline
-(_<<_): (a: &mpz_t, u: ulong) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_mul_2exp(&r, &a, u);
-}
+(_>>_): (a: mpz_t, u: ulong) ~> mpz_t  { gmpz_binary_helper(__gmpz_fdiv_q_2exp, &a, u); }
 
 //---------------------------------------------------------------------
 alwaysinline
-(_>>_): (a: mpz_t, u: ulong) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_fdiv_q_2exp(&r, &a, u);
-}
-
-alwaysinline
-(_>>_): (a: &mpz_t, u: ulong) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_fdiv_q_2exp(&r, &a, u);
-}
+(~_): (a: mpz_t) ~> mpz_t  { gmpz_unary_helper(__gmpz_com, &a); }
 
 //---------------------------------------------------------------------
 alwaysinline
-(~_): (a: mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_com(&r, &a);
-}
-
-alwaysinline
-(~_): (a: &mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_com(&r, &a);
-}
+(-_): (a: mpz_t) ~> mpz_t  { gmpz_unary_helper(__gmpz_neg, &a); }
 
 //---------------------------------------------------------------------
 alwaysinline
-(-_): (a: mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_neg(&r, &a);
-}
-
-alwaysinline
-(-_): (a: &mpz_t) ~> mpz_t
-{
-    r = v_get_return_value();
-
-    __gmpz_neg(&r, &a);
-}
-
-//---------------------------------------------------------------------
-alwaysinline
-(_==_): (a: mpz_t, b: mpz_t) ~> bool   =  __gmpz_cmp(&a, &b) == 0;
+(_==_): (a: mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) == 0;
 
 alwaysinline
 (_==__): (a: mpz_t, b: mpz_t) ~> bool  =  a == b;
-
-alwaysinline
-(_==_): (a: &mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) == 0;
-
-alwaysinline
-(_==__): (a: mpz_t, b: &mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) == 0;
 
 //---------------------------------------------------------------------
 alwaysinline
@@ -714,24 +496,12 @@ alwaysinline
 alwaysinline
 (_!=__): (a: mpz_t, b: mpz_t) ~> bool  =  a != b;
 
-alwaysinline
-(_!=_): (a: &mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) != 0;
-
-alwaysinline
-(_!=__): (a: mpz_t, b: &mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) != 0;
-
 //---------------------------------------------------------------------
 alwaysinline
 (_<_): (a: mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) < 0;
 
 alwaysinline
 (_<__): (a: mpz_t, b: mpz_t) ~> bool  =  a < b;
-
-alwaysinline
-(_<_): (a: &mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) < 0;
-
-alwaysinline
-(_<__): (a: mpz_t, b: &mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) < 0;
 
 //---------------------------------------------------------------------
 alwaysinline
@@ -740,24 +510,12 @@ alwaysinline
 alwaysinline
 (_<=__): (a: mpz_t, b: mpz_t) ~> bool  =  a <= b;
 
-alwaysinline
-(_<=_): (a: &mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) <= 0;
-
-alwaysinline
-(_<=__): (a: mpz_t, b: &mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) <= 0;
-
 //---------------------------------------------------------------------
 alwaysinline
 (_>_): (a: mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) > 0;
 
 alwaysinline
 (_>__): (a: mpz_t, b: mpz_t) ~> bool  =  a > b;
-
-alwaysinline
-(_>_): (a: &mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) > 0;
-
-alwaysinline
-(_>__): (a: mpz_t, b: &mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) > 0;
 
 //---------------------------------------------------------------------
 alwaysinline
@@ -766,23 +524,12 @@ alwaysinline
 alwaysinline
 (_>=__): (a: mpz_t, b: mpz_t) ~> bool  =  a >= b;
 
-alwaysinline
-(_>=_): (a: &mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) >= 0;
-
-alwaysinline
-(_>=__): (a: mpz_t, b: &mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) >= 0;
-
 
 //---------------------------------------------------------------------
 //- ...
 //---------------------------------------------------------------------
 alwaysinline
-(_:=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t
-{
-    v_copy(&v, &x);
-
-    v_return(v);
-}
+(_:=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  { v_copy(&v, &x); v };
 
 alwaysinline (_+=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  v := v + x;
 alwaysinline (_-=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  v := v - x;
