@@ -107,7 +107,7 @@ make_module: (modname: *const char) ~> void
     v_target_set_data_layout(dl);
 
     //----------------------------------------------------------
-    if (is_win32)   v_add_constant("_WIN32", v_find_type("void"), 0);
+    if (is_win32)   v_add_constant("_WIN32", v_void_type(), 0);
 
     //----------------------------------------------------------
     collect_defines();

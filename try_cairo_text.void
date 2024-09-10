@@ -10,6 +10,13 @@
 //---------------------------------------------------------------------
 printf: (*const char, ...) ~> int;
 
+//---------------------------------------------------------------------
+double = float(64);
+
+
+//---------------------------------------------------------------------
+GTK_VERSION = 3;
+
 
 //---------------------------------------------------------------------
 WINDOZE = v_defined(_WIN32);
@@ -26,11 +33,39 @@ fscanf: (stream: *FILE, format: *const char, ...) ~> int;
 
 
 //---------------------------------------------------------------------
-//- ... <gtk/gtk.h>
+//- ... <gtk-3.0/gtk/gtk.h>
+//- ... <gtk-3.0/gdk/gdk.h>
+//- ... <gtk-3.0/gdk/gdkkeysyms.h>
+//- ... <gtk-3.0/gdk/gdkevents.h>
+//- ... <gtk-3.0/gdk/gdktypes.h>
+//---------------------------------------------------------------------
+//- ... <gtk/gtk.h>                         GTK 4
 //---------------------------------------------------------------------
 {
+#if (GTK_VERSION == 3)
 
-#if (WINDOZE)
+  #if (WINDOZE)
+
+    libname = v_malloc(char, 1024);
+    defer v_free(libname);
+
+    {   p = popen("bash -c \"dlltool -I $(pkg-config --variable=libdir gtk+-3.0)/libgtk-3.dll.a\"", "r");
+        defer pclose(p);
+
+        fscanf(p, "%1023s", libname);
+    }
+
+  #else
+
+    libname = "libgtk-3.so";
+
+  #endif
+
+#endif      //- GTK_VERSION == 3
+
+#if (GTK_VERSION == 4)
+
+  #if (WINDOZE)
 
     libname = v_malloc(char, 1024);
     defer v_free(libname);
@@ -41,11 +76,13 @@ fscanf: (stream: *FILE, format: *const char, ...) ~> int;
         fscanf(p, "%1023s", libname);
     }
 
-#else
+  #else
 
     libname = "libgtk-4.so";
 
-#endif
+  #endif
+
+#endif      //- GTK_VERSION == 4
 
     ok = LLVMLoadLibraryPermanently(libname);
 
@@ -61,8 +98,15 @@ fscanf: (stream: *FILE, format: *const char, ...) ~> int;
 //---------------------------------------------------------------------
 struct GtkApplication;
 struct GtkWidget;
-struct GtkDrawingArea;
-struct GtkEventController;
+
+#if (GTK_VERSION == 3)
+  struct GtkContainer;
+#endif
+
+#if (GTK_VERSION == 4)
+  struct GtkDrawingArea;
+  struct GtkEventController;
+#endif
 
 //---------------------------------------------------------------------
 gtk_application_new: (id: *const char, flags: int) ~> *GtkApplication;
@@ -81,27 +125,171 @@ g_application_run: (app: *GtkApplication, argc: int, argv: **char) ~> int;
 gtk_application_window_new: (app: *GtkApplication) ~> *GtkWidget;
 
 
-gtk_window_set_child: (wnd: *GtkWidget, widget: *GtkWidget) ~> void;
+#if (GTK_VERSION == 3)
 
-gtk_window_present: (wnd: *GtkWidget) ~> void;
+  gtk_window_set_default_size: (wnd: *GtkWidget, width: int, height: int) ~> void;
 
+  gtk_container_add: (container: *GtkContainer, widget: *GtkWidget) ~> void;
+
+  gtk_widget_show_all: (wnd: *GtkWidget) ~> void;
+
+#endif
+
+#if (GTK_VERSION == 4)
+
+  gtk_window_set_child: (wnd: *GtkWidget, widget: *GtkWidget) ~> void;
+
+  gtk_window_present: (wnd: *GtkWidget) ~> void;
+
+#endif
 
 gtk_drawing_area_new: () ~> *GtkWidget;
 
 
-GtkDrawingAreaDrawFunc = *((*GtkDrawingArea, *cairo_t, w: int, h: int, aux: *void) ~> void);
+#if (GTK_VERSION == 3)
 
-gtk_drawing_area_set_draw_func: (*GtkDrawingArea, GtkDrawingAreaDrawFunc, aux: *void, destroy: *void) ~> void;
+  gtk_widget_get_allocated_width:  (*GtkWidget) ~> int;
+  gtk_widget_get_allocated_height: (*GtkWidget) ~> int;
+
+  gtk_widget_queue_draw: (*GtkWidget) ~> void;
+
+  gtk_widget_add_events: (*GtkWidget, int) ~> void;
+
+#endif
+
+#if (GTK_VERSION == 4)
+
+  GtkDrawingAreaDrawFunc = *((*GtkDrawingArea, *cairo_t, w: int, h: int, aux: *void) ~> void);
+
+  gtk_drawing_area_set_draw_func: (*GtkDrawingArea, GtkDrawingAreaDrawFunc, aux: *void, destroy: *void) ~> void;
+
+#endif
 
 
 gtk_widget_queue_draw: (*GtkWidget) ~> void;
 
-gtk_event_controller_key_new: () ~> *GtkEventController;
 
-gtk_widget_add_controller: (*GtkWidget, *GtkEventController) ~> void;
+#if (GTK_VERSION == 4)
 
-gtk_widget_set_size_request: (*GtkWidget, int, int) ~> void;
+  gtk_event_controller_key_new: () ~> *GtkEventController;
 
+  gtk_widget_add_controller: (*GtkWidget, *GtkEventController) ~> void;
+
+  gtk_widget_set_size_request: (*GtkWidget, int, int) ~> void;
+
+#endif
+
+
+//---------------------------------------------------------------------
+my_draw_cairo_text: (cr: *cairo_t, width: int, height: int) ~> void;
+
+my_key_pressed: (keyval: unsigned, widget: *GtkWidget) ~> int;
+
+my_button_pressed: (x: double, y: double, widget: *GtkWidget) ~> int;
+
+
+//---------------------------------------------------------------------
+#if (GTK_VERSION == 3)
+
+//---------------------------------------------------------------------
+GDK_BUTTON_PRESS_MASK = 1 << 8;
+GDK_KEY_PRESS_MASK    = 1 << 10;
+
+GDK_BUTTON_PRESS = 4;
+
+GdkEventType = int;
+
+struct GdkWindow;
+
+struct GdkEventKey
+{
+    type:               GdkEventType;
+    window:            *GdkWindow;
+    send_event:         int(8);
+    time:               uint(32);
+    state:              unsigned;
+    keyval:             unsigned;
+    length:             int;
+    string:            *char;
+    hardware_keycode:   uint(16);
+    group:              uint(8);
+
+    is_modifier:        unsigned;   //- ???
+};
+
+struct GdkDevice;
+
+struct GdkEventButton
+{
+    type:       GdkEventType;
+    window:    *GdkWindow;
+    send_event: int(8);
+    time:       uint(32);
+    x:          double;
+    y:          double;
+    axes:      *double;
+    state:      unsigned;
+    button:     unsigned;
+    device:    *GdkDevice;
+    x_root:     double;
+    y_root:     double;
+};
+
+//---------------------------------------------------------------------
+key_pressed: (widget: *GtkWidget, event: *GdkEventKey, aux: *void) ~> int
+{
+    keyval = event->keyval;
+
+    v_return(my_key_pressed(keyval, widget));
+}
+
+//---------------------------------------------------------------------
+button_pressed: (widget: *GtkWidget, event: *GdkEventButton, aux: *void) ~> int
+{
+    if (event->type != GDK_BUTTON_PRESS)    v_return(0);
+    if (event->button != 1)                 v_return(0);
+
+    x = event->x;
+    y = event->y;
+
+    v_return(my_button_pressed(x, y, widget));
+}
+
+//---------------------------------------------------------------------
+draw_cairo_text: (widget: *GtkWidget, cr: *cairo_t, aux: *void) ~> void
+{
+    width  = gtk_widget_get_allocated_width(widget);
+    height = gtk_widget_get_allocated_height(widget);
+
+    my_draw_cairo_text(cr, width, height);
+}
+
+//---------------------------------------------------------------------
+on_activate: (app: *GtkApplication, data: *void) ~> void
+{
+    window = gtk_application_window_new(app);
+
+    gtk_window_set_default_size(window, 128*8+4, 64*15+4);
+
+    gtk_widget_add_events(window, GDK_KEY_PRESS_MASK|GDK_BUTTON_PRESS_MASK);
+
+    g_signal_connect_data(window, "key_press_event",    (key_pressed: *(()~>void)),    0, 0, 0);
+    g_signal_connect_data(window, "button_press_event", (button_pressed: *(()~>void)), 0, 0, 0);
+
+    drawing_area = gtk_drawing_area_new();
+
+    g_signal_connect_data(drawing_area, "draw", (draw_cairo_text: *(()~>void)), 0, 0, 0);
+
+    gtk_container_add((window: *GtkContainer), drawing_area);
+
+    gtk_widget_show_all(window);
+}
+
+#endif      //- GTK_VERSION == 3
+
+
+//---------------------------------------------------------------------
+#if (GTK_VERSION == 4)
 
 //---------------------------------------------------------------------
 key_pressed: (controller: *GtkEventController,
@@ -109,7 +297,10 @@ key_pressed: (controller: *GtkEventController,
               keycode:    unsigned,
               modifiers:  unsigned,
               text_view:  *GtkWidget
-              ) ~> int;
+              ) ~> int
+{
+    v_return(my_key_pressed(keyval, text_view));
+}
 
 //---------------------------------------------------------------------
 draw_cairo_text: (drawing_area: *GtkDrawingArea,
@@ -117,7 +308,10 @@ draw_cairo_text: (drawing_area: *GtkDrawingArea,
                   width: int,
                   height: int,
                   aux: *void
-                 ) ~> void;
+                 ) ~> void
+{
+    my_draw_cairo_text(cr, width, height);
+}
 
 //---------------------------------------------------------------------
 on_activate: (app: *GtkApplication, data: *void) ~> void
@@ -139,9 +333,7 @@ on_activate: (app: *GtkApplication, data: *void) ~> void
     gtk_window_present(window);
 }
 
-
-//---------------------------------------------------------------------
-double = float(64);
+#endif      //- GTK_VERSION == 4
 
 
 //---------------------------------------------------------------------
@@ -326,12 +518,7 @@ caret_y: &int := 0;
 caret_p: &int := 0;
 
 //---------------------------------------------------------------------
-draw_cairo_text: (drawing_area: *GtkDrawingArea,
-                  cr: *cairo_t,
-                  width: int,
-                  height: int,
-                  aux: *void
-                 ) ~> void
+my_draw_cairo_text: (cr: *cairo_t, width: int, height: int) ~> void
 {
     cr.set_source_rgb(0,0,0);
     cr.paint();
@@ -450,12 +637,7 @@ GDK_KEY_Page_Up   = 0xff55;
 GDK_KEY_Page_Down = 0xff56;
 GDK_KEY_End       = 0xff57;
 
-key_pressed: (controller: *GtkEventController,
-              keyval:     unsigned,
-              keycode:    unsigned,
-              modifiers:  unsigned,
-              widget:     *GtkWidget
-              ) ~> int
+my_key_pressed: (keyval: unsigned, widget: *GtkWidget) ~> int
 {
     switch(keyval)
     {
@@ -536,6 +718,17 @@ key_pressed: (controller: *GtkEventController,
 
         v_return(0);    //- GDK_EVENT_PROPAGATE
     }
+
+    gtk_widget_queue_draw(widget);
+
+    v_return(0);    //- GDK_EVENT_PROPAGATE
+}
+
+//---------------------------------------------------------------------
+my_button_pressed: (x: double, y: double, widget: *GtkWidget) ~> int
+{
+    caret_x := ((x: int) - 2) / font_width;
+    caret_y := ((y: int) - 2) / font_height;
 
     gtk_widget_queue_draw(widget);
 
