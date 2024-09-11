@@ -940,7 +940,7 @@ stdout: &*FILE;
 fprintf: (*FILE, *const char, ...) ~> int;
 
 //---------------------------------------------------------------------
-#define (_<<_): (f: &*FILE, v) ~> &*FILE  =
+#define (_<<_): (f: *FILE, v) ~> *FILE  =
 {
     t = v_typeof(v);
 
