@@ -7,7 +7,6 @@
 //{ v_debug_print_module(999); }
 {
     v_import("try_cstdarg.void");
-//  v_import("try_cassert.void");
 
     v_import("try_header.void");
 }
