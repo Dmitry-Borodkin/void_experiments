@@ -10,6 +10,12 @@
 //---------------------------------------------------------------------
 double = float(64);
 
+struct FILE;
+
+stdout: &*FILE;
+
+setbuf: (*FILE, *char) ~> int;
+
 printf: (*const char, ...) ~> int;
 
 
@@ -296,8 +302,6 @@ text_size: &size_t := 0;
 
 block
 {
-    struct FILE;
-
     fopen: (filename: *const char, mode: *const char) ~> *FILE;
     fclose: (stream: *FILE) ~> int;
 
@@ -604,6 +608,8 @@ my_button_pressed: (x: double, y: double, widget: *GtkWidget) ~> int
 //---------------------------------------------------------------------
 main: (argc: int, argv: **const char) ~> int
 {
+    setbuf(stdout, 0);
+
     app = gtk_application_new(0, 0);
 
     g_signal_connect_data(app, "activate", (on_activate: *(()~>void)), 0, 0, 0);

@@ -984,12 +984,22 @@ fprintf: (*FILE, *const char, ...) ~> int;
 }
 
 
+//---------------------------------------------------------------------
+#define
+(_.is_pointer):   (t: v_static_type_t) ~> bool  =  t.is_refptr  &&  t.as_refptr.is_pointer;
+
+#define
+(_.is_reference): (t: v_static_type_t) ~> bool  =  t.is_refptr  &&  t.as_refptr.is_reference;
 
 
+int_ptr: v_static_type_t = *int;
 
 
-
-
+#if (int_ptr.is_pointer)
+    #note ("int_ptr is a pointer")
+#else
+    #note ("int_ptr is NOT a pointer")
+#endif
 
 
 

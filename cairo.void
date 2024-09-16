@@ -597,7 +597,7 @@
     v5 = v_struct_type_named("struct._cairo_pattern");
     v_export_type("cairo_pattern_t", v5);
 
-    arg0 = v_alloca(v_type_ptr, 10);
+    arg0 = v_alloca(v_type_ptr, 8);
     arg1 = v_getelementptr(arg0, 1);
     arg2 = v_getelementptr(arg0, 2);
     arg3 = v_getelementptr(arg0, 3);
@@ -605,8 +605,6 @@
     arg5 = v_getelementptr(arg0, 5);
     arg6 = v_getelementptr(arg0, 6);
     arg7 = v_getelementptr(arg0, 7);
-    arg8 = v_getelementptr(arg0, 8);
-    arg9 = v_getelementptr(arg0, 9);
 
     v6_void = v_find_type("void");
     v7 = v_function_type(v6_void, arg0, 0, false);
