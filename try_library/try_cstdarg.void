@@ -137,16 +137,38 @@ struct va_list { (*void)[va_list_size]; };
 
     ft = v_function_type(_void, typ, 1, false);
 
-    v_export_symbol("llvm.va_start", ft, 0);
-    v_export_symbol("llvm.va_end",   ft, 0);
+    llvm_va_start: &*const char := v_undef();
+    llvm_va_end:   &*const char := v_undef();
+    llvm_va_copy:  &*const char := v_undef();
+
+    {   ver: &unsigned[3] := v_undef();
+
+        LLVMGetVersion(ver+0, ver+1, ver+2);
+
+        if (ver[0] < 19)
+        {
+            llvm_va_start := "llvm.va_start";
+            llvm_va_end   := "llvm.va_end";
+            llvm_va_copy  := "llvm.va_copy";
+        }
+        else
+        {
+            llvm_va_start := "llvm.va_start.p0";
+            llvm_va_end   := "llvm.va_end.p0";
+            llvm_va_copy  := "llvm.va_copy.p0";
+        }
+    }
+
+    v_export_symbol(llvm_va_start, ft, 0);
+    v_export_symbol(llvm_va_end,   ft, 0);
 
     ft = v_function_type(_void, typ, 2, false);
 
-    v_export_symbol("llvm.va_copy", ft, 0);
+    v_export_symbol(llvm_va_copy, ft, 0);
 
-    v_export_alias("va_start", "llvm.va_start");
-    v_export_alias("va_end",   "llvm.va_end");
-    v_export_alias("va_copy",  "llvm.va_copy");
+    v_export_alias("va_start", llvm_va_start);
+    v_export_alias("va_end",   llvm_va_end);
+    v_export_alias("va_copy",  llvm_va_copy);
 }
 
 
