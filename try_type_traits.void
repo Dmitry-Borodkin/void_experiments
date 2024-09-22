@@ -58,50 +58,49 @@ static_types_table: &(*const char)[][2] :=
         { "_vector",  "_vector_base" },
         { "_svector", "_vector_base" },
     { "_generic", "" },
+
+    { 0 }
 };
 
 //---------------------------------------------------------------------
+build_hierarchy: (tag: *const char, table: *(*const char)[2]) ~> void
 {
-    t = v_find_symbol_type("static_types_table");
-
-    t = v_type_refptr_get_element_type(t);
-
-    N = v_type_array_get_length(t);
-
-    quarks = new v_quark_t[N];      defer delete[] quarks;
-    types  = new (*v_type_t)[N];    defer delete[] types;
-
     sstr: &v_std_string_t := {};
 
-    for (i: &int := 0; i < N; ++i)
+    for (i: &int := 0; table[i][0]; ++i)
     {
+        quark_0: &v_quark_t := v_undef();
+        type_0:  &*v_type_t := v_undef();
+
         for (j: &int := 0; j < 2; ++j)
         {
             if (i == 0  &&  j == 1) v_continue();           //- Sic!
 
-            v_std_string_set(&sstr, "v_static_type");
+            v_std_string_set(&sstr, "v_static_");
 
-            v_std_string_append(&sstr, static_types_table[i][j]);
+            v_std_string_append(&sstr, tag);
+            v_std_string_append(&sstr, table[i][j]);
             v_std_string_append(&sstr, "_t");
 
             qname = v_quark_from_string(v_std_string_get(&sstr));
 
             type = v_generic_type(qname, 0, 0);
 
-            v_std_string_set(&sstr, "v.convert_to_static_type");
+            v_std_string_set(&sstr, "v.convert_to_static_");
 
-            v_std_string_append(&sstr, static_types_table[i][j]);
+            v_std_string_append(&sstr, tag);
+            v_std_string_append(&sstr, table[i][j]);
             v_std_string_append(&sstr, "_t");
 
             quark = v_quark_from_string(v_std_string_get(&sstr));
 
             if (j == 0)             //- Derived
             {
-                types[i] := type;
+                type_0 := type;
 
                 if (i != 0) v_add_type_q(qname, type);
 
-                quarks[i] := quark;
+                quark_0 := quark;
 
                 v_add_intrinsic_q(quark, voidc_trivial_coercion_intrinsic, type);
             }
@@ -109,12 +108,14 @@ static_types_table: &(*const char)[][2] :=
             {
                 v_assert(i != 0);
 
-                v_add_coercion(v_coe_projective, quark, quarks[i], types[i], type);
-
-//printf("coe: %s - %s\n", v_quark_to_string(quark), v_quark_to_string(quarks[i]));
+                v_add_coercion(v_coe_projective, quark, quark_0, type_0, type);
             }
         }
     }
+}
+
+//---------------------------------------------------------------------
+{   build_hierarchy("type", static_types_table);
 }
 
 
@@ -252,63 +253,12 @@ static_generic_args_table: &(*const char)[][2] :=
     { "_quark", "" },
     { "_type", "" },
     { "_cons", "" },
+
+    { 0 }
 };
 
 //---------------------------------------------------------------------
-{
-    t = v_find_symbol_type("static_generic_args_table");
-
-    t = v_type_refptr_get_element_type(t);
-
-    N = v_type_array_get_length(t);
-
-    quarks = new v_quark_t[N];      defer delete[] quarks;
-    types  = new (*v_type_t)[N];    defer delete[] types;
-
-    sstr: &v_std_string_t := {};
-
-    for (i: &int := 0; i < N; ++i)
-    {
-        for (j: &int := 0; j < 2; ++j)
-        {
-            if (i == 0  &&  j == 1) v_continue();           //- Sic!
-
-            v_std_string_set(&sstr, "v_static_generic_arg");
-
-            v_std_string_append(&sstr, static_generic_args_table[i][j]);
-            v_std_string_append(&sstr, "_t");
-
-            qname = v_quark_from_string(v_std_string_get(&sstr));
-
-            type = v_generic_type(qname, 0, 0);
-
-            v_std_string_set(&sstr, "v.convert_to_static_generic_arg");
-
-            v_std_string_append(&sstr, static_generic_args_table[i][j]);
-            v_std_string_append(&sstr, "_t");
-
-            quark = v_quark_from_string(v_std_string_get(&sstr));
-
-            if (j == 0)             //- Derived
-            {
-                types[i] := type;
-
-                if (i != 0) v_add_type_q(qname, type);
-
-                quarks[i] := quark;
-
-                v_add_intrinsic_q(quark, voidc_trivial_coercion_intrinsic, type);
-            }
-            else    //- j == 1        - Base
-            {
-                v_assert(i != 0);
-
-                v_add_coercion(v_coe_projective, quark, quarks[i], types[i], type);
-
-//printf("coe: %s - %s\n", v_quark_to_string(quark), v_quark_to_string(quarks[i]));
-            }
-        }
-    }
+{   build_hierarchy("generic_arg", static_generic_args_table);
 }
 
 
