@@ -241,7 +241,7 @@ trigroup_op_braces_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_b
 
             name = v_ast_expr_identifier_get_name(e0);
 
-            idx: &int[2] := -1;
+            idx: &int[2] := v_undef();
 
             for (i: &int := 0; i < 2; ++i)
             {
