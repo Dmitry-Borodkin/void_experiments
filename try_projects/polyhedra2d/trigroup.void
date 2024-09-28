@@ -1,0 +1,384 @@
+{ voidc_import("imports.void"); }
+{ make_header("trigroup"); }
+//---------------------------------------------------------------------
+{
+    v_import("geometry.void");
+}
+
+
+//---------------------------------------------------------------------
+struct TriGroup;
+
+struct GroupElement;
+struct GroupElementData;
+
+struct GroupIterator;
+struct EvenGroupIterator;
+struct GroupFilter;
+
+
+//---------------------------------------------------------------------
+using namespace Geometry;
+
+
+//=====================================================================
+//- Triangle group element
+//=====================================================================
+struct GroupElement
+{
+    group: *TriGroup;
+    data:  *GroupElementData;
+};
+
+//---------------------------------------------------------------------
+(_.as_string()): (GroupElement, *char) ~> void;
+
+(_*_): (GroupElement, GroupElement) ~> GroupElement;
+
+(~_): (GroupElement) ~> GroupElement;
+
+(_()): (GroupElement, Vector) ~> Vector;
+
+(_.trans): (GroupElement) ~> Transform;
+
+alwaysinline
+(_==_): (a: GroupElement, b: GroupElement) ~> bool  =  a.data == b.data;
+
+alwaysinline
+(_!=_): (a: GroupElement, b: GroupElement) ~> bool  =  a.data != b.data;
+
+
+//---------------------------------------------------------------------
+//- Triangle group element data
+//---------------------------------------------------------------------
+struct GroupElementData
+{
+    height:    unsigned;                    //- Distance from ident
+    step:      (*GroupElementData)[3];      //- Step to nearest
+    direction: int(2)[3];                   //- Step direction: -1/1 - to/from ident
+
+    //- Representation of ("conform") operation
+
+    oper_m: double[4];          //- Ortho-normal(!) matrix
+    oper_v: Vector;             //- Vector of "shift" (may be "infinite")
+
+    //- Indexes related to iterators ...
+
+    index: unsigned[8];
+};
+
+//---------------------------------------------------------------------
+(_.set_step()): (&GroupElementData, unsigned, &GroupElementData) ~> void;
+
+(_.oper()): (&GroupElementData, &TriGroup, Vector) ~> Vector;
+
+
+//=====================================================================
+//- Triangle group
+//=====================================================================
+struct TriGroup
+{
+    order: unsigned[3][3];          //- Order matrix
+
+                        //-   > 0   - "spheric" (finite)
+    sigma: double;      //-   = 0   - "parabolic"
+                        //-   < 0   - "hyperbolic"
+
+    v_a: Vector;
+    v_b: Vector;
+    v_c: Vector;
+
+    p_a: Point;
+    p_b: Point;
+    p_c: Point;
+
+    l_a: Line;
+    l_b: Line;
+    l_c: Line;
+
+    p_ab: Point;
+    p_bc: Point;
+    p_ca: Point;
+
+    cur_index: unsigned[8];
+    _layers:   *void;
+    _border:   *void;
+};
+
+//---------------------------------------------------------------------
+alwaysinline
+(v_initialize(_)): (*TriGroup, size_t) ~> void  =  derive;      //- Sic !!!
+
+TriGroup._build: (&unsigned[3][3]) ~> TriGroup;                 //- Sic !!!
+
+(v_terminate(_)):  (*TriGroup, size_t) ~> void;
+
+//---------------------------------------------------------------------
+(_.gr_ident): (TriGroup) ~> GroupElement;
+(_.gr_a):     (TriGroup) ~> GroupElement;
+(_.gr_b):     (TriGroup) ~> GroupElement;
+(_.gr_c):     (TriGroup) ~> GroupElement;
+
+(_.from_string()): (&TriGroup, *const char) ~> GroupElement;
+
+(_.trans_double()): (TriGroup, Vector) ~> Point;
+(_.trans_half()):   (TriGroup, Point)  ~> Vector;
+
+(_.trans_shift()):     (TriGroup, Point) ~> Transform;
+(_.trans_shift_inv()): (TriGroup, Point) ~> Transform;
+
+(_.shift_vector()): (TriGroup, Vector, Vector) ~> Vector;
+
+(_.half_vector()):   (TriGroup, Vector) ~> Vector;
+(_.double_vector()): (TriGroup, Vector) ~> Vector;
+
+
+//=====================================================================
+//- Iterators
+//=====================================================================
+struct GroupIterator
+{
+    _next: *((&GroupIterator) ~> void);
+
+    group:  *TriGroup;
+    _layer: *void;
+    index:  unsigned;
+};
+
+//---------------------------------------------------------------------
+struct EvenGroupIterator
+{
+    GroupIterator;
+};
+
+//---------------------------------------------------------------------
+struct GroupFilter
+{
+    GroupIterator;
+
+    filter: uint(3);
+};
+
+//---------------------------------------------------------------------
+({_}): (&TriGroup) ~> GroupIterator;
+
+({_}): (&TriGroup) ~> EvenGroupIterator;
+
+({_}): (&TriGroup, *const char) ~> GroupFilter;
+
+//---------------------------------------------------------------------
+alwaysinline
+(_.ok): (it: &const GroupIterator) ~> bool  =  it._layer != 0;
+
+(*_): (&const GroupIterator) ~> GroupElement;
+
+alwaysinline
+(_->): (it: &const GroupIterator) ~> *GroupElement  = &*it;
+
+alwaysinline
+(++_): (it: &GroupIterator) ~> &GroupIterator  =
+{
+    it._next(it);
+
+    it
+};
+
+
+//=====================================================================
+{   gctx = v_target_get_global_ctx();
+    vctx = v_target_get_voidc_global_ctx();
+
+    v_target_set_global_ctx(vctx);
+
+    v_add_symbol("cur_gctx", v_target_global_ctx_t, gctx);
+
+    v_target_set_global_ctx(gctx);
+}
+
+{   vctx = v_target_get_voidc_global_ctx();
+
+    v_target_set_global_ctx(vctx);
+
+    v_import("llvm-c/Core.void");
+
+    //-----------------------------------------------------------------
+    LLVMDisposeMemoryBuffer: (LLVMMemoryBufferRef) ~> void;
+
+    LLVMDisposeMemoryBuffer(voidc_get_unit_buffer());
+    voidc_set_unit_buffer(0);
+}
+
+//---------------------------------------------------------------------
+{   voidc_unit_begin_module("trigroup_module");
+}
+
+//---------------------------------------------------------------------
+private
+trigroup_op_braces_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t,
+                               arg_ptrs: **v_ast_expr_t, arg_count: unsigned
+                              ) ~> void
+{
+    ttag = v_get_result_type();
+    vtag = v_get_result_value();
+
+    ords: &LLVMValueRef[3] := 0;
+
+    unsigned_t = v_find_type("unsigned");
+
+    {   arg0 = arg_ptrs[0];
+
+        orders = v_ast_expr_call_get_arg_list(arg0);
+        orders = (v_list_get_item(orders, 1) : *v_ast_generic_list_t);
+
+        n = v_list_get_size(orders);
+
+        for (i: &int := 0; i < n; ++i)
+        {
+            order = (v_list_get_item(orders, i) : *v_ast_expr_list_t);
+
+            e0 = v_list_get_item(order, 0);     //- Name
+            e2 = v_list_get_item(order, 2);     //- Value
+
+            name = v_ast_expr_identifier_get_name(e0);
+
+            idx: &int[2] := -1;
+
+            for (i: &int := 0; i < 2; ++i)
+            {
+                switch((name[i] : char32_t))
+                {
+                case 'a': case 'A': idx[i] := 0;  v_break();
+                case 'b': case 'B': idx[i] := 1;  v_break();
+                case 'c': case 'C': idx[i] := 2;  v_break();
+                }
+
+                v_assert(0 <= idx[i] <= 2);
+            }
+
+            v_assert(idx[0] != idx[1]);
+
+            v_set_result_type(unsigned_t);
+            v_set_result_value(0);
+
+            v_ast_accept_visitor(e2, vis);
+
+            v = v_get_result_value();
+
+            switch(idx[0]*3 + idx[1])
+            {
+            case 0*3+1: case 1*3+0: ords[0] := v;   v_break();      //- AB
+            case 1*3+2: case 2*3+1: ords[1] := v;   v_break();      //- BC
+            case 2*3+0: case 0*3+2: ords[2] := v;   v_break();      //- CA
+            }
+        }
+
+        unsigned_ = v_type_get_llvm_type(unsigned_t);
+
+        n2 = LLVMConstInt(unsigned_, 2, 0);
+
+        for (i: &int := 0; i < 3; ++i)
+        {
+            if (ords[i] == 0)   ords[i] := n2;
+        }
+    }
+
+    slst: &v_ast_stmt_list_t := {};
+
+    {   ast =
+        {'stmt'
+
+          #define my_build_trigroup: (ab, bc, ca) ~> TriGroup
+            = TriGroup._build({{ 1, ab, ca},
+                               {ab,  1, bc},
+                               {ca, bc,  1}});
+
+        'stmt'};
+
+        v_make_list( &slst, (&ast: *v_ast_stmt_t));
+    }
+
+    expr: &v_ast_expr_t := {};
+
+    elst: &v_ast_expr_list_t := {};
+
+    v_make_list_nil(&elst);
+
+    for (i: &int := 0; i < 3; ++i)
+    {
+        v_ast_make_expr_compiled(&expr, unsigned_t, ords[i]);
+
+        v_list_append(&elst, &elst, &expr);
+    }
+
+    v_ast_make_expr_identifier(&expr, "my_build_trigroup");
+
+    v_ast_make_expr_call(&expr, &expr, &elst);
+
+    v_ast_make_expr_block(&expr, &slst, &expr);
+
+    v_set_result_type(ttag);
+    v_set_result_value(vtag);
+
+    v_ast_accept_visitor(&expr, vis);
+}
+
+//---------------------------------------------------------------------
+polyhedra2d_trigroup_effort: (*void) ~> void
+{
+    v_add_overload("v.op_braces", v_find_type("TriGroup"), "make.TriGroup");
+
+    v_add_intrinsic("make.TriGroup", trigroup_op_braces_intrinsic, 0);
+
+    GrIt_t = v_find_type("GroupIterator");
+    EvIt_t = v_find_type("EvenGroupIterator");
+    GrFl_t = v_find_type("GroupFilter");
+
+    GrIt_ptr_t = v_pointer_type(GrIt_t, 0);
+    EvIt_ptr_t = v_pointer_type(EvIt_t, 0);
+    GrFl_ptr_t = v_pointer_type(GrFl_t, 0);
+
+    GrIt_ref_t = v_reference_type(GrIt_t, 0);
+    EvIt_ref_t = v_reference_type(EvIt_t, 0);
+    GrFl_ref_t = v_reference_type(GrFl_t, 0);
+
+    GrIt_ptr_q = v_quark_from_string("polyhedra2d.GroupIterator_ptr_coercion");
+    EvIt_ptr_q = v_quark_from_string("polyhedra2d.EvenGroupIterator_ptr_coercion");
+    GrFl_ptr_q = v_quark_from_string("polyhedra2d.GroupFilter_ptr_coercion");
+
+    GrIt_ref_q = v_quark_from_string("polyhedra2d.GroupIterator_ref_coercion");
+    EvIt_ref_q = v_quark_from_string("polyhedra2d.EvenGroupIterator_ref_coercion");
+    GrFl_ref_q = v_quark_from_string("polyhedra2d.GroupFilter_ref_coercion");
+
+    v_add_intrinsic_q(GrIt_ptr_q, voidc_trivial_coercion_intrinsic, GrIt_ptr_t);
+    v_add_intrinsic_q(EvIt_ptr_q, voidc_trivial_coercion_intrinsic, EvIt_ptr_t);
+    v_add_intrinsic_q(GrFl_ptr_q, voidc_trivial_coercion_intrinsic, GrFl_ptr_t);
+
+    v_add_intrinsic_q(GrIt_ref_q, voidc_trivial_coercion_intrinsic, GrIt_ref_t);
+    v_add_intrinsic_q(EvIt_ref_q, voidc_trivial_coercion_intrinsic, EvIt_ref_t);
+    v_add_intrinsic_q(GrFl_ref_q, voidc_trivial_coercion_intrinsic, GrFl_ref_t);
+
+    v_add_coercion(v_coe_projective, GrIt_ptr_q, EvIt_ptr_q, EvIt_ptr_t, GrIt_ptr_t);
+    v_add_coercion(v_coe_projective, GrIt_ptr_q, GrFl_ptr_q, GrFl_ptr_t, GrIt_ptr_t);
+
+    v_add_coercion(v_coe_projective, GrIt_ref_q, EvIt_ref_q, EvIt_ref_t, GrIt_ref_t);
+    v_add_coercion(v_coe_projective, GrIt_ref_q, GrFl_ref_q, GrFl_ref_t, GrIt_ref_t);
+}
+
+//---------------------------------------------------------------------
+{   if (v_find_symbol_value("polyhedra2d_make_trigroup_intrinsic"))
+    {
+        voidc_skip_object_file_load(1);
+    }
+}
+
+//---------------------------------------------------------------------
+{   voidc_unit_end_module(); }
+
+
+//---------------------------------------------------------------------
+{   v_target_set_global_ctx(cur_gctx);
+
+    v_export_effort(polyhedra2d_trigroup_effort, 0);
+}
+
+

@@ -1,0 +1,504 @@
+{ v_import("imports.void"); }
+{ make_module("geometry"); }
+//---------------------------------------------------------------------
+{
+    v_import("geometry.void");
+}
+
+
+//---------------------------------------------------------------------
+sin: (double) ~> double;
+cos: (double) ~> double;
+
+M_PI = 3.14159265358979323846264338327950288419716939937510582;
+
+
+//---------------------------------------------------------------------
+namespace Geometry
+{
+
+
+//---------------------------------------------------------------------
+EPSILON = 1e-9;
+
+is_equal: (x: double, y: double) ~> bool
+{
+    if (x == y)  v_return(true);
+
+    size = fabs(x) + fabs(y);
+
+    if (size <= EPSILON)  v_return(true);
+
+    diff = fabs(x - y);
+
+    if (diff <= EPSILON)  v_return(true);
+
+    if (size > 1  &&  diff/size <= EPSILON)  v_return(true);
+
+    v_return(false);
+}
+
+det_3: (v: &double[9]) ~> double
+{
+    v00 = v[0]; v01 = v[1]; v02 = v[2];
+    v10 = v[3]; v11 = v[4]; v12 = v[5];
+    v20 = v[6]; v21 = v[7]; v22 = v[8];
+
+    v_return( v00 * (v11*v22 - v12*v21)
+            - v10 * (v01*v22 - v02*v21)
+            + v20 * (v01*v12 - v02*v11) );
+}
+
+
+//---------------------------------------------------------------------
+seq_equal: (a: *double, b: *double, n: int) ~> bool
+{
+    ret: &bool := true;
+
+    for (i: &int := 0; i < n; ++i)  if (!is_equal( a[i], b[i]))  { ret := false;  v_break(); }
+
+    if (ret)  v_return(true);
+
+    ret := true;
+
+    for (i: &int := 0; i < n; ++i)  if (!is_equal(-a[i], b[i]))  { ret := false;  v_break(); }
+
+    v_return(ret);
+}
+
+
+//=====================================================================
+//- Vector (2D)
+//=====================================================================
+(_.print_to_file()): (v: Vector, f: *FILE) ~> void
+{
+    fprintf(f, "(%g, %g)", v.x, v.y);
+}
+
+(_==_): (a: Vector, b: Vector) ~> bool
+{
+    v_return( is_equal(a.x, b.x)  &&  is_equal(a.y, b.y) );
+}
+
+
+//=====================================================================
+//- Projective point (2D)
+//=====================================================================
+(_.print_to_file()): (p: Point, f: *FILE) ~> void
+{
+    fprintf(f, "(%g, %g, %g)", p.x, p.y, p.w);
+}
+
+//---------------------------------------------------------------------
+(_.norm()): (p: &Point) ~> bool
+{
+    pa: &double[3] := {p.x, p.y, p.w};
+
+    d: &double := 0;
+
+    for (i: &int := 0; i < 3; ++i)
+    {
+        if (!is_finite(pa[i]))  v_return(false);
+
+        if (di = fabs(pa[i]), d < di)   d := di;
+    }
+
+    if (d == 0)  v_return(false);
+    if (d == 1)  v_return(true);
+
+    p.x /= d;
+    p.y /= d;
+    p.w /= d;
+
+    v_return(true);
+}
+
+//---------------------------------------------------------------------
+(_.is_affine()): (p: &Point) ~> bool
+{
+    if (!p.norm())  v_return(false);
+
+    v_return( fabs(p.w) > EPSILON );
+}
+
+//---------------------------------------------------------------------
+(_==_): (a: &Point, b: &Point) ~> bool
+{
+    if (!(a.norm()  &&  b.norm()))  v_return(false);
+
+    sa: &double[] := {a.x, a.y, a.w};
+    sb: &double[] := {b.x, b.y, b.w};
+
+    v_return(seq_equal(sa, sb, 3));
+}
+
+
+//=====================================================================
+//- Projective line (2D)
+//=====================================================================
+(_.print_to_file()): (l: Line, f: *FILE) ~> void
+{
+    fprintf(f, "(%g, %g, %g)", l.cx, l.cy, l.cw);
+}
+
+//---------------------------------------------------------------------
+(_.norm()): (l: &Line) ~> bool
+{
+    la: &double[3] := {l.cx, l.cy, l.cw};
+
+    d: &double := 0;
+
+    for (i: &int := 0; i < 3; ++i)
+    {
+        if (!is_finite(la[i]))  v_return(false);
+
+        if (di = fabs(la[i]), d < di)   d := di;
+    }
+
+    if (d == 0)  v_return(false);
+    if (d == 1)  v_return(true);
+
+    l.cx /= d;
+    l.cy /= d;
+    l.cw /= d;
+
+    v_return(true);
+}
+
+//---------------------------------------------------------------------
+(_.is_affine()): (l: &Line) ~> bool
+{
+    if (!l.norm())  v_return(false);
+
+    v_return( fabs(l.cx) > EPSILON  ||  fabs(l.cy) > EPSILON );
+}
+
+//---------------------------------------------------------------------
+(_==_): (a: &Line, b: &Line) ~> bool
+{
+    if (!(a.norm()  &&  b.norm()))  v_return(false);
+
+    sa: &double[] := {a.cx, a.cy, a.cw};
+    sb: &double[] := {b.cx, b.cy, b.cw};
+
+    v_return(seq_equal(sa, sb, 3));
+}
+
+
+//=====================================================================
+incident: (l: &Line, p: &Point) ~> bool
+{
+    l.norm();
+    p.norm();
+
+    v_return( fabs(l.cx*p.x + l.cy*p.y + l.cw*p.w) < EPSILON );
+}
+
+
+//=====================================================================
+//- Projective transformation (2D)
+//=====================================================================
+(_.print_to_file()): (t: &Transform, f: *FILE) ~> void
+{
+    t = t[0];
+
+    fprintf(f, "(%g, %g, %g, %g, %g, %g, %g, %g, %g)", t[0], t[1], t[2], t[3], t[4], t[5], t[6], t[7], t[8]);
+}
+
+//---------------------------------------------------------------------
+(_.norm()): (t: &Transform) ~> bool
+{
+    t = t[0];
+
+    d: &double := 0;
+
+    for (i: &int := 0; i < 9; ++i)
+    {
+        if (!is_finite(t[i]))  v_return(false);
+
+        if (di = fabs(t[i]), d < di)  d := di;
+    }
+
+    if (d == 0)  v_return(false);
+    if (d == 1)  v_return(true);
+
+    for (i: &int := 0; i < 9; ++i)
+    {
+        t[i] /= d;
+    }
+
+    v_return(true);
+}
+
+//---------------------------------------------------------------------
+(_.is_regular()): (t: &Transform) ~> bool
+{
+    if (!t.norm())  v_return(false);
+
+    v_return( fabs(t.det()) > EPSILON );
+}
+
+//---------------------------------------------------------------------
+(_.is_affine()): (t: &Transform) ~> bool
+{
+    if (!t.norm())  v_return(false);
+
+    t = t[0];
+
+    v_return( fabs(t[6]) <= EPSILON  &&
+              fabs(t[7]) <= EPSILON  &&
+              fabs(t[8]) >  EPSILON );
+}
+
+//---------------------------------------------------------------------
+(_==_): (a: &Transform, b: &Transform) ~> bool
+{
+    if (!(a.norm()  &&  b.norm()))  v_return(false);
+
+    v_return(seq_equal(a[0], b[0], 9));
+}
+
+//---------------------------------------------------------------------
+(_.transform_by()): (v: Vector, t: Transform) ~> Vector
+{
+    t = t[0];
+
+    x = t[0]*v.x + t[1]*v.y + t[2];
+    y = t[3]*v.x + t[4]*v.y + t[5];
+    w = t[6]*v.x + t[7]*v.y + t[8];
+
+    v_return({ x/w, y/w });
+}
+
+(_.transform_by()): (p: Point, t: Transform) ~> Point
+{
+    t = t[0];
+
+    x = t[0]*p.x + t[1]*p.y + t[2]*p.w;
+    y = t[3]*p.x + t[4]*p.y + t[5]*p.w;
+    w = t[6]*p.x + t[7]*p.y + t[8]*p.w;
+
+    v_return({ x, y, w });
+}
+
+(_.transform_by()): (l: Line, t: Transform) ~> Line
+{
+    t = t[0];
+
+    cx = det_3({ l.cx, t[3], t[6],
+                 l.cy, t[4], t[7],
+                 l.cw, t[5], t[8] });
+
+    cy = det_3({ t[0], l.cx, t[6],
+                 t[1], l.cy, t[7],
+                 t[2], l.cw, t[8] });
+
+    cw = det_3({ t[0], t[3], l.cx,
+                 t[1], t[4], l.cy,
+                 t[2], t[5], l.cw });
+
+    v_return({ cx, cy, cw });
+}
+
+//---------------------------------------------------------------------
+(_+_): (t: Transform, v: Vector) ~> Transform
+{
+    t = t[0];
+
+    xx = t[0] + v.x*t[6];
+    xy = t[1] + v.x*t[7];
+    xw = t[2] + v.x*t[8];
+
+    yx = t[3] + v.y*t[6];
+    yy = t[4] + v.y*t[7];
+    yw = t[5] + v.y*t[8];
+
+    wx = t[6];
+    wy = t[7];
+    ww = t[8];
+
+    v_return({{ xx, xy, xw,
+                yx, yy, yw,
+                wx, wy, ww }});
+}
+
+//---------------------------------------------------------------------
+(_*_): (a: Transform, b: Transform) ~> Transform
+{
+    a = a[0];
+    b = b[0];
+
+    xx = a[0]*b[0] + a[1]*b[3] + a[2]*b[6];
+    xy = a[0]*b[1] + a[1]*b[4] + a[2]*b[7];
+    xw = a[0]*b[2] + a[1]*b[5] + a[2]*b[8];
+
+    yx = a[3]*b[0] + a[4]*b[3] + a[5]*b[6];
+    yy = a[3]*b[1] + a[4]*b[4] + a[5]*b[7];
+    yw = a[3]*b[2] + a[4]*b[5] + a[5]*b[8];
+
+    wx = a[6]*b[0] + a[7]*b[3] + a[8]*b[6];
+    wy = a[6]*b[1] + a[7]*b[4] + a[8]*b[7];
+    ww = a[6]*b[2] + a[7]*b[5] + a[8]*b[8];
+
+    v_return({{ xx, xy, xw,
+                yx, yy, yw,
+                wx, wy, ww }});
+}
+
+(_*__): (k: double, t: Transform) ~> Transform
+{
+    t = t[0];
+
+    xx = k*t[0];
+    xy = k*t[1];
+    xw = k*t[2];
+
+    yx = k*t[3];
+    yy = k*t[4];
+    yw = k*t[5];
+
+    wx =   t[6];
+    wy =   t[7];
+    ww =   t[8];
+
+    v_return({{ xx, xy, xw,
+                yx, yy, yw,
+                wx, wy, ww }});
+}
+
+//---------------------------------------------------------------------
+(~_): (t: Transform) ~> Transform
+{
+    t = t[0];
+
+    xx = t[4]*t[8] - t[5]*t[7];
+    xy = t[2]*t[7] - t[1]*t[8];
+    xw = t[1]*t[5] - t[2]*t[4];
+
+    yx = t[5]*t[6] - t[3]*t[8];
+    yy = t[0]*t[8] - t[2]*t[6];
+    yw = t[2]*t[3] - t[0]*t[5];
+
+    wx = t[3]*t[7] - t[4]*t[6];
+    wy = t[1]*t[6] - t[0]*t[7];
+    ww = t[0]*t[4] - t[1]*t[3];
+
+    r: &Transform := {{ xx,xy,xw, yx,yy,yw, wx,wy,ww }};
+
+    if (r.det() < 0)
+    {
+        r = r[0];
+
+        for (i: &int := 0; i < 9; ++i)  r[i] := -r[i];
+    }
+
+    v_return(r);
+}
+
+//---------------------------------------------------------------------
+(_/_): (a: Transform, b: Transform) ~> Transform
+{
+    v_return(a * (~b));
+}
+
+//---------------------------------------------------------------------
+(_.rotated()): (t: Transform, d: double) ~> Transform
+{
+    a = d * (M_PI/180);
+
+    sa = sin(a);
+    ca = cos(a);
+
+    r: Transform = {{  ca, -sa,  0,
+                       sa,  ca,  0,
+                        0,   0,  1  }};
+
+    v_return(r * t);
+}
+
+//---------------------------------------------------------------------
+private
+map4_util: (o1: &Point, o2: &Point, o3: &Point, o4: &Point) ~> Transform
+{
+    o1.norm();
+    o2.norm();
+    o3.norm();
+    o4.norm();
+
+    a1 = det_3({ o4.x, o2.x, o3.x,
+                 o4.y, o2.y, o3.y,
+                 o4.w, o2.w, o3.w });
+
+    a2 = det_3({ o1.x, o4.x, o3.x,
+                 o1.y, o4.y, o3.y,
+                 o1.w, o4.w, o3.w });
+
+    a3 = det_3({ o1.x, o2.x, o4.x,
+                 o1.y, o2.y, o4.y,
+                 o1.w, o2.w, o4.w });
+
+    v_return( {{ o1.x*a1, o2.x*a2, o3.x*a3,
+                 o1.y*a1, o2.y*a2, o3.y*a3,
+                 o1.w*a1, o2.w*a2, o3.w*a3 }} );
+}
+
+//---------------------------------------------------------------------
+Transform.map4: (i1: &Point, i2: &Point, i3: &Point, i4: &Point,
+                 o1: &Point, o2: &Point, o3: &Point, o4: &Point
+                ) ~> Transform
+{
+    t1 = map4_util(i1, i2, i3, i4);
+    t2 = map4_util(o1, o2, o3, o4);
+
+    v_return(t2 / t1);
+}
+
+Transform.map3: (i1: &Point, i2: &Point, i3: &Point,
+                 o1: &Point, o2: &Point, o3: &Point
+                ) ~> Transform
+{
+    i4 = i3 + (i2 - i1);
+    o4 = o3 + (o2 - o1);
+
+    v_return( Transform.map4(i1, i2, i3, i4,  o1, o2, o3, o4) );
+}
+
+Transform.map2: (i1: &Point, i2: &Point,
+                 o1: &Point, o2: &Point
+                ) ~> Transform
+{
+    v = i2 - i1;    v: Vector = { -v.y, v.x };
+
+    i3 = i1 + v;
+
+    v = o2 - o1;    v: Vector = { -v.y, v.x };
+
+    o3 = o1 + v;
+
+    v_return( Transform.map3(i1, i2, i3,  o1, o2, o3) );
+}
+
+Transform.map2_mirror: (i1: &Point, i2: &Point,
+                        o1: &Point, o2: &Point
+                       ) ~> Transform
+{
+    v = i2 - i1;    v: Vector = { -v.y, v.x };
+
+    i3 = i1 + v;
+
+    v = o2 - o1;    v: Vector = { v.y, -v.x };
+
+    o3 = o1 + v;
+
+    v_return( Transform.map3(i1, i2, i3,  o1, o2, o3) );
+}
+
+
+//---------------------------------------------------------------------
+}   //- namespace Geometry
+
+
+//---------------------------------------------------------------------
+{   emit_module("geometry_mod.o"); }
+//---------------------------------------------------------------------
+

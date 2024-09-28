@@ -1,0 +1,1031 @@
+{ v_import("imports.void"); }
+{ make_module("trigroup"); }
+//---------------------------------------------------------------------
+{
+    v_import("geometry.void");
+    v_import("trigroup.void");
+}
+
+
+//---------------------------------------------------------------------
+sin: (double) ~> double;
+cos: (double) ~> double;
+
+M_PI = 3.14159265358979323846264338327950288419716939937510582;
+
+sqrt: (double) ~> double;
+
+
+//---------------------------------------------------------------------
+using namespace Geometry;
+
+
+//=====================================================================
+//- Triangle group element data
+//=====================================================================
+(_.set_step()): (e: &GroupElementData, i: unsigned, s: &GroupElementData) ~> void
+{
+    v_assert(e.step[i] == 0);
+
+    e.step[i] := &s;
+}
+
+//---------------------------------------------------------------------
+(_.oper()): (e: &GroupElementData, group: TriGroup, v: Vector) ~> Vector  =
+{
+    m = e.oper_m;
+
+    r: Vector = {m[0]*v.x + m[1]*v.y, m[2]*v.x + m[3]*v.y};
+
+    group.shift_vector(e.oper_v, r)
+};
+
+
+//=====================================================================
+//- Some utility...
+//=====================================================================
+private
+struct BiLinear
+{
+    double[4];
+};
+
+alwaysinline
+(_()): (f: BiLinear, a: Vector, b: Vector) ~> double  =
+{
+    f = f[0];
+
+    a.x*(f[0]*b.x + f[1]*b.y) + a.y*(f[2]*b.x + f[3]*b.y)
+};
+
+
+//---------------------------------------------------------------------
+private
+struct Layer
+{
+    size: size_t;
+    data: *GroupElementData;
+
+    next: *Layer;
+};
+
+//---------------------------------------------------------------------
+private
+#define (_.layers): (group: TriGroup) ~> *Layer  =  (group._layers : *Layer);
+
+
+//---------------------------------------------------------------------
+private
+struct BorderItem
+{
+    kind: int;                  //- 0, 1, 2
+
+    ceil: *GroupElementData;
+
+    order:  unsigned;
+    filled: unsigned;
+};
+
+private
+mk_BorderItem: (group: TriGroup, kind: int, ceil: *GroupElementData) ~> BorderItem  =
+{
+    prev_kind: &int := v_undef();
+
+    if (ceil->height & 1)   prev_kind := (kind+1) % 3;          //- Odd ceil
+    else                    prev_kind := (kind+(3-1)) % 3;      //- Even ceil
+
+    order = 2*group.order[prev_kind][kind];     //- "Order" of axis...
+
+    {kind, ceil, order, 0}
+};
+
+
+//---------------------------------------------------------------------
+private
+struct Border
+{
+    size: size_t;
+
+    data: *BorderItem;
+
+    tail: **Layer;
+};
+
+private
+new_Border: (sz: size_t, l: **Layer) ~> *Border  =
+{
+    data = new BorderItem[sz];
+
+    new Border {{sz, data, l}}
+};
+
+private
+delete_Border: (b: *Border) ~> void
+{
+    delete[] b->data;
+
+    delete b;
+}
+
+private
+(_()): (b: *Border, i: int) ~> &BorderItem  =
+{
+    i: &intptr_t := i;
+
+    sz = (b->size : intptr_t);
+
+    v_assert(-sz < i < 2*sz);
+
+    if (i < 0)    i += sz;
+    if (i >= sz)  i -= sz;
+
+    b->data[i]
+};
+
+//---------------------------------------------------------------------
+private
+#define (_.border): (group: TriGroup) ~> *Border  =  (group._border : *Border);
+
+
+//---------------------------------------------------------------------
+private
+build_layer: (&TriGroup) ~> void;
+
+
+//=====================================================================
+//- Triangle group
+//=====================================================================
+TriGroup._build: (order: &unsigned[3][3]) ~> TriGroup
+{
+    ret = v_get_return_value();
+
+    //- The order matrix  -----------------------------------------
+
+    ret.order := order;
+
+    //- Compute sigma, etc...  ------------------------------------
+
+    //- Attention: a,b,c - are arranged CLOCKWISE!
+    //-     а - right (on the X axis)
+    //-     b - bottom left
+    //-     c - top left
+
+    //- Vectors (in "conditional" coordinates, with orientation preserved)
+
+    ac: Vector = {1, 0};
+    ab: Vector = {0, 1};
+
+    //- Inner triangle's sides (squares)
+
+    AB = 2*cos(M_PI/(2*ret.order[0][1]));   AB2 = AB * AB;
+    BC = 2*cos(M_PI/(2*ret.order[1][2]));   BC2 = BC * BC;
+    CA = 2*cos(M_PI/(2*ret.order[2][0]));   CA2 = CA * CA;
+
+    //- Dot product (for vectors in "conditional" coordinates)
+
+    d = (AB2+CA2-BC2)/2;
+
+    F: BiLinear = {{CA2, d, d, AB2}};
+
+    //- Lines - mid-perpendiculars to ab and ac
+
+    F_bb = F(ab,ab);
+    F_bc = F(ab,ac);
+    F_cc = F(ac,ac);
+
+    l_ab: Line = {F_bc, F_bb, -F_bb/2};
+    l_ac: Line = {F_cc, F_bc, -F_cc/2};
+
+    //- Circumcircle
+
+    cv = (l_ab & l_ac) - Point.zero;    //- Center
+    r2 = F(cv,cv);                      //- Square of radius
+
+    //- And now - the sigma !
+
+    ret.sigma := (1 - r2)/(r2*r2);
+
+    //- Triangle in proper coordinates ----------------------------
+
+    //- First, vectors from cv to vertices
+
+    fa =    - cv;
+    fb = ab - cv;
+    fc = ac - cv;
+
+    //- Now, the base vectors
+
+    fx = fa/sqrt(r2);                   //- fx - normalised fa
+
+    bc = ac - ab;
+
+    tt = bc - fx*F(bc,fx);
+
+    fy = tt/sqrt(F(tt,tt));
+
+    //- Vectors in proper coordinates
+
+    va: Vector = {F(fa,fx), F(fa,fy)};
+    vb: Vector = {F(fb,fx), F(fb,fy)};
+    vc: Vector = {F(fc,fx), F(fc,fy)};
+
+    //- Vectors of basis
+
+    vx = Vector.unit_x;
+    vy = Vector.unit_y;
+
+    //- Ident group element ---------------------------------------
+
+    e_ident = new GroupElementData[1];
+
+    //- Representation of metrics
+
+    e_ident->height    := 0;                //- Distance from ident.
+    e_ident->step      := 0;                //- Step to nearest
+    e_ident->direction := {1, 1, 1};        //- Step direction: -1/1 - to/from ident;
+
+    //- Representation of ("conform") operation
+
+    e_ident->oper_m := {1, 0, 0, 1};        //- Ortho-normal(!) matrix
+    e_ident->oper_v := Vector.zero;         //- Vector of "shift" (may be "infinite")
+
+    //- Indexes related to iterators ...
+
+    e_ident->index := 0;
+
+    ret.cur_index := 0;
+
+    //- Zero layer ------------------------------------------------
+
+    ret._layers := new Layer {{1, e_ident, 0}};
+
+    //- Zero border -----------------------------------------------
+
+    ret._border := new_Border(3, &ret.layers->next);
+
+    b0 = ret.border(0); b0 := mk_BorderItem(ret, 0, e_ident);   b0.filled := 1;
+    b1 = ret.border(1); b1 := mk_BorderItem(ret, 1, e_ident);   b1.filled := 1;
+    b2 = ret.border(2); b2 := mk_BorderItem(ret, 2, e_ident);   b2.filled := 1;
+
+    //- First layer -----------------------------------------------
+
+    build_layer(ret);
+
+    tx = vx - 2*vx.dot(va)*va/r2;
+    ty = vy - 2*vy.dot(va)*va/r2;
+
+    e_ident->step[0]->oper_m := {tx.x, ty.x, tx.y, ty.y};
+    e_ident->step[0]->oper_v := va;
+
+    tx = vx - 2*vx.dot(vb)*vb/r2;
+    ty = vy - 2*vy.dot(vb)*vb/r2;
+
+    e_ident->step[1]->oper_m := {tx.x, ty.x, tx.y, ty.y};
+    e_ident->step[1]->oper_v := vb;
+
+    tx = vx - 2*vx.dot(vc)*vc/r2;
+    ty = vy - 2*vy.dot(vc)*vc/r2;
+
+    e_ident->step[2]->oper_m := {tx.x, ty.x, tx.y, ty.y};
+    e_ident->step[2]->oper_v := vc;
+
+    //- Some basic geometry data ----------------------------------
+
+    ret.v_a := ret.half_vector(va);
+    ret.v_b := ret.half_vector(vb);
+    ret.v_c := ret.half_vector(vc);
+
+    vap: Vector = {va.y, -va.x};
+    vbp: Vector = {vb.y, -vb.x};
+    vcp: Vector = {vc.y, -vc.x};
+
+    ret.p_a := Point.zero + va;
+    ret.p_b := Point.zero + vb;
+    ret.p_c := Point.zero + vc;
+
+    ret.l_a := ret.p_a & (ret.p_a+vap);
+    ret.l_b := ret.p_b & (ret.p_b+vbp);
+    ret.l_c := ret.p_c & (ret.p_c+vcp);
+
+    ret.p_ab := ret.l_a & ret.l_b;
+    ret.p_bc := ret.l_b & ret.l_c;
+    ret.p_ca := ret.l_c & ret.l_a;       //- Orientation matters!!!
+
+    //- And at the end: The End ! ---------------------------------
+}
+
+
+//---------------------------------------------------------------------
+(v_terminate(_)): (ptr: *TriGroup, N: size_t) ~> void
+{
+    for (i: &int := 0; i < N; ++i)
+    {
+        gr = ptr[i];
+
+        delete_Border(gr.border);
+
+        for (l: &*Layer := gr.layers; l;)
+        {
+            delete[] l->data;
+
+            ln = v_load(&l->next);
+
+            delete l;
+
+            l := ln;
+        }
+    }
+}
+
+
+//---------------------------------------------------------------------
+(_.gr_ident): (group: TriGroup) ~> GroupElement  =  {&group, group.layers->data+0};
+
+(_.gr_a): (group: TriGroup) ~> GroupElement  =  {&group, group.layers->data[0].step[0]};
+(_.gr_b): (group: TriGroup) ~> GroupElement  =  {&group, group.layers->data[0].step[1]};
+(_.gr_c): (group: TriGroup) ~> GroupElement  =  {&group, group.layers->data[0].step[2]};
+
+//---------------------------------------------------------------------
+(_.from_string()): (group: &TriGroup, str: *const char) ~> GroupElement
+{
+    elt: &*GroupElementData := group.layers->data+0;
+
+    for (p: &*const char := str; *p; ++p)
+    {
+        i: &int := v_undef();
+
+        switch((*p : char32_t))
+        {
+        case 'A': case 'a':   i := 0;   v_break();
+        case 'B': case 'b':   i := 1;   v_break();
+        case 'C': case 'c':   i := 2;   v_break();
+        }
+
+        if (elt->step[i] == 0)  build_layer(group);
+
+        elt := elt->step[i];
+    }
+
+    v_return({&group, elt});
+}
+
+//---------------------------------------------------------------------
+(_.trans_double()): (group: TriGroup, v: Vector) ~> Point
+{
+    dv = group.double_vector(v);
+
+    if (dv.is_finite())   v_return(Point.zero + dv);
+
+    //- Case dv - infinite
+
+    v_return(Line.infinity & (Point.zero & (Point.zero + v)));
+}
+
+//---------------------------------------------------------------------
+(_.trans_half()): (group: TriGroup, p: Point) ~> Vector
+{
+    if (p.is_affine())  v_return(group.half_vector(p - Point.zero));
+
+    //- p ... on infinity line ...
+
+    v: Vector = {p.x, p.y};
+
+    v_return(v / sqrt(group.sigma*v.dot(v)));
+}
+
+//---------------------------------------------------------------------
+(_.trans_shift()): (group: TriGroup, p: Point) ~> Transform
+{
+    s = group.trans_half(p);
+
+    a = group.shift_vector(s, group.v_a);
+    b = group.shift_vector(s, group.v_b);
+    c = group.shift_vector(s, group.v_c);
+
+    v_return(Transform.map4(group.p_a,
+                            group.p_b,
+                            group.p_c,
+                            Point.zero,
+
+                            group.trans_double(a),
+                            group.trans_double(b),
+                            group.trans_double(c),
+                            p
+                           ));
+}
+
+//---------------------------------------------------------------------
+(_.trans_shift_inv()): (group: TriGroup, p: Point) ~> Transform
+{
+    if (!p.is_affine())   v_return(group.trans_shift(p));
+
+    v_return(group.trans_shift(Point.zero - (p - Point.zero)));
+}
+
+//---------------------------------------------------------------------
+(_.shift_vector()): (group: TriGroup, s: Vector, v: Vector) ~> Vector
+{
+    if (group.sigma == 0)   v_return(s+v);
+
+    //- Check for zero - simple cases
+
+    if (v == Vector.zero)   v_return(s);
+    if (s == Vector.zero)   v_return(v);
+
+    //- Check for infinite vectors
+
+    if (!v.is_finite())     //- The "infinity" argument
+    {
+        if (!s.is_finite())
+        {
+            //- "Infinity" shifted by "infinity" yields "zero"
+
+            v_return(Vector.zero);
+        }
+
+        v_return(-s / (group.sigma*s.dot(s)));
+    }
+
+    if (!s.is_finite())     //- The "infinity" shift of finite vector
+    {
+        e = Vector.unit_x;
+
+        v_return((v - 2*e.dot(v)*e) / (group.sigma*v.dot(v)));
+    }
+
+    //- The general case
+
+    a = v/v.dot(v);
+    w = a - group.sigma*s;
+
+    if (w/group.sigma == Vector.zero)
+    {
+        v_return(Vector.infinity);
+    }
+
+    u = w/w.dot(w);
+
+    v_return(s + (1 + group.sigma*s.dot(s))*u);
+}
+
+//---------------------------------------------------------------------
+(_.half_vector()): (group: TriGroup, v: Vector) ~> Vector
+{
+    if (group.sigma == 0)   v_return(v/2);
+
+    //- Check for zero - simple cases
+
+    if (v == Vector.zero)   v_return(Vector.zero);
+
+    //- Check for infinite vector
+
+    if (!v.is_finite())     //- The "infinity" argument
+    {
+        v_return(Vector.unit_x * sqrt(group.sigma));    //- Only "spheric" case
+    }
+
+    v_return(v / (1 + sqrt(1 + group.sigma*v.dot(v))));
+}
+
+//---------------------------------------------------------------------
+(_.double_vector()): (group: TriGroup, v: Vector) ~> Vector
+{
+    if (group.sigma == 0)   v_return(2*v);
+
+    //- Check for zero - simple cases
+
+    if (v == Vector.zero)   v_return(Vector.zero);
+
+    //- Check for infinite vector
+
+    if (!v.is_finite()  &&  group.sigma > 0)    //- The "infinity" argument
+    {
+        v_return(Vector.zero);      //- The "spheric" case only
+    }
+
+    v_return(v * 2 / (1 - group.sigma*v.dot(v)));
+}
+
+
+//---------------------------------------------------------------------
+private
+build_layer: (group: &TriGroup) ~> void
+{
+    b_len = group.border->size;
+
+    if (b_len == 0) v_return();
+
+    l_height = group.border(0).ceil->height + 1;
+
+    //- Determine new layer size
+
+    l_size: &size_t := b_len;
+
+    for (i: &int := 0; i < b_len; ++i)
+    {
+        b = group.border(i);
+
+        if (b.filled+1 == b.order)  l_size -= 1;
+    }
+
+//  printf("build_layer: %zd %zd\n", l_height, l_size);
+
+    if (l_size == 0)    l_size := 1;        //- Special case - last element
+
+    b_size = 3*l_size - b_len;              //- New border size
+
+
+    n_edata  = new GroupElementData[l_size];
+
+    n_layer  = new Layer {{l_size, n_edata, 0}};
+
+    n_border = new_Border(b_size, &n_layer->next);
+
+    s: &int := 0;
+    d: &int := 0;
+
+    for (i: &int := 0; i < l_size; ++i)
+    {
+        e = n_edata[i];
+
+        e.height := l_height;
+
+        e_s = e.step;       e_s := 0;
+        e_d = e.direction;  e_d := {1, 1, 1};
+
+        bp = group.border(s-1);
+        b  = group.border(s);
+        bn = group.border(s+1);
+
+        e_s[b.kind] := b.ceil;
+        e_d[b.kind] := -1;
+
+        b.ceil->set_step(b.kind, e);
+
+        t: &int := 0;
+
+        if (b.filled+1 == b.order)    t += 1;
+        if (bn.filled+1 == bn.order)  t += 2;
+
+        switch(t)
+        {
+        case 0:     //- Normal case - both vertices remain
+
+            b1 = n_border->data[d];
+            b2 = n_border->data[d+1];
+
+            if (l_height & 1)       //- Odd ceil
+            {
+                b1 := mk_BorderItem(group, (b.kind+(3-1))%3, &e);
+                b2 := mk_BorderItem(group, (b.kind+(3-2))%3, &e);
+            }
+            else                    //- Even ceil
+            {
+                b1 := mk_BorderItem(group, (b.kind+1)%3, &e);
+                b2 := mk_BorderItem(group, (b.kind+2)%3, &e);
+            }
+
+            b1.filled := b.filled + 2;
+            b2.filled := 1;
+
+            s += 1;
+            d += 2;
+
+            v_break();
+
+        case 1:     //- Drop the first vertex
+
+            e_s[bp.kind] := bp.ceil;
+            e_d[bp.kind] := -1;
+
+            bp.ceil->set_step(bp.kind, e);
+
+            b2 = n_border->data[d];
+
+            if (l_height & 1)       //- Odd ceil
+            {
+                b2 := mk_BorderItem(group, (b.kind+(3-2))%3, &e);
+            }
+            else                    //- Even ceil
+            {
+                b2 := mk_BorderItem(group, (b.kind+2)%3, &e);
+            }
+
+            b2.filled := bp.filled + 2;
+
+            s += 1;     //- !!! Only at the beginning of the chain...
+            d += 1;
+
+            v_break();
+
+        case 2:     //- Drop the second vertex
+
+            e_s[bn.kind] := bn.ceil;
+            e_d[bn.kind] := -1;
+
+            bn.ceil->set_step(bn.kind, e);
+
+            b1 = n_border->data[d];
+
+            if (l_height & 1)       //- Odd ceil
+            {
+                b1 := mk_BorderItem(group, (b.kind+(3-1))%3, &e);
+            }
+            else                    //- Even ceil
+            {
+                b1 := mk_BorderItem(group, (b.kind+1)%3, &e);
+            }
+
+            b1.filled := b.filled + 2;
+
+            s += 2;
+            d += 1;
+
+            v_break();
+
+        default:    //- Drop both vertices - the last element
+
+            e_s[bp.kind] := bp.ceil;
+            e_d[bp.kind] := -1;
+
+            bp.ceil->set_step(bp.kind, e);
+
+            e_s[bn.kind] := bn.ceil;
+            e_d[bn.kind] := -1;
+
+            bn.ceil->set_step(bn.kind, e);
+
+            v_break();
+        }
+
+        //- Indices ...
+
+        group.cur_index[0] += 1;
+
+        e_i = e.index;
+
+        e_i[0] := group.cur_index[0];
+
+        for (j: &int := 1; j < (4|2|1); ++j)
+        {
+            p: &*GroupElementData := &e;
+
+            loop
+            {
+                if (j & 1  &&  p->direction[0] == -1)
+                {
+                    p := p->step[0];
+
+                    v_continue();
+                }
+
+                if (j & 2  &&  p->direction[1] == -1)
+                {
+                    p := p->step[1];
+
+                    v_continue();
+                }
+
+                if (j & 4  &&  p->direction[2] == -1)
+                {
+                    p := p->step[2];
+
+                    v_continue();
+                }
+
+                v_break();
+            }
+
+            if (p == &e)
+            {
+                group.cur_index[j] += 1;
+
+                e_i[j] := group.cur_index[j];
+            }
+            else
+            {
+                e_i[j] := p->index[j];
+            }
+        }
+
+        if (l_height & 1)
+        {
+            e_i[4|2|1] := -1;
+        }
+        else
+        {
+            group.cur_index[4|2|1] += 1;
+
+            e_i[4|2|1] := group.cur_index[4|2|1];
+        }
+
+        if (l_height == 1)  v_continue();       //- Special case - first layer...
+
+        //- Operation...
+
+        elt1: &*GroupElementData := &e;
+
+        str = new char[l_height/2+1];
+        defer delete[] str;
+
+        for (i: &int := l_height/2-1; i >= 0; --i)
+        {
+            for (j: &int := 0; j < 3; ++j)
+            {
+                if (elt1->direction[j] > 0) v_continue();
+
+                str[i] := ('A'+j : char);
+
+                elt1 := elt1->step[j];
+
+                v_break();
+            }
+        }
+
+        str[l_height/2] := 0;
+
+        elt2 = group.from_string(str).data;
+
+        //- In fact,  e == elt1*elt2
+
+        op_v      = elt1->oper(group, elt2->oper_v);
+        e.oper_v := op_v;
+
+        vx: &Vector := Vector.unit_x;
+        vy: &Vector := Vector.unit_y;
+
+        vx := group.shift_vector(-op_v, elt1->oper(group, elt2->oper(group, vx)));
+        vy := group.shift_vector(-op_v, elt1->oper(group, elt2->oper(group, vy)));
+
+        e.oper_m := {vx.x, vy.x, vx.y, vy.y};
+    }
+
+    v_assert(d == b_size);
+
+    //- New group layer ...
+
+    *group.border->tail := n_layer;
+
+    delete_Border(group.border);
+
+    group._border := n_border;
+}
+
+
+//=====================================================================
+//- Triangle group element
+//=====================================================================
+(_.as_string()): (e: GroupElement, str: *char) ~> void
+{
+    e: &*GroupElementData := e.data;
+
+    str[e->height] := 0;
+
+    for (i: &int := e->height-1; i >= 0; --i)
+    {
+        for (j: &int := 0; j < 3; ++j)
+        {
+            if (e->direction[j] > 0)  v_continue();
+
+            str[i] := ('A'+j : char);
+
+            e := e->step[j];
+
+            v_break();
+        }
+    }
+}
+
+//---------------------------------------------------------------------
+(_*_): (a: GroupElement, b: GroupElement) ~> GroupElement  =
+{
+    bh = b.data->height;
+
+    str = new char[bh+1];
+    defer delete[] str;
+
+    r: &*GroupElementData := a.data;
+
+    for (i: &int := 0; i < bh; ++i)
+    {
+        j = str[i] - 'A';
+
+        if (r->step[j] == 0)  build_layer(*a.group);
+
+        r := r->step[j];
+    }
+
+    {a.group, r}
+};
+
+//---------------------------------------------------------------------
+(~_): (e: GroupElement) ~> GroupElement  =
+{
+    a: &*GroupElementData := e.data;
+    r: &*GroupElementData := e.group->layers->data+0;       //- gr_ident
+
+    eh = e.data->height;
+
+    for (i: &int := 0; i < eh; ++i)
+    {
+        for (j: &int := 0; j < 3; ++j)
+        {
+            if (a->direction[j] > 0)  v_continue();
+
+            a := a->step[j];
+            r := r->step[j];
+
+            v_break();
+        }
+    }
+
+    {e.group, r}
+};
+
+//---------------------------------------------------------------------
+(_()): (e: GroupElement, v: Vector) ~> Vector  =  e.data->oper(*e.group, v);
+
+//---------------------------------------------------------------------
+(_.trans): (e: GroupElement) ~> Transform  =
+{
+    g = *e.group;
+    d = *e.data;
+
+    Transform.map4( g.p_a,
+                    g.p_b,
+                    g.p_c,
+                    Point.zero,
+
+                    g.trans_double(d.oper(g, g.v_a)),
+                    g.trans_double(d.oper(g, g.v_b)),
+                    g.trans_double(d.oper(g, g.v_c)),
+                    g.trans_double(d.oper_v )
+                  )
+};
+
+
+//=====================================================================
+//- Iterators
+//=====================================================================
+private
+GroupIterator_next: (it: &GroupIterator) ~> void;
+
+private
+EvenGroupIterator_next: (it: &GroupIterator) ~> void;
+
+private
+GroupFilter_next: (it: &GroupIterator) ~> void;
+
+//---------------------------------------------------------------------
+({_}): (group: &TriGroup) ~> GroupIterator
+{
+    ret = v_get_return_value();
+
+    ret._next := GroupIterator_next;
+
+    ret.group  := &group;
+    ret._layer := group._layers;
+    ret.index  := 0;
+}
+
+({_}): (group: &TriGroup) ~> EvenGroupIterator
+{
+    ret = v_get_return_value();
+
+    ret._next := EvenGroupIterator_next;
+
+    ret.group  := &group;
+    ret._layer := group._layers;
+    ret.index  := 0;
+}
+
+({_}): (group: &TriGroup, str: *const char) ~> GroupFilter
+{
+    ret = v_get_return_value();
+
+    ret._next := GroupFilter_next;
+
+    ret.group  := &group;
+    ret._layer := group._layers;
+    ret.index  := 0;
+
+    ret.filter := 0;
+
+    for (s: &*const char := str; *s; ++s)
+    {
+        switch((*s: char32_t))
+        {
+        case 'A': case 'a': ret.filter |= 1;  v_break();
+        case 'B': case 'b': ret.filter |= 2;  v_break();
+        case 'C': case 'c': ret.filter |= 4;  v_break();
+        }
+    }
+}
+
+//---------------------------------------------------------------------
+private alwaysinline
+(_.data): (it: &const GroupIterator) ~> &GroupElementData  =  (it._layer : *Layer)->data[it.index];
+
+//---------------------------------------------------------------------
+(*_): (it: &const GroupIterator) ~> GroupElement  =  {it.group, &it.data};
+
+
+//---------------------------------------------------------------------
+private
+GroupIterator_next_layer: (it: &GroupIterator) ~> void
+{
+    if (!it.ok)   v_return();
+
+    it.index := 0;
+
+    layer = *(&it._layer : **Layer);
+
+    if (layer->next == 0)
+    {
+        if (it.group->border->size == 0)
+        {
+            layer := 0;
+
+            v_return();
+        }
+
+        build_layer(*it.group);
+    }
+
+    layer := layer->next;
+}
+
+//---------------------------------------------------------------------
+private
+GroupIterator_next: (it: &GroupIterator) ~> void
+{
+    if (!it.ok)   v_return();
+
+    it.index += 1;
+
+    layer = *(&it._layer : **Layer);
+
+    if (it.index == layer->size)  GroupIterator_next_layer(it);
+}
+
+//---------------------------------------------------------------------
+private
+EvenGroupIterator_next: (it: &GroupIterator) ~> void
+{
+    if (!it.ok)   v_return();
+
+    GroupIterator_next(it);
+
+    if (!it.ok)   v_return();
+
+    if (it.data.height & 1)   GroupIterator_next_layer(it);
+}
+
+//---------------------------------------------------------------------
+private
+GroupFilter_next: (it: &GroupIterator) ~> void
+{
+    if (!it.ok)   v_return();
+
+    it = (it : &GroupFilter);               //- Sic !!!
+
+    //- Special cases
+
+    if (it.filter == 0)         //- Every element
+    {
+        GroupIterator_next(it[0]);          //- WTF !?!?!?!?!?!?!?!?!?!?!?!?!
+
+        v_return();
+    }
+
+    if (it.filter == (4|2|1))   //- Even elements
+    {
+        EvenGroupIterator_next(it[0]);      //- WTF !?!?!?!?!?!?!?!?!?!?!?!?!
+
+        v_return();
+    }
+
+    //- General case
+
+    loop
+    {
+        GroupIterator_next(it[0]);          //- WTF !?!?!?!?!?!?!?!?!?!?!?!?!
+
+        if (!it.ok)   v_return();
+
+        e = it.data;
+
+        if (it.filter & 1  &&  e.direction[0] < 0)  v_continue();
+        if (it.filter & 2  &&  e.direction[1] < 0)  v_continue();
+        if (it.filter & 4  &&  e.direction[2] < 0)  v_continue();
+
+        v_return();
+    }
+}
+
+
+//---------------------------------------------------------------------
+{   emit_module("trigroup_mod.o"); }
+//---------------------------------------------------------------------
+
+

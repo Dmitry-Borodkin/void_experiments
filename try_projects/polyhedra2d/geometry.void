@@ -1,0 +1,294 @@
+{ voidc_import("imports.void"); }
+{ make_header("geometry"); }
+//---------------------------------------------------------------------
+{
+    v_export_import("cstdio.void");
+
+    v_export_import("type_traits.void");
+}
+
+
+//---------------------------------------------------------------------
+double = float(64);
+
+fabs: (double) ~> double;
+
+
+//---------------------------------------------------------------------
+#define (_<<_): (f: *FILE, v) ~> *FILE  =
+{
+    t = v_typeof(v);
+
+  #if (t.is_reference)
+
+    t = t.as_refptr.element_type;
+
+  #endif
+
+  #if (t.is_array  &&  t.as_array.element_type == char  ||  t == *char)
+
+    fprintf(f, "%s", v);
+
+  #else
+
+    v.print_to_file(f);
+
+  #endif
+
+    f
+};
+
+
+//---------------------------------------------------------------------
+namespace Geometry
+{
+
+
+//---------------------------------------------------------------------
+is_equal: (x: double, y: double) ~> bool;
+
+alwaysinline
+is_finite: (x: double) ~> bool  =  fabs(x) < 1e15;      //- ?...
+
+infinity = 1e1000;
+
+det_3: (v: &double[9]) ~> double;
+
+seq_equal: (a: *double, b: *double, n: int) ~> bool;
+
+
+//=====================================================================
+//- Vector (2D)
+//=====================================================================
+struct Vector
+{
+    x: double;
+    y: double;
+};
+
+(_.print_to_file()): (v: Vector, f: *FILE) ~> void;
+
+//---------------------------------------------------------------------
+alwaysinline
+(_+_): (a: Vector, b: Vector) ~> Vector  =  {a.x+b.x, a.y+b.y};
+
+alwaysinline
+(_-_): (a: Vector, b: Vector) ~> Vector  =  {a.x-b.x, a.y-b.y};
+
+alwaysinline
+(+_): (a: Vector) ~> Vector  =  a;
+
+alwaysinline
+(-_): (a: Vector) ~> Vector  =  {-a.x, -a.y};
+
+alwaysinline
+(_*_): (a: Vector, k: double) ~> Vector  =  {a.x*k, a.y*k};
+
+alwaysinline
+(_*__): (k: double, a: Vector) ~> Vector  =  {k*a.x, k*a.y};
+
+alwaysinline
+(_/_): (a: Vector, k: double) ~> Vector  =  {a.x/k, a.y/k};
+
+(_==_): (a: Vector, b: Vector) ~> bool;
+
+alwaysinline
+(_!=_): (a: Vector, b: Vector) ~> bool  =  !(a == b);
+
+//---------------------------------------------------------------------
+Vector.zero:     Vector = {0, 0};
+Vector.unit_x:   Vector = {1, 0};
+Vector.unit_y:   Vector = {0, 1};
+Vector.infinity: Vector = {infinity, infinity};
+
+//---------------------------------------------------------------------
+alwaysinline
+(_.dot()): (a: Vector, b: Vector) ~> double  =  a.x*b.x + a.y*b.y;
+
+alwaysinline
+(_.crs()): (a: Vector, b: Vector) ~> double  =  a.x*b.y - a.y*b.x;
+
+alwaysinline
+(_.is_finite()): (a: Vector) ~> bool  =  is_finite(a.x)  &&  is_finite(a.y);
+
+
+//=====================================================================
+//- Projective point (2D)
+//=====================================================================
+struct Point
+{
+    x: double;
+    y: double;
+    w: double;
+};
+
+//---------------------------------------------------------------------
+(_.print_to_file()): (p: Point, f: *FILE) ~> void;
+
+//---------------------------------------------------------------------
+alwaysinline
+(_+_): (p: Point, v: Vector) ~> Point  =  {p.x + p.w*v.x, p.y + p.w*v.y, p.w};
+
+#define (_-_): (a: Point, b)  =
+{
+    t = v_typeof(b);
+
+#if (t == Point  ||  t == &Point)
+
+    ret: Vector = {a.x/a.w - b.x/b.w, a.y/a.w - b.y/b.w};
+
+#endif
+
+#if (t == Vector  ||  t == &Vector)
+
+    ret: Point = {a.x - a.w*b.x, a.y - a.w*b.y, a.w};
+
+#endif
+
+    ret
+};
+
+//---------------------------------------------------------------------
+(_.norm()): (p: &Point) ~> bool;
+
+(_.is_affine()): (p: &Point) ~> bool;
+
+(_==_): (a: &Point, b: &Point) ~> bool;
+
+alwaysinline
+(_!=_): (a: &Point, b: &Point) ~> bool  =  !(a == b);
+
+//---------------------------------------------------------------------
+Point.zero:   Point = {0, 0, 1};
+Point.unit_x: Point = {1, 0, 1};
+Point.unit_y: Point = {0, 1, 1};
+Point.inf_x:  Point = {1, 0, 0};
+Point.inf_y:  Point = {0, 1, 0};
+
+
+//=====================================================================
+//- Projective line (2D)
+//=====================================================================
+struct Line
+{
+    cx: double;
+    cy: double;
+    cw: double;
+};
+
+//---------------------------------------------------------------------
+(_.print_to_file()): (l: Line, f: *FILE) ~> void;
+
+//---------------------------------------------------------------------
+alwaysinline
+(_+_): (l: Line, v: Vector) ~> Line  =  {l.cx, l.cy, l.cw - l.cx*v.x - l.cy*v.y};
+
+//---------------------------------------------------------------------
+(_.norm()): (l: &Line) ~> bool;
+
+(_.is_affine()): (l: &Line) ~> bool;
+
+(_==_): (a: &Line, b: &Line) ~> bool;
+
+alwaysinline
+(_!=_): (a: &Line, b: &Line) ~> bool  =  !(a == b);
+
+//---------------------------------------------------------------------
+Line.infinity: Line = {0, 0, 1};
+Line.abscissa: Line = {0, 1, 0};
+Line.ordinate: Line = {1, 0, 0};
+
+
+//=====================================================================
+incident: (l: &Line, p: &Point) ~> bool;
+
+//---------------------------------------------------------------------
+alwaysinline
+(_&_): (a: Point, b: Point) ~> Line  =  {a.y*b.w - a.w*b.y, a.w*b.x - a.x*b.w, a.x*b.y - a.y*b.x};
+
+alwaysinline
+(_&_): (a: Line, b: Line) ~> Point  =  {a.cy*b.cw - a.cw*b.cy, a.cw*b.cx - a.cx*b.cw, a.cx*b.cy - a.cy*b.cx};
+
+
+//=====================================================================
+//- Projective transformation (2D)
+//=====================================================================
+struct Transform
+{
+    double[9];
+};
+
+//---------------------------------------------------------------------
+(_.print_to_file()): (t: &Transform, f: *FILE) ~> void;
+
+//---------------------------------------------------------------------
+(_.norm()): (t: &Transform) ~> bool;
+
+(_.is_regular()): (t: &Transform) ~> bool;
+
+(_.is_affine()): (t: &Transform) ~> bool;
+
+(_==_): (a: &Transform, b: &Transform) ~> bool;
+
+alwaysinline
+(_!=_): (a: &Transform, b: &Transform) ~> bool  =  !(a == b);
+
+//---------------------------------------------------------------------
+alwaysinline
+(_.det()): (t: &Transform) ~> double  =  det_3(t[0]);
+
+
+//---------------------------------------------------------------------
+#define (_()): (t: Transform, v)  =  v.transform_by(t);
+
+//---------------------------------------------------------------------
+(_.transform_by()): (v: Vector, t: Transform) ~> Vector;
+(_.transform_by()): (p: Point, t: Transform) ~> Point;
+(_.transform_by()): (l: Line, t: Transform) ~> Line;
+
+//---------------------------------------------------------------------
+(_+_): (t: Transform, v: Vector) ~> Transform;
+
+(_*_): (a: Transform, b: Transform) ~> Transform;
+(_*__): (k: double, t: Transform) ~> Transform;
+
+(~_): (t: Transform) ~> Transform;
+
+(_/_): (a: Transform, b: Transform) ~> Transform;
+
+//---------------------------------------------------------------------
+alwaysinline
+(_.scaled()): (t: Transform, k: double) ~> Transform  =  k * t;
+
+alwaysinline
+(_.shifted()): (t: Transform, v: Vector) ~> Transform  =  t + v;
+
+(_.rotated()): (t: Transform, d: double) ~> Transform;
+
+//---------------------------------------------------------------------
+Transform.map4: (i1: &Point, i2: &Point, i3: &Point, i4: &Point,
+                 o1: &Point, o2: &Point, o3: &Point, o4: &Point
+                ) ~> Transform;
+
+Transform.map3: (i1: &Point, i2: &Point, i3: &Point,
+                 o1: &Point, o2: &Point, o3: &Point
+                ) ~> Transform;
+
+Transform.map2: (i1: &Point, i2: &Point,
+                 o1: &Point, o2: &Point
+                ) ~> Transform;
+
+Transform.map2_mirror: (i1: &Point, i2: &Point,
+                        o1: &Point, o2: &Point
+                       ) ~> Transform;
+
+//---------------------------------------------------------------------
+Transform.identity: Transform = {{ 1, 0, 0,  0, 1, 0,  0, 0, 1 }};
+Transform.flip_x:   Transform = {{-1, 0, 0,  0, 1, 0,  0, 0, 1 }};
+Transform.flip_y:   Transform = {{ 1, 0, 0,  0,-1, 0,  0, 0, 1 }};
+
+
+//---------------------------------------------------------------------
+}   //- namespace Geometry
+
+

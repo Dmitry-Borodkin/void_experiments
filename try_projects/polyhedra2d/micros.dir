@@ -1,0 +1,43 @@
+                    ****  Polyhedra2D  ****                    │*
+                                                               │
+Geometry                                                       │geometry.void
+    ...                                                        │geometry_mod.void
+                                                               │
+TriGroup                                                       │trigroup.void
+    ...                                                        │trigroup_mod.void
+                                                               │
+                                                               │
+---------------------------------------------------------------│
+try_geom.void       +TEST                                      │try_geom.void
+...                                                            │try_geom
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+===============================================================│
+cstdarg.void                                                   │cstdarg.void
+                                                               │
+cstdio.void                                                    │cstdio.void
+    ...                                                        │cstdio_mod.void
+                                                               │
+---------------------------------------------------------------│
+type_traits.void                                               │type_traits.void
+                                                               │
+                                                               │
+---------------------------------------------------------------│
+                                                               │
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
+imports.void                                                   │imports.void
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
+Makefile                                                       │Makefile
+    clean                                                      │Makefile clean
+───────────────────────────────────────────────────────────────│
+void.doit                                                      │void.doit
+═══════════════════════════════════════════════════════════════│
+micros.incdirs                                                 │micros.incdirs
+  ..                                                           │incdirs.doit

@@ -1,6 +1,10 @@
                          ****  ?  ****                         │*
                                                                │
                                                                │
+try_projects/                                                  │try_projects/micros.dir
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
 try_app/                                                       │try_app/micros.dir
                                                                │
 try_type_traits.void                                           │try_type_traits.void
@@ -235,7 +239,7 @@ try_tsearch.void                                               │try_tsearch.vo
 try_tblgen/         ... preprocessing ...                      │try_tblgen/micros.dir
                                                                │
 ───────────────────────────────────────────────────────────────│
-try_shebang.void                                               │try_shebang.void
+try_shebang.void                                               │try_shebang.void -T
                                                                │
 try_parsing.void                                               │try_parsing.void
                                                                │

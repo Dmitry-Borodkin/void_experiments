@@ -2,6 +2,7 @@ syntax: glob
 
 **.o
 **.so
+**.exe
 
 **.asm
 **.png
@@ -12,5 +13,13 @@ syntax: glob
 **micros.incdirs
 
 try_roller/**
+
+hz_seven
+
+try_app/try_app
+
+try_library/try_main
+
+try_projects/polyhedra2d/try_geom
 
 

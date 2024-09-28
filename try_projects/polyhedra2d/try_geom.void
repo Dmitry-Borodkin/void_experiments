@@ -1,0 +1,129 @@
+{ v_import("imports.void"); }
+{ make_module("try_geom"); }
+//---------------------------------------------------------------------
+{
+    v_import("geometry.void");
+    v_import("trigroup.void");
+}
+
+
+//{ v_debug_print_module(999); }
+//---------------------------------------------------------------------
+//- As is...
+//---------------------------------------------------------------------
+main: (argc: int, argv: **const char) ~> int
+{
+    using namespace Geometry;
+
+    printf("Hello, geometry!\n");
+
+    v: Vector = {1, 2};
+
+    stdout << "s: " << v + 2*v << "\n";
+
+    u = Point.unit_x - Point.unit_y;
+
+    p = Point.zero + u/3;
+
+    stdout << "p: " << p << "\n";
+
+
+    p_inf_x = Line.abscissa & Line.infinity;
+
+    l = Point.unit_y & p_inf_x;
+
+    stdout << "l: " << l << "\n";
+
+
+    //-----------------------------------------------------------------
+    t: Transform = {{ 0, -1, 0,  1, 0, 0,  0, 0, 1 }};
+
+    v = t(Vector.unit_x);
+
+    stdout << "v: " << v << "\n";
+
+    p = t(Point.unit_x);
+
+    stdout << "p: " << p << "\n";
+
+    l = t(Line.ordinate);
+
+    stdout << "l: " << l << "\n";
+
+
+    //-----------------------------------------------------------------
+    r = Transform.identity.rotated(30);
+
+    v = r(Vector.unit_x);
+//  v = r(Vector.unit_y);
+
+    stdout << "v: " << v << "\n";
+
+
+    //-----------------------------------------------------------------
+    stdout << "\n";
+
+    //-----------------------------------------------------------------
+    group: &TriGroup := {(ab=5, bc=3)};
+
+    MAXHEIGHT = 15;
+
+    s: &char[MAXHEIGHT+1] := 0;
+
+    for (it: &GroupIterator := {group}; it.ok; ++it)
+    {
+        e = *it;
+
+        if (e.data->height > MAXHEIGHT)   v_break();
+
+        e.as_string(s);
+
+        stdout << "[" << s << "] " << e(Vector.zero) << "\n";
+    }
+
+
+
+
+
+
+
+
+}
+
+
+//---------------------------------------------------------------------
+{   if (!v_find_constant("TEST", 0, 0)) v_return();
+
+    gctx = v_target_get_global_ctx();
+    vctx = v_target_get_voidc_global_ctx();
+
+    v_target_set_global_ctx(vctx);
+
+    v_add_constant("TEST", v_void_type(), 0);
+
+    v_target_set_global_ctx(gctx);
+}
+
+
+//---------------------------------------------------------------------
+{   emit_module("try_geom.o"); }
+//---------------------------------------------------------------------
+
+
+//=====================================================================
+{   if (!v_find_constant("TEST", 0, 0)) v_return();
+
+    printf: (*const char, ...) ~> int;
+
+    printf("\n");
+
+    system: (*const char) ~> int;
+
+    if (system("make try_geom") != 0)  v_return();
+
+    printf("\n");
+
+    system("./try_geom");
+}
+
+
