@@ -859,7 +859,7 @@ build_layer: (group: &TriGroup) ~> void
                     g.trans_double(d.oper(g, g.v_a)),
                     g.trans_double(d.oper(g, g.v_b)),
                     g.trans_double(d.oper(g, g.v_c)),
-                    g.trans_double(d.oper_v )
+                    g.trans_double(d.oper_v)
                   )
 };
 
