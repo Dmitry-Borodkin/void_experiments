@@ -671,7 +671,7 @@ voidc_enable_type_traits_effort: (*void) ~> void
         v_add_overload(".width",         static_type_integer_t,        "my.static_type_integer_width");
         v_add_overload(".param_count",   static_type_function_t,       "my.static_type_function_param_count");
         v_add_overload(".address_space", static_type_refptr_t,         "my.static_type_refptr_address_space");
-        v_add_overload(".vsize",         static_type_vector_base_t,    "my.static_type_vector_size");
+        v_add_overload(".size",          static_type_vector_base_t,    "my.static_type_vector_size");
         v_add_overload(".element_count", static_type_struct_t,         "my.static_type_struct_element_count");
         v_add_overload(".arg_count",     static_type_generic_t,        "my.static_type_generic_arg_count");
 
