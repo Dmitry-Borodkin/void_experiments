@@ -245,11 +245,11 @@ trigroup_op_braces_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_b
 
             for (i: &int := 0; i < 2; ++i)
             {
-                switch((name[i] : char32_t))
+                switch((name[i] | 0x20 : char32_t))
                 {
-                case 'a': case 'A': idx[i] := 0;  v_break();
-                case 'b': case 'B': idx[i] := 1;  v_break();
-                case 'c': case 'C': idx[i] := 2;  v_break();
+                case 'a':   idx[i] := 0;    v_break();
+                case 'b':   idx[i] := 1;    v_break();
+                case 'c':   idx[i] := 2;    v_break();
                 }
 
                 v_assert(0 <= idx[i] <= 2);

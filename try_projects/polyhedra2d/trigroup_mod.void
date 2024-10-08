@@ -354,11 +354,11 @@ TriGroup._build: (order: &unsigned[3][3]) ~> TriGroup
     {
         i: &int := v_undef();
 
-        switch((*p : char32_t))
+        switch((*p | 0x20 : char32_t))
         {
-        case 'A': case 'a':   i := 0;   v_break();
-        case 'B': case 'b':   i := 1;   v_break();
-        case 'C': case 'c':   i := 2;   v_break();
+        case 'a':   i := 0;   v_break();
+        case 'b':   i := 1;   v_break();
+        case 'c':   i := 2;   v_break();
         }
 
         if (elt->step[i] == 0)  build_layer(group);
@@ -913,11 +913,11 @@ GroupFilter_next: (it: &GroupIterator) ~> void;
 
     for (s: &*const char := str; *s; ++s)
     {
-        switch((*s: char32_t))
+        switch((*s | 0x20 : char32_t))
         {
-        case 'A': case 'a': ret.filter |= 1;  v_break();
-        case 'B': case 'b': ret.filter |= 2;  v_break();
-        case 'C': case 'c': ret.filter |= 4;  v_break();
+        case 'a':   ret.filter |= 1;  v_break();
+        case 'b':   ret.filter |= 2;  v_break();
+        case 'c':   ret.filter |= 4;  v_break();
         }
     }
 }
