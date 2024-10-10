@@ -5,8 +5,9 @@ syntax: glob
 **.exe
 
 **.asm
-**.png
 **.bin
+
+try_*.png
 
 **.voidc*
 
