@@ -1,0 +1,116 @@
+#!/bin/sh
+
+#----------------------------------------------------------------------
+if [ ! -d build ]; then mkdir build; fi
+
+#----------------------------------------------------------------------
+case ${1@U} in
+    DEBUG)
+
+#-------------------------------------------------------------------
+echo Configure: Debug
+
+if [[ "$OSTYPE" =~ ^linux ]]; then
+
+#---------------------------------------------------------------
+cat >build/build.ninja <<HEADER
+cxxflags = -g -fsanitize=address -fno-omit-frame-pointer
+ldflags = -rdynamic -fsanitize=address
+HEADER
+
+fi
+
+if [[ "$OSTYPE" =~ ^msys ]]; then
+
+#---------------------------------------------------------------
+cat >build/build.ninja <<HEADER
+cxxflags = -g -fcxx-exceptions -IC:/Tools/include -frtti)
+HEADER
+
+fi
+
+    ;;
+    RELEASE)
+
+#-------------------------------------------------------------------
+echo Configure: Release
+
+if [[ "$OSTYPE" =~ ^linux ]]; then
+
+#---------------------------------------------------------------
+cat >build/build.ninja <<HEADER
+cxxflags = -O3 -DNDEBUG
+ldflags = -rdynamic
+HEADER
+
+fi
+
+if [[ "$OSTYPE" =~ ^msys ]]; then
+
+#---------------------------------------------------------------
+cat >build/build.ninja <<HEADER
+cxxflags = -O3 -DNDEBUG -fcxx-exceptions -IC:/Tools/include -frtti)
+HEADER
+
+fi
+
+    ;;
+    *)
+
+#-------------------------------------------------------------------
+echo "Usage: mk_config (debug|release)"
+exit 1
+
+esac
+
+#----------------------------------------------------------------------
+cat >>build/build.ninja <<HEREDOC
+
+src = ../../../../voidc/level-00
+
+cxxflags = \$cxxflags \$\$(llvm-config --cxxflags) -std=gnu++17
+ldflags = \$ldflags \$\$(llvm-config --ldflags --libs all)
+
+rule cxx
+    command = clang++ \$cxxflags -c \$in -o \$out
+    description = Compile \$in
+
+rule link
+    command = clang++ \$ldflags \$in -o \$out
+    description = Link \$out
+
+build voidc_ast.o     : cxx \$src/voidc_ast.cpp
+build voidc_types.o   : cxx \$src/voidc_types.cpp
+build voidc_target.o  : cxx \$src/voidc_target.cpp
+build voidc_util.o    : cxx \$src/voidc_util.cpp
+build voidc_main.o    : cxx \$src/voidc_main.cpp
+build voidc_quark.o   : cxx \$src/voidc_quark.cpp
+build voidc_visitor.o : cxx \$src/voidc_visitor.cpp
+build voidc_compiler.o: cxx \$src/voidc_compiler.cpp
+build vpeg_parser.o   : cxx \$src/vpeg_parser.cpp
+build vpeg_grammar.o  : cxx \$src/vpeg_grammar.cpp
+build vpeg_context.o  : cxx \$src/vpeg_context.cpp
+build vpeg_voidc.o    : cxx \$src/vpeg_voidc.cpp
+build voidc_stdio.o   : cxx \$src/voidc_stdio.cpp
+
+
+#build voidc : link voidc_ast.o voidc_types.o voidc_target.o voidc_util.o voidc_main.o voidc_quark.o voidc_visitor.o voidc_compiler.o vpeg_parser.o vpeg_grammar.o vpeg_context.o vpeg_voidc.o voidc_stdio.o
+
+build voidc : link \$
+voidc_ast.o        \$
+voidc_types.o      \$
+voidc_target.o     \$
+voidc_util.o       \$
+voidc_main.o       \$
+voidc_quark.o      \$
+voidc_visitor.o    \$
+voidc_compiler.o   \$
+vpeg_parser.o      \$
+vpeg_grammar.o     \$
+vpeg_context.o     \$
+vpeg_voidc.o       \$
+voidc_stdio.o
+
+HEREDOC
+
+

@@ -117,6 +117,8 @@ static_types_table: &(*const char)[][2] :=
         { "_svector", "_vector_base" },
     { "_generic", "" },
 
+    { "_incomplete_array", "" },            //- Sic !
+
     { 0 }
 };
 
@@ -507,6 +509,24 @@ static_string_string_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base
 
 
 //---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+private
+is_incomplete_array_predicate: (t: *v_type_t) ~> bool
+{
+    if (!v_type_is_generic(t))  v_return(false);
+
+    tag = v_quark_from_string("voidc.incomplete_array_type_tag");
+
+    if (v_type_generic_get_cons(t) != tag)  v_return(false);
+
+    v_return(true);
+}
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
 private
 v_typeof_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
@@ -627,41 +647,43 @@ voidc_enable_type_traits_effort: (*void) ~> void
     static_type_struct_t      = v_find_type("v_static_type_struct_t");
     static_type_vector_base_t = v_find_type("v_static_type_vector_base_t");
 
-    {   v_add_overload(".is_void",           static_type_t,             "my.static_type_is_void");
-        v_add_overload(".is_floating_point", static_type_t,             "my.static_type_is_floating_point");
-        v_add_overload(".is_integer",        static_type_t,             "my.static_type_is_integer");
-        v_add_overload(".is_signed",         static_type_integer_t,     "my.static_type_is_signed");
-        v_add_overload(".is_function",       static_type_t,             "my.static_type_is_function");
-        v_add_overload(".is_var_arg",        static_type_function_t,    "my.static_type_is_var_arg");
-        v_add_overload(".is_pointer",        static_type_refptr_t,      "my.static_type_is_pointer");
-        v_add_overload(".is_pointer",        static_type_t,             "my.static_type_is_pointer");
-        v_add_overload(".is_reference",      static_type_refptr_t,      "my.static_type_is_reference");
-        v_add_overload(".is_reference",      static_type_t,             "my.static_type_is_reference");
-        v_add_overload(".is_struct",         static_type_t,             "my.static_type_is_struct");
-        v_add_overload(".is_opaque",         static_type_struct_t,      "my.static_type_is_opaque");
-        v_add_overload(".is_packed",         static_type_struct_t,      "my.static_type_is_packed");
-        v_add_overload(".is_array",          static_type_t,             "my.static_type_is_array");
-        v_add_overload(".is_vector",         static_type_t,             "my.static_type_is_vector");
-        v_add_overload(".is_scalable",       static_type_vector_base_t, "my.static_type_is_scalable");
-        v_add_overload(".is_generic",        static_type_t,             "my.static_type_is_generic");
+    {   v_add_overload(".is_void",             static_type_t,             "my.static_type_is_void");
+        v_add_overload(".is_floating_point",   static_type_t,             "my.static_type_is_floating_point");
+        v_add_overload(".is_integer",          static_type_t,             "my.static_type_is_integer");
+        v_add_overload(".is_signed",           static_type_integer_t,     "my.static_type_is_signed");
+        v_add_overload(".is_function",         static_type_t,             "my.static_type_is_function");
+        v_add_overload(".is_var_arg",          static_type_function_t,    "my.static_type_is_var_arg");
+        v_add_overload(".is_pointer",          static_type_refptr_t,      "my.static_type_is_pointer");
+        v_add_overload(".is_pointer",          static_type_t,             "my.static_type_is_pointer");
+        v_add_overload(".is_reference",        static_type_refptr_t,      "my.static_type_is_reference");
+        v_add_overload(".is_reference",        static_type_t,             "my.static_type_is_reference");
+        v_add_overload(".is_struct",           static_type_t,             "my.static_type_is_struct");
+        v_add_overload(".is_opaque",           static_type_struct_t,      "my.static_type_is_opaque");
+        v_add_overload(".is_packed",           static_type_struct_t,      "my.static_type_is_packed");
+        v_add_overload(".is_array",            static_type_t,             "my.static_type_is_array");
+        v_add_overload(".is_vector",           static_type_t,             "my.static_type_is_vector");
+        v_add_overload(".is_scalable",         static_type_vector_base_t, "my.static_type_is_scalable");
+        v_add_overload(".is_generic",          static_type_t,             "my.static_type_is_generic");
+        v_add_overload(".is_incomplete_array", static_type_t,             "my.static_type_is_incomplete_array");
 
         f = static_type_predicate_intrinsic;
 
-        v_add_intrinsic("my.static_type_is_void",           f, v_type_is_void);
-        v_add_intrinsic("my.static_type_is_floating_point", f, v_type_is_floating_point);
-        v_add_intrinsic("my.static_type_is_integer",        f, v_type_is_integer);
-        v_add_intrinsic("my.static_type_is_signed",         f, v_type_integer_is_signed);
-        v_add_intrinsic("my.static_type_is_function",       f, v_type_is_function);
-        v_add_intrinsic("my.static_type_is_var_arg",        f, v_type_function_is_var_arg);
-        v_add_intrinsic("my.static_type_is_pointer",        f, v_type_is_pointer);
-        v_add_intrinsic("my.static_type_is_reference",      f, v_type_is_reference);
-        v_add_intrinsic("my.static_type_is_struct",         f, v_type_is_struct);
-        v_add_intrinsic("my.static_type_is_opaque",         f, v_type_struct_is_opaque);
-        v_add_intrinsic("my.static_type_is_packed",         f, v_type_struct_is_packed);
-        v_add_intrinsic("my.static_type_is_array",          f, v_type_is_array);
-        v_add_intrinsic("my.static_type_is_vector",         f, v_type_is_vector);
-        v_add_intrinsic("my.static_type_is_scalable",       f, v_type_vector_is_scalable);
-        v_add_intrinsic("my.static_type_is_generic",        f, v_type_is_generic);
+        v_add_intrinsic("my.static_type_is_void",             f, v_type_is_void);
+        v_add_intrinsic("my.static_type_is_floating_point",   f, v_type_is_floating_point);
+        v_add_intrinsic("my.static_type_is_integer",          f, v_type_is_integer);
+        v_add_intrinsic("my.static_type_is_signed",           f, v_type_integer_is_signed);
+        v_add_intrinsic("my.static_type_is_function",         f, v_type_is_function);
+        v_add_intrinsic("my.static_type_is_var_arg",          f, v_type_function_is_var_arg);
+        v_add_intrinsic("my.static_type_is_pointer",          f, v_type_is_pointer);
+        v_add_intrinsic("my.static_type_is_reference",        f, v_type_is_reference);
+        v_add_intrinsic("my.static_type_is_struct",           f, v_type_is_struct);
+        v_add_intrinsic("my.static_type_is_opaque",           f, v_type_struct_is_opaque);
+        v_add_intrinsic("my.static_type_is_packed",           f, v_type_struct_is_packed);
+        v_add_intrinsic("my.static_type_is_array",            f, v_type_is_array);
+        v_add_intrinsic("my.static_type_is_vector",           f, v_type_is_vector);
+        v_add_intrinsic("my.static_type_is_scalable",         f, v_type_vector_is_scalable);
+        v_add_intrinsic("my.static_type_is_generic",          f, v_type_is_generic);
+        v_add_intrinsic("my.static_type_is_incomplete_array", f, is_incomplete_array_predicate);
     }
 
     static_type_floating_point_t = v_find_type("v_static_type_floating_point_t");
@@ -875,6 +897,8 @@ voidc_enable_type_traits_effort: (*void) ~> void
 
 #define (_.as_generic): (t: v_static_type_t)  =  (t: v_static_type_generic_t);
 
+#define (_.as_incomplete_array): (t: v_static_type_t)  =  (t: v_static_type_incomplete_array_t);
+
 
 //---------------------------------------------------------------------
 #define (_.as_number): (t: v_static_generic_arg_t)  =  (t: v_static_generic_arg_number_t);
@@ -882,6 +906,11 @@ voidc_enable_type_traits_effort: (*void) ~> void
 #define (_.as_quark):  (t: v_static_generic_arg_t)  =  (t: v_static_generic_arg_quark_t);
 #define (_.as_type):   (t: v_static_generic_arg_t)  =  (t: v_static_generic_arg_type_t);
 #define (_.as_cons):   (t: v_static_generic_arg_t)  =  (t: v_static_generic_arg_cons_t);
+
+//---------------------------------------------------------------------
+#define (_.element_type): (t: v_static_type_incomplete_array_t) ~> v_static_type_t
+  =
+    t.as_generic.args[0].as_type.type;
 
 
 //---------------------------------------------------------------------

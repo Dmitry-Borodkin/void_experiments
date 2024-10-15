@@ -1,0 +1,19 @@
+                       ****  Ninja  ****                       │*
+                                                               │
+                                                               │
+config debug                                                   │mk_config debug
+config release                                                 │mk_config release
+                                                               │
+build                                                          │mk_build
+                                                               │
+clean                                                          │mk_clean
+                                                               │
+distclean                                                      │mk_distclean
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
+try.void                                                       │try.void -T -I../../../voidc
+                                                               │
+───────────────────────────────────────────────────────────────│
+void.doit                                                      │void.doit
+                                                               │

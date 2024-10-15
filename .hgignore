@@ -23,4 +23,6 @@ try_library/try_main
 
 try_projects/polyhedra2d/try_geom
 
+try_projects/ninja/build/**
+
 
