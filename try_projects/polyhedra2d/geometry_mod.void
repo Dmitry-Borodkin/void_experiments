@@ -51,7 +51,7 @@ det_3: (v: &double[9]) ~> double
 
 
 //---------------------------------------------------------------------
-seq_equal: (a: *double, b: *double, n: int) ~> bool
+seq_equal: (a: *const double, b: *const double, n: int) ~> bool
 {
     ret: &bool := true;
 

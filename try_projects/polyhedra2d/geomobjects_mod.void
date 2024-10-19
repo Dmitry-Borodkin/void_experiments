@@ -40,8 +40,8 @@ namespace Geometry
     if (!a.norm())  v_return(false);
     if (!b.norm())  v_return(false);
 
-    aa = new double[6] {a.p0.x, a.p0.y, a.p0.w, a.p1.x, a.p1.y, a.p1.w};    defer delete[] aa;
-    bb = new double[6] {b.p0.x, b.p0.y, b.p0.w, b.p1.x, b.p1.y, b.p1.w};    defer delete[] bb;
+    aa = (&a : *double);    //- Sic!
+    bb = (&b : *double);    //- Sic!
 
     v_return(seq_equal(aa, bb, 6));
 }
@@ -91,12 +91,267 @@ namespace Geometry
         b := p.w*s.p0.y - p.y*s.p0.w;
     }
 
-    v_return(a > 0  &&  b > 0  ||  a < 0  &&  b < 0);
+    v_return(a > 0 < b  ||  a < 0 > b);
 }
 
 
+//=====================================================================
+//- Projective polygon (2D)
+//=====================================================================
+.memset: (s: *void, c: int, n: size_t) ~> *void;
+.memcpy: (d: *void, s: *const void, n: size_t) ~> *void;
 
+//---------------------------------------------------------------------
+(v_initialize(_)): (p: *Polygon, N: size_t) ~> void
+{
+    .memset(p, 0, N*Polygon.sizeof);
+}
 
+(v_terminate(_)):  (p: *Polygon, N: size_t) ~> void
+{
+    for (i: &size_t := 0; i < N; ++i)
+    {
+        if (v = p[i].v)   delete[] v;
+    }
+}
+
+(v_copy(_)): (d: *Polygon, s: *const Polygon, N: size_t) ~> void
+{
+    for (i: &size_t := 0; i < N; ++i)
+    {
+        sv = s[i].v;
+        sn = s[i].n;
+
+        dv = d[i].v;
+        dn = d[i].n;
+
+        if (dv)   delete[] dv;
+
+        dv = new Point[sn];
+
+        .memcpy(dv, sv, sn*Point.sizeof);
+
+        dn := sn;
+    }
+}
+
+(v_move(_)): (d: *Polygon, s: *Polygon, N: size_t) ~> void
+{
+    for (i: &size_t := 0; i < N; ++i)
+    {
+        sv = s[i].v;
+        sn = s[i].n;
+
+        dv = d[i].v;
+        dn = d[i].n;
+
+        if (dv)   delete[] dv;
+
+        dv := sv;
+        dn := sn;
+    }
+
+    .memset(s, 0, N*Polygon.sizeof);
+}
+
+//---------------------------------------------------------------------
+(_.print_to_file()): (p: Polygon, f: *FILE) ~> void
+{
+    f << "(" << p.v[0];
+
+    for (i: &int := 1, n = p.n; i < n; ++i)
+    {
+        f << ", " << p.v[i];
+    }
+
+    f << ")";
+}
+
+//---------------------------------------------------------------------
+(_+_): (p: Polygon, v: Vector) ~> Polygon
+{
+    pv = p.v;
+    pn = p.n;
+
+    r = v_get_return_value();
+
+    rv = r.v;
+    rn = r.n;
+
+    if (rv)   delete[] rv;
+
+    rv := new Point[pn];
+
+    for (i: &int := 0; i < pn; ++i)   rv[i] := pv[i] + v;
+
+    rn := pn;
+}
+
+(_-_): (p: Polygon, v: Vector) ~> Polygon
+{
+    pv = p.v;
+    pn = p.n;
+
+    r = v_get_return_value();
+
+    rv = r.v;
+    rn = r.n;
+
+    if (rv)   delete[] rv;
+
+    rv := new Point[pn];
+
+    for (i: &int := 0; i < pn; ++i)   rv[i] := pv[i] - v;
+
+    rn := pn;
+}
+
+//---------------------------------------------------------------------
+(_.norm()): (p: &Polygon) ~> bool
+{
+    for (i: &int := 0; i < p.n; ++i)
+    {
+        if (!p.v[i].norm()) v_return(false);
+    }
+
+    v_return(true);
+}
+
+(_.is_affine()): (p: &Polygon) ~> bool
+{
+    if (!p.norm())  v_return(false);
+
+    for (i: &int := 0; i < p.n; ++i)
+    {
+        if (!p.v[i].is_affine()) v_return(false);
+    }
+
+    f = p.v[0].w > 0;
+
+    for (i: &int := 1; i < p.n; ++i)
+    {
+        if ((p.v[i].w > 0) != f)  v_return(false);
+    }
+
+    v_return(true);
+}
+
+(_==_): (a: &Polygon, b: &Polygon) ~> bool
+{
+    if (a.n != b.n)   v_return(false);
+
+    if (!a.norm())  v_return(false);
+    if (!b.norm())  v_return(false);
+
+    aa = (a.v : *double);       //- Sic!
+    bb = (b.v : *double);       //- Sic!
+
+    v_return(seq_equal(aa, bb, 3*a.n));
+}
+
+//---------------------------------------------------------------------
+(_.transform_by()): (p: Polygon, t: Transform) ~> Polygon
+{
+    pv = p.v;
+    pn = p.n;
+
+    r = v_get_return_value();
+
+    rv = r.v;
+    rn = r.n;
+
+    if (rv)   delete[] rv;
+
+    rv := new Point[pn];
+
+    for (i: &int := 0; i < pn; ++i)   rv[i] := t(pv[i]);
+
+    rn := pn;
+}
+
+//---------------------------------------------------------------------
+private
+touches: (pl: &Polygon, pt: &Point) ~> bool
+{
+    if (!pl.norm())   v_return(false);
+    if (!pt.norm())   v_return(false);
+
+    for (i0: &int := 0; i0 < pl.n; ++i0)
+    {
+        i1: &int := i0 + 1;
+
+        if (i1 == pl.n)   i1 := 0;
+
+        s: Segment = {pl.v[i0], pl.v[i1]};
+
+        if (s.incident(pt))   v_return(true);
+    }
+
+    v_return(false);
+}
+
+private
+ins: (p0: &Point, p1: &Point, p2: &Point, pt: &Point) ~> struct {bool; double;}
+{
+    t: Transform = {{p0.x, p1.x, p2.x,
+                     p0.y, p1.y, p2.y,
+                     p0.w, p1.w, p2.w}};
+
+    p = (~t)(pt);
+
+    f = (p.x >= 0  &&  p.y >= 0  &&  p.w >= 0)  ||  (p.x <= 0  &&  p.y <= 0  &&  p.w <= 0);
+
+    v_return({f, t.det()});
+}
+
+(_.contains()): (pl: &Polygon, pt: &Point) ~> bool
+{
+    if (touches(pl, pt))  v_return(true);
+
+    r: &int := v_undef();
+
+    fd0: &struct {bool; double;} := 0;
+
+    f0 = fd0[0];
+    d0 = fd0[1];
+
+    for (i1: &int := 1, nm1 = pl.n-1; i1 < nm1; ++i1)
+    {
+        i2: &int := i1 + 1;
+
+        fd1 = ins(pl.v[0], pl.v[i1], pl.v[i2], pt);
+
+        f1 = fd1[0];
+        d1 = fd1[1];
+
+        if (d1 == 0)  v_continue();
+
+        if (d0 == 0)
+        {
+            fd0 := fd1;
+
+            r := f0;
+
+            v_continue();
+        }
+
+        if (f0 & f1)
+        {
+            if (d0 > 0 > d1  ||  d0 < 0 < d1)
+            {
+                r += 1;
+            }
+        }
+        else
+        {
+            r += (f1 : int);
+        }
+
+        fd0 := fd1;
+    }
+
+    v_return((r&1 : bool));
+}
 
 
 //---------------------------------------------------------------------

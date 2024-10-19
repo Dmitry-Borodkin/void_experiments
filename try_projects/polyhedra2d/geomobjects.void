@@ -49,10 +49,40 @@ alwaysinline
 //=====================================================================
 //- Projective polygon (2D)
 //=====================================================================
+struct Polygon
+{
+    v: *Point;
+    n: unsigned;
+};
 
+(v_initialize(_)): (*Polygon, size_t) ~> void;
+(v_terminate(_)):  (*Polygon, size_t) ~> void;
 
+(v_copy(_)): (*Polygon, *const Polygon, size_t) ~> void;
+(v_move(_)): (*Polygon, *Polygon, size_t) ~> void;
 
+//---------------------------------------------------------------------
+(_.print_to_file()): (p: Polygon, f: *FILE) ~> void;
 
+//---------------------------------------------------------------------
+(_+_): (p: Polygon, v: Vector) ~> Polygon;
+(_-_): (p: Polygon, v: Vector) ~> Polygon;
+
+//---------------------------------------------------------------------
+(_.norm()): (p: &Polygon) ~> bool;
+
+(_.is_affine()): (p: &Polygon) ~> bool;
+
+(_==_): (a: &Polygon, b: &Polygon) ~> bool;
+
+alwaysinline
+(_!=_): (a: &Polygon, b: &Polygon) ~> bool  =  !(a == b);
+
+//---------------------------------------------------------------------
+(_.transform_by()): (p: Polygon, t: Transform) ~> Polygon;
+
+//---------------------------------------------------------------------
+(_.contains()): (pl: &Polygon, pt: &Point) ~> bool;
 
 
 //---------------------------------------------------------------------
