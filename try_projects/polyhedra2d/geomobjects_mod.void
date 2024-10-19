@@ -1,0 +1,109 @@
+{ v_import("imports.void"); }
+{ make_module("geomobjects"); }
+//---------------------------------------------------------------------
+{
+    v_import("geometry.void");
+    v_import("geomobjects.void");
+}
+
+
+//---------------------------------------------------------------------
+namespace Geometry
+{
+
+
+//=====================================================================
+//- Projective segment (2D)
+//=====================================================================
+(_.print_to_file()): (s: Segment, f: *FILE) ~> void
+{
+    f << "(" << s.p0 << ", " << s.p1 << ")";
+}
+
+//---------------------------------------------------------------------
+(_.norm()): (s: &Segment) ~> bool  =  s.p0.norm()  &&  s.p1.norm();
+
+//---------------------------------------------------------------------
+(_.is_affine()): (s: &Segment) ~> bool
+{
+    if (!s.norm())  v_return(false);
+
+    if (!s.p0.is_affine())  v_return(false);
+    if (!s.p1.is_affine())  v_return(false);
+
+    v_return(s.p0.w > 0  &&  s.p1.w > 0  ||  s.p0.w < 0  &&  s.p1.w < 0);
+}
+
+//---------------------------------------------------------------------
+(_==_): (a: &Segment, b: &Segment) ~> bool
+{
+    if (!a.norm())  v_return(false);
+    if (!b.norm())  v_return(false);
+
+    aa = new double[6] {a.p0.x, a.p0.y, a.p0.w, a.p1.x, a.p1.y, a.p1.w};    defer delete[] aa;
+    bb = new double[6] {b.p0.x, b.p0.y, b.p0.w, b.p1.x, b.p1.y, b.p1.w};    defer delete[] bb;
+
+    v_return(seq_equal(aa, bb, 6));
+}
+
+//---------------------------------------------------------------------
+(_.incident()): (s: &Segment, p: &Point) ~> bool
+{
+    if (!s.norm())  v_return(false);
+    if (!p.norm())  v_return(false);
+
+    if (s.p0 == p)  v_return(true);
+    if (s.p1 == p)  v_return(true);
+
+    if (s.p0 == s.p1)   v_return(false);
+
+    dxy = s.p0.x*s.p1.y - s.p0.y*s.p1.y;
+    dxw = s.p0.x*s.p1.w - s.p0.w*s.p1.y;
+    dyw = s.p0.y*s.p1.w - s.p0.w*s.p1.y;
+
+    if (!is_equal(0, p.x*dyw - p.y*dxw + p.w*dxy))  v_return(false);
+
+    axy = fabs(dxy);
+    axw = fabs(dxw);
+    ayw = fabs(dyw);
+
+    m: &double := axy;
+
+    if (m < axw)  m := axw;
+    if (m < ayw)  m := ayw;
+
+    a: &double := v_undef();
+    b: &double := v_undef();
+
+    if (m == axy)
+    {
+        a := p.x*s.p1.y - p.y*s.p1.x;
+        b := p.y*s.p0.x - p.x*s.p0.y;
+    }
+    else if (m == axw)
+    {
+        a := p.x*s.p1.w - p.w*s.p1.x;
+        b := p.w*s.p0.x - p.x*s.p0.w;
+    }
+    else    //- m == ayw
+    {
+        a := p.y*s.p1.w - p.w*s.p1.y;
+        b := p.w*s.p0.y - p.y*s.p0.w;
+    }
+
+    v_return(a > 0  &&  b > 0  ||  a < 0  &&  b < 0);
+}
+
+
+
+
+
+
+//---------------------------------------------------------------------
+}   //- namespace Geometry
+
+
+//---------------------------------------------------------------------
+{   emit_module("geomobjects_mod.o"); }
+//---------------------------------------------------------------------
+
