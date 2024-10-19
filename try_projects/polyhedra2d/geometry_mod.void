@@ -186,7 +186,7 @@ seq_equal: (a: *double, b: *double, n: int) ~> bool
 
 
 //=====================================================================
-incident: (l: &Line, p: &Point) ~> bool
+(_.incident()): (l: &Line, p: &Point) ~> bool
 {
     l.norm();
     p.norm();

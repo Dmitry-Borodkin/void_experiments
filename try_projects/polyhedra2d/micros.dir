@@ -3,6 +3,9 @@
 Geometry                                                       │geometry.void
     ...                                                        │geometry_mod.void
                                                                │
+GeomObjects                                                    │geomobjects.void
+    ...                                                        │geomobjects_mod.void
+                                                               │
 TriGroup                                                       │trigroup.void
     ...                                                        │trigroup_mod.void
                                                                │
