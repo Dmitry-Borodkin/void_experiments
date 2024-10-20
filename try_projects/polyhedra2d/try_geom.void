@@ -89,16 +89,16 @@ main: (argc: int, argv: **const char) ~> int
     //-----------------------------------------------------------------
     pl: &Polygon := {};
 
-    pl.v := new Point[] {{0,0,1}, {0,1,1}, {1,1,1}, {1,0,1}};
+    pl.v := new Point[] {{0,0,1}, {0,1,1}, {1,-1,1}, {1,0,1}};
     pl.n := 4;
 
-    for (i: &double := -1; i < 2; i += 0.25)
+    for (i: &double := -2; i <= 3; i += 0.25)
     {
-        for (j: &double := -1; j < 2; j += 0.25)
+        for (j: &double := -2; j <= 3; j += 0.25)
         {
             f = pl.contains({i, j, 1});
 
-            printf("(%g, %g): %d\n", i, j, (f: int));
+            if (f)  printf("(%g, %g)\n", i, j);
         }
     }
 

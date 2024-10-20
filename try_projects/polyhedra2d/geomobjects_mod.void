@@ -57,8 +57,8 @@ namespace Geometry
 
     if (s.p0 == s.p1)   v_return(false);
 
-    dxy = s.p0.x*s.p1.y - s.p0.y*s.p1.y;
-    dxw = s.p0.x*s.p1.w - s.p0.w*s.p1.y;
+    dxy = s.p0.x*s.p1.y - s.p0.y*s.p1.x;
+    dxw = s.p0.x*s.p1.w - s.p0.w*s.p1.x;
     dyw = s.p0.y*s.p1.w - s.p0.w*s.p1.y;
 
     if (!is_equal(0, p.x*dyw - p.y*dxw + p.w*dxy))  v_return(false);
