@@ -1,0 +1,113 @@
+{   v_import("mainline.void");
+
+    v_import("llvm-c/Support.void");
+}
+{   v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
+
+
+//---------------------------------------------------------------------
+{
+    libname = "libgirepository-1.0.so";
+
+    ok = LLVMLoadLibraryPermanently(libname);
+
+//  printf("ok: %d\n", ok);
+}
+
+
+//---------------------------------------------------------------------
+//- <gobject-introspection-1.0/girepository.h>
+//---------------------------------------------------------------------
+struct GIRepository;
+struct GITypelib;
+struct GIBaseInfo;
+
+struct GIAttributeIter { intptr_t[4]; };        //- Sic!
+
+
+struct GObject;
+struct GError;
+
+
+//---------------------------------------------------------------------
+g_irepository_get_default: () ~> *GIRepository;
+
+g_irepository_require: (*GIRepository, *const char, *const char, int, **GError) ~> *GITypelib;
+
+g_typelib_free: (*GITypelib) ~> void;
+
+
+g_irepository_get_n_infos: (*GIRepository, *const char) ~> int;
+
+g_irepository_get_info: (*GIRepository, *const char, int) ~> *GIBaseInfo;
+
+g_base_info_unref: (*GIBaseInfo) ~> void;
+
+g_base_info_get_name: (*GIBaseInfo) ~> *const char;
+
+
+g_base_info_iterate_attributes: (*GIBaseInfo, *GIAttributeIter, **const char, **const char) ~> bool;
+
+
+
+
+
+
+
+//---------------------------------------------------------------------
+g_object_unref: (*GObject) ~> void;
+
+
+
+//---------------------------------------------------------------------
+{
+    gir = g_irepository_get_default();
+
+    printf("gir: %p\n", gir);
+
+    err: &*GError := 0;
+
+    gt_name    = "Gtk";
+    gt_version = "3.0";
+
+    gt = g_irepository_require(gir, gt_name, gt_version, 0, &err);
+    defer g_typelib_free(gt);
+
+    printf("gt: %p\n", gt);
+
+    N = g_irepository_get_n_infos(gir, gt_name);
+
+    printf("N: %d\n", N);
+
+    for (i: &int := 0; i < N; ++i)
+    {
+        bi = g_irepository_get_info(gir, gt_name, i);
+        defer g_base_info_unref(bi);
+
+        s = g_base_info_get_name(bi);
+
+        printf("name: %s\n", s);
+
+        it: &GIAttributeIter := 0;
+
+        name:  &*const char := v_undef();
+        value: &*const char := v_undef();
+
+        while(g_base_info_iterate_attributes(bi, &it, &name, &value))
+        {
+            printf("  %s = %s\n", name, value);
+        }
+
+
+
+    }
+
+}
+
+
+
+
+

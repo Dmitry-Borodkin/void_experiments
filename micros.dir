@@ -1,8 +1,10 @@
                          ****  ?  ****                         │*
                                                                │
                                                                │
-try_projects/                                                  │try_projects/micros.dir
+try_gir.void                                                   │try_gir.void
                                                                │
+                                                               │
+try_projects/                                                  │try_projects/micros.dir
                                                                │
 ───────────────────────────────────────────────────────────────│
 try_app/                                                       │try_app/micros.dir
