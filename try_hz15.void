@@ -79,9 +79,13 @@ use2: (x: &int) ~> int
 }
 
 
+//---------------------------------------------------------------------
+{
+    s = "Hello World";
 
-
-
-
+    #if (s[6] == 'W')   printf("s: \"%s\", s[6]: \'%c\'\n", s, s[6]);
+    #else               printf("This can not happen!\n");
+    #endif
+}
 
 

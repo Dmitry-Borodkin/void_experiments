@@ -559,8 +559,8 @@ __gmp_printf: (*const char, ...) ~> int;
 
     bnum: &mpz_t := {};
 
-//  __gmpz_import(&bnum, num_t.size, -1, 1, 0, 0, &num);
-    __gmpz_import(&bnum, 1, 1, num_t.size, 0, 0, &num);
+//  __gmpz_import(&bnum, num_t.sizeof, -1, 1, 0, 0, &num);
+    __gmpz_import(&bnum, 1, 1, num_t.sizeof, 0, 0, &num);
 
     __gmp_printf("%Zd\n", &bnum);
 

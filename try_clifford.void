@@ -166,7 +166,7 @@ draw_clifford: (drawing_area: *GtkDrawingArea,
 
         memset: (*void, int, size_t) ~> *void;
 
-        memset(hist, 0, sz*unsigned.size);
+        memset(hist, 0, sz*unsigned.sizeof);
 
         maxhist := 0;
 
