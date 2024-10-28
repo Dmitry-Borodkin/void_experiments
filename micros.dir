@@ -3,7 +3,6 @@
                                                                │
 try_gir.void                                                   │try_gir.void
                                                                │
-                                                               │
 try_projects/                                                  │try_projects/micros.dir
                                                                │
 ───────────────────────────────────────────────────────────────│
@@ -65,7 +64,7 @@ try_gmp2.void ... !                                            │try_gmp2.void
                                                                │
 try_cairo_text3.void                                           │try_cairo_text3.void
 try_cairo_text2.void                                           │try_cairo_text2.void
-try_cairo_text.void ... !                                      │try_cairo_text.void
+try_cairo_text.void ... !!!                                    │try_cairo_text.void
                                                                │
 try_mandel.void                                                │try_mandel.void
                                                                │

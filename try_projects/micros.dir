@@ -1,5 +1,8 @@
                      ****  Projects  ****                      │*
                                                                │
+Clang Tooling                                                  │clang_tooling/micros.dir
+                                                               │
+                                                               │
 Polyhedra2D/                                                   │polyhedra2d/micros.dir
                                                                │
 Ninja/                                                         │ninja/micros.dir
