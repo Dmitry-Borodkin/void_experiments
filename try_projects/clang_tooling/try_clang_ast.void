@@ -28,10 +28,12 @@ system: (cmd: *const char) ~> int;
 //---------------------------------------------------------------------
 my_source: &char[] :=
 """
+//--------------------------------------------------------------
+//- Declarations
+//--------------------------------------------------------------
 const char *
 clang_decl[][2] =
 {
-
 #define DECL(D, B) { #D, #B },
 
 #include "clang/AST/DeclNodes.inc"
@@ -39,12 +41,33 @@ clang_decl[][2] =
     {0}
 };
 
+//----------------------------------------------------------
+char
+clang_decl_abstract[] =
+{
+#define ABSTRACT_DECL(T)    1,
+#define DECL(D, B)          0,
+
+#include "clang/AST/DeclNodes.inc"
+};
+
+//----------------------------------------------------------
+const char *
+clang_decl_range[][3] =
+{
+#define DECL(D, B)
+#define DECL_RANGE(D, S, E) { #D, #S, #E },
+
+#include "clang/AST/DeclNodes.inc"
+
+    {0}
+};
+
+//----------------------------------------------------------
 const char *
 clang_decl_context[] =
 {
-
 #define DECL(D, B)
-
 #define DECL_CONTEXT(D) #D,
 
 #include "clang/AST/DeclNodes.inc"
@@ -53,10 +76,12 @@ clang_decl_context[] =
 };
 
 
+//--------------------------------------------------------------
+//- Types
+//--------------------------------------------------------------
 const char *
 clang_type[][2] =
 {
-
 #define TYPE(D, B) { #D, #B },
 
 #include "clang/AST/TypeNodes.inc"
@@ -64,12 +89,46 @@ clang_type[][2] =
     {0}
 };
 
+//----------------------------------------------------------
+char
+clang_type_abstract[] =
+{
+#define ABSTRACT_TYPE(D, B) 1,
+#define TYPE(D, B)          0,
 
+#include "clang/AST/TypeNodes.inc"
+};
+
+
+//--------------------------------------------------------------
+//- Statements
+//--------------------------------------------------------------
 const char *
 clang_stmt[][2] =
 {
-
 #define STMT(D, B) { #D, #B },
+
+#include "clang/AST/StmtNodes.inc"
+
+    {0}
+};
+
+//----------------------------------------------------------
+char
+clang_stmt_abstract[] =
+{
+#define ABSTRACT_STMT(T)    1,
+#define STMT(D, B)          0,
+
+#include "clang/AST/StmtNodes.inc"
+};
+
+//----------------------------------------------------------
+const char *
+clang_stmt_range[][3] =
+{
+#define STMT(D, B)
+#define STMT_RANGE(D, S, E) { #D, #S, #E },
 
 #include "clang/AST/StmtNodes.inc"
 
@@ -102,7 +161,7 @@ clang_stmt[][2] =
     }
 #endif
 
-    //-----------------------------------------------------------------
+    //----------------------------------------------------------
     {   p = popen("bash", "w");
         defer pclose(p);
 
@@ -121,7 +180,7 @@ clang_stmt[][2] =
         fprintf(p, " - <<HEREDOC\n%s\nHEREDOC\n", my_source);
     }
 
-    //-----------------------------------------------------------------
+    //----------------------------------------------------------
     mb: &LLVMMemoryBufferRef := 0;
     defer LLVMDisposeMemoryBuffer(mb);
 
@@ -129,7 +188,7 @@ clang_stmt[][2] =
 
     voidc_add_local_object_file_to_jit(mb);
 
-    //-----------------------------------------------------------------
+    //----------------------------------------------------------
     {   p = popen("bash", "w");
         defer pclose(p);
 
@@ -139,11 +198,17 @@ clang_stmt[][2] =
 
 
 //---------------------------------------------------------------------
-clang_decl: &(*const char)[0][2];
-clang_decl_context: &(*const char)[0];
+clang_decl:          &(*const char)[0][2];
+clang_decl_abstract: &char[0];
+clang_decl_range:    &(*const char)[0][3];
+clang_decl_context:  &(*const char)[0];
 
-clang_type: &(*const char)[0][2];
-clang_stmt: &(*const char)[0][2];
+clang_type:          &(*const char)[0][2];
+clang_type_abstract: &char[0];
+
+clang_stmt:          &(*const char)[0][2];
+clang_stmt_abstract: &char[0];
+clang_stmt_range:    &(*const char)[0][3];
 
 
 //=====================================================================
@@ -153,11 +218,11 @@ namespace clang
 
 //---------------------------------------------------------------------
 {
-    tab: &struct { table: *(*const char)[2]; suffix: *const char; }[3] :=
+    tab: &struct { table: *(*const char)[2]; suffix: *const char; abs: *const char; }[3] :=
     {
-        { clang_decl, "Decl" },
-        { clang_type, "Type" },
-        { clang_stmt, "" },
+        { clang_decl, "Decl", clang_decl_abstract },
+        { clang_type, "Type", clang_type_abstract },
+        { clang_stmt, "",     clang_stmt_abstract },
     };
 
     for (k: &int := 0; k < 3; ++k)
@@ -176,19 +241,7 @@ namespace clang
 
             alias = v_obtain_alias(sname, true);
 
-            printf("%s (%s)\n", sname, alias);
-
-
-
-
-
-
-
-
-
-
-
-
+            printf("%d %s (%s)\n", (tab[k].abs[i]: int), sname, alias);
 
 
 
@@ -200,10 +253,6 @@ namespace clang
         printf("\n");
     }
 }
-
-
-//---------------------------------------------------------------------
-bbbbbbbbbbbbbbbb = 1;
 
 
 
