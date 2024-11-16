@@ -46,6 +46,8 @@ g_signal_connect_data: (instance: *void,
                         flags: int
                        ) ~> long;
 
+#define my_signal_connect: (i, s, c, d=0)  =  g_signal_connect_data(i, s, (c: *(()~>void)), d, 0, 0);
+
 g_application_run: (app: *GtkApplication, argc: int, argv: **char) ~> int;
 
 
@@ -162,12 +164,12 @@ on_activate: (app: *GtkApplication, data: *void) ~> void
 
     gtk_widget_add_events(window, GDK_KEY_PRESS_MASK|GDK_BUTTON_PRESS_MASK);
 
-    g_signal_connect_data(window, "key_press_event",    (key_pressed: *(()~>void)),    0, 0, 0);
-    g_signal_connect_data(window, "button_press_event", (button_pressed: *(()~>void)), 0, 0, 0);
+    my_signal_connect(window, "key_press_event",    key_pressed);
+    my_signal_connect(window, "button_press_event", button_pressed);
 
     drawing_area = gtk_drawing_area_new();
 
-    g_signal_connect_data(drawing_area, "draw", (draw_cairo_text: *(()~>void)), 0, 0, 0);
+    my_signal_connect(drawing_area, "draw", draw_cairo_text);
 
     gtk_container_add((window: *GtkContainer), drawing_area);
 
@@ -242,47 +244,21 @@ cairo_set_font_matrix: (*cairo_t, *const cairo_matrix_t) ~> void;
 
 
 //---------------------------------------------------------------------
-FT_Library = * struct FT_LibraryRec_;
-
-FT_Init_FreeType: (*FT_Library) ~> int;
-FT_Done_FreeType: (FT_Library) ~> int;
-
-ft_library: &FT_Library := v_undef();
-
-block
-{
-    FT_Init_FreeType(&ft_library);
-}
-
-defer FT_Done_FreeType(ft_library);
-
-//---------------------------------------------------------------------
-FT_Face = * struct FT_FaceRec_;
-
-FT_New_Face: (FT_Library, *const char, long, *FT_Face) ~> int;
-FT_Done_Face: (FT_Face) ~> int;
-
-ft_face: &FT_Face := v_undef();
-
-block
-{
-#if (WINDOZE) path = "C:/Work/Downloads/dejavu-fonts-ttf-2.37/ttf/DejaVuSansMono.ttf";
-#else         path = "/usr/share/fonts/dejavu/DejaVuSansMono.ttf";
-#endif
-
-    FT_New_Face(ft_library, path, 0, &ft_face);
-}
-
-//defer FT_Done_Face(ft_face);          //- ???
-
-//---------------------------------------------------------------------
 font_face: &*cairo_font_face_t := v_undef();
 
 block
 {
-    cairo_ft_font_face_create_for_ft_face: (FT_Face, int) ~> *cairo_font_face_t;
+    struct FcPattern;
 
-    font_face := cairo_ft_font_face_create_for_ft_face(ft_face, 0);
+    FcNameParse: (*const char) ~> *FcPattern;
+    FcPatternDestroy: (*FcPattern) ~> void;
+
+    fc_pattern = FcNameParse("DejaVu Sans Mono");
+    defer FcPatternDestroy(fc_pattern);
+
+    cairo_ft_font_face_create_for_pattern: (*FcPattern) ~> *cairo_font_face_t;
+
+    font_face := cairo_ft_font_face_create_for_pattern(fc_pattern);
 }
 
 defer cairo_font_face_destroy(font_face);
@@ -612,7 +588,7 @@ main: (argc: int, argv: **const char) ~> int
 
     app = gtk_application_new(0, 0);
 
-    g_signal_connect_data(app, "activate", (on_activate: *(()~>void)), 0, 0, 0);
+    my_signal_connect(app, "activate", on_activate);
 
     g_application_run(app, 1, &("Нечто" : *char));
 }
@@ -621,5 +597,3 @@ main: (argc: int, argv: **const char) ~> int
 //---------------------------------------------------------------------
 {   emit_module("main.o"); }
 //---------------------------------------------------------------------
-
-

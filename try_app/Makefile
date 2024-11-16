@@ -2,7 +2,7 @@
 
 MYFLAGS=-- -DNDEBUG
 
-LIBS=$$(pkg-config gtk+-3.0 --libs) $$(pkg-config freetype2 --libs)
+LIBS=$$(pkg-config gtk+-3.0 --libs) $$(pkg-config fontconfig --libs)
 
 
 #----------------------------------------------------------------------
