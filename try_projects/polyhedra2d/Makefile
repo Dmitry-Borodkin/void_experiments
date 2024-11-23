@@ -32,6 +32,7 @@ cstdio_mod.o: cstdio_mod.void imports.void cstdarg.void cstdio.void
 
 
 clean:
-	-rm -fv try_geom *.o *.voidc*
+	-rm -fv try_geom *.o
+	-rm -fvr __voidcache__
 
 

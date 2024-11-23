@@ -18,6 +18,7 @@ try_app: main.o
 
 
 clean:
-	-rm -fv try_app *.o *.voidc*
+	-rm -fv try_app *.o
+	-rm -fvr __voidcache__
 
 
