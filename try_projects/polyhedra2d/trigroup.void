@@ -202,10 +202,7 @@ alwaysinline
     v_import("llvm-c/Core.void");
 
     //-----------------------------------------------------------------
-    LLVMDisposeMemoryBuffer: (LLVMMemoryBufferRef) ~> void;
-
-    LLVMDisposeMemoryBuffer(voidc_get_unit_buffer());
-    voidc_set_unit_buffer(0);
+    voidc_clear_unit_buffer();
 }
 
 //---------------------------------------------------------------------

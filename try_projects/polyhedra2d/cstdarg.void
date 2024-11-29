@@ -22,10 +22,7 @@
     v_set_export_flag(false);
 
     //-----------------------------------------------------------------
-    LLVMDisposeMemoryBuffer: (LLVMMemoryBufferRef) ~> void;
-
-    LLVMDisposeMemoryBuffer(voidc_get_unit_buffer());
-    voidc_set_unit_buffer(0);
+    voidc_clear_unit_buffer();
 }
 
 //---------------------------------------------------------------------
@@ -99,8 +96,7 @@
     }
 
     //-----------------------------------------------------------------
-    LLVMDisposeMemoryBuffer(voidc_get_unit_buffer());
-    voidc_set_unit_buffer(0);
+    voidc_clear_unit_buffer();
 }
 
 //---------------------------------------------------------------------
@@ -117,8 +113,7 @@
     v_set_export_flag(true);
 
     //-----------------------------------------------------------------
-    LLVMDisposeMemoryBuffer(voidc_get_unit_buffer());
-    voidc_set_unit_buffer(0);
+    voidc_clear_unit_buffer();
 }
 
 
