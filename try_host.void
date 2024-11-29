@@ -1,0 +1,22 @@
+{   v_import("llvm-c/Core.void");
+    v_import("llvm-c/TargetMachine.void");
+
+    v_import("printf.void");
+}
+
+
+//---------------------------------------------------------------------
+{   triple       = LLVMGetDefaultTargetTriple();
+    cpu_name     = LLVMGetHostCPUName();
+    cpu_features = LLVMGetHostCPUFeatures();
+
+    printf("triple:       %s\n", triple);
+    printf("cpu_name:     %s\n", cpu_name);
+    printf("cpu_features: %s\n", cpu_features);
+
+    LLVMDisposeMessage(cpu_features);
+    LLVMDisposeMessage(cpu_name);
+    LLVMDisposeMessage(triple);
+}
+
+

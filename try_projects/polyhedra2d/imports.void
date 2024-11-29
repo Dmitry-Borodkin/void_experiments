@@ -114,7 +114,9 @@ make_module: (modname: *const char) ~> void
     gctx = v_target_create_global_ctx(int.sizeof, long.sizeof, intptr_t.sizeof);
     lctx = v_target_create_local_ctx(filename, gctx);
 
-    v_target_global_ctx_add_constant_value(gctx, v_quark_from_string("voidc.import_bin_filename_suffix"), ("c-my": LLVMValueRef));
+    suf_q = v_quark_from_string("voidc.import_bin_filename_suffix");
+
+    v_target_global_ctx_add_constant_value(gctx, suf_q, ("c-my": LLVMValueRef));
 
     v_target_set_global_ctx(gctx);
 
