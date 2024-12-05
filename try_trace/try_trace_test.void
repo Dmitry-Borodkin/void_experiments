@@ -1,13 +1,13 @@
 {   v_import("mainline.void");
 
-    v_import("try_trace.void");
+//  v_import("try_trace.void");
 
     v_import("printf.void");
 }
 
 {   v_enable_mainline();
 
-    v_enable_trace();
+//  v_enable_trace();
 }
 
 

@@ -41,9 +41,9 @@ compile_stmt_list: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> v
     ps = v_std_any_get_value(size_t, v_ast_get_property(self, v_quark_from_string("pos_start")));
     pe = v_std_any_get_value(size_t, v_ast_get_property(self, v_quark_from_string("pos_end")));
 
-    v_peg_get_line_column(ps, line, column);
+    line := v_peg_get_line_column(ps, &column);
 
-    printf("%s (%zd, %zd) %s: list begin\n", filename, line+1, column+1, function);
+    printf("%s (%zd:%zd) %s: list begin\n", filename, line, column, function);
 
 
     list = (self: *v_ast_stmt_list_t);
@@ -55,21 +55,21 @@ compile_stmt_list: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> v
         ps = v_std_any_get_value(size_t, v_ast_get_property((stmt: *v_ast_base_t), v_quark_from_string("pos_start")));
         pe = v_std_any_get_value(size_t, v_ast_get_property((stmt: *v_ast_base_t), v_quark_from_string("pos_end")));
 
-        v_peg_get_line_column(ps, line, column);
+        line := v_peg_get_line_column(ps, &column);
 
-        printf("%s (%zd, %zd) %s: stmt begin\n", filename, line+1, column+1, function);
+        printf("%s (%zd:%zd) %s: stmt begin\n", filename, line, column, function);
 
         v_ast_accept_visitor((stmt: *v_ast_base_t), vis);
 
-        v_peg_get_line_column(pe, line, column);
+        line := v_peg_get_line_column(pe, &column);
 
-        printf("%s (%zd, %zd) %s: stmt end\n", filename, line+1, column+1, function);
+        printf("%s (%zd:%zd) %s: stmt end\n", filename, line, column, function);
     }
 
 
-    v_peg_get_line_column(pe, line, column);
+    line := v_peg_get_line_column(pe, &column);
 
-    printf("%s (%zd, %zd) %s: list end\n", filename, line+1, column+1, function);
+    printf("%s (%zd:%zd) %s: list end\n", filename, line, column, function);
 }
 
 
@@ -82,7 +82,7 @@ v_enable_trace: () ~> void
 
     q = v_quark_from_string;
 
-    voidc_visitor_set_void_method(vis, vis, q("stmt_list"), compile_stmt_list, 0);
+    voidc_visitor_set_method(vis, vis, q("stmt_list"), compile_stmt_list, 0);
 }
 
 

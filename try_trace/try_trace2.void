@@ -1,0 +1,30 @@
+{   v_import("mainline.void");
+
+    v_import("llvm-c/Core.void");
+
+    //-------------------------------------------------------------
+    voidc_clear_unit_buffer();
+}
+
+{   v_enable_mainline();
+
+    //-------------------------------------------------------------
+    voidc_clear_unit_buffer();
+}
+
+
+//---------------------------------------------------------------------
+{   mb: &LLVMMemoryBufferRef := v_undef();
+
+    LLVMCreateMemoryBufferWithContentsOfFile("try_trace.o", &mb, 0);
+
+    voidc_add_object_file_to_jit(mb);
+
+    LLVMDisposeMemoryBuffer(mb);
+}
+
+//---------------------------------------------------------------------
+export
+v_enable_trace: () ~> void;
+
+

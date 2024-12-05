@@ -7,6 +7,11 @@ try_trace.void          "Header"...                            │try_trace.void
 try_trace_test.void                                            │try_trace_test.void
                                                                │
                                                                │
+try_trace2.void                                                │try_trace2.void
+                                                               │
+try_trace3.void                                                │try_trace3.void try_trace_test.void -T
+                                                               │
+                                                               │
                                                                │
 ───────────────────────────────────────────────────────────────│
 void.doit                                                      │void.doit

@@ -149,14 +149,14 @@ print_trace: () ~> void
 
             if (pps)
             {
-                v_peg_get_line_column(*pps, line, column);
+                line := v_peg_get_line_column(*pps, &column);
 
                 printf(": (%zd, %zd)", line, column);
             }
 
             if (ppe)
             {
-                v_peg_get_line_column(*ppe, line, column);
+                line := v_peg_get_line_column(*ppe, &column);
 
                 printf(" - (%zd, %zd)", line, column);
             }
@@ -189,10 +189,9 @@ print_trace: () ~> void
 
             printf("  #%d: %s", i, tag);
 
-            line:   &size_t := v_undef();
             column: &size_t := v_undef();
 
-            v_peg_get_line_column(item[1], line, column);
+            line = v_peg_get_line_column(item[1], &column);
 
             printf(": (%zd, %zd)\n", line, column);
         }
@@ -211,15 +210,11 @@ ctx_v: &my_trace_visitor_ctx_t := v_undef();
     __sanitizer_set_death_callback(print_trace);
 
 
-    grm: &v_peg_grammar_t := {};
+    grm = v_peg_get_grammar();
 
-    v_peg_get_grammar(&grm);
+    ctx_g.fun := v_peg_grammar_get_parse_hook(grm, &ctx_g.aux);
 
-    ctx_g.fun := v_peg_grammar_get_parse_hook(&grm, &ctx_g.aux);
-
-    v_peg_grammar_set_parse_hook(&grm, &grm, my_trace_grammar, &ctx_g);
-
-    v_peg_set_grammar(&grm);
+    v_peg_grammar_set_parse_hook(grm, grm, my_trace_grammar, &ctx_g);
 
 
     vis = v_get_compiler();
@@ -259,14 +254,14 @@ ctx_v: &my_trace_visitor_ctx_t := v_undef();
 //
 //            if (pps)
 //            {
-//                v_peg_get_line_column(*pps, line, column);
+//                line := v_peg_get_line_column(*pps, &column);
 //
 //                printf(": (%zd, %zd)", line, column);
 //            }
 //
 //            if (ppe)
 //            {
-//                v_peg_get_line_column(*ppe, line, column);
+//                line := v_peg_get_line_column(*ppe, &column);
 //
 //                printf(" - (%zd, %zd)", line, column);
 //            }
