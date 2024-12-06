@@ -1,2 +1,2 @@
-{ v_import("try_trace2.void"); }
+{ v_import("try_trace22.void"); }
 { v_enable_trace(); }

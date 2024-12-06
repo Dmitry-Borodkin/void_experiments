@@ -1,0 +1,96 @@
+{   voidc_guard_target("try_trace22.void  must be imported into the voidc target only!"); }
+
+//---------------------------------------------------------------------
+{   typ0 = v_alloca(v_type_ptr, 2);
+    typ1 = v_getelementptr(typ0, 1);
+
+    v_store(v_type_ptr, typ0);          //- Element type
+    v_store(unsigned,   typ1);          //- Address space
+
+    ft = v_function_type(v_type_ptr, typ0, 2, false);
+    v_add_symbol("v_pointer_type", ft, 0);
+
+    //-------------------------------------------------------------
+    voidc_clear_unit_buffer();
+}
+
+//---------------------------------------------------------------------
+{   typ0 = v_alloca(v_type_ptr, 2);
+    typ1 = v_getelementptr(typ0, 1);
+
+    char_ptr = v_pointer_type(char, 0);
+
+    v_store(char_ptr,   typ0);          //- Symbol name
+    v_store(v_type_ptr, typ1);          //- Symbol type
+
+    ft = v_function_type(void, typ0, 2, false);
+    v_add_symbol("v_export_symbol_type", ft, 0);
+
+//  v_store(char_ptr,   typ0);          //- Struct name
+
+    ft = v_function_type(v_type_ptr, typ0, 1, false);
+    v_add_symbol("v_struct_type_named", ft, 0);
+
+//  v_store(char_ptr,   typ0);          //- Type name
+//  v_store(v_type_ptr, typ1);          //- Type
+
+    ft = v_function_type(void, typ0, 2, false);
+    v_add_symbol("v_add_type", ft, 0);
+
+    //-------------------------------------------------------------
+    voidc_clear_unit_buffer();
+}
+
+//---------------------------------------------------------------------
+{   opaque_membuf_t = v_struct_type_named("struct.LLVMOpaqueMemoryBuffer");
+    membuf_ref = v_pointer_type(opaque_membuf_t, 0);
+    v_add_type("LLVMMemoryBufferRef", membuf_ref);
+
+    //-------------------------------------------------------------
+    voidc_clear_unit_buffer();
+}
+
+//---------------------------------------------------------------------
+{   typ0 = v_alloca(v_type_ptr, 3);
+    typ1 = v_getelementptr(typ0, 1);
+    typ2 = v_getelementptr(typ0, 2);
+
+    char_ptr     = v_pointer_type(char, 0);
+    mbr_ptr      = v_pointer_type(LLVMMemoryBufferRef, 0);
+    char_ptr_ptr = v_pointer_type(char_ptr, 0);
+
+    v_store(char_ptr,     typ0);
+    v_store(mbr_ptr,      typ1);
+    v_store(char_ptr_ptr, typ2);
+
+    ft = v_function_type(int, typ0, 3, false);
+    v_add_symbol("LLVMCreateMemoryBufferWithContentsOfFile", ft, 0);
+
+    v_store(LLVMMemoryBufferRef, typ0);
+
+    ft = v_function_type(void, typ0, 1, false);
+    v_add_symbol("voidc_add_object_file_to_jit", ft, 0);
+    v_add_symbol("LLVMDisposeMemoryBuffer", ft, 0);
+
+    //-------------------------------------------------------------
+    voidc_clear_unit_buffer();
+}
+
+
+//=====================================================================
+{   mb = v_alloca(LLVMMemoryBufferRef);
+
+    LLVMCreateMemoryBufferWithContentsOfFile("try_trace.o", mb, 0);
+
+    mb = v_load(mb);
+
+    voidc_add_object_file_to_jit(mb);
+
+    LLVMDisposeMemoryBuffer(mb);
+
+    //-------------------------------------------------------------
+    ft = v_function_type(void, 0, 0, false);
+    v_export_symbol_type("v_enable_trace", ft);
+}
+
+
