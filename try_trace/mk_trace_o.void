@@ -115,10 +115,6 @@ v_enable_trace: () ~> void
                                 "try_trace.o",
                                 LLVMObjectFile,
                                 0);
-
-    //-----------------------------------------------------------------
-    LLVMDisposeModule(module);
-    v_set_module(0);
 }
 
 
