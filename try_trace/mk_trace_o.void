@@ -83,6 +83,18 @@ compile_stmt_list: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> v
 
 //---------------------------------------------------------------------
 export
+my_std_string_get: (s: *const v_std_string_t) ~> *const char
+{
+    ret = v_std_string_get(s);
+
+    printf("[%s]\n", ret);
+
+    v_return(ret);
+}
+
+
+//---------------------------------------------------------------------
+export
 v_enable_trace: () ~> void
 {
     voidc_internal_voidc_compiler_level_zero:  &voidc_visitor_t;
@@ -97,6 +109,11 @@ v_enable_trace: () ~> void
     voidc_visitor_set_method(vis0, vis0, stmt_list_q, compile_stmt_list, 0);
     voidc_visitor_set_method(vis1, vis1, stmt_list_q, compile_stmt_list, 0);
     voidc_visitor_set_method(vis2, vis2, stmt_list_q, compile_stmt_list, 0);
+
+
+    vctx = v_target_get_voidc_global_ctx();
+
+    v_target_global_ctx_add_alias(vctx, v_quark_from_string("v_std_string_get"), v_quark_from_string("my_std_string_get"));
 }
 
 

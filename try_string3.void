@@ -117,6 +117,8 @@ inlinehint
             di._data := si._data;
 
             di[2].capacity := si[2].capacity;
+
+            si._data := si[2].local;
         }
         else
         {
@@ -125,7 +127,6 @@ inlinehint
             memcpy(di._data, si._data, sz+1);
         }
 
-        si._data := si[2].local;
         si._size := 0;
         si[2].local[0] := 0;
     }
@@ -134,23 +135,10 @@ inlinehint
 
 //---------------------------------------------------------------------
 alwaysinline
-(_.data): (str: &const string_t) ~> *char  =  str._data;
-
-alwaysinline
 (_.data): (str: string_t) ~> *char  =  str._data;
 
 alwaysinline
-(_.size): (str: &const string_t) ~> size_t  =  str._size;
-
-alwaysinline
 (_.size): (str: string_t) ~> size_t  =  str._size;
-
-inlinehint
-(_.capacity): (str: &const string_t) ~> size_t
-{
-    if (str.is_long)  v_return(str[2].capacity);
-    else              v_return(15);
-}
 
 inlinehint
 (_.capacity): (str: string_t) ~> size_t
@@ -162,10 +150,8 @@ inlinehint
 
 //---------------------------------------------------------------------
 inlinehint
-(_.set()): (str: &string_t, s: *const char) ~> void
+(_.set_data()): (str: &string_t, s: *const char, len: size_t) ~> void
 {
-    len = strlen(s);
-
     if (len > str.capacity)
     {
         if (str.is_long) v_free(str._data);
@@ -176,15 +162,23 @@ inlinehint
         str[2].capacity := csz - 1;
     }
 
-    str._size := len;
+    memcpy(str._data, s, len);
 
-    memcpy(str._data, s, len+1);
+    str._data[len] := 0;
+
+    str._size := len;
 }
 
 inlinehint
-(_.append()): (str: &string_t, s: *const char) ~> void
+(_.set()): (str: &string_t, s: *const char) ~> void
 {
-    len = strlen(s);
+    str.set_data(s, strlen(s));
+}
+
+inlinehint
+(_.append_data()): (str: &string_t, s: *const char, len: size_t) ~> void
+{
+    if (len == 0) v_return();
 
     sz = str._size;
 
@@ -210,10 +204,73 @@ inlinehint
         str[2].capacity := csz - 1;
     }
 
-    memcpy(str._data+sz, s, len+1);
+    memcpy(str._data+sz, s, len);
+
+    str._data[sz_len] := 0;
 
     str._size := sz_len;
 }
+
+inlinehint
+(_.append()): (str: &string_t, s: *const char) ~> void
+{
+    str.append_data(s, strlen(s));
+}
+
+inlinehint
+(_.append_char()): (str: &string_t, c: char32_t) ~> void
+{
+    r: &int := v_undef();
+
+    if (c <= 0x7FF)
+    {
+        if (c <= 0x7F)  r := 0;
+        else            r := 1;
+    }
+    else
+    {
+        if (c <= 0xFFFF)  r := 2;
+        else              r := 3;
+    }
+
+    d = v_alloca(char, r+1);
+
+    if (r == 0)
+    {
+        d[0] := (c & 0x7F : char);
+    }
+    else
+    {
+        c: &char32_t := c;
+
+        for (j: &int := 0; j < r; ++j)
+        {
+            d[r-j] := (0x80 | (c & 0x3F) : char);
+
+            c >>= 6;
+        }
+
+        d[0] := ((0x1E << (6-r)) | (c & (0x3F >> r)) : char);
+    }
+
+    str.append_data(d, r+1);
+}
+
+inlinehint
+(_.append_number()): (str: &string_t, n: intptr_t) ~> void
+{
+    buf: &char[24] := v_undef();
+
+    sprintf: (*char, *const char, ...) ~> int;
+
+    len = sprintf(buf, "%zd", n);
+
+    str.append_data(buf, len);
+}
+
+
+
+
 
 
 
@@ -254,6 +311,16 @@ pr_string: (s: string_t) ~> void
     pr_string(s);
 
     s.append("asdfgh_____5");
+
+    pr_string(s);
+
+    s.append_char('_');
+    s.append_char('Ы');
+
+    pr_string(s);
+
+    s.append_char('_');
+    s.append_number((-1 : size_t) >> 1);
 
     pr_string(s);
 }

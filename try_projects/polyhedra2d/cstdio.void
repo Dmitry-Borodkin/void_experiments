@@ -10,6 +10,9 @@
     v_add_symbol("cur_gctx", v_target_global_ctx_t, gctx);
 
     v_target_set_global_ctx(gctx);
+
+    //-----------------------------------------------------------------
+    voidc_clear_unit_buffer();
 }
 
 //---------------------------------------------------------------------
