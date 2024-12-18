@@ -953,13 +953,26 @@ int_ptr: v_static_type_t = *int;
 
 
 //---------------------------------------------------------------------
+byte = uint(8);
 
+union IntRep
+{
+    i: int;
+    s: byte[0];
+};
 
+{
+    ir: &IntRep := v_undef();
 
+    ir.i := 0xDEADBEEF;
 
+    for (i: &int := 0; i < int.sizeof; ++i)
+    {
+        printf("%02X ", ir.s[i]);
+    }
 
-
-
+    printf("\n");
+}
 
 
 
