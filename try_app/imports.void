@@ -81,6 +81,15 @@ make_header: (name: *const char) ~> void
 
 
 //---------------------------------------------------------------------
+private
+my_rewrite: (*void, parent: *const v_std_string_t, file: *v_std_string_t) ~> void
+{
+    v_std_string_append(file, "-r");
+
+    printf("[%s, %s]\n", v_std_string_get(parent), v_std_string_get(file));
+}
+
+//---------------------------------------------------------------------
 export
 make_module: (modname: *const char) ~> void
 {
@@ -97,6 +106,8 @@ make_module: (modname: *const char) ~> void
     lctx = v_target_create_local_ctx(filename, gctx);
 
     v_target_global_ctx_add_constant_value(gctx, v_quark_from_string("voidc.import_bin_filename_suffix"), ("c-my": LLVMValueRef));
+
+    v_target_global_ctx_add_intrinsic(gctx, v_quark_from_string("voidc.import_bin_filename_rewrite"), my_rewrite, 0);
 
     v_target_set_global_ctx(gctx);
 
