@@ -121,12 +121,11 @@ check_SOL_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) 
 {
     pos = v_std_any_get_value(size_t, any+0);
 
-    line:   &size_t := 0;
-    column: &size_t := 0;
+    column: &size_t := v_undef();
 
-    v_peg_get_line_column(pos, line, column);
+    v_peg_get_line_column(pos, &column);
 
-    if (column == 0)  v_std_any_set_value(ret, true);
+    if (column == 1)  v_std_any_set_value(ret, true);
 }
 
 
@@ -166,11 +165,11 @@ make_preprocessor_context: (ctx: v_peg_context_ptr) ~> void
 {
     v_make_map(&defset);
 
-    grm = v_alloca(v_peg_grammar_t);
-    v_initialize(grm);
-    defer v_terminate(grm);
+    grm: &v_peg_grammar_t := {};
 
-    v_peg_make_grammar(grm);        //- New grammar from scratch!
+    v_peg_make_grammar(&grm);       //- New grammar from scratch!
+
+    grm = &grm;
 
     grammar grm
     {

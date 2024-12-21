@@ -26,7 +26,7 @@ enable_imports: () ~> void
 //---------------------------------------------------------------------
 struct FILE;
 
-v_fopen: (filename: *const char, mode: *const char) ~> *FILE;       //- Sic!
+fopen: (filename: *const char, mode: *const char) ~> *FILE;
 
 fwrite: (buf: *const void, size: size_t, count: size_t, stream: *FILE) ~> size_t;
 
