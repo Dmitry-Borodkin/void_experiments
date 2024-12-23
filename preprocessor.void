@@ -1,0 +1,206 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
+
+exit: (int) ~> void;
+
+
+//---------------------------------------------------------------------
+ifdef_counter: &int := 0;
+
+
+//---------------------------------------------------------------------
+//private
+check_pp_ifdef_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
+{
+    ++ifdef_counter;
+
+    name = v_std_any_get_pointer(v_std_string_t, any+0);
+
+    vdef = v_find_constant(v_std_string_get(name), 0, 0);
+
+    flag = v_std_any_get_value(intptr_t, any+1) != 0;
+
+printf("pp_if%d %s %d %d\n", (flag: int), v_std_string_get(name), (vdef: int), ifdef_counter);
+
+    if (flag == vdef)   v_std_any_set_value(ret, true);
+}
+
+//---------------------------------------------------------------------
+//private
+pp_else_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
+{
+printf("pp_else %d\n", ifdef_counter);
+
+    if (ifdef_counter <= 0)
+    {
+        printf("##else without ##ifdef\n");
+
+        exit(-1);
+    }
+
+    v_std_any_set_value(ret, true);
+}
+
+//---------------------------------------------------------------------
+//private
+pp_endif_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
+{
+printf("pp_endif %d\n", ifdef_counter);
+
+    if (ifdef_counter <= 0)
+    {
+        printf("##endif without ##ifdef\n");
+
+        exit(-1);
+    }
+
+    --ifdef_counter;
+
+    v_std_any_set_value(ret, true);
+}
+
+
+//---------------------------------------------------------------------
+//private
+check_SOL_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
+{
+    pos = v_std_any_get_value(size_t, any+0);
+
+    column: &size_t := v_undef();
+
+    v_peg_get_line_column(pos, &column);
+
+    if (column == 1)  v_std_any_set_value(ret, true);
+}
+
+
+//---------------------------------------------------------------------
+my_trace_grammar_ctx_t = struct
+{
+    fun: *((*void, *v_std_any_t, *v_peg_grammar_t, v_quark_t, *v_peg_context_t) ~> void);
+    aux: *void;
+};
+
+//---------------------------------------------------------------------
+my_trace_grammar: (aux: *void, ret: *v_std_any_t, grm: *v_peg_grammar_t, q: v_quark_t, ctx: *v_peg_context_t) ~> void
+{
+    ps0 = v_peg_get_position();
+
+    column0: &size_t := v_undef();
+
+    line0 = v_peg_get_line_column(ps0, &column0);
+
+    printf("start  %zu:%zu %s\n", line0, column0, v_quark_to_string(q));
+
+    my_ctx = *(aux: *my_trace_grammar_ctx_t);
+
+    my_ctx.fun(my_ctx.aux, ret, grm, q, ctx);
+
+    ps1 = v_peg_get_position();
+
+    column1: &size_t := v_undef();
+
+    line1 = v_peg_get_line_column(ps1, &column1);
+
+    printf("finish %zu:%zu %s %zu:%zu ", line1, column1, v_quark_to_string(q), line0, column0);
+
+    if (v_empty(ret))   printf("FAIL\n");
+    else                printf("OK\n");
+}
+
+
+//---------------------------------------------------------------------
+ctx_g: &my_trace_grammar_ctx_t := v_undef();
+
+{
+    grm = v_peg_get_grammar();
+
+    ctx_g.fun := v_peg_grammar_get_parse_hook(grm, &ctx_g.aux);
+
+    v_peg_grammar_set_parse_hook(grm, grm, my_trace_grammar, &ctx_g);
+
+    grammar grm
+    {
+    actions:
+
+        check_pp_ifdef = check_pp_ifdef_grammar_action;
+
+        pp_else  = pp_else_grammar_action;
+        pp_endif = pp_endif_grammar_action;
+
+        check_SOL = check_SOL_grammar_action;
+
+    parsers:
+
+        _ = (pp_directive / space / comment)*;          //- Sic !!!
+
+
+        pp_directive = PreIfdef / PreElse / PreEndif;
+
+
+        PreIfdef  = n:pp_ifdef  ({ check_pp_ifdef(n, 1) }  / skip_ifdef)
+
+                  / n:pp_ifndef ({ check_pp_ifdef(n, 0) }  / skip_ifdef)
+
+                  ;
+
+
+        PreElse   = pp_else  { pp_else() }  skip_lines  pp_endif  { pp_endif() };
+
+
+        PreEndif  = pp_endif { pp_endif() };
+
+
+        skip_ifdef = skip_lines (pp_else {pp_else()} / pp_endif {pp_endif()});
+
+
+        skip_lines = ( !(pp_ifdef / pp_ifndef / pp_else / pp_endif) (!EOL .)* EOL
+
+                     / (pp_ifdef / pp_ifndef) skip_lines (pp_else skip_lines)? pp_endif
+
+                     )*;
+
+
+        pp_ifdef  = pp_SOL "ifdef"  [ \t]+  n:identifier  pp_EOL    { n };
+        pp_ifndef = pp_SOL "ifndef" [ \t]+  n:identifier  pp_EOL    { n };
+
+        pp_else   = pp_SOL "else"   pp_EOL;
+        pp_endif  = pp_SOL "endif"  pp_EOL;
+
+
+        pp_SOL = { check_SOL($0s) } [ \t]*  "##";
+
+        pp_EOL = [ \t]* (comment / EOL);
+    }
+}
+
+
+//---------------------------------------------------------------------
+AAA: void;
+
+{ printf("QQQ\n"); }
+
+##ifdef AAA
+
+    #note ("AAA")                   D O E S   N O T   W O R K   ! ! ! ! ! ! !
+
+##else
+
+    #note ("not AAA")
+
+##endif
+
+
+{}
+
+
+
+
+
+
+
+
+

@@ -89,3 +89,22 @@ use2: (x: &int) ~> int
 }
 
 
+//---------------------------------------------------------------------
+QWERTY: void;
+
+#if (v_defined(QWERTY))     #note ("QWERTY defined!")
+#else                       #note ("QWERTY NOT defined")
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
