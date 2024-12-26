@@ -1,7 +1,5 @@
 #!/usr/bin/make -f
 
-MYFLAGS=-- -DNDEBUG
-
 LIBS=$$(pkg-config gtk+-3.0 --libs) $$(pkg-config fontconfig --libs)
 
 
@@ -9,8 +7,8 @@ LIBS=$$(pkg-config gtk+-3.0 --libs) $$(pkg-config fontconfig --libs)
 all: try_app
 
 
-main.o: main.void imports.void
-	voidc $< $(MYFLAGS)
+main.o: main.void
+	voidc $<
 
 
 try_app: main.o

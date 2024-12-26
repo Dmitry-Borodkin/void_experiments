@@ -1,9 +1,8 @@
-{ v_import("imports.void"); }
-
-{ make_module("main_module"); }
-
+{ v_import("libvoidc.void"); }
+{ voidc_make_module("main_module"); }
 //---------------------------------------------------------------------
-{   v_import("../cairo.void");          //- ?
+{
+    v_import("../cairo.void");          //- ?
 }
 
 
@@ -595,5 +594,5 @@ main: (argc: int, argv: **const char) ~> int
 
 
 //---------------------------------------------------------------------
-{   emit_module("main.o"); }
+{ voidc_emit_module("main.o"); }
 //---------------------------------------------------------------------
