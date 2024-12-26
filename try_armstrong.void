@@ -13,15 +13,18 @@
 
     q = v_quark_ptr_from_string;
 
-    v_add_symbol("q_op_postfix_squared", q_ref, q("v.op_postfix_squared"));
-    v_add_symbol("q_op_postfix_cubed",   q_ref, q("v.op_postfix_cubed"));
+    v_add_symbol("q_op_squared", q_ref, q("v.op_postfix_squared"));
+    v_add_symbol("q_op_cubed",   q_ref, q("v.op_postfix_cubed"));
+
+    v_add_symbol("op_squared_impl_q", q_ref, q("op_postfix_squared_impl"));
+    v_add_symbol("op_cubed_impl_q",   q_ref, q("op_postfix_cubed_impl"));
 }
 
 {   op_squared: &v_ast_expr_t := {};
     op_cubed:   &v_ast_expr_t := {};
 
-    v_ast_make_operator_unary(&op_squared, q_op_postfix_squared, 30000, 0);     //- "Postfix" priority
-    v_ast_make_operator_unary(&op_cubed,   q_op_postfix_cubed,   30000, 0);     //- "Postfix" priority
+    v_ast_make_operator_unary(&op_squared, q_op_squared, 30000, 0);     //- "Postfix" priority
+    v_ast_make_operator_unary(&op_cubed,   q_op_cubed,   30000, 0);     //- "Postfix" priority
 
     any: &v_std_any_t[2] := {};
 
@@ -31,11 +34,9 @@
     v_std_any_set_pointer(any_2, &op_squared);
     v_std_any_set_pointer(any_3, &op_cubed);
 
-    gr0: &v_peg_grammar_t := {};    gr0 = &gr0;
+    grm = v_peg_get_grammar();
 
-    v_peg_get_grammar(gr0);
-
-    grammar gr0
+    grammar grm
     {
     values:
         op_postfix_squared = any_2;
@@ -45,48 +46,33 @@
         postfix =+ '²'  { op_postfix_squared }
                 /  '³'  { op_postfix_cubed };
     }
-
-    v_peg_set_grammar(gr0);
 }
 
 //---------------------------------------------------------------------
-compile_op_postfix_fixpow: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+compile_op_unary_impl: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
-    call = (self: *v_ast_expr_t);
+    arg = v_list_get_item(v_ast_expr_call_get_arg_list((self: *v_ast_expr_t)), 1);
 
-    args = v_ast_expr_call_get_arg_list(call);
+    elst: &v_ast_expr_list_t := {};
 
-    ast = v_list_get_item(args, 1);
+    v_make_list(&elst, arg);
 
-    ttag = v_get_result_type();
-    vtag = v_get_result_value();
+    expr: &v_ast_expr_t := {};
 
-    v_set_result_type(UNREFERENCE_TAG);
-    v_set_result_value(0);
+    v_ast_make_expr_identifier_q(&expr, (aux: v_quark_t));
 
-    v_ast_accept_visitor((ast: *v_ast_base_t), vis);
+    v_ast_make_expr_call(&expr, &expr, &elst);
 
-    t = v_get_result_type();
-    v = v_get_result_value();
-
-    compile_mul = voidc_internal_compile_mul_helper;
-
-    vv: &LLVMValueRef := v;
-
-    for (p: &int := (aux: int); p > 1; --p)
-    {
-        vv := compile_mul(t, vv, v);
-    }
-
-    v_set_result_type(ttag);
-    v_set_result_value(vtag);
-
-    v_adopt_result(t, vv);
+    v_ast_accept_visitor(&expr, vis);
 }
 
-{   v_add_intrinsic_q(q_op_postfix_squared, compile_op_postfix_fixpow, (2: *void));
-    v_add_intrinsic_q(q_op_postfix_cubed,   compile_op_postfix_fixpow, (3: *void));
+{   v_add_intrinsic_q(q_op_squared, compile_op_unary_impl, (op_squared_impl_q: *void));
+    v_add_intrinsic_q(q_op_cubed,   compile_op_unary_impl, (op_cubed_impl_q:   *void));
 }
+
+//---------------------------------------------------------------------
+#define op_postfix_squared_impl: (x)  =  x*x;
+#define op_postfix_cubed_impl:   (x)  =  x*x*x;
 
 
 //---------------------------------------------------------------------
@@ -95,7 +81,7 @@ compile_op_postfix_fixpow: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base
     ceil: (double) ~> double;
     log:  (double) ~> double;
 
-    ND = (ceil(log(int.size*8 - 1) / (log(2) / log(10))) : int);
+    ND = (ceil((int.sizeof*8 - 1) * (log(2) / log(10))) : int);
 
     v_add_constant("NUMDIGITS", int, LLVMConstInt(v_type_get_llvm_type(int), ND, 0));
 }

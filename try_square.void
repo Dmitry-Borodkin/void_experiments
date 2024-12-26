@@ -1,0 +1,85 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
+
+
+//---------------------------------------------------------------------
+//- (_²)  (_³)  ...
+
+//---------------------------------------------------------------------
+q_op_squared      = v_quark_from_string("v.op_postfix_squared");
+q_op_cubed        = v_quark_from_string("v.op_postfix_cubed");
+
+op_squared_impl_q = v_quark_from_string("op_postfix_squared_impl");
+op_cubed_impl_q   = v_quark_from_string("op_postfix_cubed_impl");
+
+
+//---------------------------------------------------------------------
+{   #define mk_op_any: (q, a)  =
+    {
+        op: &v_ast_expr_t := {};
+
+        v_ast_make_operator_unary(&op, q, 30000, 0);    //- "Postfix" priority
+
+        v_std_any_set_pointer(&a, &op);
+
+        &a
+    };
+
+    any: &v_std_any_t[2] := {};
+
+    any_2 = mk_op_any(q_op_squared, any[0]);
+    any_3 = mk_op_any(q_op_cubed,   any[1]);
+
+    grm = v_peg_get_grammar();
+
+    grammar grm
+    {
+    values:
+        op_postfix_squared = any_2;
+        op_postfix_cubed   = any_3;
+
+    parsers:
+        postfix =+ '²'  { op_postfix_squared }
+                /  '³'  { op_postfix_cubed };
+    }
+}
+
+//---------------------------------------------------------------------
+compile_op_unary_impl: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    arg = v_list_get_item(v_ast_expr_call_get_arg_list((self: *v_ast_expr_t)), 1);
+
+    elst: &v_ast_expr_list_t := {};
+
+    v_make_list(&elst, arg);
+
+    expr: &v_ast_expr_t := {};
+
+    v_ast_make_expr_identifier_q(&expr, (aux: v_quark_t));
+
+    v_ast_make_expr_call(&expr, &expr, &elst);
+
+    v_ast_accept_visitor(&expr, vis);
+}
+
+{   v_add_intrinsic_q(q_op_squared, compile_op_unary_impl, (op_squared_impl_q: *void));
+    v_add_intrinsic_q(q_op_cubed,   compile_op_unary_impl, (op_cubed_impl_q:   *void));
+}
+
+//---------------------------------------------------------------------
+#define op_postfix_squared_impl: (x)  =  x*x;
+#define op_postfix_cubed_impl:   (x)  =  x*x*x;
+
+
+//---------------------------------------------------------------------
+{
+    for (i: &int := 0; i < 10; ++i)
+    {
+        printf("%d² = %2d,    %d³ = %3d;\n", i, i², i, i³);
+    }
+}
+
+

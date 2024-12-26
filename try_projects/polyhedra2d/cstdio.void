@@ -163,17 +163,48 @@
 
 
 //---------------------------------------------------------------------
-{
-    v_import("cstdarg.void");
-}
-
-//---------------------------------------------------------------------
 struct FILE;
+
+#if (!v_defined(_WIN32))
 
 stdin:  &*FILE;
 stdout: &*FILE;
 stderr: &*FILE;
 
+#endif
+
+//---------------------------------------------------------------------
+{   v_import("cstdarg.void");
+
+#if (v_defined(WIN32))
+
+    q = v_quark_from_string;
+
+    stream_t = v_generic_type(q("v.stdio.stream_t"), 0, 0);
+
+    FILE_ptr = v_pointer_type(v_find_type("FILE"), 0);
+
+    func_q = q("__acrt_iob_func");
+    fake_q = q("v.fake.cstdio_stream_coercion");
+
+    v_add_coercion(v_coe_projective, func_q, fake_q, stream_t, FILE_ptr);
+
+    _int = v_find_type("int");
+    int_ = v_type_get_llvm_type(_int);
+
+    v_type_generic_set_implementation_type(stream_t, _int);
+
+    v_export_constant("stdin",  stream_t, LLVMConstInt(int_, 0, 0));
+    v_export_constant("stdout", stream_t, LLVMConstInt(int_, 1, 0));
+    v_export_constant("stderr", stream_t, LLVMConstInt(int_, 2, 0));
+
+    ft = v_function_type(FILE_ptr, &stream_t, 1, false);
+    v_export_symbol_q(func_q, ft, 0);
+
+#endif
+}
+
+//---------------------------------------------------------------------
 struct fpos_t { (*void)[fpos_t_size]; };
 
 _IOFBF       = my__IOFBF;
