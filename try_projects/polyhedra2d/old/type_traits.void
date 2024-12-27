@@ -13,9 +13,7 @@
 }
 
 //---------------------------------------------------------------------
-{   vctx = v_target_get_voidc_global_ctx();
-
-    v_target_set_global_ctx(vctx);
+{   v_target_set_global_ctx(v_target_get_voidc_global_ctx());
 
     v_import("llvm-c/Core.void");
 
@@ -586,7 +584,7 @@ v_eq_types_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> voi
 
 
 //---------------------------------------------------------------------
-export
+//export
 voidc_enable_type_traits_effort: (*void) ~> void
 {
     block

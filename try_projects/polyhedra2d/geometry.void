@@ -3,7 +3,6 @@
 //---------------------------------------------------------------------
 {
     v_export_import("cstdio.void");
-
     v_export_import("type_traits.void");
 }
 

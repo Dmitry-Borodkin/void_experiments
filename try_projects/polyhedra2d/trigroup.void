@@ -5,6 +5,28 @@
     v_import("geometry.void");
 }
 
+//---------------------------------------------------------------------
+{   gctx = v_target_get_global_ctx();
+    vctx = v_target_get_voidc_global_ctx();
+
+    v_target_set_global_ctx(vctx);
+
+    v_add_symbol("cur_gctx", v_target_global_ctx_t, gctx);
+
+    v_target_set_global_ctx(gctx);
+}
+
+//---------------------------------------------------------------------
+{   v_target_set_global_ctx(v_target_get_voidc_global_ctx());
+
+    v_import("llvm-c/Core.void");               //- WTF !?!?!?!?!?!?!?!
+
+    v_target_set_global_ctx(cur_gctx);
+
+    //-----------------------------------------------------------------
+    voidc_clear_unit_buffer();
+}
+
 
 //---------------------------------------------------------------------
 struct TriGroup;
@@ -185,29 +207,11 @@ alwaysinline
 
 
 //=====================================================================
-{   gctx = v_target_get_global_ctx();
-    vctx = v_target_get_voidc_global_ctx();
-
-    v_target_set_global_ctx(vctx);
-
-    v_add_symbol("cur_gctx", v_target_global_ctx_t, gctx);
-
-    v_target_set_global_ctx(gctx);
-}
-
-{   vctx = v_target_get_voidc_global_ctx();
-
-    v_target_set_global_ctx(vctx);
-
-    v_import("llvm-c/Core.void");
-
-    //-----------------------------------------------------------------
-    voidc_clear_unit_buffer();
-}
+{ v_target_set_global_ctx(v_target_get_voidc_global_ctx()); }
 
 //---------------------------------------------------------------------
-{   voidc_unit_begin_module("trigroup_module");
-}
+{ voidc_unit_begin_module("trigroup_module"); }
+
 
 //---------------------------------------------------------------------
 private

@@ -19,7 +19,7 @@ try_geom.void       +TEST                                      │try_geom.void
                                                                │
                                                                │
 ===============================================================│
-type_traits.void                                               │type_traits.void
+type_traits.void                                               │old/type_traits.void
                                                                │
                                                                │
 ---------------------------------------------------------------│
