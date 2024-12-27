@@ -8,7 +8,7 @@ all: try_app
 
 
 main.o: main.void
-	voidc $<
+	voidc $< -T
 
 
 try_app: main.o

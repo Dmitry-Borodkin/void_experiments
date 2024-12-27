@@ -1,5 +1,5 @@
-{ v_import("imports.void"); }
-{ make_module("try_geom"); }
+{ v_import("libvoidc.void"); }
+{ voidc_make_module("try_geom"); }
 //---------------------------------------------------------------------
 {
     v_import("geometry.void");
@@ -124,7 +124,7 @@ main: (argc: int, argv: **const char) ~> int
 
 
 //---------------------------------------------------------------------
-{   emit_module("try_geom.o"); }
+{ voidc_emit_module("try_geom.o"); }
 //---------------------------------------------------------------------
 
 

@@ -1,5 +1,5 @@
-{ voidc_import("imports.void"); }
-{ make_header("geomobjects"); }
+{ voidc_import("libvoidc.void"); }
+{ voidc_make_header("geomobjects"); }
 //---------------------------------------------------------------------
 {
     v_import("geometry.void");

@@ -1,5 +1,5 @@
-{ voidc_import("imports.void"); }
-{ make_header("type_traits"); }
+{ voidc_import("libvoidc.void"); }
+{ voidc_make_header("type_traits"); }
 //---------------------------------------------------------------------
 
 {   gctx = v_target_get_global_ctx();
@@ -17,7 +17,7 @@
 
     v_target_set_global_ctx(vctx);
 
-//  v_import("llvm-c/Core.void");
+    v_import("llvm-c/Core.void");
 
     v_set_export_flag(false);
 
@@ -844,6 +844,8 @@ voidc_enable_type_traits_effort: (*void) ~> void
 {   v_target_set_global_ctx(cur_gctx);
 
     v_export_effort(voidc_enable_type_traits_effort, 0);
+
+    v_set_export_flag(true);        //- WTF !?!?!?!?!?!?!?!
 }
 
 

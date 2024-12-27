@@ -1,5 +1,5 @@
-{ v_import("imports.void"); }
-{ make_module("trigroup"); }
+{ v_import("libvoidc.void"); }
+{ voidc_make_module("trigroup"); }
 //---------------------------------------------------------------------
 {
     v_import("geometry.void");
@@ -1025,7 +1025,5 @@ GroupFilter_next: (it: &GroupIterator) ~> void
 
 
 //---------------------------------------------------------------------
-{   emit_module("trigroup_mod.o"); }
+{ voidc_emit_module("trigroup_mod.o"); }
 //---------------------------------------------------------------------
-
-

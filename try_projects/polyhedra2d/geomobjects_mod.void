@@ -1,5 +1,5 @@
-{ v_import("imports.void"); }
-{ make_module("geomobjects"); }
+{ v_import("libvoidc.void"); }
+{ voidc_make_module("geomobjects"); }
 //---------------------------------------------------------------------
 {
     v_import("geometry.void");
@@ -359,6 +359,6 @@ ins: (p0: &Point, p1: &Point, p2: &Point, pt: &Point) ~> struct {bool; double;}
 
 
 //---------------------------------------------------------------------
-{   emit_module("geomobjects_mod.o"); }
+{ voidc_emit_module("geomobjects_mod.o"); }
 //---------------------------------------------------------------------
 

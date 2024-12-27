@@ -115,6 +115,68 @@
     voidc_clear_unit_buffer();
 }
 
+
+{   voidc_unit_begin_module("namespaces_module"); }
+
+my_effort: (*void) ~> void
+{
+    q = v_quark_from_string;
+
+    stream_t = v_generic_type(q("v.stdio.stream_t"), 0, 0);
+
+    v_add_type("my_stream_t", stream_t);
+
+    _int = v_find_type("int");
+
+    v_type_generic_set_implementation_type(stream_t, _int);
+
+    FILE_ptr = v_pointer_type(v_struct_type_named("struct.FILE"), 0);
+
+//  func_q = q("__acrt_iob_func");
+    func_q = q("my__acrt_iob_func");
+    fake_q = q("v.fake.cstdio_stream_coercion");
+
+    v_add_coercion(v_coe_projective, func_q, fake_q, stream_t, FILE_ptr);
+
+    _int = v_find_type("int");
+    int_ = v_type_get_llvm_type(_int);
+
+    v_add_constant("stdin",  stream_t, LLVMConstInt(int_, 0, 0));
+    v_add_constant("my_stdout", stream_t, LLVMConstInt(int_, 1, 0));
+    v_add_constant("stderr", stream_t, LLVMConstInt(int_, 2, 0));
+}
+
+{   voidc_unit_end_module(); }
+
+
+{   v_export_effort(my_effort, 0);
+}
+
+
+{   voidc_unit_begin_module("namespaces_module"); }
+
+export
+my__acrt_iob_func: (f: my_stream_t) ~> *(struct FILE)
+{
+    f: &my_stream_t := f;
+
+    f: &int := *(&f: *int);
+
+    stdin:  &*struct FILE;
+    stdout: &*struct FILE;
+    stderr: &*struct FILE;
+
+    switch(f)
+    {
+    case 0: v_return(stdin);
+    case 1: v_return(stdout);
+    case 2: v_return(stderr);
+    }
+}
+
+{   voidc_unit_end_module(); }
+
+
 //---------------------------------------------------------------------
 {   my_fpos_t_size : &unsigned;
     my__IOFBF      : &int     ;
@@ -165,7 +227,8 @@
 //---------------------------------------------------------------------
 struct FILE;
 
-#if (!v_defined(_WIN32))
+//#if (!v_defined(_WIN32))
+#if (0)
 
 stdin:  &*FILE;
 stdout: &*FILE;
@@ -173,36 +236,66 @@ stderr: &*FILE;
 
 #endif
 
+
+
+#if (1)
+
+//my__acrt_iob_func: (f: my_stream_t) ~> *FILE
+//{
+//    f: &my_stream_t := f;
+//
+//    f: &int := *(&f: *int);
+//
+//    stdin:  &*FILE;
+//    stdout: &*FILE;
+//    stderr: &*FILE;
+//
+//    switch(f)
+//    {
+//    case 0: v_return(stdin);
+//    case 1: v_return(stdout);
+//    case 2: v_return(stderr);
+//    }
+//}
+
+#endif
+
 //---------------------------------------------------------------------
 {   v_import("cstdarg.void");
 
-#if (v_defined(WIN32))
+//#if (v_defined(WIN32))
+#if (1)
 
-    q = v_quark_from_string;
 
-    stream_t = v_generic_type(q("v.stdio.stream_t"), 0, 0);
-
-    FILE_ptr = v_pointer_type(v_find_type("FILE"), 0);
-
-    func_q = q("__acrt_iob_func");
-    fake_q = q("v.fake.cstdio_stream_coercion");
-
-    v_add_coercion(v_coe_projective, func_q, fake_q, stream_t, FILE_ptr);
-
-    _int = v_find_type("int");
-    int_ = v_type_get_llvm_type(_int);
-
-    v_type_generic_set_implementation_type(stream_t, _int);
-
-    v_export_constant("stdin",  stream_t, LLVMConstInt(int_, 0, 0));
-    v_export_constant("stdout", stream_t, LLVMConstInt(int_, 1, 0));
-    v_export_constant("stderr", stream_t, LLVMConstInt(int_, 2, 0));
-
-    ft = v_function_type(FILE_ptr, &stream_t, 1, false);
-    v_export_symbol_q(func_q, ft, 0);
+//    q = v_quark_from_string;
+//
+//    stream_t = v_generic_type(q("v.stdio.stream_t"), 0, 0);
+//
+////  v_add_type("my_stream_t", stream_t);
+//
+//    FILE_ptr = v_pointer_type(v_find_type("FILE"), 0);
+//
+////  func_q = q("__acrt_iob_func");
+//    func_q = q("my__acrt_iob_func");
+//    fake_q = q("v.fake.cstdio_stream_coercion");
+//
+//    v_add_coercion(v_coe_projective, func_q, fake_q, stream_t, FILE_ptr);
+//
+//    _int = v_find_type("int");
+//    int_ = v_type_get_llvm_type(_int);
+//
+////  v_type_generic_set_implementation_type(stream_t, _int);
+//
+//    v_export_constant("stdin",  stream_t, LLVMConstInt(int_, 0, 0));
+//    v_export_constant("stdout", stream_t, LLVMConstInt(int_, 1, 0));
+//    v_export_constant("stderr", stream_t, LLVMConstInt(int_, 2, 0));
+//
+////    ft = v_function_type(FILE_ptr, &stream_t, 1, false);
+////    v_export_symbol_q(func_q, ft, 0);
 
 #endif
 }
+
 
 //---------------------------------------------------------------------
 struct fpos_t { (*void)[fpos_t_size]; };

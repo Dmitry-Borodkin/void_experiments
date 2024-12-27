@@ -1,5 +1,5 @@
-{ v_import("imports.void"); }
-{ make_module("geometry"); }
+{ v_import("libvoidc.void"); }
+{ voidc_make_module("geometry"); }
 //---------------------------------------------------------------------
 {
     v_import("geometry.void");
@@ -499,6 +499,6 @@ Transform.map2_mirror: (i1: &Point, i2: &Point,
 
 
 //---------------------------------------------------------------------
-{   emit_module("geometry_mod.o"); }
+{ voidc_emit_module("geometry_mod.o"); }
 //---------------------------------------------------------------------
 

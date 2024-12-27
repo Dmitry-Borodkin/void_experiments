@@ -228,6 +228,16 @@ ctx_v: &my_trace_visitor_ctx_t := v_undef();
 
 
 //---------------------------------------------------------------------
+{
+    v_import("try_projects/polyhedra2d/geometry.void");
+}
+
+{
+    my_stdout << "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n";
+}
+
+
+//---------------------------------------------------------------------
 print_trace_test: () ~> void
 {
     item: &*my_trace_visitor_item_t := my_trace_visitor_item_root;

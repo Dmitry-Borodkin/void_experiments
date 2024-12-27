@@ -1,5 +1,5 @@
-{ voidc_import("imports.void"); }
-{ make_header("trigroup"); }
+{ voidc_import("libvoidc.void"); }
+{ voidc_make_header("trigroup"); }
 //---------------------------------------------------------------------
 {
     v_import("geometry.void");
