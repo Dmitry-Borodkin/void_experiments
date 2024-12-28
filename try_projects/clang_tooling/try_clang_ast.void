@@ -1,28 +1,17 @@
 {   v_import("mainline.void");
+    v_import("cstdio.void");
 
     v_import("llvm-c/Core.void");
 }
 {   v_enable_mainline(); }
 
 
-//====================================================================-
-struct FILE;
-
+//---------------------------------------------------------------------
 popen: (command: *const char, prop: *const char) ~> *FILE;
 
 pclose: (*FILE) ~> int;
 
-fprintf: (stream: *FILE, format: *const char, ...) ~> int;
-
-fscanf: (stream: *FILE, format: *const char, ...) ~> int;
-
-fputs: (buf: *char, stream: *FILE) ~> int;
-
-sprintf: (str: *char, format: *const char, ...) ~> int;
-
-printf: (format: *const char, ...) ~> int;
-
-system: (cmd: *const char) ~> int;
+//system: (cmd: *const char) ~> int;
 
 
 //---------------------------------------------------------------------
