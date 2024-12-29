@@ -9,12 +9,8 @@ printf: (*const char, ...) ~> int;
 //- (_²)  (_³)  ...
 
 //---------------------------------------------------------------------
-q_op_squared      = v_quark_from_string("v.op_postfix_squared");
-q_op_cubed        = v_quark_from_string("v.op_postfix_cubed");
-
-op_squared_impl_q = v_quark_from_string("op_postfix_squared_impl");
-op_cubed_impl_q   = v_quark_from_string("op_postfix_cubed_impl");
-
+q_op_squared = v_quark_from_string("v.op_postfix_squared");
+q_op_cubed   = v_quark_from_string("v.op_postfix_cubed");
 
 //---------------------------------------------------------------------
 {   #define mk_op_any: (q, a)  =
@@ -65,8 +61,10 @@ compile_op_unary_impl: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) 
     v_ast_accept_visitor(&expr, vis);
 }
 
-{   v_add_intrinsic_q(q_op_squared, compile_op_unary_impl, (op_squared_impl_q: *void));
-    v_add_intrinsic_q(q_op_cubed,   compile_op_unary_impl, (op_cubed_impl_q:   *void));
+{   q = v_quark_from_string;
+
+    v_add_intrinsic_q(q_op_squared, compile_op_unary_impl, (q("op_postfix_squared_impl"): *void));
+    v_add_intrinsic_q(q_op_cubed,   compile_op_unary_impl, (q("op_postfix_cubed_impl"):   *void));
 }
 
 //---------------------------------------------------------------------

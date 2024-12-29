@@ -59,11 +59,9 @@ seq_equal: (a: *const double, b: *const double, n: int) ~> bool
 
     if (ret)  v_return(true);
 
-    ret := true;
+    for (i: &int := 0; i < n; ++i)  if (!is_equal(-a[i], b[i]))  { v_return(false); }
 
-    for (i: &int := 0; i < n; ++i)  if (!is_equal(-a[i], b[i]))  { ret := false;  v_break(); }
-
-    v_return(ret);
+    v_return(true);
 }
 
 
