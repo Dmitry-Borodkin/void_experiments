@@ -185,7 +185,7 @@ AAA: void;
 
 ##ifdef AAA
 
-    #note ("AAA")                   D O E S   N O T   W O R K   ! ! ! ! ! ! !
+    #note ("AAA")           //      D O E S   N O T   W O R K   ! ! ! ! ! ! !
 
 ##else
 

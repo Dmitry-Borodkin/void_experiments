@@ -61,6 +61,8 @@ gtk_drawing_area_set_draw_func: (*GtkDrawingArea, GtkDrawingAreaDrawFunc, aux: *
 
 gtk_widget_queue_draw: (*GtkWidget) ~> void;
 
+gtk_widget_set_size_request: (*GtkWidget, int, int) ~> void;
+
 
 //---------------------------------------------------------------------
 on_idle: (aux: *void) ~> bool
@@ -87,6 +89,8 @@ on_activate: (app: *GtkApplication, data: *void) ~> void
     window = gtk_application_window_new(app);
 
     drawing_area = gtk_drawing_area_new();
+
+    gtk_widget_set_size_request(drawing_area, 320, 320);
 
     gtk_drawing_area_set_draw_func((drawing_area: *GtkDrawingArea), draw_clifford, 0, 0);
 
