@@ -1,17 +1,51 @@
 - Общая идея API ------------------------------------------------------
 
-  - Один(!) handler/hook:
+  - Все-таки это будет ДВА хэндлера (хука):
+
+    v_try_to_adopt: (t0: *v_type_t, v0: LLVMValueRef) ~> bool;
 
     v_try_to_convert: (t0: *v_type_t, v0: LLVMValueRef,
-                       pt1: **v_type_t, pv1: *LLVMValueRef
+                       t1: *v_type_t, pv1: *LLVMValueRef
                       ) ~> bool;
 
-    Т.е. вместо двух хэндлеров (adopt и convert) делаем один с совмещенной семантикой...
+  - На их основе реализуются "фиксированные":
+
+    v_adopt_result: (t0: *v_type_t, v0: LLVMValueRef) ~> void;
+
+    v_convert_to_type: (t0: *v_type_t, v0: LLVMValueRef, t1: *v_type_t) ~> LLVMValueRef;
+
+  - "Разделение обязанностей":
+
+    - "Adopt" обрабатывает result_type/result_value:
+
+      - Анализирует полученные result_type/result_value (тэги и тп.)
+
+      - Определяет способ трансформации t0/v0 в result_type/result_value
+
+      - Выполняет эту трансформацию
+
+      - В "простых" случаях вызывает "Convert"
+
+    - "Convert" делает "implicit conversion" v0 из t0 в t1:
+
+      - Работает с "конкретными" типами/значениями
+
+      - "НЕ ТРОГАЕТ" result_type/result_value (!!!)
+
+      - Если нужно, сохраняет/восстанавливает result_type/result_value
+
+  - ОБА хэндлера "условные":
+
+    - Если хендлер возвращает true - значит работа сделана и больше ничего делать не нужно
+
+    - Если  false  - состояние НЕ изменилось...
+
+    - Эта логика позволит делать перехват "с обоих концов"...
 
 
 - Stage 0 -------------------------------------------------------------
 
-  - "Простые" скалярные преобразования...
+  - "Convert" - "простые" скалярные преобразования...
 
     - Floating point -> floating point,  с увеличением разрядности
 
@@ -21,7 +55,7 @@
 
     - *T -> *void,  (w/a address space?)
 
-    - T[_] -> *T,  промоушен из массива в указатель
+    - &T[_] -> *T,  промоушен из массива (в памяти) в указатель
 
     - &T -> T,  (разыменование ссылки)
 
@@ -29,11 +63,25 @@
 
   - "Комбинации" преобразований
 
+    - &T[_] -> *void,   (&T[_] -> *T -> *void)
+
+    - &T[_] -> &*T,     (&T[_] -> *T -> &*T)
+
+    - &T[_] -> &*void,  (&T[_] -> *void -> &*void)
+
+    - T[_] -> *T,       (T[_] -> &T[_] -> *T)
+
+    - T[_] -> *void,    (T[_] -> *T -> *void)
+
+    - T[_] -> &*T,      (T[_] -> *T -> &*T)
+
+    - T[_] -> &*void,   (T[_] -> *void -> &*void)
+
     - ... ??? ...
 
   - "Adopt"...
 
-    - INVIOLABLE_TAG:   t0 -> t1,  v0 -> v1
+    - INVIOLABLE_TAG:   t0/v0 -> result_type/result_value
 
     - UNREFERENCE_TAG:
 
