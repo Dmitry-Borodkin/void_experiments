@@ -993,14 +993,14 @@ GroupFilter_next: (it: &GroupIterator) ~> void
 
     if (it.filter == 0)         //- Every element
     {
-        GroupIterator_next(it[0]);          //- WTF !?!?!?!?!?!?!?!?!?!?!?!?!
+        GroupIterator_next(it);
 
         v_return();
     }
 
     if (it.filter == (4|2|1))   //- Even elements
     {
-        EvenGroupIterator_next(it[0]);      //- WTF !?!?!?!?!?!?!?!?!?!?!?!?!
+        EvenGroupIterator_next(it);
 
         v_return();
     }
@@ -1009,7 +1009,7 @@ GroupFilter_next: (it: &GroupIterator) ~> void
 
     loop
     {
-        GroupIterator_next(it[0]);          //- WTF !?!?!?!?!?!?!?!?!?!?!?!?!
+        GroupIterator_next(it);
 
         if (!it.ok)   v_return();
 
