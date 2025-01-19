@@ -75,7 +75,7 @@ inlinehint
 
         if (di.is_long) v_free(di._data);
 
-        sz = v_load(&si._size);
+        sz = si._size;
 
         di._size := sz;
 
@@ -108,7 +108,7 @@ inlinehint
 
         if (di.is_long) v_free(di._data);
 
-        sz = v_load(&si._size);
+        sz = si._size;
 
         di._size := sz;
 
@@ -341,10 +341,10 @@ pr_string: (s: string_t) ~> void
 
 
 //---------------------------------------------------------------------
-{   v_debug_print_module(2);
-
-    voidc_verify_jit_module_optimized(true);
-}
+//{   v_debug_print_module(2);
+//
+//    voidc_verify_jit_module_optimized(true);
+//}
 {
     s: &string_t := "qwerty____0";
 
