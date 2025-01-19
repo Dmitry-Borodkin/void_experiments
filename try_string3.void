@@ -269,10 +269,68 @@ inlinehint
 }
 
 
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+alwaysinline
+my_adopt_to_string: (s: *const char) ~> string_t
+{
+    ret = v_get_return_value();
 
+    ret.set(s);
+}
 
+//---------------------------------------------------------------------
+my_try_to_adopt_ctx_t = struct
+{
+    fun: *((*void, *v_type_t, LLVMValueRef) ~> bool);
+    aux: *void;
+};
 
+my_try_to_adopt: (aux: *void, t0: *v_type_t, v0: LLVMValueRef) ~> bool
+{
+    string_type = v_find_type("string_t");
+    char_type = v_int_type(8);
 
+    t1 = v_get_result_type();
+
+    if ((INVIOLABLE_TAG != t1 != UNREFERENCE_TAG
+        )  &&
+        (t1 == string_type  ||
+         v_type_is_reference(t1)  &&  v_type_refptr_get_element_type(t1) == string_type
+        )  &&
+        ((v_type_is_pointer(t0)  &&  v_type_refptr_get_element_type(t0) == char_type)  ||
+         (v_type_is_array(t0)  &&  v_type_array_get_element_type(t0) == char_type)
+        )
+       )
+    {
+        expr: &v_ast_expr_t      := {};
+        list: &v_ast_expr_list_t := {};
+
+        v_ast_make_expr_compiled(&expr, t0, v0);
+
+        v_make_list(&list, &expr);
+
+        v_ast_make_expr_identifier(&expr, "my_adopt_to_string");
+
+        v_ast_make_expr_call(&expr, &expr, &list);
+
+        v_ast_accept_visitor(&expr, v_get_compiler());
+
+        v_return(true);
+    }
+
+    ctx = *(aux: *my_try_to_adopt_ctx_t);
+
+    v_return(ctx.fun(ctx.aux, t0, v0));
+}
+
+my_try_to_adopt_ctx: &my_try_to_adopt_ctx_t := {};
+
+{   my_try_to_adopt_ctx.fun := v_get_try_to_adopt_hook(&my_try_to_adopt_ctx.aux);
+
+    v_set_try_to_adopt_hook(my_try_to_adopt, &my_try_to_adopt_ctx);
+}
 
 
 //---------------------------------------------------------------------
@@ -283,14 +341,12 @@ pr_string: (s: string_t) ~> void
 
 
 //---------------------------------------------------------------------
-//{   v_debug_print_module(2);
-//
-//    voidc_verify_jit_module_optimized(true);
-//}
-{
-    s: &string_t := {};
+{   v_debug_print_module(2);
 
-    s.set("qwerty____0");
+    voidc_verify_jit_module_optimized(true);
+}
+{
+    s: &string_t := "qwerty____0";
 
     pr_string(s);
 
@@ -340,10 +396,7 @@ alwaysinline
 //
 //    voidc_verify_jit_module_optimized(true);
 //}
-{   s: &string_t[2] := {};
-
-    s[0].set("1");
-    s[1].set("0");
+{   s: &string_t[2] := { "1", "0" };
 
     pr_string(s[1]);
 
