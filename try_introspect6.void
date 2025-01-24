@@ -110,7 +110,7 @@ constant_types_iter(constant_type_ft fun, void *aux)
 
         fprintf(p, " $(llvm-config --cxxflags) -std=c++17");
 
-        fprintf(p, " -I%s", v_std_string_get(&voidc_include_path));
+        fprintf(p, " -I%s/../../stage0", v_std_string_get(&voidc_include_path));
 
 #if (v_defined(_WIN32))
 

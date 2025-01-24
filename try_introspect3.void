@@ -117,7 +117,7 @@ buffer: &*char := 0;
 
         fprintf(p, " $(llvm-config --cxxflags) -std=c++17");
 
-        fprintf(p, " -I%s", v_std_string_get(&voidc_include_path));
+        fprintf(p, " -I%s/../../stage0", v_std_string_get(&voidc_include_path));
 
         if (v_find_constant("_WIN32", 0, 0))
         {

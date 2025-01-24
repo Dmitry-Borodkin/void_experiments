@@ -41,7 +41,7 @@ voidc_include_path: &v_std_string_t := {};
 
     *strrchr(v_std_string_get(&voidc_include_path), '/') := 0;
 
-//  printf("voidc_include_path: %s\n", v_std_string_get(&voidc_include_path));
+    printf("voidc_include_path: %s\n", v_std_string_get(&voidc_include_path));
 }
 
 //---------------------------------------------------------------------
@@ -164,7 +164,7 @@ overloads_iter(overload_ft fun, void *aux)
 
         fprintf(p, " $(llvm-config --cxxflags) -std=c++17");
 
-        fprintf(p, " -I%s", v_std_string_get(&voidc_include_path));
+        fprintf(p, " -I%s/../../stage0", v_std_string_get(&voidc_include_path));
 
 #if (v_defined(_WIN32))
 
@@ -245,6 +245,25 @@ type_fun: (*void, t: *const v_type_t) ~> void
     voidc_internal_std_string_append_type(&sstr, t);
 
     printf("%s\n", v_std_string_get(&sstr));
+
+    block
+    {
+        if (!v_type_is_struct(t))       v_break();
+        if (!v_type_struct_get_name(t)) v_break();
+        if (v_type_struct_is_opaque(t)) v_break();
+
+        et = v_type_struct_get_element_types(t);
+        en = v_type_struct_get_element_count(t);
+
+        for (i: &int := 0; i < en; ++i)
+        {
+            v_std_string_set(&sstr, "");
+
+            voidc_internal_std_string_append_type(&sstr, et[i]);
+
+            printf("  %s\n", v_std_string_get(&sstr));
+        }
+    }
 
     alst: &*v_std_any_t := v_map_find(&idx, (t: intptr_t));
 

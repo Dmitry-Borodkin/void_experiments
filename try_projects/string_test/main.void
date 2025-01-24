@@ -1,0 +1,111 @@
+{ v_import("libvoidc.void"); }
+{ voidc_make_module("main_module"); }
+//---------------------------------------------------------------------
+{
+    v_import("cstdio.void");
+
+    v_import("string.void");
+}
+
+
+//{ v_debug_print_module(9); }
+
+
+//---------------------------------------------------------------------
+pr_string: (s: v_string_t) ~> void
+{
+    printf("d: %s, s: %zd, c: %zd\n", s.data, s.size, s.capacity);
+}
+
+
+//---------------------------------------------------------------------
+alwaysinline
+(_:=_): (str: &v_string_t, val: v_string_t) ~> &v_string_t
+{
+    v_copy(&str, &val);
+
+    v_return(str);
+}
+
+
+//---------------------------------------------------------------------
+alwaysinline
+(_+_): (a: v_string_t, b: v_string_t) ~> v_string_t
+{
+    ret = v_get_return_value();
+
+    ret := a;
+
+    ret.append_data(b.data, b.size);
+}
+
+
+//---------------------------------------------------------------------
+print_fibs: (n: int) ~> void
+{
+    s: &v_string_t[2] := { "1", "0" };
+
+    pr_string(s[1]);
+
+    for (i: &int := 0; i < n; ++i)
+    {
+        t = s[1] + s[0];
+
+        s[0] := s[1];
+        s[1] := t;
+
+        pr_string(t);
+    }
+}
+
+
+//---------------------------------------------------------------------
+//- As is...
+//---------------------------------------------------------------------
+main: (argc: int, argv: **const char) ~> int
+{
+    s: &v_string_t := "qwerty____0";
+
+    pr_string(s);
+
+    s.set("qwerty_________1");
+
+    pr_string(s);
+
+    s := "qwerty_______________________________________________________________________________________2";
+
+    pr_string(s);
+
+    s := "qwerty___________________3";
+
+    pr_string(s);
+
+    s.set("qwerty_____4");
+
+    pr_string(s);
+
+    s.append("asdfgh_____5");
+
+    pr_string(s);
+
+    s.append_char(('_': char));
+    s.append_char32('Ы');
+
+    pr_string(s);
+
+    s.append_char(('_': char));
+    s.append_number((-1 : size_t) >> 1);
+
+    pr_string(s);
+
+    printf("\n");
+
+    print_fibs(9);
+
+    v_return(0);
+}
+
+
+//---------------------------------------------------------------------
+{ voidc_emit_module("main.o"); }
+//---------------------------------------------------------------------

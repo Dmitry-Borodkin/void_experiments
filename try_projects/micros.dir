@@ -5,6 +5,21 @@ Clang Tooling                                                  │clang_tooling/
                                                                │
 Polyhedra2D/                                                   │polyhedra2d/micros.dir
                                                                │
+                                                               │
+string_test/                                                   │string_test/micros.dir
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
 Ninja/                                                         │ninja/micros.dir
                                                                │
                                                                │

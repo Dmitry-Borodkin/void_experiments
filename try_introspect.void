@@ -101,7 +101,7 @@ buffer: &*char := 0;
 
         fprintf(p, " $(llvm-config --cxxflags) -std=c++17");
 
-        fprintf(p, " -I../voidc/level-00");
+        fprintf(p, " -I../voidc/compiler/stage0");
 
         if (v_find_constant("_WIN32", 0, 0))
         {
@@ -139,11 +139,7 @@ item_fun: (aux: *void, name: *const char) ~> void
 
 
 //---------------------------------------------------------------------
-{   gr = v_alloca(v_peg_grammar_t);
-    v_initialize(gr);
-    defer v_terminate(gr);
-
-    v_peg_get_grammar(gr);
+{   gr = v_peg_get_grammar();
 
     sz = parsers_count(gr);
 

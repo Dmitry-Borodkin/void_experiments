@@ -341,6 +341,16 @@ pr_string: (s: string_t) ~> void
 
 
 //---------------------------------------------------------------------
+alwaysinline
+(_:=_): (str: &string_t, val: string_t) ~> &string_t
+{
+    v_copy(&str, &val);
+
+    v_return(str);
+}
+
+
+//---------------------------------------------------------------------
 //{   v_debug_print_module(2);
 //
 //    voidc_verify_jit_module_optimized(true);
@@ -354,11 +364,11 @@ pr_string: (s: string_t) ~> void
 
     pr_string(s);
 
-    s.set("qwerty_______________________________________________________________________________________2");
+    s := "qwerty_______________________________________________________________________________________2";
 
     pr_string(s);
 
-    s.set("qwerty___________________3");
+    s := "qwerty___________________3";
 
     pr_string(s);
 
@@ -383,15 +393,6 @@ pr_string: (s: string_t) ~> void
 
 
 //---------------------------------------------------------------------
-alwaysinline
-(_:=_): (str: &string_t, val: string_t) ~> &string_t
-{
-    v_copy(&str, &val);
-
-    v_return(str);
-}
-
-//---------------------------------------------------------------------
 //{   v_debug_print_module(2);
 //
 //    voidc_verify_jit_module_optimized(true);
@@ -404,7 +405,7 @@ alwaysinline
     {
         t: &string_t := s[1];
 
-        t.append(s[0].data);
+        t.append_data(s[0].data, s[0].size);
 
         s[0] := s[1];
         s[1] := t;

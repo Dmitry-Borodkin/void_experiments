@@ -1,0 +1,15 @@
+                         ****  ?  ****                         │*
+                                                               │
+                                                               │
+main.void                                                      │main.void
+...                                                            │try_string
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
+Makefile                                                       │Makefile
+    clean                                                      │Makefile clean
+───────────────────────────────────────────────────────────────│
+void.doit                                                      │void.doit
+═══════════════════════════════════════════════════════════════│
+micros.incdirs                                                 │micros.incdirs
+    ...                                                        │incdirs.doit
