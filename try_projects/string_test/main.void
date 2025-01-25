@@ -3,6 +3,7 @@
 //---------------------------------------------------------------------
 {
     v_import("cstdio.void");
+    v_import("cstdarg.void");
 
     v_import("string.void");
 }
@@ -60,6 +61,31 @@ print_fibs: (n: int) ~> void
 
 
 //---------------------------------------------------------------------
+(_.appendf()): (str: &v_string_t, fmt: *const char, ...) ~> &v_string_t  =
+{
+    ap:  &va_list := v_undef();
+    apc: &va_list := v_undef();
+
+    va_start(ap);
+
+    va_copy(apc, ap);
+    len = vsnprintf(0, 0, fmt, ap);
+    va_end(ap);
+
+    bsz = len + 1;
+
+    buf = v_malloc(char, bsz);
+    defer v_free(buf);
+
+    vsnprintf(buf, bsz, fmt, apc);
+    va_end(apc);
+
+    str.append_data(buf, len)
+};
+
+
+
+//---------------------------------------------------------------------
 //- As is...
 //---------------------------------------------------------------------
 main: (argc: int, argv: **const char) ~> int
@@ -88,13 +114,17 @@ main: (argc: int, argv: **const char) ~> int
 
     pr_string(s);
 
-    s.append_char(('_': char));
-    s.append_char32('Ы');
+    s.append_char(('_': char)).append_char32('Ы');
 
     pr_string(s);
 
-    s.append_char(('_': char));
-    s.append_number((-1 : size_t) >> 1);
+    s.append("_").append_number((-1 : size_t) >> 1);
+
+    pr_string(s);
+
+    sqrt: (float(64)) ~> float(64);
+
+    s.appendf(" %g %g", (1+sqrt(5))/2, sqrt(2));
 
     pr_string(s);
 
