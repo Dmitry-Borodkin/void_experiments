@@ -199,7 +199,8 @@ namespace clang
 {
 
 
-//{ v_debug_print_module(1); }
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(2); }
 //---------------------------------------------------------------------
 {
     tab: &struct { table: *(*const char)[2]; suffix: *const char; abs: *const char; }[3] :=
@@ -211,23 +212,29 @@ namespace clang
 
     for (k: &int := 0; k < 3; ++k)
     {
-        for (i: &int := 0; tab[k].table[i][0]; ++i)
+        tk = tab[k];
+
+        sz: &int := 0;
+
+        while (tk.table[sz][0]) ++sz;       //- ...
+
+        for (i: &int := 0; i < sz; ++i)
         {
-            str: &v_string_t := tab[k].table[i][0];
-
-            str.append(tab[k].suffix);
-
-            sname = str.data;
-
-            alias = v_obtain_alias(sname, true);
-
-            printf("%d %s (%s)\n", (tab[k].abs[i]: int), sname, alias);
-
-
+//            str: &v_string_t := tk.table[i][0];
+//
+//            str.append(tk.suffix);
+//
+//            sname = str.data;
+//
+//            alias = v_obtain_alias(sname, true);
+//
+//            printf("%d %s (%s)\n", (tk.abs[i]: int), sname, alias);
 
 
 
-//          printf("%s <- %s%s\n", tab[k].table[i][1], tab[k].table[i][0], tab[k].suffix);
+
+
+            printf("%s <- %s%s\n", tk.table[i][1], tk.table[i][0], tk.suffix);
         }
 
         printf("\n");
