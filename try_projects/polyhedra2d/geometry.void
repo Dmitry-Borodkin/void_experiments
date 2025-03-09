@@ -182,6 +182,9 @@ struct Line
 alwaysinline
 (_+_): (l: Line, v: Vector) ~> Line  =  {l.cx, l.cy, l.cw - l.cx*v.x - l.cy*v.y};
 
+alwaysinline
+(_-_): (l: Line, v: Vector) ~> Line  =  {l.cx, l.cy, l.cw + l.cx*v.x + l.cy*v.y};
+
 //---------------------------------------------------------------------
 (_.norm()): (l: &Line) ~> bool;
 
@@ -247,6 +250,9 @@ alwaysinline
 
 //---------------------------------------------------------------------
 (_+_): (t: Transform, v: Vector) ~> Transform;
+
+alwaysinline
+(_-_): (t: Transform, v: Vector) ~> Transform  =  t + -v;
 
 (_*_): (a: Transform, b: Transform) ~> Transform;
 (_*__): (k: double, t: Transform) ~> Transform;

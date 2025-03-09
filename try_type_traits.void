@@ -958,7 +958,7 @@ byte = uint(8);
 union IntRep
 {
     i: int;
-    s: byte[0];
+    s: byte[int.sizeof];
 };
 
 {

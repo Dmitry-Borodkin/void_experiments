@@ -128,9 +128,20 @@ main: (argc: int, argv: **const char) ~> int
 
     pr_string(s);
 
+    //-------------------------------------------------------------
     printf("\n");
 
     print_fibs(9);
+
+    //-------------------------------------------------------------
+    printf("\n");
+
+    s1: v_string_t = "Hello";
+
+    s2: &v_string_t := s1;
+
+    pr_string(s2);
+
 
     v_return(0);
 }

@@ -1,0 +1,44 @@
+#!/usr/bin/env -S ASAN_OPTIONS=detect_leaks=0 voidc
+//---------------------------------------------------------------------
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+//---------------------------------------------------------------------
+{
+    v_import("llvm-c/Support.void");
+
+    v_import("cstdio.void");
+}
+
+//---------------------------------------------------------------------
+{
+    ok = LLVMLoadLibraryPermanently("libncurses.so.6");     //- ?
+
+    printf("ok: %d\n", ok);
+}
+
+initscr: () ~> void;
+
+printw: (*const char, ...) ~> int;
+refresh: () ~> void;
+getch: () ~> int;
+endwin: () ~> void;
+
+struct WINDOW;
+
+stdscr: &*WINDOW;
+
+getmaxx: (*WINDOW) ~> int;
+getmaxy: (*WINDOW) ~> int;
+
+
+{
+    initscr();
+    printw("Превед!");
+
+    printw(" (%d, %d)", getmaxx(stdscr), getmaxy(stdscr));
+
+    refresh();
+    getch();
+    endwin();
+}
+

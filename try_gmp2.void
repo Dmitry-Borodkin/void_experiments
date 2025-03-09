@@ -1,24 +1,16 @@
-{   v_import("mainline.void");
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
 
-    v_import("llvm-c/Core.void");
+{   v_import("llvm-c/Core.void");
     v_import("llvm-c/Support.void");
 
-    v_import("printf.void");
+    v_import("cstdio.void");
+    v_import("type_traits.void");
 }
 
-{   v_enable_mainline(); }
 
 
 //=====================================================================
-struct FILE;
-
-popen: (command: *const char, prop: *const char) ~> *FILE;
-
-pclose: (*FILE) ~> int;
-
-fscanf: (stream: *FILE, format: *const char, ...) ~> int;
-
-
 //{ v_debug_print_module(1); }
 //---------------------------------------------------------------------
 {
@@ -47,10 +39,7 @@ fscanf: (stream: *FILE, format: *const char, ...) ~> int;
 
 
 //=====================================================================
-{   w = v_type_integer_get_width(v_find_type("long"));
-
-    v_add_type("ulong", v_uint_type(w));
-}
+ulong = uint(long.as_integer.width);
 
 double = float(64);
 
@@ -129,274 +118,262 @@ inlinehint
 }
 
 
+////---------------------------------------------------------------------
+////- ...
+////---------------------------------------------------------------------
+//literal_integer_ctx_t = struct
+//{
+//    fun: *((*void, *voidc_visitor_t, *v_ast_base_t) ~> void);
+//
+//    aux: *void;
+//};
+//
+////---------------------------------------------------------------------
+//my_literal_integer_intrinsic: (aux: *void, vis: *voidc_visitor_t,
+//                               self: *v_ast_base_t) ~> void
+//{
+//    ttag = v_get_result_type();
+//    vtag = v_get_result_value();
+//
+//    v_set_result_type(INVIOLABLE_TAG);
+//    v_set_result_value(0);
+//
+//    ctx = *(aux: *literal_integer_ctx_t);
+//
+//    ctx.fun(ctx.aux, vis, self);
+//
+//    t = v_get_result_type();
+//    v = v_get_result_value();
+//
+//    v_set_result_type(ttag);
+//    v_set_result_value(vtag);
+//
+//    v_adopt_result(t, v);
+//}
+//
+////---------------------------------------------------------------------
+//literal_integer_ctx: &literal_integer_ctx_t := v_undef();
+//
+//{   q = v_quark_from_string("v.literal.integer");
+//
+//    void_fun = v_get_intrinsic_q(q, &literal_integer_ctx.aux);
+//
+//    literal_integer_ctx.fun := (void_fun: *((*void, *voidc_visitor_t, *v_ast_base_t) ~> void));
+//
+//    v_add_intrinsic_q(q, my_literal_integer_intrinsic, &literal_integer_ctx);
+//}
+
+
+////---------------------------------------------------------------------
+////- ...
+////---------------------------------------------------------------------
+//expr_integer_ctx_t = struct
+//{
+//    fun: *((*void, *voidc_visitor_t, *v_ast_base_t) ~> void);
+//
+//    aux: *void;
+//};
+//
+////---------------------------------------------------------------------
+//my_compile_expr_integer: (aux: *void, vis: *voidc_visitor_t,
+//                          self: *v_ast_base_t) ~> void
+//{
+//    ttag = v_get_result_type();
+//
+//    if (ttag != v_find_type("mpz_t"))
+//    {
+//        ctx = *(aux: *expr_integer_ctx_t);
+//
+//        ctx.fun(ctx.aux, vis, self);
+//
+//        v_return();
+//    }
+//
+//    vtag = v_get_result_value();
+//
+//    vr = v_obtain_special_result_value(vis, ttag);
+//
+//    expr: &v_ast_expr_t := {};
+//
+//    v_ast_make_expr_compiled(&expr, v_pointer_type(ttag, 0), vr);
+//
+//    list: &v_ast_expr_list_t := {};
+//
+//    v_make_list(&list, &expr);
+//
+//    v_list_append(&list, &list, (self: *v_ast_expr_t));
+//
+//    v_ast_make_expr_identifier(&expr, "__gmpz_set_si");
+//
+//    v_ast_make_expr_call(&expr, &expr, &list);
+//
+//    v_set_result_type(INVIOLABLE_TAG);
+//    v_set_result_value(0);
+//
+//    v_ast_accept_visitor(&expr, vis);
+//
+//    v_set_result_type(ttag);
+//    v_set_result_value(vtag);
+//
+//    v_adopt_result(ttag, vr);
+//}
+//
+////---------------------------------------------------------------------
+//expr_integer_ctx: &expr_integer_ctx_t := v_undef();
+//
+//{   q = v_quark_from_string("expr_integer");
+//
+//    vis = v_get_compiler();
+//
+//    expr_integer_ctx.fun := voidc_visitor_get_method(vis, q, &expr_integer_ctx.aux);
+//
+//    voidc_visitor_set_method(vis, vis, q, my_compile_expr_integer, &expr_integer_ctx);
+//}
+
+
 //---------------------------------------------------------------------
-//- ...
-//---------------------------------------------------------------------
-literal_integer_ctx_t = struct
+#define gmpz_adopt_to_mpz: (n) ~> mpz_t  =
+block
 {
-    fun: *((*void, *voidc_visitor_t, *v_ast_base_t) ~> void);
+    brk = v_get_break_value();
 
-    aux: *void;
-};
+    t = v_typeof(n);
 
-//---------------------------------------------------------------------
-my_literal_integer_intrinsic: (aux: *void, vis: *voidc_visitor_t,
-                               self: *v_ast_base_t) ~> void
-{
-    ttag = v_get_result_type();
-    vtag = v_get_result_value();
+    #if (t.is_reference)
 
-    v_set_result_type(INVIOLABLE_TAG);
-    v_set_result_value(0);
+        n = v_load(&n);
 
-    ctx = *(aux: *literal_integer_ctx_t);
+        t = t.as_reference.element_type;
 
-    ctx.fun(ctx.aux, vis, self);
+    #endif
 
-    t = v_get_result_type();
-    v = v_get_result_value();
+    #if (t.is_floating_point)
 
-    v_set_result_type(ttag);
-    v_set_result_value(vtag);
+        __gmpz_set_d(&brk, n);
 
-    v_adopt_result(t, v);
-}
+    #else
 
-//---------------------------------------------------------------------
-literal_integer_ctx: &literal_integer_ctx_t := v_undef();
+        #assert (t.is_integer)
 
-{   q = v_quark_from_string("v.literal.integer");
+        t = t.as_integer;
 
-    void_fun = v_get_intrinsic_q(q, &literal_integer_ctx.aux);
+        w = t.width;
 
-    literal_integer_ctx.fun := (void_fun: *((*void, *voidc_visitor_t, *v_ast_base_t) ~> void));
+        #if (w <= long.as_integer.width)
 
-    v_add_intrinsic_q(q, my_literal_integer_intrinsic, &literal_integer_ctx);
-}
+            #if (t.is_signed) __gmpz_set_si(&brk, n);
+            #else             __gmpz_set_ui(&brk, n);
+            #endif
 
+        #else
 
-//---------------------------------------------------------------------
-//- ...
-//---------------------------------------------------------------------
-expr_integer_ctx_t = struct
-{
-    fun: *((*void, *voidc_visitor_t, *v_ast_base_t) ~> void);
+            __gmpz_import(&brk, 1, 1, (w+7)/8, 0, (8-w%8)%8, &n);
 
-    aux: *void;
-};
+            #if (t.is_signed)
 
-//---------------------------------------------------------------------
-my_compile_expr_integer: (aux: *void, vis: *voidc_visitor_t,
-                          self: *v_ast_base_t) ~> void
-{
-    ttag = v_get_result_type();
-
-    if (ttag != v_find_type("mpz_t"))
-    {
-        ctx = *(aux: *expr_integer_ctx_t);
-
-        ctx.fun(ctx.aux, vis, self);
-
-        v_return();
-    }
-
-    vtag = v_get_result_value();
-
-    vr = v_obtain_special_result_value(vis, ttag);
-
-    expr: &v_ast_expr_t := {};
-
-    v_ast_make_expr_compiled(&expr, v_pointer_type(ttag, 0), vr);
-
-    list: &v_ast_expr_list_t := {};
-
-    v_make_list(&list, &expr);
-
-    v_list_append(&list, &list, (self: *v_ast_expr_t));
-
-    v_ast_make_expr_identifier(&expr, "__gmpz_set_si");
-
-    v_ast_make_expr_call(&expr, &expr, &list);
-
-    v_set_result_type(INVIOLABLE_TAG);
-    v_set_result_value(0);
-
-    v_ast_accept_visitor(&expr, vis);
-
-    v_set_result_type(ttag);
-    v_set_result_value(vtag);
-
-    v_adopt_result(ttag, vr);
-}
-
-//---------------------------------------------------------------------
-expr_integer_ctx: &expr_integer_ctx_t := v_undef();
-
-{   q = v_quark_from_string("expr_integer");
-
-    vis = v_get_compiler();
-
-    expr_integer_ctx.fun := voidc_visitor_get_method(vis, q, &expr_integer_ctx.aux);
-
-    voidc_visitor_set_method(vis, vis, q, my_compile_expr_integer, &expr_integer_ctx);
-}
-
-
-//---------------------------------------------------------------------
-//private
-mpz_temporary_cleaner: (void_tmp: *void) ~> void
-{
-    vtmp = (void_tmp: LLVMValueRef);
-
-    ft: &v_type_ptr   := v_undef();
-    fv: &LLVMValueRef := v_undef();
-
-    v_obtain_identifier("__gmpz_clear", &ft, &fv);
-
-    builder = v_target_get_builder();
-
-    if (v_type_is_pointer(ft))  ft := v_type_refptr_get_element_type(ft);
-
-    LLVMBuildCall2(builder, v_type_get_llvm_type(ft), fv, &vtmp, 1, "");
-}
-
-//---------------------------------------------------------------------
-//- ...
-//---------------------------------------------------------------------
-//private
-convert_to_type_ctx_t = struct
-{
-    fun: *((*void, t0: *v_type_t, v0: LLVMValueRef, t1: *v_type_t) ~> LLVMValueRef);
-
-    aux: *void;
-};
-
-//---------------------------------------------------------------------
-//private
-my_convert_to_type: (aux: *void, t0: *v_type_t, v0: LLVMValueRef, t1: *v_type_t) ~> LLVMValueRef
-{
-    if (t0 == t1)   v_return(v0);
-
-    _mpz_t = v_find_type("mpz_t");
-
-    if (t1 == _mpz_t)
-    block
-    {
-        v1: &LLVMValueRef := v0;
-
-        fn: &*const char := v_undef();
-
-        builder = v_target_get_builder();
-
-        if (v_type_is_floating_point(t0))
-        {
-            _double = v_f64_type();
-
-            if (t0 != _double)
-            {
-                v1 := LLVMBuildFPCast(builder, v0, v_type_get_llvm_type(_double), "");
-            }
-
-            fn := "__gmpz_init_set_d";
-        }
-        else if (v_type_is_integer(t0))
-        {
-            sign = v_type_integer_is_signed(t0);
-
-            w = v_type_integer_get_width(t0);
-
-            _long = v_find_type("long");
-
-            long_width = v_type_integer_get_width(_long);
-
-            if (w <= long_width)
-            {
-                if (w < long_width)
+                if (n < 0)
                 {
-                    v1 := LLVMBuildIntCast2(builder, v0, v_type_get_llvm_type(_long), sign, "");
+                    tmp: &mpz_t := v_undef();
+
+                    __gmpz_init_set_ui(&tmp, 1);
+
+                    __gmpz_mul_exp2(&tmp, &tmp, w);
+
+                    __gmpz_sub(&brk, &brk, &tmp);
+
+                    __gmpz_clear(&tmp);
                 }
 
-                if (sign) fn := "__gmpz_init_set_si";
-                else      fn := "__gmpz_init_set_ui";
-            }
-            else    //- w > long_width
-            {
-                ttag = v_get_result_type();
-                vtag = v_get_result_value();
+            #endif
 
-                v1 := v_make_temporary(t0, v0);
+        #endif
 
-                vr = v_obtain_special_result_value(v_get_compiler(), t1);
+    #endif
+};
 
-                size_t_ = v_type_get_llvm_type(v_find_type("size_t"));
-                int_    = v_type_get_llvm_type(v_find_type("int"));
+//---------------------------------------------------------------------
+//private
+try_to_adopt_ctx_t = struct
+{
+    fun: *((*void, *v_type_t, LLVMValueRef) ~> bool);
+    aux: *void;
+};
 
-                val: &LLVMValueRef[7] :=
-                {
-                    vr,                                     //- rop
-                    LLVMConstInt(size_t_,         1, 0),    //- count
-                    LLVMConstInt(int_,            1, 0),    //- order
-                    LLVMConstInt(size_t_,   (w+7)/8, 0),    //- size
-                    LLVMConstInt(int_,            0, 0),    //- endian
-                    LLVMConstInt(size_t_, (8-w%8)%8, 0),    //- nails
-                    v1                                      //- op
-                };
+//---------------------------------------------------------------------
+//private
+try_to_adopt_to_mpz: (aux: *void, t0: *v_type_t, v0: LLVMValueRef) ~> bool
+{
+//printf("try_to_adopt_to_mpz: start\n");
+//defer printf("try_to_adopt_to_mpz: stop\n");
 
-                ft: &v_type_ptr   := v_undef();
-                fv: &LLVMValueRef := v_undef();
+    ctx = *(aux: *try_to_adopt_ctx_t);
 
-                v_obtain_identifier("__gmpz_import", &ft, &fv);
+    mpz_type = v_find_type("mpz_t");
 
-                if (v_type_is_pointer(ft))  ft := v_type_refptr_get_element_type(ft);
+    block
+    {
+        t1 = v_get_result_type();
 
-                LLVMBuildCall2(builder, v_type_get_llvm_type(ft), fv, val, 7, "");
+        if (t1 == INVIOLABLE_TAG)  v_break();
+        if (t1 == UNREFERENCE_TAG) v_break();
 
-                v_set_result_type(ttag);
-                v_set_result_value(vtag);
+        check: &bool := true;
 
-                v_return(vr);
-            }
-        }
-        else
+        block
         {
-            v_break();      //- ?
+            if (t1 == mpz_type) v_break();
+
+            if (v_type_is_reference(t1)  &&  v_type_refptr_get_element_type(t1) == mpz_type)  v_break();
+
+            check := false;
         }
 
-        ttag = v_get_result_type();
-        vtag = v_get_result_value();
+        if (!check)  v_break();
 
-        vtmp = v_make_temporary(t1, 0);
+        block
+        {
+            tt: &*v_type_t := t0;
 
-        val: &LLVMValueRef[2] := {vtmp, v1};
+            if (v_type_is_reference(t0))  tt := v_type_refptr_get_element_type(t0);
 
-        ft: &v_type_ptr   := v_undef();
-        fv: &LLVMValueRef := v_undef();
+            if (v_type_is_floating_point(tt)  &&  v_type_floating_point_get_width(tt) <= 64)  v_break();
 
-        v_obtain_identifier(fn, &ft, &fv);
+            if (v_type_is_integer(tt))  v_break();
 
-        if (v_type_is_pointer(ft))  ft := v_type_refptr_get_element_type(ft);
+            check := false;
+        }
 
-        LLVMBuildCall2(builder, v_type_get_llvm_type(ft), fv, val, 2, "");
+        if (!check)  v_break();
 
-        v_add_temporary_cleaner(mpz_temporary_cleaner, vtmp);
+        //- Got it...
 
-        v_set_result_type(ttag);
-        v_set_result_value(vtag);
+        expr: &v_ast_expr_t      := {};
+        list: &v_ast_expr_list_t := {};
 
-        v_return(vtmp);
+        v_ast_make_expr_compiled(&expr, t0, v0);
+
+        v_make_list(&list, &expr);
+
+        v_ast_make_expr_identifier(&expr, "gmpz_adopt_to_mpz");
+
+        v_ast_make_expr_call(&expr, &expr, &list);
+
+        v_ast_accept_visitor(&expr, v_get_compiler());
+
+        v_return(true);
     }
 
-    ctx = *(aux: *convert_to_type_ctx_t);
+    //- Default treatment...
 
-    v_return(ctx.fun(ctx.aux, t0, v0, t1));
+    v_return(ctx.fun(ctx.aux, t0, v0));
 }
 
 //---------------------------------------------------------------------
-convert_to_type_ctx: &convert_to_type_ctx_t := v_undef();
+try_to_adopt_ctx: &try_to_adopt_ctx_t := v_undef();
 
-{   convert_to_type_ctx.fun := v_get_convert_to_type_hook(&convert_to_type_ctx.aux);
+{   try_to_adopt_ctx.fun := v_get_try_to_adopt_hook(&try_to_adopt_ctx.aux);
 
-    v_set_convert_to_type_hook(my_convert_to_type, &convert_to_type_ctx);
+    v_set_try_to_adopt_hook(try_to_adopt_to_mpz, &try_to_adopt_ctx);
 }
 
 
@@ -550,6 +527,7 @@ __gmp_printf: (*const char, ...) ~> int;
 
 
 //---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
 {
     N = 256*8;
 
@@ -577,9 +555,9 @@ __gmp_printf: (*const char, ...) ~> int;
 }
 
 //---------------------------------------------------------------------
-//{   v_debug_print_module(2);
+{   v_debug_print_module(2);
 //    voidc_verify_jit_module_optimized(true);
-//}
+}
 {
 //  val: mpz_t = -0x100;
 //  val: mpz_t = -100;
@@ -589,9 +567,8 @@ __gmp_printf: (*const char, ...) ~> int;
 
     __gmp_printf("%Zd\n", &bnum);
 
-
 }
-
+?
 
 //---------------------------------------------------------------------
 //{   v_debug_print_module(2);
@@ -626,6 +603,7 @@ __gmp_printf: (*const char, ...) ~> int;
 
 
 //---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
 {
     printf("\n");
 
@@ -661,12 +639,12 @@ __gmp_printf: (*const char, ...) ~> int;
 //    voidc_verify_jit_module_optimized(true);
 //}
 
-check_fruits: (a: mpz_t, b: mpz_t, c: mpz_t) ~> bool
+check_fruits: (a: mpz_t, b: mpz_t, c: mpz_t) ~> bool  =
 {
     ab = a + b;     ac = a + c;     bc = b + c;
 
-    v_return(a*ab*ac + b*ab*bc + c*ac*bc == 4*ab*ac*bc);
-}
+    a*ab*ac + b*ab*bc + c*ac*bc == 4*ab*ac*bc
+};
 
 A = 154476802108746166441951315019919837485664325669565431700026634898253202035277999;
 B =  36875131794129999827197811565225474825492979968971970996283137471637224634055579;

@@ -259,6 +259,8 @@ scale: double = 1/1e3;
 //---------------------------------------------------------------------
 sqrt: (double) ~> double;
 
+memset: (*void, int, size_t) ~> *void;
+
 
 //---------------------------------------------------------------------
 wsize: &unsigned[2] := 0;
@@ -286,7 +288,11 @@ draw_mandel: (drawing_area: *GtkDrawingArea,
 
         stride := cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, width);
 
-        data := v_malloc(uint(8), stride*height);
+        sz = stride * height;
+
+        data := v_malloc(uint(8), sz);
+
+        memset(data, 0, sz);
 
         w := width;
         h := height;
