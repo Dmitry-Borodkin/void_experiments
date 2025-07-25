@@ -1,10 +1,15 @@
                          ****  ?  ****                         │*
                                                                │
                                                                │
+try_blocks_etc.void                                            │try_blocks_etc.void
+                                                               │
 Blocks thoughts...                                             │blocks_thoughts.txt
                                                                │
 Convertibility thoughts...                                     │try_to_convert.txt
                                                                │
+                                                               │
+───────────────────────────────────────────────────────────────│
+try_clock.void                                                 │try_clock.void
                                                                │
 ───────────────────────────────────────────────────────────────│
 Square...                                                      │try_square.void
@@ -268,7 +273,7 @@ try_parsing.void                                               │try_parsing.vo
 ───────────────────────────────────────────────────────────────│
 _README.md                                                     │_README.md
                                                                │
-───────────────────────────────────────────────────────────────│
+───────────────────────────────────────────────────────────────│*
 try_cairo4.void                                                │try_cairo4.void
 try_cairo5.void                                                │try_cairo5.void
                                                                │

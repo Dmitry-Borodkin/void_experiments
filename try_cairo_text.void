@@ -15,7 +15,7 @@ double = float(64);
 
 
 //---------------------------------------------------------------------
-GTK_VERSION = 3;
+GTK_VERSION = 4;
 
 
 //---------------------------------------------------------------------
@@ -79,6 +79,10 @@ fscanf: (stream: *FILE, format: *const char, ...) ~> int;
   #else
 
     libname = "libgtk-4.so";
+
+    setenv: (*const char, *const char, int) ~> int;
+
+    setenv("GSK_RENDERER", "cairo", 1);         //- WTF !?!
 
   #endif
 

@@ -14,6 +14,10 @@
 //- ... <gtk/gtk.h>
 //---------------------------------------------------------------------
 {
+    setenv: (*const char, *const char, int) ~> int;
+
+    setenv("GSK_RENDERER", "cairo", 1);         //- WTF !?!
+
     ok = LLVMLoadLibraryPermanently("libgtk-4.so");
 //  ok = LLVMLoadLibraryPermanently("libgtk-4-1.dll");
 

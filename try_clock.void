@@ -1,0 +1,381 @@
+{   v_import("mainline.void");
+
+    v_import("llvm-c/Support.void");
+
+    v_import("cairo.void");
+}
+
+{   v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+{   v_import("cstdio.void"); }
+
+//---------------------------------------------------------------------
+WINDOZE = v_defined(_WIN32);
+
+
+//---------------------------------------------------------------------
+my_source: &char[] :=
+"""
+#include <time.h>
+#include <gtk/gtk.h>
+
+double my_clock(void)
+{
+    struct timespec rawtime;
+    struct tm * timeinfo;
+    double ret;
+
+    clock_gettime(CLOCK_REALTIME, &rawtime);
+    timeinfo = localtime(&rawtime.tv_sec);
+
+    ret = timeinfo->tm_hour;
+    ret = 60*ret + timeinfo->tm_min;
+    ret = 60*ret + timeinfo->tm_sec;
+    ret += rawtime.tv_nsec * 1e-9;
+
+    return ret;
+}
+
+void *my_gtk_hook = gtk_application_new;
+
+""";
+
+
+//---------------------------------------------------------------------
+buffer: &*char := 0;
+
+{   buflen = 1024;
+
+    buffer := v_malloc(char, buflen);
+
+    {   p = popen("mktemp", "r");
+        defer pclose(p);
+
+        fscanf(p, "%500s", buffer);
+    }
+
+#if (WINDOZE)
+
+    {
+        cmd = buffer + 512;
+
+        sprintf(cmd, "cygpath -m %s", buffer);
+
+        p = v_popen(cmd, "r");
+        defer v_pclose(p);
+
+        fscanf(p, "%1000s", buffer);
+    }
+
+#endif
+
+    //-----------------------------------------------------------------
+    {   p = v_popen("bash", "w");
+        defer v_pclose(p);
+
+        fprintf(p, "clang -x c - -O3 $(pkg-config gtk+-3.0 --cflags --libs) -shared -fPIC -o %s <<HEREDOC\n", buffer);
+
+        fprintf(p, "%s\nHEREDOC\n", my_source);
+    }
+}
+
+//---------------------------------------------------------------------
+{   ok = LLVMLoadLibraryPermanently(buffer);
+
+    printf("ok: %d\n", ok);
+}
+
+
+//---------------------------------------------------------------------
+double = float(64);
+
+my_clock: () ~> double;
+
+
+//---------------------------------------------------------------------
+//- ... <gtk/gtk.h>
+//---------------------------------------------------------------------
+struct GtkApplication;
+struct GtkContainer;
+struct GtkWidget;
+
+
+//---------------------------------------------------------------------
+M_PI: double = 3.14159265358979323846264338327950288419716939937510582;
+
+
+//{ v_debug_print_module(1); }
+//---------------------------------------------------------------------
+gtk_application_new: (id: *const char, flags: int) ~> *GtkApplication;
+
+g_signal_connect_data: (instance: *void,
+                        signal: *const char,
+                        callback: *(()~>void),
+                        data: *void,
+                        notify: *void,
+                        flags: int
+                       ) ~> long;
+
+g_application_run: (app: *GtkApplication, argc: int, argv: **char) ~> int;
+
+
+gtk_application_window_new: (app: *GtkApplication) ~> *GtkWidget;
+
+
+gtk_container_add: (container: *GtkContainer, widget: *GtkWidget) ~> void;
+
+gtk_widget_show_all: (wnd: *GtkWidget) ~> void;
+
+
+gtk_drawing_area_new: () ~> *GtkWidget;
+
+gtk_widget_get_allocated_width:  (*GtkWidget) ~> int;
+gtk_widget_get_allocated_height: (*GtkWidget) ~> int;
+
+
+gtk_widget_queue_draw: (*GtkWidget) ~> void;
+
+g_timeout_add: (interval: unsigned, func: *((aux: *void) ~> bool), aux: *void) ~> unsigned;
+
+
+//---------------------------------------------------------------------
+is_active: &bool := true;
+
+on_timeout: (aux: *void) ~> bool
+{
+    if (!is_active) v_return(false);
+
+    gtk_widget_queue_draw((aux: *GtkWidget));
+
+    v_return(true);
+}
+
+on_destroy: (wid: *GtkWidget, *void) ~> void
+{
+    is_active := false;
+}
+
+
+//---------------------------------------------------------------------
+sin: (double) ~> double;
+cos: (double) ~> double;
+
+floor: (double) ~> double;
+
+
+//---------------------------------------------------------------------
+(_.flush())        = cairo_surface_flush;
+(_.write_to_png()) = cairo_surface_write_to_png;
+(_.destroy())      = cairo_surface_destroy;
+
+(_.destroy())         = cairo_destroy;
+(_.paint())           = cairo_paint;
+(_.fill())            = cairo_fill;
+(_.fill_preserve())   = cairo_fill_preserve;
+(_.stroke())          = cairo_stroke;
+(_.stroke_preserve()) = cairo_stroke_preserve;
+(_.set_source_rgb())  = cairo_set_source_rgb;
+(_.set_source_rgba()) = cairo_set_source_rgba;
+(_.rectangle())       = cairo_rectangle;
+(_.set_line_width())  = cairo_set_line_width;
+(_.set_line_cap())    = cairo_set_line_cap;
+(_.line_to())         = cairo_line_to;
+(_.move_to())         = cairo_move_to;
+(_.close_path())      = cairo_close_path;
+(_.scale())           = cairo_scale;
+(_.translate())       = cairo_translate;
+(_.save())            = cairo_save;
+(_.restore())         = cairo_restore;
+(_.arc())             = cairo_arc;
+(_.clip())            = cairo_clip;
+
+
+//---------------------------------------------------------------------
+m_radius     = 0.42;
+m_line_width = 0.025;
+
+draw_cb: (widget: *GtkWidget, cr: *cairo_t, *void) ~> void
+{
+    width  = gtk_widget_get_allocated_width(widget);
+    height = gtk_widget_get_allocated_height(widget);
+
+    {   k: &double := height;
+
+        if (width < height) k := width;
+
+        cr.scale(k, k);
+
+        k *= 2;
+
+        cr.translate(width/k, height/k);
+    }
+
+    cr.set_line_width(m_line_width);
+
+    cr.save();
+    cr.set_source_rgba(0.337, 0.612, 0.117, 0.9);        //- Green
+    cr.paint();
+    cr.restore();
+    cr.arc(0, 0, m_radius, 0, 2*M_PI);
+    cr.save();
+    cr.set_source_rgba(1, 1, 1, 0.8);
+    cr.fill_preserve();
+    cr.restore();
+    cr.stroke_preserve();
+    cr.clip();
+
+    //- Clock ticks
+
+    for (i: &int := 0; i < 12; ++i)
+    {
+        inset: &double := 0.05;
+
+        cr.save();
+        cr.set_line_cap(CAIRO_LINE_CAP_ROUND);
+
+        if (i % 3 != 0)
+        {
+            inset *= 0.8;
+
+            cr.set_line_width(0.03);
+        }
+
+        cr.move_to((m_radius - inset) * cos(i*(M_PI/6)),
+                   (m_radius - inset) * sin(i*(M_PI/6)));
+
+        cr.line_to(m_radius * cos(i*(M_PI/6)),
+                   m_radius * sin(i*(M_PI/6)));
+
+        cr.stroke();
+        cr.restore();
+    }
+
+    time = my_clock();
+
+    hours   = time          * (M_PI /  6 / 3600);
+    minutes = (time % 3600) * (M_PI / 30 /   60);
+    seconds = (time %   60) * (M_PI / 30       );
+
+    cr.save();
+    cr.set_line_cap(CAIRO_LINE_CAP_ROUND);
+
+    //- Seconds...
+    {
+        a = floor(time % 60);
+
+        a0 = -(M_PI/2) + (a     * (M_PI/30));
+        a1 = -(M_PI/2) + ((a+1) * (M_PI/30));
+
+        cr.move_to(0, 0);
+        cr.arc(0, 0, m_radius*0.9, a0, a1);
+        cr.line_to(0, 0);
+
+        cr.set_source_rgba(0.6, 0.6, 0.6, 0.2);             //- Gray
+
+        cr.fill();
+    }
+
+    //- Draw the seconds hand
+    cr.save();
+    cr.set_line_width(m_line_width/3);
+
+    cr.set_source_rgba(0.6, 0.6, 0.6, 0.9);                 //- Gray
+
+    cr.move_to(0, 0);
+    cr.line_to(sin(seconds)*(m_radius * 0.9), -cos(seconds)*(m_radius * 0.9));
+    cr.stroke();
+    cr.restore();
+
+    //- Minutes...
+    {
+        a = floor((time % 3600) / 60);
+
+        a0 = -(M_PI/2) + (a     * (M_PI/30));
+        a1 = -(M_PI/2) + ((a+1) * (M_PI/30));
+
+        cr.move_to(0, 0);
+        cr.arc(0, 0, m_radius*0.8, a0, a1);
+        cr.line_to(0, 0);
+
+        cr.set_source_rgba(0.117, 0.337, 0.612, 0.2);       // Blue
+
+        cr.fill();
+    }
+
+    //- Draw the minutes hand
+    cr.set_source_rgba(0.117, 0.337, 0.612, 0.9);           // Blue
+    cr.move_to(0, 0);
+    cr.line_to(sin(minutes)*(m_radius * 0.8), -cos(minutes)*(m_radius * 0.8));
+    cr.stroke();
+
+    //- Hours...
+    {
+        a = floor((time % (12*60*60)) / 3600);
+
+        a0 = -(M_PI/2) + (a     * (M_PI/6));
+        a1 = -(M_PI/2) + ((a+1) * (M_PI/6));
+
+        cr.move_to(0, 0);
+        cr.arc(0, 0, m_radius*0.5, a0, a1);
+        cr.line_to(0, 0);
+
+        cr.set_source_rgba(0.337, 0.612, 0.117, 0.2);       // Green
+
+        cr.fill();
+    }
+
+    //- Draw the hours hand
+    cr.set_source_rgba(0.337, 0.612, 0.117, 0.9);           // Green
+    cr.move_to(0, 0);
+    cr.line_to(sin(hours)*(m_radius * 0.5), -cos(hours)*(m_radius * 0.5));
+    cr.stroke();
+    cr.restore();
+
+    //- Draw a little dot in the middle
+    cr.arc(0, 0, m_line_width/3, 0, 2*M_PI);
+    cr.fill();
+}
+
+
+//---------------------------------------------------------------------
+on_activate: (app: *GtkApplication, data: *void) ~> void
+{
+    window = gtk_application_window_new(app);
+
+    drawing_area = gtk_drawing_area_new();
+
+    g_signal_connect_data(drawing_area, "draw", (draw_cb: *(()~>void)), 0, 0, 0);
+
+    gtk_container_add((window: *GtkContainer), drawing_area);
+
+    gtk_widget_show_all(window);
+
+    g_signal_connect_data(window, "destroy", (on_destroy: *(()~>void)), 0, 0, 0);
+
+    g_timeout_add(20, on_timeout, drawing_area);
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    app = gtk_application_new(0, 0);
+
+    g_signal_connect_data(app, "activate", (on_activate: *(()~>void)), 0, 0, 0);
+
+    g_application_run(app, 1, &("Часики" : *char));
+}
+
+
+//---------------------------------------------------------------------
+{
+    p = v_popen("bash", "w");
+    defer v_pclose(p);
+
+    fprintf(p, "rm %s\n", buffer);
+
+    v_free(buffer);
+}
+
+
