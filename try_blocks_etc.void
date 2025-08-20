@@ -4,16 +4,14 @@
 
     v_import("llvm-c/Core.void");
 
-//  v_import("intrinsics_derive.void");
-
     v_import("printf.void");
 }
 
 {   v_enable_level_01();
     v_enable_level_02();
-
-//  voidc_enable_intrinsics_derive();
 }
+
+{   v_assert(v_find_symbol_type("v_push_result")); }
 
 
 //=====================================================================
@@ -29,13 +27,16 @@
     v_add_symbol("expr_stmt_q",  q_ref, q("expr_stmt"));
     v_add_symbol("expr_block_q", q_ref, q("expr_block"));
 
-    v_add_symbol("q_break",  q_ref, q("v_break"));
-    v_add_symbol("q_return", q_ref, q("v_return"));
+    v_add_symbol("q_break", q_ref, q("v_break"));
 
-    v_add_symbol("voidc_internal_return_disabled_q",     q_ref, q("voidc.internal_return_disabled"));
-    v_add_symbol("voidc_internal_return_value_q",        q_ref, q("voidc.internal_return_value"));
     v_add_symbol("voidc_internal_branch_target_leave_q", q_ref, q("voidc.internal_branch_target_leave"));
+    v_add_symbol("voidc_internal_return_value_q",        q_ref, q("voidc.internal_return_value"));
     v_add_symbol("voidc_internal_break_value_q",         q_ref, q("voidc.internal_break_value"));
+
+    v_add_symbol("voidc_internal_branch_target_leave_first_q", q_ref, q("voidc.internal_branch_target_leave_first"));
+    v_add_symbol("voidc_internal_expr_block_enabled_q",        q_ref, q("voidc.internal_expr_block_enabled"));
+
+    v_add_symbol("q_static_type_t", q_ref, q("v_static_type_t"));
 }
 
 
@@ -188,26 +189,42 @@ compile_expr_stmt: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 //printf("compile_expr_stmt start\n");
 //defer printf("compile_expr_stmt stop\n");
 
-    ttag = v_get_result_type();
-    vtag = v_get_result_value();
+    tr: &*v_type_t := v_get_result_type();       //- Sic!
 
-    tr = ttag;                          //- Sic !!!
+    type_ok = INVIOLABLE_TAG != tr != UNREFERENCE_TAG;
 
-    vr = v_make_temporary(tr, 0);
+    v_push_result();
+
+    builder = v_target_get_builder();
+
+    llvm_ctx = v_target_get_llvm_ctx();
+
+    vr: &LLVMValueRef := v_undef();
+
+    if (type_ok)
+    {
+        vr := v_make_temporary(tr, 0);
+    }
+    else
+    {
+        data = v_malloc(struct { *v_type_t; LLVMValueRef; });
+
+        anchor_ptr_v = v_make_temporary(0, 0);          //- !
+
+        *data := { 0, anchor_ptr_v };
+
+        vr := (data: LLVMValueRef);         //- !
+    }
 
     void_obj = v_ast_generic_get_object((self: *v_ast_expr_t));
 
     obj = *(void_obj: *v_ast_expr_stmt_t);
 
+
     v_save_variables();
 
     v_add_variable_q(voidc_internal_break_value_q, tr, vr);
 
-    v_add_variable_q(voidc_internal_return_disabled_q, 0, (true: LLVMValueRef));        //- Sic !!!
-
-    builder = v_target_get_builder();
-
-    llvm_ctx = v_target_get_llvm_ctx();
 
     cur_b = LLVMGetInsertBlock(builder);
     cur_f = LLVMGetBasicBlockParent(cur_b);
@@ -237,36 +254,62 @@ compile_expr_stmt: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     v_restore_variables();
 
+    if (!type_ok)
+    {
+        data = v_load((vr: *struct { *v_type_t; LLVMValueRef; }));
+        v_free(vr);
+
+        tr := data[0];
+
+        v_assert(INVIOLABLE_TAG != tr != UNREFERENCE_TAG);
+
+        anchor_ptr_v = data[1];
+
+        v_save_builder_ip();
+
+        LLVMPositionBuilderBefore(builder, anchor_ptr_v);
+
+        vr := LLVMBuildAlloca(builder, v_type_get_llvm_type(tr), "");
+
+        v_restore_builder_ip();
+
+        LLVMReplaceAllUsesWith(anchor_ptr_v, vr);           //- Sic!!!
+
+        LLVMInstructionEraseFromParent(anchor_ptr_v);
+    }
+
     tr_ = v_type_get_llvm_type(tr);
 
-    vr = LLVMBuildLoad2(builder, tr_, vr, "vr");
+    vr := LLVMBuildLoad2(builder, tr_, vr, "vr");
 
-    v_set_result_type(tr);              //- Sic !!!
-    v_set_result_value(vr);             //- Sic !!!
+    v_pop_result();
+
+    v_adopt_result(tr, vr);
 }
 
 
 //---------------------------------------------------------------------
 private
-my_intrinsic_t = struct { fun: *((*void, *voidc_visitor_t, *v_ast_base_t) ~> void); aux: *void; };
+my_intrinsic_ctx_t = struct { fun: *((*void, *voidc_visitor_t, *v_ast_base_t) ~> void); aux: *void; };
 
 private
-my_expr_stmt_ctx_t = struct
+blocks_etc_ctx_t = struct
 {
-    return: my_intrinsic_t;
-    break:  my_intrinsic_t;
+    break: my_intrinsic_ctx_t;
+
+    stmt_block:  my_intrinsic_ctx_t;
+    stmt_loop:   my_intrinsic_ctx_t;
+    stmt_switch: my_intrinsic_ctx_t;
+    stmt_defer:  my_intrinsic_ctx_t;
 };
 
 //---------------------------------------------------------------------
-private
-my_return_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+private alwaysinline
+(_()): (ctx: &my_intrinsic_ctx_t, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
-    v_assert(v_get_variable_value_q(voidc_internal_return_disabled_q) == 0);        //- Sic !!!
-
-    ctx = (aux: *my_expr_stmt_ctx_t)->return;
-
     ctx.fun(ctx.aux, vis, self);
 }
+
 
 //---------------------------------------------------------------------
 private
@@ -287,26 +330,41 @@ my_break_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> 
         brk_type  = v_get_variable_type_q(voidc_internal_break_value_q);
         brk_var_v = v_get_variable_value_q(voidc_internal_break_value_q);
 
+        v_push_result();
+
         v_set_result_type(brk_type);
-        v_set_result_value(0);
 
         v_ast_accept_visitor((arg0: *v_ast_base_t), vis);
 
         vr = v_get_result_value();
 
-        LLVMBuildStore(builder, vr, brk_var_v);
+        if (INVIOLABLE_TAG != brk_type != UNREFERENCE_TAG)
+        {
+            LLVMBuildStore(builder, vr, brk_var_v);
+        }
+        else
+        {
+            data = *(brk_var_v: *struct { *v_type_t; LLVMValueRef; });
+
+            tr = v_get_result_type();
+
+            if (data[0] == 0)   data[0] := tr;
+            else                v_assert(data[0] == tr);
+
+            LLVMBuildStore(builder, vr, data[1]);
+        }
+
+        v_pop_result();
     }
 
-    ctx = (aux: *my_expr_stmt_ctx_t)->break;
+    ctx = *(aux: *blocks_etc_ctx_t);
 
-    ctx.fun(ctx.aux, vis, self);
+    ctx.break(vis, self);
 }
 
 
-
-
 //---------------------------------------------------------------------
-//- ... ???????????????????????????????????????????????????????
+//- ...
 //---------------------------------------------------------------------
 private
 compile_expr_block: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
@@ -314,30 +372,119 @@ compile_expr_block: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 //printf("compile_expr_block start\n");
 //defer printf("compile_expr_block stop\n");
 
-    ttag = v_get_result_type();
-    vtag = v_get_result_value();
-
     void_obj = v_ast_generic_get_object((self: *v_ast_expr_t));
 
     obj = *(void_obj: *v_ast_expr_block_t);
 
-    v_save_variables();
-    saved_bv = v_get_variable_value_q(voidc_internal_branch_target_leave_q);
+
+    builder = v_target_get_builder();
+
+    stack_v: &LLVMValueRef := v_undef();        //- ...
+
+    top_level = (v_get_variable_value_q(voidc_internal_expr_block_enabled_q) == 0);
+
+    if (top_level)
+    {
+        v_save_variables();
+
+        v_add_variable_q(voidc_internal_branch_target_leave_q,       0, 0);                     //- Sic !!!
+        v_add_variable_q(voidc_internal_branch_target_leave_first_q, 0, 0);                     //- Sic !!!
+
+        lltyp = v_alloca(LLVMTypeRef);
+
+        llvm_stacksave_f   = v_obtain_function(voidc_llvm_stacksave_name, lltyp);
+        llvm_stacksave_ft_ = v_load(lltyp);
+
+        stack_v := LLVMBuildCall2(builder, llvm_stacksave_ft_, llvm_stacksave_f, 0, 0, "stack_v");
+    }
+    else    //- ! top_level
+    {
+        v_add_variable_q(voidc_internal_expr_block_enabled_q, 0, 0);                            //- Sic !!!
+    }
+
+    v_assert(v_get_variable_value_q(voidc_internal_expr_block_enabled_q) == 0);                 //- Sic !!!
+
+
+    v_push_result();
 
     v_ast_accept_visitor((&obj.slst: *v_ast_base_t), vis);
 
-    v_set_result_type(ttag);
-    v_set_result_value(vtag);
+
+    v_add_variable_q(voidc_internal_expr_block_enabled_q, 0, (true: LLVMValueRef));             //- Sic !!!
+
+
+    v_pop_result();
 
     v_ast_accept_visitor((&obj.expr: *v_ast_base_t), vis);
 
-    current_bv = v_get_variable_value_q(voidc_internal_branch_target_leave_q);
-    v_restore_variables();
 
-    if (saved_bv != current_bv)
+    if (top_level)
     {
-        v_add_variable_q(voidc_internal_branch_target_leave_q, 0, current_bv);      //- Sic !?!?!
+        if (leave_bv = v_get_variable_value_q(voidc_internal_branch_target_leave_q))
+        {
+            cur_b = LLVMGetInsertBlock(builder);
+
+            if (!LLVMGetBasicBlockTerminator(cur_b))
+            {
+                leave_b = LLVMValueAsBasicBlock(leave_bv);
+
+                LLVMBuildBr(builder, leave_b);
+            }
+
+            leave_first_bv = v_get_variable_value_q(voidc_internal_branch_target_leave_first_q);
+            leave_first_b  = LLVMValueAsBasicBlock(leave_first_bv);
+
+            LLVMMoveBasicBlockAfter(leave_first_b, cur_b);
+
+            LLVMPositionBuilderAtEnd(builder, leave_first_b);
+        }
+
+        if (LLVMGetNextInstruction(stack_v))            //- Sic !!!
+        {
+            lltyp: &LLVMTypeRef := v_undef();
+
+            llvm_stackrestore_f   = v_obtain_function(voidc_llvm_stackrestore_name, &lltyp);
+            llvm_stackrestore_ft_ = v_load(&lltyp);
+
+            LLVMBuildCall2(builder, llvm_stackrestore_ft_, llvm_stackrestore_f, &stack_v, 1, "");
+        }
+        else
+        {
+            LLVMInstructionEraseFromParent(stack_v);
+        }
+
+        v_restore_variables();
     }
+}
+
+//---------------------------------------------------------------------
+private
+my_compile_ast_stmt_block_etc: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    if (!v_get_variable_value_q(voidc_internal_branch_target_leave_q))
+    {
+        v_assert(v_get_variable_value_q(voidc_internal_branch_target_leave_first_q) == 0);
+
+        llvm_ctx = v_target_get_llvm_ctx();
+        builder  = v_target_get_builder();
+
+        cur_b = LLVMGetInsertBlock(builder);
+        cur_f = LLVMGetBasicBlockParent(cur_b);
+
+        sbl_leave_b  = LLVMAppendBasicBlockInContext(llvm_ctx, cur_f, "sbl_leave_b");
+        sbl_leave_bv = LLVMBasicBlockAsValue(sbl_leave_b);
+
+        v_add_variable_q(voidc_internal_branch_target_leave_q,       0, sbl_leave_bv);      //- Sic!
+        v_add_variable_q(voidc_internal_branch_target_leave_first_q, 0, sbl_leave_bv);      //- Sic!
+    }
+
+    v_save_variables();
+
+    method = *(aux: *my_intrinsic_ctx_t);
+
+    method(vis, self);
+
+    v_restore_variables();
 }
 
 
@@ -364,11 +511,6 @@ v_get_return_value_intrinsic: (aux: *void, *voidc_visitor_t, *v_ast_base_t) ~> v
 }
 
 
-
-
-
-
-
 //=====================================================================
 //- Enable blocks etc...
 //---------------------------------------------------------------------
@@ -390,19 +532,33 @@ voidc_enable_blocks_etc_compiler: () ~> void
     v_add_intrinsic("v_get_break_value",  v_get_return_value_intrinsic, ((voidc_internal_break_value_q:  intptr_t) : *void));
 
     //-----------------------------------------------------------------
-    ctx = *v_malloc(my_expr_stmt_ctx_t);
+    ctx = *v_malloc(blocks_etc_ctx_t);
 
     free: (*void) ~> void;
 
     v_add_cleaner(free, &ctx);
 
-    ctx.break.fun    := (v_get_intrinsic_q(q_break,    &ctx.break.aux)    : *voidc_intrinsic_t);
-    ctx.return.fun   := (v_get_intrinsic_q(q_return,   &ctx.return.aux)   : *voidc_intrinsic_t);
+    ctx.break.fun := (v_get_intrinsic_q(q_break, &ctx.break.aux) : *voidc_intrinsic_t);
 
-    v_add_intrinsic_q(q_break,    my_break_intrinsic,    &ctx);
-    v_add_intrinsic_q(q_return,   my_return_intrinsic,   &ctx);
+    v_add_intrinsic_q(q_break, my_break_intrinsic, &ctx);
 
+    //-----------------------------------------------------------------
+    q = v_quark_from_string;
 
+    stmt_block_q  = q("stmt_block");
+    stmt_loop_q   = q("stmt_loop");
+    stmt_switch_q = q("stmt_switch");
+    stmt_defer_q  = q("stmt_defer");
+
+    ctx.stmt_block.fun  := voidc_visitor_get_method(vis, stmt_block_q,  &ctx.stmt_block.aux);
+    ctx.stmt_loop.fun   := voidc_visitor_get_method(vis, stmt_loop_q,   &ctx.stmt_loop.aux);
+    ctx.stmt_switch.fun := voidc_visitor_get_method(vis, stmt_switch_q, &ctx.stmt_switch.aux);
+    ctx.stmt_defer.fun  := voidc_visitor_get_method(vis, stmt_defer_q,  &ctx.stmt_defer.aux);
+
+    voidc_visitor_set_method(vis, vis, stmt_block_q,  my_compile_ast_stmt_block_etc, &ctx.stmt_block);
+    voidc_visitor_set_method(vis, vis, stmt_loop_q,   my_compile_ast_stmt_block_etc, &ctx.stmt_loop);
+    voidc_visitor_set_method(vis, vis, stmt_switch_q, my_compile_ast_stmt_block_etc, &ctx.stmt_switch);
+    voidc_visitor_set_method(vis, vis, stmt_defer_q,  my_compile_ast_stmt_block_etc, &ctx.stmt_defer);
 }
 
 //---------------------------------------------------------------------
@@ -453,6 +609,26 @@ voidc_enable_blocks_etc: () ~> void
 }
 
 
+//=====================================================================
+{
+    if (v_target_local_ctx_has_parent())
+    {
+        gr0 = v_peg_get_grammar();
+
+        v_assert(gr0);
+
+        grammar gr0
+        {
+        parsers:
+
+            unit = { mk_EOF() };            //- !
+        }
+    }
+
+    //-----------------------------------------------------------------
+    voidc_clear_unit_buffer();
+}
+
 
 //=====================================================================
 { voidc_enable_blocks_etc(); }
@@ -461,7 +637,7 @@ voidc_enable_blocks_etc: () ~> void
 //{ voidc_verify_jit_module_optimized(true); }
 //{ v_debug_print_module(2); }
 {
-    a: int  =  block
+    a = block
     {
         x: &int := 5;
 
@@ -486,11 +662,66 @@ voidc_enable_blocks_etc: () ~> void
 
         if (i == 0) _a := 0;
         else        _a += i;
+
+//      printf("i: %d, _a: %d\n", i, _a);
     };
 
     printf("a: %d\n", a);
 
 }
+
+
+//---------------------------------------------------------------------
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(2); }
+{
+    printf("\n");
+
+    x: &int := block { v_break(42); };
+
+    printf("x: %d\n", x);
+
+    xx: &int := { a: &int := 1; a += 2; a+3 };
+
+    printf("xx: %d\n", xx);
+
+    u: &int[2] := block { v_break({7, 77}); };
+
+    printf("u: (%d, %d)\n", u[0], u[1]);
+
+    v: vec(int, 2) = block { v_break({8, 88}); };
+
+    printf("v: [%d, %d]\n", v[0], v[1]);
+}
+
+
+//---------------------------------------------------------------------
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(2); }
+{
+    printf("\n");
+
+    x = { a = 1; a = a+1;  a+1 };
+
+    printf("x: %d\n", x);
+
+    y = { a: &int := 1; a += 1;  a+2 };
+
+    printf("y: %d\n", y);
+}
+
+
+//---------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
 
 
 
