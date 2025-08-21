@@ -478,13 +478,9 @@ my_compile_ast_stmt_block_etc: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_
         v_add_variable_q(voidc_internal_branch_target_leave_first_q, 0, sbl_leave_bv);      //- Sic!
     }
 
-    v_save_variables();
-
     method = *(aux: *my_intrinsic_ctx_t);
 
     method(vis, self);
-
-    v_restore_variables();
 }
 
 

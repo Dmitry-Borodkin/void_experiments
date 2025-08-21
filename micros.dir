@@ -1,6 +1,8 @@
                          ****  ?  ****                         │*
                                                                │
                                                                │
+try_local_objects.void                                         │try_local_objects.void
+                                                               │
 try_blocks_etc.void                                            │try_blocks_etc.void
                                                                │
                                                                │
