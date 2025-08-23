@@ -189,32 +189,18 @@ compile_expr_stmt: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 //printf("compile_expr_stmt start\n");
 //defer printf("compile_expr_stmt stop\n");
 
-    tr: &*v_type_t := v_get_result_type();       //- Sic!
+    tr = v_get_result_type();
 
-    type_ok = INVIOLABLE_TAG != tr != UNREFERENCE_TAG;
-
-    v_push_result();
 
     builder = v_target_get_builder();
 
     llvm_ctx = v_target_get_llvm_ctx();
 
-    vr: &LLVMValueRef := v_undef();
 
-    if (type_ok)
-    {
-        vr := v_make_temporary(tr, 0);
-    }
-    else
-    {
-        data = v_malloc(struct { *v_type_t; LLVMValueRef; });
+    anchor_ptr_v = v_make_temporary(0, 0);          //- !
 
-        anchor_ptr_v = v_make_temporary(0, 0);          //- !
+    data: &struct { *v_type_t; LLVMValueRef; } := { 0, anchor_ptr_v };
 
-        *data := { 0, anchor_ptr_v };
-
-        vr := (data: LLVMValueRef);         //- !
-    }
 
     void_obj = v_ast_generic_get_object((self: *v_ast_expr_t));
 
@@ -223,8 +209,10 @@ compile_expr_stmt: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     v_save_variables();
 
-    v_add_variable_q(voidc_internal_break_value_q, tr, vr);
+    v_add_variable_q(voidc_internal_break_value_q, tr, (&data : LLVMValueRef));
 
+
+    v_push_result();
 
     cur_b = LLVMGetInsertBlock(builder);
     cur_f = LLVMGetBasicBlockParent(cur_b);
@@ -254,33 +242,23 @@ compile_expr_stmt: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     v_restore_variables();
 
-    if (!type_ok)
-    {
-        data = v_load((vr: *struct { *v_type_t; LLVMValueRef; }));
-        v_free(vr);
 
-        tr := data[0];
+    tr = data[0];
 
-        v_assert(INVIOLABLE_TAG != tr != UNREFERENCE_TAG);
+    v_save_builder_ip();
 
-        anchor_ptr_v = data[1];
+    LLVMPositionBuilderBefore(builder, anchor_ptr_v);
 
-        v_save_builder_ip();
+    vr = LLVMBuildAlloca(builder, v_type_get_llvm_type(tr), "");
 
-        LLVMPositionBuilderBefore(builder, anchor_ptr_v);
+    v_restore_builder_ip();
 
-        vr := LLVMBuildAlloca(builder, v_type_get_llvm_type(tr), "");
+    LLVMReplaceAllUsesWith(anchor_ptr_v, vr);           //- Sic!!!
 
-        v_restore_builder_ip();
+    LLVMInstructionEraseFromParent(anchor_ptr_v);
 
-        LLVMReplaceAllUsesWith(anchor_ptr_v, vr);           //- Sic!!!
 
-        LLVMInstructionEraseFromParent(anchor_ptr_v);
-    }
-
-    tr_ = v_type_get_llvm_type(tr);
-
-    vr := LLVMBuildLoad2(builder, tr_, vr, "vr");
+    vr = LLVMBuildLoad2(builder, v_type_get_llvm_type(tr), vr, "");
 
     v_pop_result();
 
@@ -315,6 +293,9 @@ private alwaysinline
 private
 my_break_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
+//printf("my_break_intrinsic: start\n");
+//defer printf("my_break_intrinsic: stop\n");
+
     builder = v_target_get_builder();
 
     call = (self: *v_ast_expr_t);
@@ -328,38 +309,30 @@ my_break_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> 
         arg0 = v_list_get_item(arg_list, 0);
 
         brk_type  = v_get_variable_type_q(voidc_internal_break_value_q);
-        brk_var_v = v_get_variable_value_q(voidc_internal_break_value_q);
+        brk_value = v_get_variable_value_q(voidc_internal_break_value_q);
 
-        v_push_result();
+        v_reset_result();
 
         v_set_result_type(brk_type);
 
         v_ast_accept_visitor((arg0: *v_ast_base_t), vis);
 
+        tr = v_get_result_type();
         vr = v_get_result_value();
 
-        if (INVIOLABLE_TAG != brk_type != UNREFERENCE_TAG)
-        {
-            LLVMBuildStore(builder, vr, brk_var_v);
-        }
-        else
-        {
-            data = *(brk_var_v: *struct { *v_type_t; LLVMValueRef; });
+        data = *(brk_value: *struct { *v_type_t; LLVMValueRef; });
 
-            tr = v_get_result_type();
+        if (data[0] == 0)   data[0] := tr;
+        else                v_assert(data[0] == tr);
 
-            if (data[0] == 0)   data[0] := tr;
-            else                v_assert(data[0] == tr);
-
-            LLVMBuildStore(builder, vr, data[1]);
-        }
-
-        v_pop_result();
+        LLVMBuildStore(builder, vr, data[1]);
     }
 
-    ctx = *(aux: *blocks_etc_ctx_t);
+    stmt = v_make_object(v_ast_stmt_t);
 
-    ctx.break(vis, self);
+    v_ast_make_stmt_call(stmt, 0, q_break, 0, 0);
+
+    (aux: *blocks_etc_ctx_t)->break(vis, (stmt: *v_ast_base_t));        //- Sic !!!
 }
 
 
@@ -488,12 +461,31 @@ my_compile_ast_stmt_block_etc: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_
 private
 v_get_return_value_intrinsic: (aux: *void, *voidc_visitor_t, *v_ast_base_t) ~> void
 {
+//printf("v_get_return_value_intrinsic: start\n");
+//defer printf("v_get_return_value_intrinsic: stop\n");
+
     quark = ((aux: intptr_t) : v_quark_t);
 
-    ret_type  = v_get_variable_type_q(quark);
-    ret_value = v_get_variable_value_q(quark);
+    ret_type:  &*v_type_t    := v_get_variable_type_q(quark);
+    ret_value: &LLVMValueRef := v_undef();
 
-    ret_type: &*v_type_t := ret_type;
+    if (quark == voidc_internal_return_value_q)
+    {
+        ret_value := v_get_variable_value_q(quark);
+    }
+    else
+    {
+        v_assert(quark == voidc_internal_break_value_q);
+
+        data = v_get_variable_value_q(quark);
+
+        data = *(data: *struct { *v_type_t; LLVMValueRef; });
+
+        ret_value := data[1];
+
+        if (data[0] == 0)   data[0] := ret_type;
+        else                v_assert(data[0] == ret_type);
+    }
 
     if (v_type_is_reference(ret_type))
     {
