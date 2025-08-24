@@ -1,14 +1,34 @@
 {   v_import("level-00");
     v_import("level-01");
-    v_import("level-02");
 
     v_import("llvm-c/Core.void");
+
+    v_import("level-02/literals.void");
+    v_import("level-02/loops_etc.void");
+    v_import("level-02/condcomp.void");
+    v_import("level-02/aggregates.void");
+    v_import("level-02/overloading.void");
+    v_import("level-02/projections.void");
+    v_import("level-02/structures.void");
+    v_import("level-02/mangling.void");
+    v_import("level-02/inlining.void");
+    v_import("level-02/unions.void");
 
     v_import("printf.void");
 }
 
 {   v_enable_level_01();
-    v_enable_level_02();
+
+    voidc_enable_literals();
+    voidc_enable_loops_etc();
+    voidc_enable_condcomp();
+    voidc_enable_aggregates();
+    voidc_enable_overloading();
+    voidc_enable_projections();
+    voidc_enable_structures();
+    voidc_enable_mangling();
+    voidc_enable_inlining();
+    voidc_enable_unions();
 }
 
 {   v_assert(v_find_symbol_type("v_push_result")); }
