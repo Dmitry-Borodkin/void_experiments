@@ -273,15 +273,17 @@ block
 
                 if (n < 0)
                 {
-                    tmp: &mpz_t := v_undef();
+                    tmp = v_alloca(mpz_t);
 
-                    __gmpz_init_set_ui(&tmp, 1);
+                    __gmpz_init_set_ui(tmp, 1);
 
-                    __gmpz_mul_exp2(&tmp, &tmp, w);
+                    __gmpz_set_ui(tmp, 1);
 
-                    __gmpz_sub(&brk, &brk, &tmp);
+                    __gmpz_mul_2exp(tmp, tmp, w);
 
-                    __gmpz_clear(&tmp);
+                    __gmpz_sub(&brk, &brk, tmp);
+
+                    __gmpz_clear(tmp);
                 }
 
             #endif
@@ -300,6 +302,17 @@ try_to_adopt_ctx_t = struct
 };
 
 //---------------------------------------------------------------------
+pr_type: (t: *v_type_t) ~> void
+{
+    str: &v_std_string_t := {};
+
+    v_std_string_set(&str, "");
+
+    voidc_internal_std_string_append_type(&str, t);
+
+    printf("%s\n", v_std_string_get(&str));
+}
+
 //private
 try_to_adopt_to_mpz: (aux: *void, t0: *v_type_t, v0: LLVMValueRef) ~> bool
 {
@@ -555,12 +568,13 @@ __gmp_printf: (*const char, ...) ~> int;
 }
 
 //---------------------------------------------------------------------
-{   v_debug_print_module(2);
-//    voidc_verify_jit_module_optimized(true);
-}
+//{   v_debug_print_module(2);
+////    voidc_verify_jit_module_optimized(true);
+//}
 {
 //  val: mpz_t = -0x100;
 //  val: mpz_t = -100;
+//  val: mpz_t = 1'0;
     val: mpz_t = 98765432109876543210987654321098765432109876543210987654321098765432109876543210987654321098765432109876543210;
 
     bnum: &mpz_t := val;
@@ -568,7 +582,7 @@ __gmp_printf: (*const char, ...) ~> int;
     __gmp_printf("%Zd\n", &bnum);
 
 }
-?
+
 
 //---------------------------------------------------------------------
 //{   v_debug_print_module(2);

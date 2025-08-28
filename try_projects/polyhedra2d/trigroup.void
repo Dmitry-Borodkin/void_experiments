@@ -203,8 +203,7 @@ trigroup_op_braces_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_b
                                arg_ptrs: **v_ast_expr_t, arg_count: unsigned
                               ) ~> void
 {
-    ttag = v_get_result_type();
-    vtag = v_get_result_value();
+    v_push_result();
 
     ords: &LLVMValueRef[3] := 0;
 
@@ -242,8 +241,9 @@ trigroup_op_braces_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_b
 
             v_assert(idx[0] != idx[1]);
 
+            v_reset_result();
+
             v_set_result_type(unsigned_t);
-            v_set_result_value(0);
 
             v_ast_accept_visitor(e2, vis);
 
@@ -269,7 +269,7 @@ trigroup_op_braces_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_b
 
     slst: &v_ast_stmt_list_t := {};
 
-    {   ast =
+    {   ast: v_ast_generic_list_t =         //- ???
         {'stmt'
 
           #define my_build_trigroup: (ab, bc, ca) ~> TriGroup
@@ -301,8 +301,7 @@ trigroup_op_braces_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_b
 
     v_ast_make_expr_block(&expr, &slst, &expr);
 
-    v_set_result_type(ttag);
-    v_set_result_value(vtag);
+    v_pop_result();
 
     v_ast_accept_visitor(&expr, vis);
 }

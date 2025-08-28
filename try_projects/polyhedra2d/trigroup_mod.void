@@ -804,6 +804,8 @@ build_layer: (group: &TriGroup) ~> void
     str = new char[bh+1];
     defer delete[] str;
 
+    b.as_string(str);
+
     r: &*GroupElementData := a.data;
 
     for (i: &int := 0; i < bh; ++i)
