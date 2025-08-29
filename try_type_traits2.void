@@ -1,0 +1,66 @@
+{   v_import("mainline.void");
+
+    v_import("type_traits.void");
+}
+{   v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
+
+
+//=====================================================================
+#define (_.element_type): (t: v_static_type_t) ~> v_static_type_t  =
+{
+    #if   (t.is_refptr)             tt = t.as_refptr;
+    #elif (t.is_array)              tt = t.as_array;
+    #elif (t.is_vector)             tt = t.as_vector_base;
+    #elif (t.is_incomplete_array)   tt = t.as_incomplete_array;
+    #else
+        #error ("AAAAAAAAAA")
+    #endif
+
+    tt.element_type
+};
+
+
+//---------------------------------------------------------------------
+#define (_.width): (t: v_static_type_t) ~> unsigned  =
+{
+    #if   (t.is_integer)            tt = t.as_integer;
+    #elif (t.is_floating_point)     tt = t.as_floating_point;
+    #else
+        #error ("BBBBBBBBBB")
+    #endif
+
+    tt.width
+};
+
+
+
+
+//---------------------------------------------------------------------
+et = int[8].element_type;
+
+#assert (et == int)
+
+
+e0 = (long[]).element_type;
+
+#assert (e0 == long)
+
+#note ("asd")
+
+#assert (long[1].element_type == long)
+
+
+//---------------------------------------------------------------------
+{
+    printf("int.width: %d\n", int.width);
+
+    printf("long.width: %d\n", long.width);
+
+    printf("uint(777).width: %d\n", uint(777).width);
+
+}
+
+
