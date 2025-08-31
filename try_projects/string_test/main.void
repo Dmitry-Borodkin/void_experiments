@@ -25,7 +25,7 @@ alwaysinline
 {
     v_copy(&str, &val);
 
-    v_return(str);
+    return  str;
 }
 
 
@@ -63,8 +63,8 @@ print_fibs: (n: int) ~> void
 //---------------------------------------------------------------------
 (_.appendf()): (str: &v_string_t, fmt: *const char, ...) ~> &v_string_t  =
 {
-    ap:  &va_list := v_undef();
-    apc: &va_list := v_undef();
+    ap:  &va_list := undef;
+    apc: &va_list := undef;
 
     va_start(ap);
 
@@ -143,7 +143,7 @@ main: (argc: int, argv: **const char) ~> int
     pr_string(s2);
 
 
-    v_return(0);
+    return  0;
 }
 
 

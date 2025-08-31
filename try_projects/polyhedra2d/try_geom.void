@@ -96,7 +96,7 @@ main: (argc: int, argv: **const char) ~> int
     {
         for (j: &double := -20; j <= 30; j += 0.5)
         {
-            if (!pl.contains({i, j, 1}))  v_continue();
+            if (!pl.contains({i, j, 1}))  continue;
 
             printf("(%g, %g)\n", i, j);
         }

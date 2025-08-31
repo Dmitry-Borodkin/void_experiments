@@ -89,7 +89,7 @@ struct BorderItem
 private
 mk_BorderItem: (group: TriGroup, kind: int, ceil: *GroupElementData) ~> BorderItem  =
 {
-    prev_kind: &int := v_undef();
+    prev_kind: &int := undef;
 
     if (ceil->height & 1)   prev_kind := (kind+1) % 3;          //- Odd ceil
     else                    prev_kind := (kind+(3-1)) % 3;      //- Even ceil
@@ -352,13 +352,13 @@ TriGroup._build: (order: &unsigned[3][3]) ~> TriGroup
 
     for (p: &*const char := str; *p; ++p)
     {
-        i: &int := v_undef();
+        i: &int := undef;
 
         switch((*p | 0x20 : char32_t))
         {
-        case 'a':   i := 0;   v_break();
-        case 'b':   i := 1;   v_break();
-        case 'c':   i := 2;   v_break();
+        case 'a':   i := 0;   break;
+        case 'b':   i := 1;   break;
+        case 'c':   i := 2;   break;
         }
 
         if (elt->step[i] == 0)  build_layer(group);
@@ -591,7 +591,7 @@ build_layer: (group: &TriGroup) ~> void
             s += 1;
             d += 2;
 
-            v_break();
+            break;
 
         case 1:     //- Drop the first vertex
 
@@ -616,7 +616,7 @@ build_layer: (group: &TriGroup) ~> void
             s += 1;     //- !!! Only at the beginning of the chain...
             d += 1;
 
-            v_break();
+            break;
 
         case 2:     //- Drop the second vertex
 
@@ -641,7 +641,7 @@ build_layer: (group: &TriGroup) ~> void
             s += 2;
             d += 1;
 
-            v_break();
+            break;
 
         default:    //- Drop both vertices - the last element
 
@@ -655,7 +655,7 @@ build_layer: (group: &TriGroup) ~> void
 
             bn.ceil->set_step(bn.kind, e);
 
-            v_break();
+            break;
         }
 
         //- Indices ...
@@ -676,24 +676,24 @@ build_layer: (group: &TriGroup) ~> void
                 {
                     p := p->step[0];
 
-                    v_continue();
+                    continue;
                 }
 
                 if (j & 2  &&  p->direction[1] == -1)
                 {
                     p := p->step[1];
 
-                    v_continue();
+                    continue;
                 }
 
                 if (j & 4  &&  p->direction[2] == -1)
                 {
                     p := p->step[2];
 
-                    v_continue();
+                    continue;
                 }
 
-                v_break();
+                break;
             }
 
             if (p == &e)
@@ -719,7 +719,7 @@ build_layer: (group: &TriGroup) ~> void
             e_i[4|2|1] := group.cur_index[4|2|1];
         }
 
-        if (l_height == 1)  v_continue();       //- Special case - first layer...
+        if (l_height == 1)  continue;       //- Special case - first layer...
 
         //- Operation...
 
@@ -732,13 +732,13 @@ build_layer: (group: &TriGroup) ~> void
         {
             for (j: &int := 0; j < 3; ++j)
             {
-                if (elt1->direction[j] > 0) v_continue();
+                if (elt1->direction[j] > 0) continue;
 
                 str[i] := ('A'+j : char);
 
                 elt1 := elt1->step[j];
 
-                v_break();
+                break;
             }
         }
 
@@ -785,13 +785,13 @@ build_layer: (group: &TriGroup) ~> void
     {
         for (j: &int := 0; j < 3; ++j)
         {
-            if (e->direction[j] > 0)  v_continue();
+            if (e->direction[j] > 0)  continue;
 
             str[i] := ('A'+j : char);
 
             e := e->step[j];
 
-            v_break();
+            break;
         }
     }
 }
@@ -832,12 +832,12 @@ build_layer: (group: &TriGroup) ~> void
     {
         for (j: &int := 0; j < 3; ++j)
         {
-            if (a->direction[j] > 0)  v_continue();
+            if (a->direction[j] > 0)  continue;
 
             a := a->step[j];
             r := r->step[j];
 
-            v_break();
+            break;
         }
     }
 
@@ -917,9 +917,9 @@ GroupFilter_next: (it: &GroupIterator) ~> void;
     {
         switch((*s | 0x20 : char32_t))
         {
-        case 'a':   ret.filter |= 1;  v_break();
-        case 'b':   ret.filter |= 2;  v_break();
-        case 'c':   ret.filter |= 4;  v_break();
+        case 'a':   ret.filter |= 1;  break;
+        case 'b':   ret.filter |= 2;  break;
+        case 'c':   ret.filter |= 4;  break;
         }
     }
 }
@@ -1017,9 +1017,9 @@ GroupFilter_next: (it: &GroupIterator) ~> void
 
         e = it.data;
 
-        if (it.filter & 1  &&  e.direction[0] < 0)  v_continue();
-        if (it.filter & 2  &&  e.direction[1] < 0)  v_continue();
-        if (it.filter & 4  &&  e.direction[2] < 0)  v_continue();
+        if (it.filter & 1  &&  e.direction[0] < 0)  continue;
+        if (it.filter & 2  &&  e.direction[1] < 0)  continue;
+        if (it.filter & 4  &&  e.direction[2] < 0)  continue;
 
         v_return();
     }

@@ -8,19 +8,30 @@
 printf: (*const char, ...) ~> int;
 
 
-//=====================================================================
-#define (_.element_type): (t: v_static_type_t) ~> v_static_type_t  =
+//---------------------------------------------------------------------
+#define (_.is_signed): (t: v_static_type_t) ~> bool  =
 {
-    #if   (t.is_refptr)             tt = t.as_refptr;
-    #elif (t.is_array)              tt = t.as_array;
-    #elif (t.is_vector)             tt = t.as_vector_base;
-    #elif (t.is_incomplete_array)   tt = t.as_incomplete_array;
+    #if (t.is_integer)  tt = t.as_integer;
     #else
-        #error ("AAAAAAAAAA")
+        #error ("???")
     #endif
 
-    tt.element_type
+    tt.is_signed
 };
+
+//---------------------------------------------------------------------
+#define (_.is_var_arg): (t: v_static_type_t) ~> bool  =
+{
+    #if (t.is_function) tt = t.as_function;
+    #else
+        #error ("???")
+    #endif
+
+    tt.is_var_arg
+};
+
+
+
 
 
 //---------------------------------------------------------------------
@@ -29,11 +40,93 @@ printf: (*const char, ...) ~> int;
     #if   (t.is_integer)            tt = t.as_integer;
     #elif (t.is_floating_point)     tt = t.as_floating_point;
     #else
-        #error ("BBBBBBBBBB")
+        #error ("???")
     #endif
 
     tt.width
 };
+
+//---------------------------------------------------------------------
+#define (_.param_count): (t: v_static_type_t) ~> unsigned  =
+{
+    #if (t.is_function)   tt = t.as_function;
+    #else
+        #error ("???")
+    #endif
+
+    tt.param_count
+};
+
+//---------------------------------------------------------------------
+#define (_.address_space): (t: v_static_type_t) ~> unsigned  =
+{
+    #if (t.is_refptr)   tt = t.as_refptr;
+    #else
+        #error ("???")
+    #endif
+
+    tt.address_space
+};
+
+//---------------------------------------------------------------------
+#define (_.size): (t: v_static_type_t) ~> unsigned  =
+{
+    #if (t.is_vector)   tt = t.as_vector_base;
+    #else
+        #error ("???")
+    #endif
+
+    tt.size
+};
+
+//---------------------------------------------------------------------
+#define (_.element_count): (t: v_static_type_t) ~> unsigned  =
+{
+    #if (t.is_struct)   tt = t.as_struct;
+    #else
+        #error ("???")
+    #endif
+
+    tt.element_count
+};
+
+//---------------------------------------------------------------------
+#define (_.arg_count): (t: v_static_type_t) ~> unsigned  =
+{
+    #if (t.is_generic)  tt = t.as_generic;
+    #else
+        #error ("???")
+    #endif
+
+    tt.arg_count
+};
+
+
+//---------------------------------------------------------------------
+#define (_.return_type): (t: v_static_type_t) ~> v_static_type_t  =
+{
+    #if (t.is_function) tt = t.as_function;
+    #else
+        #error ("???")
+    #endif
+
+    tt.return_type
+};
+
+//---------------------------------------------------------------------
+#define (_.element_type): (t: v_static_type_t) ~> v_static_type_t  =
+{
+    #if   (t.is_refptr)             tt = t.as_refptr;
+    #elif (t.is_array)              tt = t.as_array;
+    #elif (t.is_vector)             tt = t.as_vector_base;
+    #elif (t.is_incomplete_array)   tt = t.as_incomplete_array;
+    #else
+        #error ("???")
+    #endif
+
+    tt.element_type
+};
+
 
 
 
@@ -52,6 +145,8 @@ e0 = (long[]).element_type;
 
 #assert (long[1].element_type == long)
 
+#assert ((*void).element_type == void)
+
 
 //---------------------------------------------------------------------
 {
@@ -60,6 +155,8 @@ e0 = (long[]).element_type;
     printf("long.width: %d\n", long.width);
 
     printf("uint(777).width: %d\n", uint(777).width);
+
+    printf("float(128).width: %d\n", float(128).width);
 
 }
 

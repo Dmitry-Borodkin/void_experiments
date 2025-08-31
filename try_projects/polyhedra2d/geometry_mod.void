@@ -23,19 +23,19 @@ EPSILON = 1e-9;
 
 is_equal: (x: double, y: double) ~> bool
 {
-    if (x == y)  v_return(true);
+    if (x == y)  return true;
 
     size = fabs(x) + fabs(y);
 
-    if (size <= EPSILON)  v_return(true);
+    if (size <= EPSILON)  return true;
 
     diff = fabs(x - y);
 
-    if (diff <= EPSILON)  v_return(true);
+    if (diff <= EPSILON)  return true;
 
-    if (size > 1  &&  diff/size <= EPSILON)  v_return(true);
+    if (size > 1  &&  diff/size <= EPSILON)  return true;
 
-    v_return(false);
+    return  false;
 }
 
 det_3: (v: &double[9]) ~> double
@@ -44,9 +44,9 @@ det_3: (v: &double[9]) ~> double
     v10 = v[3]; v11 = v[4]; v12 = v[5];
     v20 = v[6]; v21 = v[7]; v22 = v[8];
 
-    v_return( v00 * (v11*v22 - v12*v21)
-            - v10 * (v01*v22 - v02*v21)
-            + v20 * (v01*v12 - v02*v11) );
+    return  v00 * (v11*v22 - v12*v21)
+          - v10 * (v01*v22 - v02*v21)
+          + v20 * (v01*v12 - v02*v11);
 }
 
 
@@ -55,13 +55,13 @@ seq_equal: (a: *const double, b: *const double, n: int) ~> bool
 {
     ret: &bool := true;
 
-    for (i: &int := 0; i < n; ++i)  if (!is_equal( a[i], b[i]))  { ret := false;  v_break(); }
+    for (i: &int := 0; i < n; ++i)  if (!is_equal( a[i], b[i]))  { ret := false;  break; }
 
-    if (ret)  v_return(true);
+    if (ret)  return true;
 
-    for (i: &int := 0; i < n; ++i)  if (!is_equal(-a[i], b[i]))  { v_return(false); }
+    for (i: &int := 0; i < n; ++i)  if (!is_equal(-a[i], b[i]))  { return false; }
 
-    v_return(true);
+    return  true;
 }
 
 
@@ -75,7 +75,7 @@ seq_equal: (a: *const double, b: *const double, n: int) ~> bool
 
 (_==_): (a: Vector, b: Vector) ~> bool
 {
-    v_return( is_equal(a.x, b.x)  &&  is_equal(a.y, b.y) );
+    return  is_equal(a.x, b.x)  &&  is_equal(a.y, b.y);
 }
 
 
@@ -96,38 +96,38 @@ seq_equal: (a: *const double, b: *const double, n: int) ~> bool
 
     for (i: &int := 0; i < 3; ++i)
     {
-        if (!is_finite(pa[i]))  v_return(false);
+        if (!is_finite(pa[i]))  return false;
 
         if (di = fabs(pa[i]), d < di)   d := di;
     }
 
-    if (d == 0)  v_return(false);
-    if (d == 1)  v_return(true);
+    if (d == 0)  return false;
+    if (d == 1)  return true;
 
     p.x /= d;
     p.y /= d;
     p.w /= d;
 
-    v_return(true);
+    return  true;
 }
 
 //---------------------------------------------------------------------
 (_.is_affine()): (p: &Point) ~> bool
 {
-    if (!p.norm())  v_return(false);
+    if (!p.norm())  return false;
 
-    v_return( fabs(p.w) > EPSILON );
+    return  fabs(p.w) > EPSILON;
 }
 
 //---------------------------------------------------------------------
 (_==_): (a: &Point, b: &Point) ~> bool
 {
-    if (!(a.norm()  &&  b.norm()))  v_return(false);
+    if (!(a.norm()  &&  b.norm()))  return false;
 
     sa: &double[] := {a.x, a.y, a.w};
     sb: &double[] := {b.x, b.y, b.w};
 
-    v_return(seq_equal(sa, sb, 3));
+    return  seq_equal(sa, sb, 3);
 }
 
 
@@ -148,38 +148,38 @@ seq_equal: (a: *const double, b: *const double, n: int) ~> bool
 
     for (i: &int := 0; i < 3; ++i)
     {
-        if (!is_finite(la[i]))  v_return(false);
+        if (!is_finite(la[i]))  return false;
 
         if (di = fabs(la[i]), d < di)   d := di;
     }
 
-    if (d == 0)  v_return(false);
-    if (d == 1)  v_return(true);
+    if (d == 0)  return false;
+    if (d == 1)  return true;
 
     l.cx /= d;
     l.cy /= d;
     l.cw /= d;
 
-    v_return(true);
+    return  true;
 }
 
 //---------------------------------------------------------------------
 (_.is_affine()): (l: &Line) ~> bool
 {
-    if (!l.norm())  v_return(false);
+    if (!l.norm())  return false;
 
-    v_return( fabs(l.cx) > EPSILON  ||  fabs(l.cy) > EPSILON );
+    return  fabs(l.cx) > EPSILON  ||  fabs(l.cy) > EPSILON;
 }
 
 //---------------------------------------------------------------------
 (_==_): (a: &Line, b: &Line) ~> bool
 {
-    if (!(a.norm()  &&  b.norm()))  v_return(false);
+    if (!(a.norm()  &&  b.norm()))  return false;
 
     sa: &double[] := {a.cx, a.cy, a.cw};
     sb: &double[] := {b.cx, b.cy, b.cw};
 
-    v_return(seq_equal(sa, sb, 3));
+    return  seq_equal(sa, sb, 3);
 }
 
 
@@ -189,7 +189,7 @@ seq_equal: (a: *const double, b: *const double, n: int) ~> bool
     l.norm();
     p.norm();
 
-    v_return( fabs(l.cx*p.x + l.cy*p.y + l.cw*p.w) < EPSILON );
+    return  fabs(l.cx*p.x + l.cy*p.y + l.cw*p.w) < EPSILON;
 }
 
 
@@ -212,48 +212,48 @@ seq_equal: (a: *const double, b: *const double, n: int) ~> bool
 
     for (i: &int := 0; i < 9; ++i)
     {
-        if (!is_finite(t[i]))  v_return(false);
+        if (!is_finite(t[i]))  return false;
 
         if (di = fabs(t[i]), d < di)  d := di;
     }
 
-    if (d == 0)  v_return(false);
-    if (d == 1)  v_return(true);
+    if (d == 0)  return false;
+    if (d == 1)  return true;
 
     for (i: &int := 0; i < 9; ++i)
     {
         t[i] /= d;
     }
 
-    v_return(true);
+    return  true;
 }
 
 //---------------------------------------------------------------------
 (_.is_regular()): (t: &Transform) ~> bool
 {
-    if (!t.norm())  v_return(false);
+    if (!t.norm())  return false;
 
-    v_return( fabs(t.det()) > EPSILON );
+    return  fabs(t.det()) > EPSILON;
 }
 
 //---------------------------------------------------------------------
 (_.is_affine()): (t: &Transform) ~> bool
 {
-    if (!t.norm())  v_return(false);
+    if (!t.norm())  return false;
 
     t = t[0];
 
-    v_return( fabs(t[6]) <= EPSILON  &&
-              fabs(t[7]) <= EPSILON  &&
-              fabs(t[8]) >  EPSILON );
+    return  fabs(t[6]) <= EPSILON  &&
+            fabs(t[7]) <= EPSILON  &&
+            fabs(t[8]) >  EPSILON;
 }
 
 //---------------------------------------------------------------------
 (_==_): (a: &Transform, b: &Transform) ~> bool
 {
-    if (!(a.norm()  &&  b.norm()))  v_return(false);
+    if (!(a.norm()  &&  b.norm()))  return false;
 
-    v_return(seq_equal(a[0], b[0], 9));
+    return  seq_equal(a[0], b[0], 9);
 }
 
 //---------------------------------------------------------------------
@@ -265,7 +265,7 @@ seq_equal: (a: *const double, b: *const double, n: int) ~> bool
     y = t[3]*v.x + t[4]*v.y + t[5];
     w = t[6]*v.x + t[7]*v.y + t[8];
 
-    v_return({ x/w, y/w });
+    return  { x/w, y/w };
 }
 
 (_.transform_by()): (p: Point, t: Transform) ~> Point
@@ -276,7 +276,7 @@ seq_equal: (a: *const double, b: *const double, n: int) ~> bool
     y = t[3]*p.x + t[4]*p.y + t[5]*p.w;
     w = t[6]*p.x + t[7]*p.y + t[8]*p.w;
 
-    v_return({ x, y, w });
+    return  { x, y, w };
 }
 
 (_.transform_by()): (l: Line, t: Transform) ~> Line
@@ -295,7 +295,7 @@ seq_equal: (a: *const double, b: *const double, n: int) ~> bool
                  t[1], t[4], l.cy,
                  t[2], t[5], l.cw });
 
-    v_return({ cx, cy, cw });
+    return  { cx, cy, cw };
 }
 
 //---------------------------------------------------------------------
@@ -315,9 +315,9 @@ seq_equal: (a: *const double, b: *const double, n: int) ~> bool
     wy = t[7];
     ww = t[8];
 
-    v_return({{ xx, xy, xw,
-                yx, yy, yw,
-                wx, wy, ww }});
+    return  {{ xx, xy, xw,
+               yx, yy, yw,
+               wx, wy, ww }};
 }
 
 //---------------------------------------------------------------------
@@ -338,9 +338,9 @@ seq_equal: (a: *const double, b: *const double, n: int) ~> bool
     wy = a[6]*b[1] + a[7]*b[4] + a[8]*b[7];
     ww = a[6]*b[2] + a[7]*b[5] + a[8]*b[8];
 
-    v_return({{ xx, xy, xw,
-                yx, yy, yw,
-                wx, wy, ww }});
+    return  {{ xx, xy, xw,
+               yx, yy, yw,
+               wx, wy, ww }};
 }
 
 (_*__): (k: double, t: Transform) ~> Transform
@@ -359,9 +359,9 @@ seq_equal: (a: *const double, b: *const double, n: int) ~> bool
     wy =   t[7];
     ww =   t[8];
 
-    v_return({{ xx, xy, xw,
-                yx, yy, yw,
-                wx, wy, ww }});
+    return  {{ xx, xy, xw,
+               yx, yy, yw,
+               wx, wy, ww }};
 }
 
 //---------------------------------------------------------------------
@@ -390,13 +390,13 @@ seq_equal: (a: *const double, b: *const double, n: int) ~> bool
         for (i: &int := 0; i < 9; ++i)  r[i] := -r[i];
     }
 
-    v_return(r);
+    return  r;
 }
 
 //---------------------------------------------------------------------
 (_/_): (a: Transform, b: Transform) ~> Transform
 {
-    v_return(a * (~b));
+    return  a * (~b);
 }
 
 //---------------------------------------------------------------------
@@ -411,7 +411,7 @@ seq_equal: (a: *const double, b: *const double, n: int) ~> bool
                        sa,  ca,  0,
                         0,   0,  1  }};
 
-    v_return(r * t);
+    return  r * t;
 }
 
 //---------------------------------------------------------------------
@@ -435,9 +435,9 @@ map4_util: (o1: &Point, o2: &Point, o3: &Point, o4: &Point) ~> Transform
                  o1.y, o2.y, o4.y,
                  o1.w, o2.w, o4.w });
 
-    v_return( {{ o1.x*a1, o2.x*a2, o3.x*a3,
-                 o1.y*a1, o2.y*a2, o3.y*a3,
-                 o1.w*a1, o2.w*a2, o3.w*a3 }} );
+    return  {{ o1.x*a1, o2.x*a2, o3.x*a3,
+               o1.y*a1, o2.y*a2, o3.y*a3,
+               o1.w*a1, o2.w*a2, o3.w*a3 }};
 }
 
 //---------------------------------------------------------------------
@@ -448,7 +448,7 @@ Transform.map4: (i1: &Point, i2: &Point, i3: &Point, i4: &Point,
     t1 = map4_util(i1, i2, i3, i4);
     t2 = map4_util(o1, o2, o3, o4);
 
-    v_return(t2 / t1);
+    return  t2 / t1;
 }
 
 Transform.map3: (i1: &Point, i2: &Point, i3: &Point,
@@ -458,7 +458,7 @@ Transform.map3: (i1: &Point, i2: &Point, i3: &Point,
     i4 = i3 + (i2 - i1);
     o4 = o3 + (o2 - o1);
 
-    v_return( Transform.map4(i1, i2, i3, i4,  o1, o2, o3, o4) );
+    return  Transform.map4(i1, i2, i3, i4,  o1, o2, o3, o4);
 }
 
 Transform.map2: (i1: &Point, i2: &Point,
@@ -473,7 +473,7 @@ Transform.map2: (i1: &Point, i2: &Point,
 
     o3 = o1 + v;
 
-    v_return( Transform.map3(i1, i2, i3,  o1, o2, o3) );
+    return  Transform.map3(i1, i2, i3,  o1, o2, o3);
 }
 
 Transform.map2_mirror: (i1: &Point, i2: &Point,
@@ -488,7 +488,7 @@ Transform.map2_mirror: (i1: &Point, i2: &Point,
 
     o3 = o1 + v;
 
-    v_return( Transform.map3(i1, i2, i3,  o1, o2, o3) );
+    return  Transform.map3(i1, i2, i3,  o1, o2, o3);
 }
 
 

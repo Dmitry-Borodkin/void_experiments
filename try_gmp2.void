@@ -152,7 +152,7 @@ inlinehint
 //}
 //
 ////---------------------------------------------------------------------
-//literal_integer_ctx: &literal_integer_ctx_t := v_undef();
+//literal_integer_ctx: &literal_integer_ctx_t := undef;
 //
 //{   q = v_quark_from_string("v.literal.integer");
 //
@@ -186,7 +186,7 @@ inlinehint
 //
 //        ctx.fun(ctx.aux, vis, self);
 //
-//        v_return();
+//        return;
 //    }
 //
 //    vtag = v_get_result_value();
@@ -219,7 +219,7 @@ inlinehint
 //}
 //
 ////---------------------------------------------------------------------
-//expr_integer_ctx: &expr_integer_ctx_t := v_undef();
+//expr_integer_ctx: &expr_integer_ctx_t := undef;
 //
 //{   q = v_quark_from_string("expr_integer");
 //
@@ -232,11 +232,10 @@ inlinehint
 
 
 //---------------------------------------------------------------------
-#define gmpz_adopt_to_mpz: (n) ~> mpz_t  =
+#define gmpz_adopt_to_mpz: (_n) ~> mpz_t  =
 block
 {
-    brk = v_get_break_value();
-
+    n = _n;
     t = v_typeof(n);
 
     #if (t.is_reference)
@@ -247,13 +246,13 @@ block
 
     #endif
 
+    brk = v_get_break_value();
+
     #if (t.is_floating_point)
 
         __gmpz_set_d(&brk, n);
 
-    #else
-
-        #assert (t.is_integer)
+    #elif (t.is_integer)
 
         t = t.as_integer;
 
@@ -289,6 +288,10 @@ block
             #endif
 
         #endif
+
+    #else
+
+        #error ("!!!")
 
     #endif
 };
@@ -327,21 +330,21 @@ try_to_adopt_to_mpz: (aux: *void, t0: *v_type_t, v0: LLVMValueRef) ~> bool
     {
         t1 = v_get_result_type();
 
-        if (t1 == INVIOLABLE_TAG)  v_break();
-        if (t1 == UNREFERENCE_TAG) v_break();
+        if (t1 == INVIOLABLE_TAG)  break;
+        if (t1 == UNREFERENCE_TAG) break;
 
         check: &bool := true;
 
         block
         {
-            if (t1 == mpz_type) v_break();
+            if (t1 == mpz_type) break;
 
-            if (v_type_is_reference(t1)  &&  v_type_refptr_get_element_type(t1) == mpz_type)  v_break();
+            if (v_type_is_reference(t1)  &&  v_type_refptr_get_element_type(t1) == mpz_type)  break;
 
             check := false;
         }
 
-        if (!check)  v_break();
+        if (!check)  break;
 
         block
         {
@@ -349,14 +352,14 @@ try_to_adopt_to_mpz: (aux: *void, t0: *v_type_t, v0: LLVMValueRef) ~> bool
 
             if (v_type_is_reference(t0))  tt := v_type_refptr_get_element_type(t0);
 
-            if (v_type_is_floating_point(tt)  &&  v_type_floating_point_get_width(tt) <= 64)  v_break();
+            if (v_type_is_floating_point(tt)  &&  v_type_floating_point_get_width(tt) <= 64)  break;
 
-            if (v_type_is_integer(tt))  v_break();
+            if (v_type_is_integer(tt))  break;
 
             check := false;
         }
 
-        if (!check)  v_break();
+        if (!check)  break;
 
         //- Got it...
 
@@ -373,16 +376,16 @@ try_to_adopt_to_mpz: (aux: *void, t0: *v_type_t, v0: LLVMValueRef) ~> bool
 
         v_ast_accept_visitor(&expr, v_get_compiler());
 
-        v_return(true);
+        return  true;
     }
 
     //- Default treatment...
 
-    v_return(ctx.fun(ctx.aux, t0, v0));
+    return  ctx.fun(ctx.aux, t0, v0);
 }
 
 //---------------------------------------------------------------------
-try_to_adopt_ctx: &try_to_adopt_ctx_t := v_undef();
+try_to_adopt_ctx: &try_to_adopt_ctx_t := undef;
 
 {   try_to_adopt_ctx.fun := v_get_try_to_adopt_hook(&try_to_adopt_ctx.aux);
 

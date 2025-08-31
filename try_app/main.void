@@ -124,19 +124,19 @@ key_pressed: (widget: *GtkWidget, event: *GdkEventKey, aux: *void) ~> int
 {
     keyval = event->keyval;
 
-    v_return(my_key_pressed(keyval, widget));
+    return  my_key_pressed(keyval, widget);
 }
 
 //---------------------------------------------------------------------
 button_pressed: (widget: *GtkWidget, event: *GdkEventButton, aux: *void) ~> int
 {
-    if (event->type != GDK_BUTTON_PRESS)    v_return(0);
-    if (event->button != 1)                 v_return(0);
+    if (event->type != GDK_BUTTON_PRESS)    return 0;
+    if (event->button != 1)                 return 0;
 
     x = event->x;
     y = event->y;
 
-    v_return(my_button_pressed(x, y, widget));
+    return  my_button_pressed(x, y, widget);
 }
 
 //---------------------------------------------------------------------
@@ -237,7 +237,7 @@ cairo_set_font_matrix: (*cairo_t, *const cairo_matrix_t) ~> void;
 
 
 //---------------------------------------------------------------------
-font_face: &*cairo_font_face_t := v_undef();
+font_face: &*cairo_font_face_t := undef;
 
 block
 {
@@ -287,7 +287,7 @@ block
     {
         perror(filename);
 
-        v_return();
+        return;
     }
 
     bufsize = 1024;
@@ -356,8 +356,8 @@ defer
 font_size: &double := 13;
 
 font_width:  &int := 0;
-font_height: &int := v_undef();
-font_ascent: &int := v_undef();
+font_height: &int := undef;
+font_ascent: &int := undef;
 
 //---------------------------------------------------------------------
 position_x: &int := 0;
@@ -463,7 +463,7 @@ my_draw_cairo_text: (cr: *cairo_t, width: int, height: int) ~> void
 
         pos += font_height;
 
-        if (pos-font_ascent > height) v_break();
+        if (pos-font_ascent > height) break;
     }
 
     c_x = 2 + caret_x*font_width;
@@ -498,43 +498,43 @@ my_key_pressed: (keyval: unsigned, widget: *GtkWidget) ~> int
         caret_y := 0;
         caret_p := 0;
 
-        v_break();
+        break;
 
     case GDK_KEY_Up:
 
         caret_y -= 1;
 
-        v_break();
+        break;
 
     case GDK_KEY_Down:
 
         caret_y += 1;
 
-        v_break();
+        break;
 
     case GDK_KEY_Page_Up:
 
         caret_p -= 1;
 
-        v_break();
+        break;
 
     case GDK_KEY_Page_Down:
 
         caret_p += 1;
 
-        v_break();
+        break;
 
     case GDK_KEY_Left:
 
         caret_x -= 1;
 
-        v_break();
+        break;
 
     case GDK_KEY_Right:
 
         caret_x += 1;
 
-        v_break();
+        break;
 
     case GDK_KEY_End:
 
@@ -544,7 +544,7 @@ my_key_pressed: (keyval: unsigned, widget: *GtkWidget) ~> int
         caret_y := (text_size : int);
         caret_p := 0;
 
-        v_break();
+        break;
 
     default:
 
@@ -552,12 +552,12 @@ my_key_pressed: (keyval: unsigned, widget: *GtkWidget) ~> int
 
         printf("%s\n", gdk_keyval_name(keyval));
 
-        v_return(0);    //- GDK_EVENT_PROPAGATE
+        return  0;      //- GDK_EVENT_PROPAGATE
     }
 
     gtk_widget_queue_draw(widget);
 
-    v_return(0);    //- GDK_EVENT_PROPAGATE
+    return  0;      //- GDK_EVENT_PROPAGATE
 }
 
 //---------------------------------------------------------------------
@@ -568,7 +568,7 @@ my_button_pressed: (x: double, y: double, widget: *GtkWidget) ~> int
 
     gtk_widget_queue_draw(widget);
 
-    v_return(0);    //- GDK_EVENT_PROPAGATE
+    return  0;      //- GDK_EVENT_PROPAGATE
 }
 
 
