@@ -366,7 +366,7 @@ TriGroup._build: (order: &unsigned[3][3]) ~> TriGroup
         elt := elt->step[i];
     }
 
-    v_return({&group, elt});
+    return  {&group, elt};
 }
 
 //---------------------------------------------------------------------
@@ -374,23 +374,23 @@ TriGroup._build: (order: &unsigned[3][3]) ~> TriGroup
 {
     dv = group.double_vector(v);
 
-    if (dv.is_finite())   v_return(Point.zero + dv);
+    if (dv.is_finite())   return  Point.zero + dv;
 
     //- Case dv - infinite
 
-    v_return(Line.infinity & (Point.zero & (Point.zero + v)));
+    return  Line.infinity & (Point.zero & (Point.zero + v));
 }
 
 //---------------------------------------------------------------------
 (_.trans_half()): (group: TriGroup, p: Point) ~> Vector
 {
-    if (p.is_affine())  v_return(group.half_vector(p - Point.zero));
+    if (p.is_affine())  return  group.half_vector(p - Point.zero);
 
     //- p ... on infinity line ...
 
     v: Vector = {p.x, p.y};
 
-    v_return(v / sqrt(group.sigma*v.dot(v)));
+    return  v / sqrt(group.sigma*v.dot(v));
 }
 
 //---------------------------------------------------------------------
@@ -402,35 +402,35 @@ TriGroup._build: (order: &unsigned[3][3]) ~> TriGroup
     b = group.shift_vector(s, group.v_b);
     c = group.shift_vector(s, group.v_c);
 
-    v_return(Transform.map4(group.p_a,
-                            group.p_b,
-                            group.p_c,
-                            Point.zero,
+    return  Transform.map4(group.p_a,
+                           group.p_b,
+                           group.p_c,
+                           Point.zero,
 
-                            group.trans_double(a),
-                            group.trans_double(b),
-                            group.trans_double(c),
-                            p
-                           ));
+                           group.trans_double(a),
+                           group.trans_double(b),
+                           group.trans_double(c),
+                           p
+                          );
 }
 
 //---------------------------------------------------------------------
 (_.trans_shift_inv()): (group: TriGroup, p: Point) ~> Transform
 {
-    if (!p.is_affine())   v_return(group.trans_shift(p));
+    if (!p.is_affine())   return group.trans_shift(p);
 
-    v_return(group.trans_shift(Point.zero - (p - Point.zero)));
+    return  group.trans_shift(Point.zero - (p - Point.zero));
 }
 
 //---------------------------------------------------------------------
 (_.shift_vector()): (group: TriGroup, s: Vector, v: Vector) ~> Vector
 {
-    if (group.sigma == 0)   v_return(s+v);
+    if (group.sigma == 0)   return s+v;
 
     //- Check for zero - simple cases
 
-    if (v == Vector.zero)   v_return(s);
-    if (s == Vector.zero)   v_return(v);
+    if (v == Vector.zero)   return s;
+    if (s == Vector.zero)   return v;
 
     //- Check for infinite vectors
 
@@ -440,17 +440,17 @@ TriGroup._build: (order: &unsigned[3][3]) ~> TriGroup
         {
             //- "Infinity" shifted by "infinity" yields "zero"
 
-            v_return(Vector.zero);
+            return  Vector.zero;
         }
 
-        v_return(-s / (group.sigma*s.dot(s)));
+        return  -s / (group.sigma*s.dot(s));
     }
 
     if (!s.is_finite())     //- The "infinity" shift of finite vector
     {
         e = Vector.unit_x;
 
-        v_return((v - 2*e.dot(v)*e) / (group.sigma*v.dot(v)));
+        return  (v - 2*e.dot(v)*e) / (group.sigma*v.dot(v));
     }
 
     //- The general case
@@ -460,50 +460,50 @@ TriGroup._build: (order: &unsigned[3][3]) ~> TriGroup
 
     if (w/group.sigma == Vector.zero)
     {
-        v_return(Vector.infinity);
+        return  Vector.infinity;
     }
 
     u = w/w.dot(w);
 
-    v_return(s + (1 + group.sigma*s.dot(s))*u);
+    return  s + (1 + group.sigma*s.dot(s))*u;
 }
 
 //---------------------------------------------------------------------
 (_.half_vector()): (group: TriGroup, v: Vector) ~> Vector
 {
-    if (group.sigma == 0)   v_return(v/2);
+    if (group.sigma == 0)   return v/2;
 
     //- Check for zero - simple cases
 
-    if (v == Vector.zero)   v_return(Vector.zero);
+    if (v == Vector.zero)   return Vector.zero;
 
     //- Check for infinite vector
 
     if (!v.is_finite())     //- The "infinity" argument
     {
-        v_return(Vector.unit_x * sqrt(group.sigma));    //- Only "spheric" case
+        return  Vector.unit_x * sqrt(group.sigma);      //- Only "spheric" case
     }
 
-    v_return(v / (1 + sqrt(1 + group.sigma*v.dot(v))));
+    return  v / (1 + sqrt(1 + group.sigma*v.dot(v)));
 }
 
 //---------------------------------------------------------------------
 (_.double_vector()): (group: TriGroup, v: Vector) ~> Vector
 {
-    if (group.sigma == 0)   v_return(2*v);
+    if (group.sigma == 0)   return 2*v;
 
     //- Check for zero - simple cases
 
-    if (v == Vector.zero)   v_return(Vector.zero);
+    if (v == Vector.zero)   return Vector.zero;
 
     //- Check for infinite vector
 
     if (!v.is_finite()  &&  group.sigma > 0)    //- The "infinity" argument
     {
-        v_return(Vector.zero);      //- The "spheric" case only
+        return  Vector.zero;        //- The "spheric" case only
     }
 
-    v_return(v * 2 / (1 - group.sigma*v.dot(v)));
+    return  v * 2 / (1 - group.sigma*v.dot(v));
 }
 
 
@@ -513,7 +513,7 @@ build_layer: (group: &TriGroup) ~> void
 {
     b_len = group.border->size;
 
-    if (b_len == 0) v_return();
+    if (b_len == 0) return;
 
     l_height = group.border(0).ceil->height + 1;
 
@@ -936,7 +936,7 @@ private alwaysinline
 private
 GroupIterator_next_layer: (it: &GroupIterator) ~> void
 {
-    if (!it.ok)   v_return();
+    if (!it.ok)   return;
 
     it.index := 0;
 
@@ -948,7 +948,7 @@ GroupIterator_next_layer: (it: &GroupIterator) ~> void
         {
             layer := 0;
 
-            v_return();
+            return;
         }
 
         build_layer(*it.group);
@@ -961,7 +961,7 @@ GroupIterator_next_layer: (it: &GroupIterator) ~> void
 private
 GroupIterator_next: (it: &GroupIterator) ~> void
 {
-    if (!it.ok)   v_return();
+    if (!it.ok)   return;
 
     it.index += 1;
 
@@ -974,11 +974,11 @@ GroupIterator_next: (it: &GroupIterator) ~> void
 private
 EvenGroupIterator_next: (it: &GroupIterator) ~> void
 {
-    if (!it.ok)   v_return();
+    if (!it.ok)   return;
 
     GroupIterator_next(it);
 
-    if (!it.ok)   v_return();
+    if (!it.ok)   return;
 
     if (it.data.height & 1)   GroupIterator_next_layer(it);
 }
@@ -987,7 +987,7 @@ EvenGroupIterator_next: (it: &GroupIterator) ~> void
 private
 GroupFilter_next: (it: &GroupIterator) ~> void
 {
-    if (!it.ok)   v_return();
+    if (!it.ok)   return;
 
     it = (it : &GroupFilter);               //- Sic !!!
 
@@ -997,14 +997,14 @@ GroupFilter_next: (it: &GroupIterator) ~> void
     {
         GroupIterator_next(it);
 
-        v_return();
+        return;
     }
 
     if (it.filter == (4|2|1))   //- Even elements
     {
         EvenGroupIterator_next(it);
 
-        v_return();
+        return;
     }
 
     //- General case
@@ -1013,7 +1013,7 @@ GroupFilter_next: (it: &GroupIterator) ~> void
     {
         GroupIterator_next(it);
 
-        if (!it.ok)   v_return();
+        if (!it.ok)   return;
 
         e = it.data;
 
@@ -1021,7 +1021,7 @@ GroupFilter_next: (it: &GroupIterator) ~> void
         if (it.filter & 2  &&  e.direction[1] < 0)  continue;
         if (it.filter & 4  &&  e.direction[2] < 0)  continue;
 
-        v_return();
+        return;
     }
 }
 

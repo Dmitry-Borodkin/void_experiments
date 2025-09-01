@@ -75,7 +75,7 @@ main: (argc: int, argv: **const char) ~> int
     {
         e = *it;
 
-        if (e.data->height > MAXHEIGHT)   v_break();
+        if (e.data->height > MAXHEIGHT)   break;
 
         e.as_string(s);
 
@@ -110,7 +110,7 @@ main: (argc: int, argv: **const char) ~> int
 
 
 //---------------------------------------------------------------------
-{   if (!v_find_constant("TEST", 0, 0)) v_return();
+{   if (!v_find_constant("TEST", 0, 0)) return;
 
     gctx = v_target_get_global_ctx();
     vctx = v_target_get_voidc_global_ctx();
@@ -129,7 +129,7 @@ main: (argc: int, argv: **const char) ~> int
 
 
 //=====================================================================
-{   if (!v_find_constant("TEST", 0, 0)) v_return();
+{   if (!v_find_constant("TEST", 0, 0)) return;
 
     printf: (*const char, ...) ~> int;
 
@@ -137,7 +137,7 @@ main: (argc: int, argv: **const char) ~> int
 
     system: (*const char) ~> int;
 
-    if (system("make try_geom") != 0)  v_return();
+    if (system("make try_geom") != 0)  return;
 
     printf("\n");
 
