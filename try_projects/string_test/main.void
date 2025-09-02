@@ -3,7 +3,7 @@
 //---------------------------------------------------------------------
 {
     v_import("cstdio.void");
-    v_import("cstdarg.void");
+//  v_import("cstdarg.void");
 
     v_import("string.void");
 }
@@ -19,26 +19,26 @@ pr_string: (s: v_string_t) ~> void
 }
 
 
-//---------------------------------------------------------------------
-alwaysinline
-(_:=_): (str: &v_string_t, val: v_string_t) ~> &v_string_t
-{
-    v_copy(&str, &val);
-
-    return  str;
-}
-
-
-//---------------------------------------------------------------------
-alwaysinline
-(_+_): (a: v_string_t, b: v_string_t) ~> v_string_t
-{
-    ret = v_get_return_value();
-
-    ret := a;
-
-    ret.append_data(b.data, b.size);
-}
+////---------------------------------------------------------------------
+//alwaysinline
+//(_:=_): (str: &v_string_t, val: v_string_t) ~> &v_string_t
+//{
+//    v_copy(&str, &val);
+//
+//    return  str;
+//}
+//
+//
+////---------------------------------------------------------------------
+//alwaysinline
+//(_+_): (a: v_string_t, b: v_string_t) ~> v_string_t
+//{
+//    ret = v_get_return_value();
+//
+//    ret := a;
+//
+//    ret.append_data(b.data, b.size);
+//}
 
 
 //---------------------------------------------------------------------
@@ -60,28 +60,28 @@ print_fibs: (n: int) ~> void
 }
 
 
-//---------------------------------------------------------------------
-(_.appendf()): (str: &v_string_t, fmt: *const char, ...) ~> &v_string_t  =
-{
-    ap:  &va_list := undef;
-    apc: &va_list := undef;
-
-    va_start(ap);
-
-    va_copy(apc, ap);
-    len = vsnprintf(0, 0, fmt, ap);
-    va_end(ap);
-
-    bsz = len + 1;
-
-    buf = v_malloc(char, bsz);
-    defer v_free(buf);
-
-    vsnprintf(buf, bsz, fmt, apc);
-    va_end(apc);
-
-    str.append_data(buf, len)
-};
+////---------------------------------------------------------------------
+//(_.appendf()): (str: &v_string_t, fmt: *const char, ...) ~> &v_string_t  =
+//{
+//    ap:  &va_list := undef;
+//    apc: &va_list := undef;
+//
+//    va_start(ap);
+//
+//    va_copy(apc, ap);
+//    len = vsnprintf(0, 0, fmt, ap);
+//    va_end(ap);
+//
+//    bsz = len + 1;
+//
+//    buf = v_malloc(char, bsz);
+//    defer v_free(buf);
+//
+//    vsnprintf(buf, bsz, fmt, apc);
+//    va_end(apc);
+//
+//    str.append_data(buf, len)
+//};
 
 
 
