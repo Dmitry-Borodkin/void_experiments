@@ -1,0 +1,70 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
+
+
+//---------------------------------------------------------------------
+qwe_ns: v_static_namespace_t = struct qwe;
+
+
+namespace qwe_ns
+{
+    a = 777;
+    b = 888;
+}
+
+{
+    printf("qwe_ns.a = %d, qwe_ns.b = %d\n", qwe_ns.a, qwe_ns.b);
+
+    printf("qwe.a = %d, qwe.b = %d\n", qwe.a, qwe.b);
+
+}
+
+
+namespace qwe
+{
+    c = 999;
+}
+
+{
+    printf("qwe.c = %d\n", qwe.c);
+
+}
+
+
+//---------------------------------------------------------------------
+namespace G {
+
+struct V
+{
+    x: int;
+    y: int;
+};
+
+namespace V
+{
+    unit_x: V = {1, 0};
+    unit_y: V = {0, 1};
+}
+
+(_+_): (a: V, b: V) ~> V  =  {a.x+b.x, a.y+b.y};
+
+}
+
+
+using namespace G;
+
+{ v_debug_print_module(1); }
+{
+    u = V.unit_x + V.unit_y;
+
+    printf("(%d, %d)\n", u.x, u.y);
+}
+
+
+
+
+
+

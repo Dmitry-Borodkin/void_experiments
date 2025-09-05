@@ -137,9 +137,10 @@ print_trace: () ~> void
 
         for (i: &int := 1; item; item := item->nxt, ++i)
         {
-            tag = v_quark_to_string(v_ast_base_get_tag(item->ast));
+            qtag = v_ast_base_get_tag(item->ast);
+            stag = v_quark_to_string(qtag);
 
-            printf("  #%d: %s", i, tag);
+            printf("  #%d: %s", i, stag);
 
             pps = v_std_any_get_pointer(size_t, v_ast_get_property(item->ast, pos_start_q));
             ppe = v_std_any_get_pointer(size_t, v_ast_get_property(item->ast, pos_end_q));
@@ -159,6 +160,19 @@ print_trace: () ~> void
                 line := v_peg_get_line_column(*ppe, &column);
 
                 printf(" - %zd:%zd", line, column);
+            }
+
+            block
+            {
+                if (qtag != v_quark_from_string("expr_call")) break;
+
+                f = v_ast_expr_call_get_fun_expr((item->ast: *v_ast_expr_t));
+
+                if (v_ast_base_get_tag(f) != v_quark_from_string("expr_identifier")) break;
+
+                s = v_ast_expr_identifier_get_name(f);
+
+                printf(", %s", s);
             }
 
             printf("\n");
@@ -231,6 +245,13 @@ ctx_v: &my_trace_visitor_ctx_t := v_undef();
 {
     v_import("try_projects/polyhedra2d/geometry.void");
 }
+
+
+{   using namespace Geometry;
+
+    Point.unit_x - Point.unit_y;
+}
+
 
 {
     my_stdout << "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n";

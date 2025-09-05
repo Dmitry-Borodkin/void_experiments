@@ -491,7 +491,6 @@ Transform.map2_mirror: (i1: &Point, i2: &Point,
     return  Transform.map3(i1, i2, i3,  o1, o2, o3);
 }
 
-
 //---------------------------------------------------------------------
 }   //- namespace Geometry
 

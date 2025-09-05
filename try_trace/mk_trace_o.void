@@ -26,9 +26,9 @@ get_line_column: (p: *v_ast_base_t, q: v_quark_t, c: &size_t) ~> size_t
 {
     pp = v_std_any_get_pointer(size_t, v_ast_get_property(p, q));
 
-    if (!pp)  v_return(0);
+    if (!pp)  return 0;
 
-    v_return(v_peg_get_line_column(*pp, &c));
+    return  v_peg_get_line_column(*pp, &c);
 }
 
 //---------------------------------------------------------------------
@@ -89,7 +89,7 @@ my_std_string_get: (s: *const v_std_string_t) ~> *const char
 
     printf("[%s]\n", ret);
 
-    v_return(ret);
+    return  ret;
 }
 
 

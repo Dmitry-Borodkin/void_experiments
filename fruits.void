@@ -8,11 +8,11 @@
 //=====================================================================
 check: (a: long, b: long, c: long) ~> bool
 {
-    ab = a + b;     if (ab == 0)  v_return(false);
-    ac = a + c;     if (ac == 0)  v_return(false);
-    bc = b + c;     if (bc == 0)  v_return(false);
+    ab = a + b;     if (ab == 0)  return false;
+    ac = a + c;     if (ac == 0)  return false;
+    bc = b + c;     if (bc == 0)  return false;
 
-    v_return(a*ab*ac + b*ab*bc + c*ac*bc == 4*ab*ac*bc);
+    return  a*ab*ac + b*ab*bc + c*ac*bc == 4*ab*ac*bc;
 }
 
 //---------------------------------------------------------------------

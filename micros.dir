@@ -1,6 +1,11 @@
                          ****  ?  ****                         │*
                                                                │
                                                                │
+try_hz20.void       #define check_fruits ...                   │try_hz20.void
+try_hz19.void                                                  │try_hz19.void
+                                                               │
+try_ast_interpolation.void                                     │try_ast_interpolation.void
+                                                               │
 try_type_traits2.void                                          │try_type_traits2.void
                                                                │
                                                                │

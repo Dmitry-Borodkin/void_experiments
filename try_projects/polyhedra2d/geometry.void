@@ -95,10 +95,13 @@ alwaysinline
 (_!=_): (a: Vector, b: Vector) ~> bool  =  !(a == b);
 
 //---------------------------------------------------------------------
-Vector.zero:     Vector = {0, 0};
-Vector.unit_x:   Vector = {1, 0};
-Vector.unit_y:   Vector = {0, 1};
-Vector.infinity: Vector = {infinity, infinity};
+namespace Vector
+{
+    zero:     Vector = {0, 0};
+    unit_x:   Vector = {1, 0};
+    unit_y:   Vector = {0, 1};
+    infinity: Vector = {infinity, infinity};
+}
 
 //---------------------------------------------------------------------
 alwaysinline
@@ -134,6 +137,8 @@ alwaysinline
 
 #if (t == Point  ||  t == &Point)
 
+    a[2];
+
     ret: Vector = {a.x/a.w - b.x/b.w, a.y/a.w - b.y/b.w};
 
 #endif
@@ -158,11 +163,14 @@ alwaysinline
 (_!=_): (a: &Point, b: &Point) ~> bool  =  !(a == b);
 
 //---------------------------------------------------------------------
-Point.zero:   Point = {0, 0, 1};
-Point.unit_x: Point = {1, 0, 1};
-Point.unit_y: Point = {0, 1, 1};
-Point.inf_x:  Point = {1, 0, 0};
-Point.inf_y:  Point = {0, 1, 0};
+namespace Point
+{
+    zero:   Point = {0, 0, 1};
+    unit_x: Point = {1, 0, 1};
+    unit_y: Point = {0, 1, 1};
+    inf_x:  Point = {1, 0, 0};
+    inf_y:  Point = {0, 1, 0};
+}
 
 
 //=====================================================================
@@ -271,27 +279,29 @@ alwaysinline
 (_.rotated()): (t: Transform, d: double) ~> Transform;
 
 //---------------------------------------------------------------------
-Transform.map4: (i1: &Point, i2: &Point, i3: &Point, i4: &Point,
-                 o1: &Point, o2: &Point, o3: &Point, o4: &Point
-                ) ~> Transform;
+namespace Transform
+{
+    map4: (i1: &Point, i2: &Point, i3: &Point, i4: &Point,
+           o1: &Point, o2: &Point, o3: &Point, o4: &Point
+          ) ~> Transform;
 
-Transform.map3: (i1: &Point, i2: &Point, i3: &Point,
-                 o1: &Point, o2: &Point, o3: &Point
-                ) ~> Transform;
+    map3: (i1: &Point, i2: &Point, i3: &Point,
+           o1: &Point, o2: &Point, o3: &Point
+          ) ~> Transform;
 
-Transform.map2: (i1: &Point, i2: &Point,
-                 o1: &Point, o2: &Point
-                ) ~> Transform;
+    map2: (i1: &Point, i2: &Point,
+           o1: &Point, o2: &Point
+          ) ~> Transform;
 
-Transform.map2_mirror: (i1: &Point, i2: &Point,
-                        o1: &Point, o2: &Point
-                       ) ~> Transform;
+    map2_mirror: (i1: &Point, i2: &Point,
+                  o1: &Point, o2: &Point
+                 ) ~> Transform;
 
-//---------------------------------------------------------------------
-Transform.identity: Transform = {{ 1, 0, 0,  0, 1, 0,  0, 0, 1 }};
-Transform.flip_x:   Transform = {{-1, 0, 0,  0, 1, 0,  0, 0, 1 }};
-Transform.flip_y:   Transform = {{ 1, 0, 0,  0,-1, 0,  0, 0, 1 }};
-
+    //------------------------------------------------------
+    identity: Transform = {{ 1, 0, 0,  0, 1, 0,  0, 0, 1 }};
+    flip_x:   Transform = {{-1, 0, 0,  0, 1, 0,  0, 0, 1 }};
+    flip_y:   Transform = {{ 1, 0, 0,  0,-1, 0,  0, 0, 1 }};
+}
 
 //---------------------------------------------------------------------
 }   //- namespace Geometry

@@ -1,0 +1,121 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
+
+
+{ v_debug_print_module(1); }
+//---------------------------------------------------------------------
+//private
+my_expr_identifier_ctx_t = struct
+{
+    fun: *((*void, *voidc_visitor_t, *v_ast_base_t) ~> void);
+    aux: *void;
+
+    map: *v_util_map_t;
+};
+
+//private
+my_compile_expr_identifier: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+//printf("my_compile_expr_identifier start\n");
+//defer printf("my_compile_expr_identifier stop\n");
+
+    bind = *(aux: *my_expr_identifier_ctx_t);
+
+    qname = v_ast_expr_identifier_get_name_q((self: *v_ast_expr_t));
+
+    if (a = v_map_find(bind.map, (qname: intptr_t)))
+    {
+        expr = v_std_any_get_pointer(v_ast_expr_t, a);
+
+        v_ast_accept_visitor(expr, vis);
+
+        return;
+    }
+
+    bind.fun(bind.aux, vis, self);
+}
+
+
+//---------------------------------------------------------------------
+(_.interpolate()): (vis: *voidc_visitor_t, map: *v_util_map_t, body: *v_ast_base_t) ~> void
+{
+//printf("(_.interpolate()): start\n");
+//defer printf("(_.interpolate()): stop\n");
+
+    vis_old: &voidc_visitor_t := {};
+
+    v_copy(&vis_old, vis);
+    defer v_copy(vis, &vis_old);
+
+    bind: &my_expr_identifier_ctx_t := undef;
+
+    q = v_quark_from_string("expr_identifier");
+
+    bind.fun := voidc_visitor_get_method(vis, q, &bind.aux);
+
+    voidc_visitor_set_method(vis, vis, q, my_compile_expr_identifier, &bind);
+
+    bind.map := map;
+
+    v_ast_accept_visitor(body, vis);
+}
+
+
+//---------------------------------------------------------------------
+some_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+//printf("some_intrinsic: start\n");
+//defer printf("some_intrinsic: stop\n");
+
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    arg0 = v_list_get_item(args, 0);
+    arg1 = v_list_get_item(args, 1);
+
+    map: &v_util_map_t := {};
+
+    v_make_map(&map);
+
+    any: &v_std_any_t := {};
+
+    #define (_.put()): (m: &v_util_map_t, n, a)
+    {'stmt_list'
+
+        v_std_any_set_pointer(&any, a);
+
+        v_map_insert(&m, &m, (v_quark_from_string(n): intptr_t), &any);
+
+    'stmt_list'}
+
+    map.put("s", arg0);
+    map.put("n", arg1);
+
+    body: v_ast_base_t = {'expr'  printf("s: %s, n: %d\n", s, n)  'expr'};
+
+    vis.interpolate(&map, &body);
+}
+
+{   v_add_intrinsic("some", some_intrinsic, 0);
+}
+
+
+//---------------------------------------------------------------------
+//{ v_debug_print_module(1); }
+{
+    some("aaa", 777);
+    some("bbb", 888);
+    some("ccc", 999);
+
+}
+
+
+
+
+
+
+
+
+

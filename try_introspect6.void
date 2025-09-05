@@ -187,6 +187,9 @@ constant_type_fun: (*void, q: v_quark_t, t: *const v_type_t) ~> void
 //=====================================================================
 QWERTY: void;
 
+{
+    v_import("try_projects/polyhedra2d/geometry.void");
+}
 
 ////=====================================================================
 //w: struct { int; long; } = { 7, 8 };
