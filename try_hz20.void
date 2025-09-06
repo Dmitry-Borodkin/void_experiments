@@ -13,15 +13,15 @@ C =   43736126779286972578612526023713901528165375581616136186214379933784234677
 {
     num_t = uint(800);
 
-    #define check: (a: num_t, b: num_t, c: num_t)  =
+    #define check_fruits: (a: num_t, b: num_t, c: num_t)  =
     {
         ab = a + b;     ac = a + c;     bc = b + c;
 
         a*ab*ac + b*ab*bc + c*ac*bc == 4*ab*ac*bc
     };
 
-    #if (check(A, B, C))  printf("\nOK\n");
-    #else                 printf("\nFail\n");
+    #if (check_fruits(A, B, C)) printf("\nOK\n");
+    #else                       printf("\nFail\n");
     #endif
 }
 

@@ -137,8 +137,6 @@ alwaysinline
 
 #if (t == Point  ||  t == &Point)
 
-    a[2];
-
     ret: Vector = {a.x/a.w - b.x/b.w, a.y/a.w - b.y/b.w};
 
 #endif
@@ -204,9 +202,12 @@ alwaysinline
 (_!=_): (a: &Line, b: &Line) ~> bool  =  !(a == b);
 
 //---------------------------------------------------------------------
-Line.infinity: Line = {0, 0, 1};
-Line.abscissa: Line = {0, 1, 0};
-Line.ordinate: Line = {1, 0, 0};
+namespace Line
+{
+    infinity: Line = {0, 0, 1};
+    abscissa: Line = {0, 1, 0};
+    ordinate: Line = {1, 0, 0};
+}
 
 
 //=====================================================================
