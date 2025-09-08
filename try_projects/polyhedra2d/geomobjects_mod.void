@@ -4,6 +4,8 @@
 {
     v_import("geometry.void");
     v_import("geomobjects.void");
+
+    v_import("cstring.void");
 }
 
 
@@ -98,13 +100,9 @@ namespace Geometry
 //=====================================================================
 //- Projective polygon (2D)
 //=====================================================================
-.memset: (s: *void, c: int, n: size_t) ~> *void;
-.memcpy: (d: *void, s: *const void, n: size_t) ~> *void;
-
-//---------------------------------------------------------------------
 (v_initialize(_)): (p: *Polygon, N: size_t) ~> void
 {
-    .memset(p, 0, N*Polygon.sizeof);
+    memset(p, 0, N*Polygon.sizeof);
 }
 
 (v_terminate(_)):  (p: *Polygon, N: size_t) ~> void
@@ -129,7 +127,7 @@ namespace Geometry
 
         dv = new Point[sn];
 
-        .memcpy(dv, sv, sn*Point.sizeof);
+        memcpy(dv, sv, sn*Point.sizeof);
 
         dn := sn;
     }
@@ -151,7 +149,7 @@ namespace Geometry
         dn := sn;
     }
 
-    .memset(s, 0, N*Polygon.sizeof);
+    memset(s, 0, N*Polygon.sizeof);
 }
 
 //---------------------------------------------------------------------

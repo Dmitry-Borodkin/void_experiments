@@ -3,6 +3,7 @@
 //---------------------------------------------------------------------
 {
     v_import("cstdio.void");
+    v_import("cstring.void");
 
     v_import("../cairo.void");          //- ?
 }
@@ -10,10 +11,6 @@
 
 //---------------------------------------------------------------------
 double = float(64);
-
-
-//---------------------------------------------------------------------
-WINDOZE = v_defined(_WIN32);
 
 
 //---------------------------------------------------------------------
@@ -271,13 +268,6 @@ text_size: &size_t := 0;
 
 block
 {
-    fopen: (filename: *const char, mode: *const char) ~> *FILE;
-    fclose: (stream: *FILE) ~> int;
-
-    perror: (s: *const char) ~> void;
-
-    fgets: (s: *char, n: int, stream: *FILE) ~> *char;
-
     filename = "main.void";
 
     f = fopen(filename, "r");
@@ -300,8 +290,6 @@ block
 
     while (fgets(buf, bufsize, f))
     {
-        strchr: (*char, int) ~> *char;
-
         len: &size_t := bufsize;
 
         if (p = strchr(buf, '\n'))
@@ -314,8 +302,6 @@ block
         item = new list_item_t;
 
         item->data := new char[len];
-
-        memcpy: (*void, *const void, size_t) ~> *void;
 
         memcpy(item->data, buf, len);
 
