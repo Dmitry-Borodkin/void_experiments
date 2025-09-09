@@ -129,7 +129,7 @@ block
 
         n = v_load(&n);
 
-        t = t.as_reference.element_type;
+        t = t.element_type;
 
     #endif
 
@@ -141,11 +141,9 @@ block
 
     #elif (t.is_integer)
 
-        t = t.as_integer;
-
         w = t.width;
 
-        #if (w <= long.as_integer.width)
+        #if (w <= long.width)
 
             #if (t.is_signed) __gmpz_set_si(&brk, n);
             #else             __gmpz_set_ui(&brk, n);
@@ -411,16 +409,19 @@ alwaysinline
 alwaysinline
 (_:=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  { v_copy(&v, &x); v };
 
-alwaysinline (_+=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  v := v + x;
-alwaysinline (_-=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  v := v - x;
-alwaysinline (_*=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  v := v * x;
-alwaysinline (_/=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  v := v / x;
-alwaysinline (_%=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  v := v % x;
-alwaysinline (_&=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  v := v & x;
-alwaysinline (_|=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  v := v | x;
-alwaysinline (_^=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  v := v ^ x;
-alwaysinline (_<<=_): (v: &mpz_t, u: ulong) ~> &mpz_t  =  v := v << u;
-alwaysinline (_>>=_): (v: &mpz_t, u: ulong) ~> &mpz_t  =  v := v >> u;
+#define
+gmpz_assign_helper: (f, v, x)  =  { f(&v, &v, x); v };
+
+alwaysinline (_+=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_add, v, &x);
+alwaysinline (_-=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_sub, v, &x);
+alwaysinline (_*=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_mul, v, &x);
+alwaysinline (_/=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_tdiv_q, v, &x);
+alwaysinline (_%=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_tdiv_r, v, &x);
+alwaysinline (_&=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_and, v, &x);
+alwaysinline (_|=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_ior, v, &x);
+alwaysinline (_^=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_xor, v, &x);
+alwaysinline (_<<=_): (v: &mpz_t, u: ulong) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_mul_2exp, v, u);
+alwaysinline (_>>=_): (v: &mpz_t, u: ulong) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_fdiv_q_2exp, v, u);
 
 
 //=====================================================================

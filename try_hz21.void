@@ -1,0 +1,49 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
+
+//---------------------------------------------------------------------
+{
+    dt = v_f64_type();
+
+    ft = v_function_type(dt, &dt, 1, false);
+
+    v_add_symbol("llvm.sqrt.f64", ft, 0);
+
+    v_add_alias("sqrt", "llvm.sqrt.f64");
+}
+
+
+//---------------------------------------------------------------------
+{ voidc_verify_jit_module_optimized(true); }
+{ v_debug_print_module(2); }
+{
+    sq2 = sqrt(2);
+
+    printf("sqrt(2) = %g\n", sq2);
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

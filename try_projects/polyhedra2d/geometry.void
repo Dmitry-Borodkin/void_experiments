@@ -20,11 +20,11 @@ fabs: (double) ~> double;
 
   #if (t.is_reference)
 
-    t = t.as_refptr.element_type;
+    t = t.element_type;
 
   #endif
 
-  #if (t.is_array  &&  t.as_array.element_type == char  ||  t == *char)
+  #if (t.is_array  &&  t.element_type == char  ||  t == *char)
 
     fprintf(f, "%s", v);
 
