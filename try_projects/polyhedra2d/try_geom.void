@@ -7,6 +7,9 @@
     v_import("trigroup.void");
 }
 
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
 
 //{ v_debug_print_module(999); }
 //---------------------------------------------------------------------

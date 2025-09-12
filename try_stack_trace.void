@@ -1,6 +1,6 @@
 {   v_import("mainline.void");
 
-    v_import("llvm-c/Core.void");
+//  v_import("llvm-c/Core.void");
 }
 {   v_enable_mainline(); }
 
@@ -8,8 +8,27 @@
 printf: (*const char, ...) ~> int;
 
 //---------------------------------------------------------------------
-#if (v_defined(NDEBUG))   #error ("Need debug mode...")   #endif
+{   #if (v_defined(NDEBUG)  ||  v_defined(_WIN32))
 
+        #if (v_defined(NDEBUG)) #warning ("Need debug mode...") #endif
+        #if (v_defined(_WIN32)) #warning ("Not implemented...") #endif
+
+        gr0 = v_peg_get_grammar();
+
+        v_assert(gr0);
+
+        grammar gr0
+        {
+        parsers:
+
+            unit = { mk_EOF() };            //- !
+        }
+
+    #endif
+
+    //-----------------------------------------------------------------
+    voidc_clear_unit_buffer();
+}
 
 //---------------------------------------------------------------------
 {   q_ref = v_reference_type(v_quark_t, 0);
@@ -18,6 +37,9 @@ printf: (*const char, ...) ~> int;
 
     v_add_symbol("pos_start_q", q_ref, q("pos_start"));
     v_add_symbol("pos_end_q",   q_ref, q("pos_end"));
+
+    v_add_symbol("expr_call_q",       q_ref, q("expr_call"));
+    v_add_symbol("expr_identifier_q", q_ref, q("expr_identifier"));
 }
 
 
@@ -162,15 +184,20 @@ print_trace: () ~> void
                 printf(" - %zd:%zd", line, column);
             }
 
-            block
+            if (qtag == expr_call_q)
             {
-                if (qtag != v_quark_from_string("expr_call")) break;
-
                 f = v_ast_expr_call_get_fun_expr((item->ast: *v_ast_expr_t));
 
-                if (v_ast_base_get_tag(f) != v_quark_from_string("expr_identifier")) break;
+                if (v_ast_base_get_tag(f) == expr_identifier_q)
+                {
+                    s = v_ast_expr_identifier_get_name(f);
 
-                s = v_ast_expr_identifier_get_name(f);
+                    printf(", %s", s);
+                }
+            }
+            else if (qtag == expr_identifier_q)
+            {
+                s = v_ast_expr_identifier_get_name((item->ast: *v_ast_expr_t));
 
                 printf(", %s", s);
             }

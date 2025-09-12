@@ -1,0 +1,19 @@
+{   v_import("mainline.void");
+
+    v_import("stack_trace.void");
+}
+{   v_enable_mainline();
+
+    voidc_enable_stack_trace();
+}
+
+//---------------------------------------------------------------------
+{
+    a;
+
+}
+
+
+
+
+

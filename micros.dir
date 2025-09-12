@@ -45,6 +45,7 @@ try_app/                                                       │try_app/micros
 try_type_traits.void                                           │try_type_traits.void
                                                                │
 try_stack_trace.void                                           │try_stack_trace.void
+    ...                                                        │try_stack_trace_test.void
                                                                │
 try_macros.void                                                │try_macros.void
                                                                │

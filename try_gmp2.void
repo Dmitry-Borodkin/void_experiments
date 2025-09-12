@@ -39,7 +39,7 @@
 
 
 //=====================================================================
-ulong = uint(long.as_integer.width);
+ulong = uint(long.width);
 
 double = float(64);
 
@@ -160,8 +160,6 @@ block
                     tmp = v_alloca(mpz_t);
 
                     __gmpz_init_set_ui(tmp, 1);
-
-                    __gmpz_set_ui(tmp, 1);
 
                     __gmpz_mul_2exp(tmp, tmp, w);
 
@@ -292,56 +290,56 @@ gmpz_unary_helper: (f, a)  =  f(&v_get_return_value(), a);
 alwaysinline
 (_+_): (a: mpz_t, b: mpz_t) ~> mpz_t  { gmpz_binary_helper(__gmpz_add, &a, &b); }
 
-alwaysinline
+#define
 (_+__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a + b;
 
 //---------------------------------------------------------------------
 alwaysinline
 (_-_): (a: mpz_t, b: mpz_t) ~> mpz_t  { gmpz_binary_helper(__gmpz_sub, &a, &b); }
 
-alwaysinline
+#define
 (_-__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a - b;
 
 //---------------------------------------------------------------------
 alwaysinline
 (_*_): (a: mpz_t, b: mpz_t) ~> mpz_t  { gmpz_binary_helper(__gmpz_mul, &a, &b); }
 
-alwaysinline
+#define
 (_*__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a * b;
 
 //---------------------------------------------------------------------
 alwaysinline
 (_/_): (a: mpz_t, b: mpz_t) ~> mpz_t  { gmpz_binary_helper(__gmpz_tdiv_q, &a, &b); }
 
-alwaysinline
+#define
 (_/__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a / b;
 
 //---------------------------------------------------------------------
 alwaysinline
 (_%_): (a: mpz_t, b: mpz_t) ~> mpz_t  { gmpz_binary_helper(__gmpz_tdiv_r, &a, &b); }
 
-alwaysinline
+#define
 (_%__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a % b;
 
 //---------------------------------------------------------------------
 alwaysinline
 (_&_): (a: mpz_t, b: mpz_t) ~> mpz_t  { gmpz_binary_helper(__gmpz_and, &a, &b); }
 
-alwaysinline
+#define
 (_&__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a & b;
 
 //---------------------------------------------------------------------
 alwaysinline
 (_|_): (a: mpz_t, b: mpz_t) ~> mpz_t  { gmpz_binary_helper(__gmpz_ior, &a, &b); }
 
-alwaysinline
+#define
 (_|__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a | b;
 
 //---------------------------------------------------------------------
 alwaysinline
 (_^_): (a: mpz_t, b: mpz_t) ~> mpz_t  { gmpz_binary_helper(__gmpz_xor, &a, &b); }
 
-alwaysinline
+#define
 (_^__): (a: mpz_t, b: mpz_t) ~> mpz_t  =  a ^ b;
 
 //---------------------------------------------------------------------
@@ -361,67 +359,67 @@ alwaysinline
 (-_): (a: mpz_t) ~> mpz_t  { gmpz_unary_helper(__gmpz_neg, &a); }
 
 //---------------------------------------------------------------------
-alwaysinline
+#define
 (_==_): (a: mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) == 0;
 
-alwaysinline
+#define
 (_==__): (a: mpz_t, b: mpz_t) ~> bool  =  a == b;
 
 //---------------------------------------------------------------------
-alwaysinline
+#define
 (_!=_): (a: mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) != 0;
 
-alwaysinline
+#define
 (_!=__): (a: mpz_t, b: mpz_t) ~> bool  =  a != b;
 
 //---------------------------------------------------------------------
-alwaysinline
+#define
 (_<_): (a: mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) < 0;
 
-alwaysinline
+#define
 (_<__): (a: mpz_t, b: mpz_t) ~> bool  =  a < b;
 
 //---------------------------------------------------------------------
-alwaysinline
+#define
 (_<=_): (a: mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) <= 0;
 
-alwaysinline
+#define
 (_<=__): (a: mpz_t, b: mpz_t) ~> bool  =  a <= b;
 
 //---------------------------------------------------------------------
-alwaysinline
+#define
 (_>_): (a: mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) > 0;
 
-alwaysinline
+#define
 (_>__): (a: mpz_t, b: mpz_t) ~> bool  =  a > b;
 
 //---------------------------------------------------------------------
-alwaysinline
+#define
 (_>=_): (a: mpz_t, b: mpz_t) ~> bool  =  __gmpz_cmp(&a, &b) >= 0;
 
-alwaysinline
+#define
 (_>=__): (a: mpz_t, b: mpz_t) ~> bool  =  a >= b;
 
 
 //---------------------------------------------------------------------
 //- ...
 //---------------------------------------------------------------------
-alwaysinline
+#define
 (_:=_): (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  { v_copy(&v, &x); v };
 
 #define
 gmpz_assign_helper: (f, v, x)  =  { f(&v, &v, x); v };
 
-alwaysinline (_+=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_add, v, &x);
-alwaysinline (_-=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_sub, v, &x);
-alwaysinline (_*=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_mul, v, &x);
-alwaysinline (_/=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_tdiv_q, v, &x);
-alwaysinline (_%=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_tdiv_r, v, &x);
-alwaysinline (_&=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_and, v, &x);
-alwaysinline (_|=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_ior, v, &x);
-alwaysinline (_^=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_xor, v, &x);
-alwaysinline (_<<=_): (v: &mpz_t, u: ulong) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_mul_2exp, v, u);
-alwaysinline (_>>=_): (v: &mpz_t, u: ulong) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_fdiv_q_2exp, v, u);
+#define (_+=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_add, v, &x);
+#define (_-=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_sub, v, &x);
+#define (_*=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_mul, v, &x);
+#define (_/=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_tdiv_q, v, &x);
+#define (_%=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_tdiv_r, v, &x);
+#define (_&=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_and, v, &x);
+#define (_|=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_ior, v, &x);
+#define (_^=_):  (v: &mpz_t, x: mpz_t) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_xor, v, &x);
+#define (_<<=_): (v: &mpz_t, u: ulong) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_mul_2exp, v, u);
+#define (_>>=_): (v: &mpz_t, u: ulong) ~> &mpz_t  =  gmpz_assign_helper(__gmpz_fdiv_q_2exp, v, u);
 
 
 //=====================================================================
@@ -555,8 +553,64 @@ A = 1544768021087461664419513150199198374856643256695654317000266348982532020352
 B =  36875131794129999827197811565225474825492979968971970996283137471637224634055579;
 C =   4373612677928697257861252602371390152816537558161613618621437993378423467772036;
 
-{   if (check_fruits(A, B, C))  printf("\nOK\n");
-    else                        printf("\nFail\n");
+{   printf("\nFruits: ");
+
+    if (check_fruits(A, B, C))  printf("OK\n");
+    else                        printf("Fail\n");
 }
+
+
+//---------------------------------------------------------------------
+struct pi_iter
+{
+    mpz_t[6];
+};
+
+inlinehint (v_initialize(_)): (it: *pi_iter, N: size_t) ~> void  =  derive;
+inlinehint (v_terminate(_)):  (it: *pi_iter, N: size_t) ~> void  =  derive;
+
+#define (_:=_): (a: &pi_iter, b: pi_iter)  =  { v_copy(a[0], b[0], 6); a };
+
+#define
+(_.next): (it: &pi_iter) ~> int  =
+{
+    i = it[0];
+
+    q = i[0]; r = i[1]; t = i[2]; k = i[3]; m = i[4]; x = i[5];
+
+    while (4*q+r-t >= m*t)
+    {
+        it := {{ q*k, (2*q+r)*x, t*x, k+1, (q*(7*k+2)+r*x)/(t*x), x+2 }};
+    }
+
+    __gmpz_get_si: (*const mpz_t) ~> long;          //- TODO
+                                                    //-
+    ret = (__gmpz_get_si(&m): int);                 //- Should be  (m: int) ...
+
+    it := {{ 10*q, 10*(r-m*t), t, k, (10*(3*q+r))/t-10*m, x }};
+
+    ret
+};
+
+
+//---------------------------------------------------------------------
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(2); }
+{
+    printf("\n");
+
+    it: &pi_iter := {{ 1, 0, 1, 1, 3, 3 }};
+
+    for (n: &int := 0; n < 100; ++n)
+    {
+        for (i: &int := 0; i < 100; ++i)
+        {
+            printf("%d", it.next);
+        }
+
+        printf("\n");
+    }
+}
+
 
 
