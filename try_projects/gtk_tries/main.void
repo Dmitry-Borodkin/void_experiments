@@ -1,0 +1,261 @@
+{   v_import("libvoidc.void");
+
+    v_import("llvm-c/Core.void");
+}
+{ voidc_make_module("main_module"); }
+//---------------------------------------------------------------------
+{
+    v_import("cstdio.void");
+    v_import("cstring.void");
+
+//  v_import("string.void");
+}
+
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//{ v_debug_print_module(9); }
+
+
+//---------------------------------------------------------------------
+double = float(64);
+
+
+//---------------------------------------------------------------------
+//- ... <gtk-3.0/gtk/gtk.h>
+//- ... <gtk-3.0/gdk/gdk.h>
+//- ... <gtk-3.0/gdk/gdkkeysyms.h>
+//- ... <gtk-3.0/gdk/gdkevents.h>
+//- ... <gtk-3.0/gdk/gdktypes.h>
+//---------------------------------------------------------------------
+struct GtkApplication;
+struct GtkWidget;
+
+struct GtkContainer;
+
+struct GtkTreeModel;
+struct GtkTreeStore;
+
+struct GtkTreeIter { int; *void; *void; *void; };
+
+struct GtkTreeViewColumn;
+
+struct GtkCellRenderer;
+
+
+//---------------------------------------------------------------------
+gtk_application_new: (id: *const char, flags: int) ~> *GtkApplication;
+
+g_signal_connect_data: (instance: *void,
+                        signal: *const char,
+                        callback: *(()~>void),
+                        data: *void,
+                        notify: *void,
+                        flags: int
+                       ) ~> long;
+
+#define my_signal_connect: (i, s, c, d=0)  =  g_signal_connect_data(i, s, (c: *(()~>void)), d, 0, 0);
+
+g_application_run: (app: *GtkApplication, argc: int, argv: **char) ~> int;
+
+
+gtk_application_window_new: (app: *GtkApplication) ~> *GtkWidget;
+
+
+gtk_window_set_default_size: (wnd: *GtkWidget, width: int, height: int) ~> void;
+
+gtk_container_add: (container: *GtkContainer, widget: *GtkWidget) ~> void;
+
+gtk_widget_show_all: (wnd: *GtkWidget) ~> void;
+
+gtk_widget_add_events: (*GtkWidget, int) ~> void;
+
+
+gtk_tree_view_new: () ~> *GtkWidget;
+gtk_tree_view_new_with_model: (*GtkTreeModel) ~> *GtkWidget;
+
+
+gtk_tree_store_new: (n: int, ...) ~> *GtkTreeStore;
+
+gtk_tree_store_append: (*GtkTreeStore, *GtkTreeIter, *GtkTreeIter) ~> void;
+gtk_tree_store_set:    (*GtkTreeStore, *GtkTreeIter, ...) ~> void;
+
+gtk_tree_view_column_new: () ~> *GtkTreeViewColumn;
+
+gtk_tree_view_column_new_with_attributes: (*const char, *GtkCellRenderer, ...) ~> *GtkTreeViewColumn;
+
+gtk_tree_view_append_column: (*GtkWidget, *GtkTreeViewColumn) ~> int;
+
+gtk_cell_renderer_text_new: () ~> *GtkCellRenderer;
+
+
+
+
+//---------------------------------------------------------------------
+GDK_BUTTON_PRESS_MASK = 1 << 8;
+GDK_KEY_PRESS_MASK    = 1 << 10;
+
+
+//---------------------------------------------------------------------
+g_type_fundamental: (size_t) ~> size_t;
+
+
+
+//---------------------------------------------------------------------
+{
+    Q = v_quark_from_string("ЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫ");
+
+    qarray_t  = v_array_type(v_pointer_type(v_int_type(8), 0), Q);
+    qarray_t_ = v_type_get_llvm_type(qarray_t);
+
+    module = v_get_module();
+
+    qarray_g = LLVMAddGlobal(module, qarray_t_, "quarks_array");
+
+    qarray_v: &LLVMValueRef := LLVMGetUndef(qarray_t_);
+
+    llvm_ctx = v_target_get_llvm_ctx();
+
+    builder = v_target_get_builder();
+
+    for (q: &v_quark_t := 1; q < Q; ++q)
+    {
+        str = v_quark_to_string(q);
+        len = v_quark_to_string_size(q);
+
+        val = LLVMConstStringInContext(llvm_ctx, str, (len: unsigned), 0);
+
+        val_g = LLVMAddGlobal(module, LLVMTypeOf(val), "");
+
+        LLVMSetLinkage(val_g, LLVMPrivateLinkage);
+
+        LLVMSetInitializer(val_g, val);
+
+        qarray_v := LLVMBuildInsertValue(builder, qarray_v, val_g, q, "");
+    }
+
+    LLVMSetInitializer(qarray_g, qarray_v);
+
+    v_add_constant("quarks_array_size", v_uint_type(32), LLVMConstInt(v_type_get_llvm_type(v_uint_type(32)), Q, 0));
+}
+
+
+//---------------------------------------------------------------------
+mk_tree_store: () ~> *GtkTreeStore
+{
+    ret = gtk_tree_store_new(1, g_type_fundamental(16 << 2));       //- G_TYPE_STRING ...
+
+    iter0: &GtkTreeIter := undef;
+    iter1: &GtkTreeIter := undef;
+
+    gtk_tree_store_append(ret, &iter0, 0);
+
+    gtk_tree_store_set(ret, &iter0, 0, "Превед", -1);
+
+    gtk_tree_store_append(ret, &iter1, &iter0);
+
+    gtk_tree_store_set(ret, &iter1, 0, "Кагдила?", -1);
+
+    gtk_tree_store_append(ret, &iter1, &iter0);
+
+    gtk_tree_store_set(ret, &iter1, 0, "Qwerty", -1);
+
+
+    gtk_tree_store_append(ret, &iter0, 0);
+
+    gtk_tree_store_set(ret, &iter0, 0, "Медвед", -1);
+
+    gtk_tree_store_append(ret, &iter1, &iter0);
+
+    gtk_tree_store_set(ret, &iter1, 0, "Asdfgh", -1);
+
+    gtk_tree_store_append(ret, &iter1, &iter0);
+
+    gtk_tree_store_set(ret, &iter1, 0, "Zxcvbn", -1);
+
+
+    gtk_tree_store_append(ret, &iter0, 0);
+
+    gtk_tree_store_set(ret, &iter0, 0, "Quarks", -1);
+
+
+printf("Q: %d\n", quarks_array_size);
+
+//  Q = quarks_array_size;
+    Q = 830;
+
+    quarks_array: &(*const char)[Q];
+
+    for (q: &unsigned := 1; q < Q; ++q)
+    {
+        gtk_tree_store_append(ret, &iter1, &iter0);
+
+        gtk_tree_store_set(ret, &iter1, 0, quarks_array[q], -1);
+    }
+
+
+    return  ret;
+}
+
+
+
+
+//---------------------------------------------------------------------
+on_activate: (app: *GtkApplication, data: *void) ~> void
+{
+    window = gtk_application_window_new(app);
+
+    gtk_window_set_default_size(window, 800, 600);
+
+//  gtk_widget_add_events(window, GDK_KEY_PRESS_MASK|GDK_BUTTON_PRESS_MASK);
+
+
+    tree_store = mk_tree_store();
+
+
+    tree_view = gtk_tree_view_new_with_model((tree_store: *GtkTreeModel));
+
+    renderer = gtk_cell_renderer_text_new();
+
+    column = gtk_tree_view_column_new_with_attributes("Ы-ы-ы", renderer, "text", 0,  0);
+
+    gtk_tree_view_append_column(tree_view, column);
+
+
+    gtk_container_add((window: *GtkContainer), tree_view);
+
+
+    gtk_widget_show_all(window);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------
+//- As is...
+//---------------------------------------------------------------------
+main: (argc: int, argv: **const char) ~> int
+{
+    setbuf(stdout, 0);
+
+    app = gtk_application_new(0, 0);
+
+    my_signal_connect(app, "activate", on_activate);
+
+    g_application_run(app, 1, &("***" : *char));
+}
+
+
+//---------------------------------------------------------------------
+{ voidc_emit_module("main.o"); }
+//---------------------------------------------------------------------

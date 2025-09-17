@@ -277,7 +277,7 @@ block
     {
         perror(filename);
 
-        return;
+        break;
     }
 
     bufsize = 1024;
