@@ -8,7 +8,7 @@
     v_import("cstdio.void");
     v_import("cstring.void");
 
-//  v_import("string.void");
+    v_import("string.void");
 }
 
 { v_import("stack_trace.void"); }
@@ -43,6 +43,13 @@ struct GtkTreeViewColumn;
 
 struct GtkCellRenderer;
 
+struct GtkAdjustment;
+
+struct GtkCssProvider;
+
+struct GtkStyleContext;
+struct GtkStyleProvider;
+
 
 //---------------------------------------------------------------------
 gtk_application_new: (id: *const char, flags: int) ~> *GtkApplication;
@@ -64,6 +71,8 @@ gtk_application_window_new: (app: *GtkApplication) ~> *GtkWidget;
 
 
 gtk_window_set_default_size: (wnd: *GtkWidget, width: int, height: int) ~> void;
+
+gtk_scrolled_window_new: (h: *GtkAdjustment, v: *GtkAdjustment) ~> *GtkWidget;
 
 gtk_container_add: (container: *GtkContainer, widget: *GtkWidget) ~> void;
 
@@ -89,6 +98,19 @@ gtk_tree_view_append_column: (*GtkWidget, *GtkTreeViewColumn) ~> int;
 
 gtk_cell_renderer_text_new: () ~> *GtkCellRenderer;
 
+gtk_tree_view_set_enable_tree_lines: (*GtkWidget, int) ~> void;
+gtk_tree_view_set_headers_visible: (*GtkWidget, int) ~> void;
+
+
+gtk_css_provider_new: () ~> *GtkCssProvider;
+
+gtk_css_provider_load_from_data: (*GtkCssProvider, *const char, intptr_t, *void) ~> int;
+
+gtk_widget_get_style_context: (*GtkWidget) ~> *GtkStyleContext;
+
+gtk_style_context_add_provider: (*GtkStyleContext, *GtkStyleProvider, unsigned) ~> void;
+
+GTK_STYLE_PROVIDER_PRIORITY_USER = 800;
 
 
 
@@ -180,18 +202,19 @@ mk_tree_store: () ~> *GtkTreeStore
     gtk_tree_store_set(ret, &iter0, 0, "Quarks", -1);
 
 
-printf("Q: %d\n", quarks_array_size);
-
-//  Q = quarks_array_size;
-    Q = 830;
+    Q = quarks_array_size;
 
     quarks_array: &(*const char)[Q];
 
-    for (q: &unsigned := 1; q < Q; ++q)
+    for (q: &unsigned := 0; q < Q; ++q)
     {
+        s: &v_string_t := "";
+
+        s.appendf("%4u - %s", q, quarks_array[q]);
+
         gtk_tree_store_append(ret, &iter1, &iter0);
 
-        gtk_tree_store_set(ret, &iter1, 0, quarks_array[q], -1);
+        gtk_tree_store_set(ret, &iter1, 0, s.data, -1);
     }
 
 
@@ -223,7 +246,26 @@ on_activate: (app: *GtkApplication, data: *void) ~> void
     gtk_tree_view_append_column(tree_view, column);
 
 
-    gtk_container_add((window: *GtkContainer), tree_view);
+    gtk_tree_view_set_enable_tree_lines(tree_view, true);
+    gtk_tree_view_set_headers_visible(tree_view, false);
+
+
+    cssProvider = gtk_css_provider_new();
+
+    data = "treeview {font-family: monospace;}";
+
+    gtk_css_provider_load_from_data(cssProvider, data, -1, 0);
+
+    gtk_style_context_add_provider(gtk_widget_get_style_context(tree_view),
+                                   (cssProvider: *GtkStyleProvider),
+                                   GTK_STYLE_PROVIDER_PRIORITY_USER);
+
+
+    scrolled_window = gtk_scrolled_window_new(0, 0);
+
+    gtk_container_add((scrolled_window: *GtkContainer), tree_view);
+
+    gtk_container_add((window: *GtkContainer), scrolled_window);
 
 
     gtk_widget_show_all(window);
