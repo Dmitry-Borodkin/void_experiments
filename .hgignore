@@ -25,6 +25,8 @@ try_projects/polyhedra2d/try_geom
 
 try_projects/string_test/try_string
 
+try_projects/gtk_tries/gtk_tries
+
 try_projects/ninja/build/**
 
 
