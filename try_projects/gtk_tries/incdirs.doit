@@ -3,7 +3,6 @@
 $HOME_BIN/incdirs.clang $@
 
 cat >>micros.incdirs <<HEREDOC
-/usr/include/gtk-3.0
 ../../voidc
 ../../voidc/compiler/import
 ../../voidc/library/import
