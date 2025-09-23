@@ -38,6 +38,7 @@ Bootstrap thoughts...                                          │bootstrap_thou
 try_host.void                                                  │try_host.void
                                                                │
 try_gir.void                                                   │try_gir.void
+try_gir2.void                                                  │try_gir2.void
                                                                │
 try_projects/                                                  │try_projects/micros.dir
                                                                │
