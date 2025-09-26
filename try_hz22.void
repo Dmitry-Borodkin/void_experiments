@@ -48,3 +48,74 @@ hzhzhz: void;
 }
 
 
+//---------------------------------------------------------------------
+my_type2string: (t: *v_type_t) ~> v_std_string_t
+{
+    ret = v_get_return_value();
+
+    v_std_string_set(&ret, "");     //- ?
+
+    voidc_internal_std_string_append_type(&ret, t);
+}
+
+my_type2string_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    call = (self: *v_ast_expr_t);
+
+    arg_list = v_ast_expr_call_get_arg_list(call);
+
+    arg0 = v_list_get_item(arg_list, 0);
+
+    v_push_result();
+
+    v_set_result_type(v_static_type_t);
+
+    v_ast_accept_visitor(arg0, vis);
+
+    type = (v_get_result_value() : *v_type_t);
+
+    str = my_type2string(type);
+
+    expr: &v_ast_expr_t := {};
+
+    v_ast_make_expr_string(&expr, v_std_string_get(&str));
+
+    v_pop_result();
+
+    v_ast_accept_visitor(&expr, vis);
+}
+
+{   v_add_intrinsic("type2str", my_type2string_intrinsic, 0); }
+
+
+//---------------------------------------------------------------------
+{
+    printf("\n");
+
+    #define MACRO: ()  =  0;
+
+    printf("MACRO: %s\n", type2str(v_typeof(MACRO)));
+
+    printf("\"Hello world!\\n\": %s\n", type2str(v_typeof("Hello world!\n")));
+
+    printf("A: %s\n", type2str(v_typeof(A)));
+    printf("B: %s\n", type2str(v_typeof(B)));
+    printf("C: %s\n", type2str(v_typeof(C)));
+}
+
+
+{
+    #define pair: (a, b)  =  v_typed(v_struct({v_typeof(a), v_typeof(b)}), {a, b});
+
+    printf("pair(42, 0.5): %s\n", type2str(v_typeof(pair(42, 0.5))));
+
+    printf("pair(pair(42, 0.5), true): %s\n", type2str(v_typeof(pair(pair(42, 0.5), true))));
+
+    printf("pair(1, 2): %s\n", type2str(v_typeof(pair(1, 2))));
+
+    printf("pair(pair(1, 2), pair(3, 4)): %s\n", type2str(v_typeof(pair(pair(1, 2), pair(3, 4)))));
+}
+
+
+
+
