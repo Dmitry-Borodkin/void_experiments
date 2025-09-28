@@ -145,11 +145,23 @@ g_type_check_instance_is_a: (*void, GType) ~> int;
 
 
 //---------------------------------------------------------------------
+GI_FUNCTION_IS_METHOD      = 1 << 0;
+GI_FUNCTION_IS_CONSTRUCTOR = 1 << 1;
+GI_FUNCTION_IS_GETTER      = 1 << 2;
+GI_FUNCTION_IS_SETTER      = 1 << 3;
+GI_FUNCTION_WRAPS_VFUNC    = 1 << 4;
+GI_FUNCTION_IS_ASYNC       = 1 << 5;
+
+//---------------------------------------------------------------------
 gi_function_info_get_symbol: (*GIBaseInfo) ~> *const char;
+
+gi_function_info_get_flags: (*GIBaseInfo) ~> unsigned;
 
 gi_callable_info_get_n_args: (*GIBaseInfo) ~> unsigned;
 
 gi_callable_info_get_arg: (*GIBaseInfo, unsigned) ~> *GIBaseInfo;
+
+gi_callable_info_can_throw_gerror: (*GIBaseInfo) ~> int;
 
 gi_arg_info_get_type_info: (*GIBaseInfo) ~> *GIBaseInfo;
 
@@ -224,6 +236,17 @@ gi_object_info_get_method: (*GIBaseInfo, unsigned) ~> *GIBaseInfo;
 
 
 //---------------------------------------------------------------------
+print_base_info: (bi: *GIBaseInfo) ~> void
+{
+    tn = g_type_name_from_instance(bi);
+
+    printf("%s", tn);
+
+
+}
+
+
+//---------------------------------------------------------------------
 print_type_info: (bi: *GIBaseInfo) ~> void
 {
     is_pointer = gi_type_info_is_pointer(bi);
@@ -281,6 +304,12 @@ print_type_info: (bi: *GIBaseInfo) ~> void
         name = gi_base_info_get_name(iface);
 
         printf("%s.%s", ns, name);
+
+        printf(" [");
+
+        print_base_info(iface);
+
+        printf("]");
 
         break;
       }
@@ -340,6 +369,75 @@ print_type_info: (bi: *GIBaseInfo) ~> void
 
 
 //---------------------------------------------------------------------
+compute_voidc_type: (ti: *GIBaseInfo) ~> *v_type_t
+{
+    tag = gi_type_info_get_tag(ti);
+
+    switch(tag)
+    {
+    case GI_TYPE_TAG_VOID:      return v_void_type();
+    case GI_TYPE_TAG_BOOLEAN:   return v_find_type("int");
+    case GI_TYPE_TAG_INT8:      return v_int_type(8);
+    case GI_TYPE_TAG_UINT8:     return v_uint_type(8);
+    case GI_TYPE_TAG_INT16:     return v_int_type(16);
+    case GI_TYPE_TAG_UINT16:    return v_uint_type(16);
+    case GI_TYPE_TAG_INT32:     return v_int_type(32);
+    case GI_TYPE_TAG_UINT32:    return v_uint_type(32);
+    case GI_TYPE_TAG_INT64:     return v_int_type(64);
+    case GI_TYPE_TAG_UINT64:    return v_uint_type(64);
+    case GI_TYPE_TAG_FLOAT:     return v_f32_type();
+    case GI_TYPE_TAG_DOUBLE:    return v_f64_type();
+    case GI_TYPE_TAG_GTYPE:     return v_find_type("size_t");
+    case GI_TYPE_TAG_UNICHAR:   return v_uint_type(32);
+
+    case GI_TYPE_TAG_UTF8:
+    case GI_TYPE_TAG_FILENAME:
+
+        return  v_pointer_type(v_int_type(8), 0);
+
+    case GI_TYPE_TAG_ARRAY:
+
+        if (gi_type_info_get_array_type(ti) == GI_ARRAY_TYPE_C)
+        {
+            type = gi_type_info_get_param_type(ti, 0);      defer gi_base_info_unref(type);
+
+            t = compute_voidc_type(type);
+
+            if (t) return v_pointer_type(t, 0);
+        }
+
+        break;
+
+    case GI_TYPE_TAG_INTERFACE:
+      {
+//      iface = gi_type_info_get_interface(ti);         defer gi_base_info_unref(iface);
+
+      }
+    }
+
+    return 0;
+}
+
+//---------------------------------------------------------------------
+print_voidc_type: (ti: *GIBaseInfo, dir: int) ~> bool
+{
+    t = compute_voidc_type(ti);         if (!t) return false;
+
+    t: &*v_type_t := t;
+
+    if (dir > GI_DIRECTION_IN)  t := v_pointer_type(t, 0);
+
+    sstr: &v_std_string_t := {};
+
+    voidc_internal_std_string_append_type(&sstr, t);
+
+    printf("%s", v_std_string_get(&sstr));
+
+    return true;
+}
+
+
+//---------------------------------------------------------------------
 print_callable_info: (bi: *GIBaseInfo) ~> void
 {
     n = gi_callable_info_get_n_args(bi);
@@ -350,7 +448,9 @@ print_callable_info: (bi: *GIBaseInfo) ~> void
 
         a = gi_callable_info_get_arg(bi, i);        defer gi_base_info_unref(a);
 
-        switch(gi_arg_info_get_direction(a))
+        d = gi_arg_info_get_direction(a);
+
+        switch(d)
         {
         case GI_DIRECTION_IN:     printf("in ");    break;
         case GI_DIRECTION_OUT:    printf("out ");   break;
@@ -361,7 +461,18 @@ print_callable_info: (bi: *GIBaseInfo) ~> void
 
         print_type_info(t);
 
+        printf("  {");
+
+        if (!print_voidc_type(t, d))  printf("?");
+
+        printf("}");
+
         printf("\n");
+    }
+
+    if (gi_callable_info_can_throw_gerror(bi))
+    {
+        printf("%15s %s\n", "error:", "can throw GError");
     }
 
     printf("%15s ", "ret:");
@@ -369,6 +480,12 @@ print_callable_info: (bi: *GIBaseInfo) ~> void
     r = gi_callable_info_get_return_type(bi);       defer gi_base_info_unref(r);
 
     print_type_info(r);
+
+    printf("  {");
+
+    if (!print_voidc_type(r, -1)) printf("?");
+
+    printf("}");
 
     printf("\n");
 }
@@ -384,7 +501,7 @@ print_function_info: (bi: *GIBaseInfo) ~> void
 }
 
 //---------------------------------------------------------------------
-print_callbak_info  : (bi: *GIBaseInfo) ~> void
+print_callback_info : (bi: *GIBaseInfo) ~> void
 {
 }
 
@@ -417,9 +534,17 @@ print_object_info   : (bi: *GIBaseInfo) ~> void
     {
         f = gi_object_info_get_method(bi, i);       defer gi_base_info_unref(f);
 
+        flags = gi_function_info_get_flags(f);
+
+        kind: &*const char := undef;
+
+        if (flags & GI_FUNCTION_IS_CONSTRUCTOR)   kind := "constructor";
+        else if (flags & GI_FUNCTION_IS_METHOD)   kind := "method";
+        else                                      kind := "function";
+
         m = gi_base_info_get_name(f);
 
-        printf("%15s %s\n", "method:", m);
+        printf("%14s: %s\n", kind, m);
 
         print_function_info(f);
     }
@@ -481,7 +606,7 @@ print_interface_info: (bi: *GIBaseInfo) ~> void
         }
         else if(GI_IS_CALLBACK_INFO(bi))
         {
-//          print_callbak_info(bi);
+//          print_callback_info(bi);
         }
         else if(GI_IS_STRUCT_INFO(bi))
         {
