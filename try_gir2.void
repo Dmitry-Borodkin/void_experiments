@@ -74,6 +74,7 @@ GType = size_t;
 
 #assert (GType == uint(intptr_t.width))
 
+gi_base_info_gt           : &GType := undef;
 gi_callable_info_gt       : &GType := undef;
 gi_function_info_gt       : &GType := undef;
 gi_callback_info_gt       : &GType := undef;
@@ -96,6 +97,7 @@ gi_unresolved_info_gt     : &GType := undef;
 
 block
 {
+    gi_base_info_get_type           : () ~> GType;
     gi_callable_info_get_type       : () ~> GType;
     gi_function_info_get_type       : () ~> GType;
     gi_callback_info_get_type       : () ~> GType;
@@ -116,6 +118,7 @@ block
     gi_type_info_get_type           : () ~> GType;
     gi_unresolved_info_get_type     : () ~> GType;
 
+    gi_base_info_gt            := gi_base_info_get_type();
     gi_callable_info_gt        := gi_callable_info_get_type();
     gi_function_info_gt        := gi_function_info_get_type();
     gi_callback_info_gt        := gi_callback_info_get_type();
@@ -144,6 +147,7 @@ g_type_name_from_instance: (*void) ~> *const char;
 g_type_check_instance_is_a: (*void, GType) ~> int;
 
 
+#define GI_IS_BASE_INFO           : (bi)  =  g_type_check_instance_is_a(bi, gi_base_info_gt           );
 #define GI_IS_CALLABLE_INFO       : (bi)  =  g_type_check_instance_is_a(bi, gi_callable_info_gt       );
 #define GI_IS_FUNCTION_INFO       : (bi)  =  g_type_check_instance_is_a(bi, gi_function_info_gt       );
 #define GI_IS_CALLBACK_INFO       : (bi)  =  g_type_check_instance_is_a(bi, gi_callback_info_gt       );
@@ -259,13 +263,45 @@ gi_enum_info_get_storage_type: (*GIBaseInfo) ~> int;
 
 
 //---------------------------------------------------------------------
+the_gir: &*GIRepository := undef;
+
+
+//---------------------------------------------------------------------
 print_base_info: (bi: *GIBaseInfo) ~> void
 {
+    if (GI_IS_REGISTERED_TYPE_INFO(bi))
+    {
+        g_type_name: (GType) ~> *const char;
+
+        g_type_parent: (GType) ~> GType;
+
+        gi_repository_find_by_gtype: (*GIRepository, GType) ~> *GIBaseInfo;
+
+        gi_registered_type_info_get_g_type: (*GIBaseInfo) ~> GType;
+
+        gt: &GType := gi_registered_type_info_get_g_type(bi);
+
+        gt := g_type_parent(gt);
+
+        for (; gt; gt := g_type_parent(gt))
+        {
+            info = gi_repository_find_by_gtype(the_gir, gt);
+
+            if (!info)  break;
+
+            defer gi_base_info_unref(info);
+
+            ns = gi_base_info_get_namespace(info);
+
+            name = gi_base_info_get_name(info);
+
+            printf("%s.%s ", ns, name);
+        }
+    }
+
     tn = g_type_name_from_instance(bi);
 
-    printf("%s", tn);
-
-
+    printf(":%s", tn);
 }
 
 
@@ -616,6 +652,8 @@ print_interface_info: (bi: *GIBaseInfo) ~> void
 //----------------- ----------------------------------------------------
 {
     gir = gi_repository_new();          defer g_object_unref(gir);
+
+    the_gir := gir;
 
     printf("gir: %p\n", gir);
 
