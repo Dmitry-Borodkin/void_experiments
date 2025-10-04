@@ -5,5 +5,9 @@ $(llvm-config --cxxflags) \
 $(pkg-config gtk4 -cflags) \
 
 
-echo ../voidc >>micros.incdirs
+cat >>micros.incdirs <<HEREDOC
+../voidc
+../voidc/compiler/import
+../voidc/library/import
+HEREDOC
 

@@ -1,10 +1,10 @@
 #!/bin/bash
 
-$HOME_BIN/incdirs.clang $@
+$HOME_BIN/incdirs.clang $@ $(pkg-config gtk+-3.0 --cflags)
 
 cat >>micros.incdirs <<HEREDOC
-../../voidc
-../../voidc/compiler/import
-../../voidc/library/import
+../../../voidc
+../../../voidc/compiler/import
+../../../voidc/library/import
 HEREDOC
 

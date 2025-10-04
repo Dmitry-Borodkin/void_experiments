@@ -11,5 +11,5 @@ Makefile                                                       │Makefile
 ───────────────────────────────────────────────────────────────│
 void.doit                                                      │void.doit
 ═══════════════════════════════════════════════════════════════│
-micros.incdirs                                                 │micros.incdirs $(pkg-config gtk+-3.0 --cflags)
+micros.incdirs                                                 │micros.incdirs
     ...                                                        │incdirs.doit

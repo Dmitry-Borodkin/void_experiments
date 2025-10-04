@@ -122,6 +122,8 @@ my_type2string_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~>
 //---------------------------------------------------------------------
 (_.unit_namespace_open()): (l: &v_ast_generic_list_t, qf: int, name: *const char) ~> &v_ast_generic_list_t
 {
+    //- $qf namespace $name {
+
     expr: &v_ast_expr_t := {};
 
     v_ast_make_expr_integer(&expr, qf);
@@ -141,6 +143,8 @@ my_type2string_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~>
 
 (_.unit_defn_close): (l: &v_ast_generic_list_t) ~> &v_ast_generic_list_t
 {
+    //- }
+
     list: &v_ast_generic_list_t := {};
 
     v_make_list_nil(&list, v_quark_from_string("unit_defn_close"));
@@ -152,6 +156,8 @@ my_type2string_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~>
 
 (_.unit_val_defn()): (l: &v_ast_generic_list_t, qf: int, name: *const char, t: *v_type_t, v: LLVMValueRef) ~> &v_ast_generic_list_t
 {
+    //- $qf $name : $t = $v;
+
     expr: &v_ast_expr_t := {};
 
     v_ast_make_expr_integer(&expr, qf);
@@ -206,6 +212,52 @@ my_doit_intrinsic: (*void, vis: *voidc_visitor_t, *v_ast_base_t) ~> void
 
     printf("aaa.bbb: %d\n", aaa.bbb);
 }
+
+
+//---------------------------------------------------------------------
+{
+    //- namespace zzz {
+    //-
+    //-     ccc = 777;
+    //- }
+
+    l: &v_ast_generic_list_t := {};
+
+    v_make_list_nil(&l, v_quark_from_string("unit_defn_list"));
+
+    l.unit_namespace_open(0, "zzz");
+
+    l.unit_val_defn(0, "ccc", int, LLVMConstInt(v_type_get_llvm_type(int), 777, 0));
+
+    l.unit_defn_close;
+
+    u: &v_ast_generic_list_t := {};
+
+    a: &v_ast_base_t[3] := {};
+
+    v_copy(a+0, &l);
+
+    v_ast_make_expr_integer((a+1: *v_ast_expr_t), 0);
+    v_ast_make_expr_integer((a+2: *v_ast_expr_t), 0);
+
+    v_make_list(&u, v_quark_from_string("defn_list_unit"), a, 3);
+
+    voidc_clear_unit_buffer();
+
+    v_ast_accept_visitor(&u, v_get_compiler());
+
+    voidc_run_unit_action();
+
+    voidc_clear_unit_buffer();
+}
+
+{
+    printf("\n");
+
+    printf("zzz.ccc: %d\n", zzz.ccc);
+}
+
+
 
 
 

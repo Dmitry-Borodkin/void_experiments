@@ -579,6 +579,8 @@ print_callable_info: (bi: *GIBaseInfo) ~> void
     printf("\n");
 }
 
+
+
 //---------------------------------------------------------------------
 print_function_info: (bi: *GIBaseInfo) ~> void
 {
@@ -657,8 +659,6 @@ print_interface_info: (bi: *GIBaseInfo) ~> void
 
     printf("gir: %p\n", gir);
 
-    err: &*GError := 0;
-
     gt_name    = "GIRepository";
     gt_version = "3.0";
 
@@ -673,7 +673,7 @@ print_interface_info: (bi: *GIBaseInfo) ~> void
 
     printf("name: %s, version: %s\n", gt_name, gt_version);
 
-    gt = gi_repository_require(gir, gt_name, gt_version, 0, &err);
+    gt = gi_repository_require(gir, gt_name, gt_version, 0, 0);
     defer gi_typelib_unref(gt);
 
     printf("gt: %p\n", gt);

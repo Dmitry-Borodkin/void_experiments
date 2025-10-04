@@ -3,8 +3,8 @@
 $HOME_BIN/incdirs.clang $@
 
 cat >>micros.incdirs <<HEREDOC
-../../voidc
-../../voidc/compiler/import
-../../voidc/library/import
+../../../voidc
+../../../voidc/compiler/import
+../../../voidc/library/import
 HEREDOC
 
