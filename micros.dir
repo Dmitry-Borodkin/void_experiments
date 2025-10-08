@@ -1,6 +1,8 @@
                          ****  ?  ****                         │*
                                                                │
                                                                │
+try_gir3.void                                                  │try_gir3.void
+try_gir2.void                                                  │try_gir2.void
                                                                │
 try_hz22.void                                                  │try_hz22.void
                                                                │
@@ -38,7 +40,6 @@ Bootstrap thoughts...                                          │bootstrap_thou
 try_host.void                                                  │try_host.void
                                                                │
 try_gir.void                                                   │try_gir.void
-try_gir2.void                                                  │try_gir2.void
                                                                │
 try_projects/                                                  │try_projects/micros.dir
                                                                │

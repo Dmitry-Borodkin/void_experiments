@@ -1,0 +1,142 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+
+{   v_import("llvm-c/Core.void");
+    v_import("llvm-c/Support.void");
+
+    v_import("cstdio.void");
+    v_import("type_traits.void");
+}
+
+//---------------------------------------------------------------------
+{
+
+#if (v_defined(_WIN32))
+
+    libname = v_malloc(char, 1024);
+    defer v_free(libname);
+
+    {   p = popen("bash -c \"dlltool -I $(pkg-config --variable=libdir girepository-2.0)/libgirepository-2.0.dll.a\"", "r");
+        defer pclose(p);
+
+        fscanf(p, "%1023s", libname);
+    }
+
+#else
+
+    libname = "libgirepository-2.0.so";         //- !
+
+#endif
+
+    ok = LLVMLoadLibraryPermanently(libname);
+
+//  printf("ok: %d\n", ok);
+}
+
+
+//---------------------------------------------------------------------
+//- <girepository/girepository.h>
+//---------------------------------------------------------------------
+struct GIRepository;
+struct GITypelib;
+struct GIBaseInfo;
+
+struct GError;
+
+
+//---------------------------------------------------------------------
+gi_repository_new: () ~> *GIRepository;
+
+g_object_unref: (*void) ~> void;    //- ?
+
+gi_repository_require: (*GIRepository, *const char, *const char, int, **GError) ~> *GITypelib;
+
+
+gi_typelib_unref: (*GITypelib) ~> void;
+
+
+gi_repository_get_n_infos: (*GIRepository, *const char) ~> int;
+
+gi_repository_get_info: (*GIRepository, *const char, int) ~> *GIBaseInfo;
+
+
+gi_base_info_unref: (*GIBaseInfo) ~> void;
+
+gi_base_info_get_name: (*GIBaseInfo) ~> *const char;
+
+
+//---------------------------------------------------------------------
+GType = size_t;
+
+g_type_name: (GType) ~> *const char;
+
+g_type_name_from_instance: (*void) ~> *const char;
+
+g_type_check_instance_is_a: (*void, GType) ~> int;
+
+
+gi_registered_type_info_gt: &GType := undef;
+
+block
+{
+    gi_registered_type_info_get_type: () ~> GType;
+
+    gi_registered_type_info_gt := gi_registered_type_info_get_type();
+}
+
+#define GI_IS_REGISTERED_TYPE_INFO: (bi)  =  g_type_check_instance_is_a(bi, gi_registered_type_info_gt);
+
+
+gi_registered_type_info_get_g_type: (*GIBaseInfo) ~> GType;
+
+gi_registered_type_info_get_type_name: (*GIBaseInfo) ~> *const char;
+
+
+//---------------------------------------------------------------------
+the_gir: &*GIRepository := undef;
+
+
+
+//----------------- ----------------------------------------------------
+{
+    gir = gi_repository_new();          defer g_object_unref(gir);
+
+    the_gir := gir;
+
+    gt_name    = "GIRepository";
+    gt_version = "3.0";
+
+    gt = gi_repository_require(gir, gt_name, gt_version, 0, 0);
+    defer gi_typelib_unref(gt);
+
+    N = gi_repository_get_n_infos(gir, gt_name);
+
+    for (i: &int := 0; i < N; ++i)
+    {
+        bi = gi_repository_get_info(gir, gt_name, i);
+        defer gi_base_info_unref(bi);
+
+        if (!GI_IS_REGISTERED_TYPE_INFO(bi))  continue;
+
+        n = gi_base_info_get_name(bi);
+
+        tn = g_type_name_from_instance(bi);
+
+        printf("%15s %s\n", tn, n);
+
+//        gt = gi_registered_type_info_get_g_type(bi);
+//
+//        if (gt == 4)  continue;
+//
+//        printf("%15s %s\n", "name:", g_type_name(gt));
+
+        printf("%15s %s\n", "name:", gi_registered_type_info_get_type_name(bi));
+
+
+    }
+
+}
+
+
+
+

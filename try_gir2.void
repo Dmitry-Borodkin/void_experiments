@@ -287,7 +287,12 @@ print_base_info: (bi: *GIBaseInfo) ~> void
         {
             info = gi_repository_find_by_gtype(the_gir, gt);
 
-            if (!info)  break;
+            if (!info)
+            {
+                printf("?%s ", g_type_name(gt));
+
+                break;
+            }
 
             defer gi_base_info_unref(info);
 
@@ -657,7 +662,7 @@ print_interface_info: (bi: *GIBaseInfo) ~> void
 
     the_gir := gir;
 
-    printf("gir: %p\n", gir);
+//  printf("gir: %p\n", gir);
 
     gt_name    = "GIRepository";
     gt_version = "3.0";
@@ -676,7 +681,7 @@ print_interface_info: (bi: *GIBaseInfo) ~> void
     gt = gi_repository_require(gir, gt_name, gt_version, 0, 0);
     defer gi_typelib_unref(gt);
 
-    printf("gt: %p\n", gt);
+//  printf("gt: %p\n", gt);
 
     N = gi_repository_get_n_infos(gir, gt_name);
 

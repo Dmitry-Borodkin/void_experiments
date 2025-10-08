@@ -241,7 +241,7 @@ on_activate: (app: *GtkApplication, data: *void) ~> void
 
     renderer = gtk_cell_renderer_text_new();
 
-    column = gtk_tree_view_column_new_with_attributes("Ы-ы-ы", renderer, "text", 0,  0);
+    column = gtk_tree_view_column_new_with_attributes("Ы-ы-ы", renderer, "text", 0, (0: *void));
 
     gtk_tree_view_append_column(tree_view, column);
 
