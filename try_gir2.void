@@ -658,7 +658,9 @@ print_interface_info: (bi: *GIBaseInfo) ~> void
 
 //----------------- ----------------------------------------------------
 {
-    gir = gi_repository_new();          defer g_object_unref(gir);
+    gir = gi_repository_new();
+
+    #if (!v_defined(NDEBUG))  defer g_object_unref(gir);    #endif      //- WTF ?!?!?
 
     the_gir := gir;
 
@@ -731,8 +733,6 @@ print_interface_info: (bi: *GIBaseInfo) ~> void
 //          print_interface_info(bi);
         }
     }
-
-
 
 
 }

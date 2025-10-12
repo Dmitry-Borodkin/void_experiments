@@ -120,8 +120,7 @@ GDK_KEY_PRESS_MASK    = 1 << 10;
 
 
 //---------------------------------------------------------------------
-g_type_fundamental: (size_t) ~> size_t;
-
+g_type_from_name: (*const char) ~> size_t;
 
 
 //---------------------------------------------------------------------
@@ -166,7 +165,7 @@ g_type_fundamental: (size_t) ~> size_t;
 //---------------------------------------------------------------------
 mk_tree_store: () ~> *GtkTreeStore
 {
-    ret = gtk_tree_store_new(1, g_type_fundamental(16 << 2));       //- G_TYPE_STRING ...
+    ret = gtk_tree_store_new(1, g_type_from_name("gchararray"));        //- G_TYPE_STRING ...
 
     iter0: &GtkTreeIter := undef;
     iter1: &GtkTreeIter := undef;

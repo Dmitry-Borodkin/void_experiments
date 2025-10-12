@@ -99,7 +99,9 @@ the_gir: &*GIRepository := undef;
 
 //----------------- ----------------------------------------------------
 {
-    gir = gi_repository_new();          defer g_object_unref(gir);
+    gir = gi_repository_new();
+
+    #if (!v_defined(NDEBUG))  defer g_object_unref(gir);    #endif      //- WTF ?!?!?
 
     the_gir := gir;
 
