@@ -1,0 +1,253 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
+
+
+//---------------------------------------------------------------------
+struct intgen_t
+{
+    num: *((*void) ~> int);
+    fun: *((*void) ~> intgen_t);
+    cpy: *((*void) ~> *void);
+    del: *((*void) ~> void);
+
+    aux: *void;
+};
+
+(v_initialize(_)): (d: *intgen_t, n: size_t) ~> void
+{
+    for (i: &size_t := 0; i < n; ++i)
+    {
+        d[i].cpy := 0;
+        d[i].del := 0;
+    }
+}
+
+(v_terminate(_)): (d: *intgen_t, n: size_t) ~> void
+{
+    for (i: &size_t := 0; i < n; ++i)
+    {
+        di = d[i];
+
+        if (del = di.del)   del(di.aux);
+    }
+}
+
+(v_copy(_)): (d: *intgen_t, s: *const intgen_t, n: size_t) ~> void
+{
+    for (i: &size_t := 0; i < n; ++i)
+    {
+        di = d[i];
+        si = s[i];
+
+        if (del = di.del)   del(di.aux);
+
+        di.num := si.num;
+        di.fun := si.fun;
+        di.cpy := si.cpy;
+        di.del := si.del;
+
+        if (cpy = di.cpy)   di.aux := cpy(si.aux);
+        else                di.aux := si.aux;
+    }
+}
+
+(_:=_): (d: &intgen_t, ig: intgen_t) ~> &intgen_t
+{
+    v_copy(&d, &ig);
+
+    return d;
+}
+
+#define (_.head): (v: intgen_t) ~> int       =  v.num(v.aux);
+#define (_.tail): (v: intgen_t) ~> intgen_t  =  v.fun(v.aux);
+
+
+//---------------------------------------------------------------------
+print_intgen: (ig: intgen_t, n: int) ~> void
+{
+    ig: &intgen_t := ig;
+
+    for (i: &int := 0; i < n; ++i)
+    {
+        printf("%d: %d\n", i, ig.head);
+
+        ig := ig.tail;
+    }
+}
+
+
+//---------------------------------------------------------------------
+private
+intgen_s_num: (aux: *void) ~> int  =  (aux: int);
+
+private
+intgen_s_fun: (aux: *void) ~> intgen_t  =  { intgen_s_num, intgen_s_fun, 0, 0, ((aux: int) + 1 : *void) };
+
+mk_intgen_s: (p: int) ~> intgen_t  =  { intgen_s_num, intgen_s_fun, 0, 0, (p: *void) };
+
+
+//---------------------------------------------------------------------
+//{   printf("\n");
+//
+//    print_intgen(mk_intgen_s(0), 10);
+//}
+
+
+//---------------------------------------------------------------------
+struct intgen_filt_data_t
+{
+    cur: intgen_t;
+
+    fun: *((*void, int) ~> bool);
+    aux: *void;
+};
+
+(v_initialize(_)): (*intgen_filt_data_t, size_t) ~> void  =  derive;
+(v_terminate(_)):  (*intgen_filt_data_t, size_t) ~> void  =  derive;
+
+(v_copy(_)): (*intgen_filt_data_t, *const intgen_filt_data_t, size_t) ~> void  =  derive;
+
+private intgen_filt_num: (aux: *void) ~> int;
+private intgen_filt_fun: (aux: *void) ~> intgen_t;
+private intgen_filt_cpy: (aux: *void) ~> *void;
+private intgen_filt_del: (aux: *void) ~> void;
+
+private
+intgen_filt_num: (aux: *void) ~> int  =  (aux: *const intgen_filt_data_t)->cur.head;
+
+private
+intgen_filt_fun: (aux: *void) ~> intgen_t  =
+{
+    filt = *(aux: *const intgen_filt_data_t);
+
+    igr: &intgen_t := filt.cur.tail;
+
+    while(!filt.fun(filt.aux, igr.head))
+    {
+        igr := igr.tail;
+    }
+
+    rflt = new intgen_filt_data_t;
+
+    rflt->cur := igr;
+    rflt->fun := filt.fun;
+    rflt->aux := filt.aux;
+
+    { intgen_filt_num, intgen_filt_fun, intgen_filt_cpy, intgen_filt_del, (rflt: *void) }
+};
+
+private
+intgen_filt_cpy: (aux: *void) ~> *void
+{
+    ret = new intgen_filt_data_t;
+
+    v_copy(ret, (aux: *const intgen_filt_data_t));
+
+    return ret;
+}
+
+private
+intgen_filt_del: (aux: *void) ~> void
+{
+    delete (aux: *intgen_filt_data_t);
+}
+
+
+private
+intgen_filt_fun_mod: (aux: *void, n: int) ~> bool
+{
+    return  n % (aux: int) != 0;
+}
+
+mk_intgen_filt: (p: int, ig: intgen_t) ~> intgen_t  =
+{
+    filt = new intgen_filt_data_t;
+
+    filt->cur := ig;
+    filt->fun := intgen_filt_fun_mod;
+    filt->aux := (p: *void);
+
+    { intgen_filt_num, intgen_filt_fun, intgen_filt_cpy, intgen_filt_del, (filt: *void) }
+};
+
+
+//---------------------------------------------------------------------
+//{   printf("\n");
+//
+//    print_intgen(mk_intgen_filt(2, mk_intgen_s(0)), 10);
+//}
+
+
+//---------------------------------------------------------------------
+struct intgen_primes_data_t
+{
+    this: intgen_t;
+};
+
+(v_initialize(_)): (*intgen_primes_data_t, size_t) ~> void  =  derive;
+(v_terminate(_)):  (*intgen_primes_data_t, size_t) ~> void  =  derive;
+
+(v_copy(_)): (*intgen_primes_data_t, *const intgen_primes_data_t, size_t) ~> void  =  derive;
+
+private intgen_primes_num: (aux: *void) ~> int;
+private intgen_primes_fun: (aux: *void) ~> intgen_t;
+private intgen_primes_cpy: (aux: *void) ~> *void;
+private intgen_primes_del: (aux: *void) ~> void;
+
+mk_intgen_primes: (ig: intgen_t) ~> intgen_t;
+
+private
+intgen_primes_num: (aux: *void) ~> int  =  (aux: *const intgen_primes_data_t)->this.head;
+
+private
+intgen_primes_fun: (aux: *void) ~> intgen_t  =
+{
+    ig = (aux: *const intgen_primes_data_t)->this;
+
+    p = ig.head;
+
+    t = ig.tail;
+
+    mk_intgen_primes(mk_intgen_filt(p, t))
+};
+
+private
+intgen_primes_cpy: (aux: *void) ~> *void
+{
+    ret = new intgen_primes_data_t;
+
+    v_copy(ret, (aux: *const intgen_primes_data_t));
+
+    return ret;
+}
+
+private
+intgen_primes_del: (aux: *void) ~> void
+{
+    delete (aux: *intgen_primes_data_t);
+}
+
+mk_intgen_primes: (ig: intgen_t) ~> intgen_t  =
+{
+    primes = new intgen_primes_data_t;
+
+    primes->this := ig;
+
+    { intgen_primes_num, intgen_primes_fun, intgen_primes_cpy, intgen_primes_del, (primes: *void) }
+};
+
+
+//---------------------------------------------------------------------
+{   printf("\n");
+
+    print_intgen(mk_intgen_primes(mk_intgen_s(2)), 300);
+}
+
+
+
+
+
+
