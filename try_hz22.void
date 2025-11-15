@@ -187,6 +187,11 @@ my_type2string_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~>
 //---------------------------------------------------------------------
 my_doit_intrinsic: (*void, vis: *voidc_visitor_t, *v_ast_base_t) ~> void
 {
+    //- namespace aaa {
+    //-
+    //-     bbb = 42;
+    //- }
+
     l: &v_ast_generic_list_t := {};
 
     v_make_list_nil(&l, v_quark_from_string("unit_defn_list"));

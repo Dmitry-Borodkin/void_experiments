@@ -1,0 +1,3 @@
+{ v_import("cstdio.void"); }
+
+{ printf("Hello world!\n"); }

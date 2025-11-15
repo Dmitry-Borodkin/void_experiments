@@ -16,6 +16,7 @@ struct intgen_t
     aux: *void;
 };
 
+inlinehint
 (v_initialize(_)): (d: *intgen_t, n: size_t) ~> void
 {
     for (i: &size_t := 0; i < n; ++i)
@@ -25,6 +26,7 @@ struct intgen_t
     }
 }
 
+inlinehint
 (v_terminate(_)): (d: *intgen_t, n: size_t) ~> void
 {
     for (i: &size_t := 0; i < n; ++i)
@@ -35,6 +37,7 @@ struct intgen_t
     }
 }
 
+inlinehint
 (v_copy(_)): (d: *intgen_t, s: *const intgen_t, n: size_t) ~> void
 {
     for (i: &size_t := 0; i < n; ++i)
@@ -70,9 +73,15 @@ print_intgen: (ig: intgen_t, n: int) ~> void
 {
     ig: &intgen_t := ig;
 
-    for (i: &int := 0; i < n; ++i)
+    prev: &int := 0;
+
+    for (i: &int := 1; i <= n; ++i)
     {
-        printf("%d: %d\n", i, ig.head);
+        igh = ig.head;
+
+        printf("%d: %d %d\n", i, igh, igh-prev);
+
+        prev := igh;
 
         ig := ig.tail;
     }
@@ -97,6 +106,17 @@ mk_intgen_s: (p: int) ~> intgen_t  =  { intgen_s_num, intgen_s_fun, 0, 0, (p: *v
 
 
 //---------------------------------------------------------------------
+#define derive_itc: (T: v_static_type_t)
+{'unit_defn_list'
+
+    alwaysinline (v_initialize(_)): (*T, size_t) ~> void = derive;
+    alwaysinline (v_terminate(_)):  (*T, size_t) ~> void = derive;
+    alwaysinline (v_copy(_)):       (*T, *const T, size_t) ~> void = derive;
+
+'unit_defn_list'}
+
+
+//---------------------------------------------------------------------
 struct intgen_filt_data_t
 {
     cur: intgen_t;
@@ -105,10 +125,7 @@ struct intgen_filt_data_t
     aux: *void;
 };
 
-(v_initialize(_)): (*intgen_filt_data_t, size_t) ~> void  =  derive;
-(v_terminate(_)):  (*intgen_filt_data_t, size_t) ~> void  =  derive;
-
-(v_copy(_)): (*intgen_filt_data_t, *const intgen_filt_data_t, size_t) ~> void  =  derive;
+#do (derive_itc(intgen_filt_data_t))
 
 private intgen_filt_num: (aux: *void) ~> int;
 private intgen_filt_fun: (aux: *void) ~> intgen_t;
@@ -159,7 +176,11 @@ intgen_filt_del: (aux: *void) ~> void
 private
 intgen_filt_fun_mod: (aux: *void, n: int) ~> bool
 {
-    return  n % (aux: int) != 0;
+    p = (aux: int);
+
+//  if (p*p > n)  return true;
+
+    return  n % p != 0;
 }
 
 mk_intgen_filt: (p: int, ig: intgen_t) ~> intgen_t  =
@@ -187,10 +208,7 @@ struct intgen_primes_data_t
     this: intgen_t;
 };
 
-(v_initialize(_)): (*intgen_primes_data_t, size_t) ~> void  =  derive;
-(v_terminate(_)):  (*intgen_primes_data_t, size_t) ~> void  =  derive;
-
-(v_copy(_)): (*intgen_primes_data_t, *const intgen_primes_data_t, size_t) ~> void  =  derive;
+#do (derive_itc(intgen_primes_data_t))
 
 private intgen_primes_num: (aux: *void) ~> int;
 private intgen_primes_fun: (aux: *void) ~> intgen_t;
@@ -243,7 +261,7 @@ mk_intgen_primes: (ig: intgen_t) ~> intgen_t  =
 //---------------------------------------------------------------------
 {   printf("\n");
 
-    print_intgen(mk_intgen_primes(mk_intgen_s(2)), 300);
+    print_intgen(mk_intgen_primes(mk_intgen_s(2)), 500);
 }
 
 
