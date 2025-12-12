@@ -43,6 +43,8 @@ struct GIBaseInfo;
 
 struct GError;
 
+GType = size_t;
+
 
 //---------------------------------------------------------------------
 gi_repository_new: () ~> *GIRepository;
@@ -59,20 +61,24 @@ gi_repository_get_n_infos: (*GIRepository, *const char) ~> int;
 
 gi_repository_get_info: (*GIRepository, *const char, int) ~> *GIBaseInfo;
 
+gi_repository_find_by_gtype: (*GIRepository, GType) ~> *GIBaseInfo;
+
 
 gi_base_info_unref: (*GIBaseInfo) ~> void;
 
 gi_base_info_get_name: (*GIBaseInfo) ~> *const char;
 
+gi_base_info_get_namespace: (*GIBaseInfo) ~> *const char;
+
 
 //---------------------------------------------------------------------
-GType = size_t;
-
 g_type_name: (GType) ~> *const char;
 
 g_type_name_from_instance: (*void) ~> *const char;
 
 g_type_check_instance_is_a: (*void, GType) ~> int;
+
+g_type_parent: (GType) ~> GType;
 
 
 gi_registered_type_info_gt: &GType := undef;
@@ -101,15 +107,25 @@ the_gir: &*GIRepository := undef;
 {
     gir = gi_repository_new();
 
-    #if (!v_defined(NDEBUG))  defer g_object_unref(gir);    #endif      //- WTF ?!?!?
+//  #if (!v_defined(NDEBUG))  defer g_object_unref(gir);    #endif      //- WTF ?!?!?
+
+    defer g_object_unref(gir);
 
     the_gir := gir;
 
     gt_name    = "GIRepository";
     gt_version = "3.0";
 
-    gt = gi_repository_require(gir, gt_name, gt_version, 0, 0);
-    defer gi_typelib_unref(gt);
+//    gt_name    = "GObject";
+//    gt_version = 0; // "2.0";
+
+//    gt_name    = "GLib";
+//    gt_version = 0; // "2.0";
+
+//    gt_name    = "Gtk";
+//    gt_version = "3.0";
+
+    gi_repository_require(gir, gt_name, gt_version, 0, 0);
 
     N = gi_repository_get_n_infos(gir, gt_name);
 
@@ -118,13 +134,15 @@ the_gir: &*GIRepository := undef;
         bi = gi_repository_get_info(gir, gt_name, i);
         defer gi_base_info_unref(bi);
 
-        if (!GI_IS_REGISTERED_TYPE_INFO(bi))  continue;
-
         n = gi_base_info_get_name(bi);
 
         tn = g_type_name_from_instance(bi);
 
-        printf("%15s %s\n", tn, n);
+        printf("\n%15s %s\n", tn, n);
+
+        if (!GI_IS_REGISTERED_TYPE_INFO(bi))  continue;
+
+        printf("%15s %s\n", "name:", gi_registered_type_info_get_type_name(bi));
 
 //        gt = gi_registered_type_info_get_g_type(bi);
 //
@@ -132,7 +150,31 @@ the_gir: &*GIRepository := undef;
 //
 //        printf("%15s %s\n", "name:", g_type_name(gt));
 
-        printf("%15s %s\n", "name:", gi_registered_type_info_get_type_name(bi));
+        gt: &GType := gi_registered_type_info_get_g_type(bi);
+
+//      gt := g_type_parent(gt);
+
+        for (; gt; gt := g_type_parent(gt))
+        {
+            info = gi_repository_find_by_gtype(the_gir, gt);
+
+            if (!info)
+            {
+                printf("%15s %s\n", "?:", g_type_name(gt));
+
+                break;
+            }
+
+            defer gi_base_info_unref(info);
+
+            ns = gi_base_info_get_namespace(info);
+
+            name = gi_base_info_get_name(info);
+
+            printf("%15s %s.%s\n", "::", ns, name);
+        }
+
+
 
 
     }

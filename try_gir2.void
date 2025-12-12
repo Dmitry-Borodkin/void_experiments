@@ -698,7 +698,7 @@ print_interface_info: (bi: *GIBaseInfo) ~> void
 
         tn = g_type_name_from_instance(bi);
 
-        printf("%15s %s\n", tn, n);
+        printf("\n%15s %s\n", tn, n);
 
         if (GI_IS_FUNCTION_INFO(bi))
         {
