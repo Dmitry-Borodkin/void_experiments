@@ -135,17 +135,17 @@ alwaysinline
 {
     t = v_typeof(b);
 
-#if (t == Point  ||  t == &Point)
+  #if (t == Point  ||  t == &Point)
 
     ret: Vector = {a.x/a.w - b.x/b.w, a.y/a.w - b.y/b.w};
 
-#endif
+  #endif
 
-#if (t == Vector  ||  t == &Vector)
+  #if (t == Vector  ||  t == &Vector)
 
     ret: Point = {a.x - a.w*b.x, a.y - a.w*b.y, a.w};
 
-#endif
+  #endif
 
     ret
 };
