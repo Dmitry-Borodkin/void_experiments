@@ -24,7 +24,7 @@ fabs: (double) ~> double;
 
   #endif
 
-  #if (t.is_array  &&  t.element_type == char  ||  t == *char)
+  #if ((t.is_array  ||  t.is_pointer)  &&  t.element_type == char)
 
     fprintf(f, "%s", v);
 
@@ -135,13 +135,15 @@ alwaysinline
 {
     t = v_typeof(b);
 
-  #if (t == Point  ||  t == &Point)
+  #if (t.is_reference)  t = t.element_type;   #endif
+
+  #if (t == Point)
 
     ret: Vector = {a.x/a.w - b.x/b.w, a.y/a.w - b.y/b.w};
 
   #endif
 
-  #if (t == Vector  ||  t == &Vector)
+  #if (t == Vector)
 
     ret: Point = {a.x - a.w*b.x, a.y - a.w*b.y, a.w};
 
