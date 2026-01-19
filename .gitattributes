@@ -1,4 +1,4 @@
-*.void linguist-language=C
+*.void gitlab-language=C linguist-language=C
 
-micros.dir linguist-documentation
+micros.dir gitlab-language=text linguist-documentation
 
