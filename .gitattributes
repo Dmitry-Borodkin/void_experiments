@@ -2,7 +2,9 @@
 #
 #micros.dir gitlab-language=text linguist-documentation
 
-*.void gitlab-language=C
+*.void linguist-language=C
+*.void linguist-detectable=true
 
-micros.dir gitlab-language=text
+micros.dir linguist-documentation
+micros.dir linguist-detectable=true
 
