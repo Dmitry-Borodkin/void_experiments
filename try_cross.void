@@ -1,0 +1,260 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+//---------------------------------------------------------------------
+{
+    v_import("llvm-c/Core.void");
+    v_import("llvm-c/BitReader.void");
+    v_import("llvm-c/TargetMachine.void");
+    v_import("llvm-c/Transform/PassBuilder.void");
+}
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
+
+
+//---------------------------------------------------------------------
+triple = "armv7a-unknown-linux-gnueabihft64";
+
+data_layout: &LLVMTargetDataRef := undef;
+
+
+//---------------------------------------------------------------------
+{   struct FILE;
+
+    popen: (command: *const char, prop: *const char) ~> *FILE;
+
+    pclose: (*FILE) ~> int;
+
+    fprintf: (stream: *FILE, format: *const char, ...) ~> int;
+
+    fscanf: (stream: *FILE, format: *const char, ...) ~> int;
+
+    sprintf: (str: *char, format: *const char, ...) ~> int;
+
+    //-----------------------------------------------------------------
+    buflen = 1024;
+
+    buffer = v_malloc(char, buflen);
+    defer v_free(buffer);
+
+    {   p = popen("mktemp", "r");
+        defer pclose(p);
+
+        fscanf(p, "%500s", buffer);
+    }
+
+    #if (v_defined(_WIN32))
+    {
+        cmd = buffer + 512;
+
+        sprintf(cmd, "cygpath -m %s", buffer);
+
+        p = popen(cmd, "r");
+        defer pclose(p);
+
+        fscanf(p, "%1000s", buffer);
+    }
+    #endif
+
+    //-----------------------------------------------------------------
+    {   p = popen("bash", "w");
+        defer pclose(p);
+
+        fprintf(p, "clang -target %s -emit-llvm -c -o %s -x c", triple, buffer);
+
+        source_str =
+        """
+        int my_size_int  = sizeof(int);
+        int my_size_long = sizeof(long);
+        int my_size_ptr  = sizeof(void *);
+        """;
+
+        fprintf(p, " - <<HEREDOC\n%s\nHEREDOC\n", source_str);
+    }
+
+    //-----------------------------------------------------------------
+    {   mb: &LLVMMemoryBufferRef := 0;
+        defer LLVMDisposeMemoryBuffer(mb);
+
+        LLVMCreateMemoryBufferWithContentsOfFile(buffer, &mb, 0);
+
+        mod: &LLVMModuleRef := undef;
+
+        LLVMParseBitcodeInContext2(v_target_get_llvm_ctx(), mb, &mod);
+
+        size_t_ = v_type_get_llvm_type(size_t);
+
+        #define doit: (name)  =
+        {
+            sz = LLVMGetInitializer(LLVMGetNamedGlobal(mod, name));
+            sz = LLVMConstInt(size_t_, LLVMConstIntGetZExtValue(sz),  false);
+            v_add_constant(name,  size_t, sz);
+
+            0   //- ?
+        };
+
+        doit("my_size_int");
+        doit("my_size_long");
+        doit("my_size_ptr");
+
+        data_layout := LLVMGetModuleDataLayout(mod);
+    }
+
+    //-----------------------------------------------------------------
+    {   p = popen("bash", "w");
+        defer pclose(p);
+
+        fprintf(p, "rm %s\n", buffer);
+    }
+
+    //-----------------------------------------------------------------
+    //- ...
+}
+
+
+{   //----------------------------------------------------------
+    filename = v_target_local_ctx_get_filename(v_target_get_voidc_local_ctx());
+
+    gctx = v_target_create_global_ctx(my_size_int, my_size_long, my_size_ptr);
+    lctx = v_target_create_local_ctx(filename, gctx);
+
+    v_target_set_global_ctx(gctx);
+
+    v_target_set_data_layout(data_layout);
+
+    //----------------------------------------------------------
+    v_enable_mainline();
+
+    //----------------------------------------------------------
+    module = LLVMModuleCreateWithNameInContext("hello", v_target_get_llvm_ctx());
+
+    strlen: (*const char) ~> size_t;
+
+    LLVMSetSourceFileName(module, filename, strlen(filename));
+
+    v_set_module(module);
+}
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+A = 154476802108746166441951315019919837485664325669565431700026634898253202035277999;
+B =  36875131794129999827197811565225474825492979968971970996283137471637224634055579;
+C =   4373612677928697257861252602371390152816537558161613618621437993378423467772036;
+
+//---------------------------------------------------------------------
+num_t = uint(800);          //- Sic !!!
+
+//---------------------------------------------------------------------
+private
+check_num: (a: num_t, b: num_t, c: num_t) ~> bool  =
+{
+    ab = a + b;     ac = a + c;     bc = b + c;
+
+    a*ab*ac + b*ab*bc + c*ac*bc == 4*ab*ac*bc
+};
+
+
+//---------------------------------------------------------------------
+//- As is...
+//---------------------------------------------------------------------
+main: (argc: int, argv: **const char) ~> int
+{
+    printf: (*const char, ...) ~> int;
+
+    printf("Hello world!\n");
+
+    if (check_num(A, B, C)) printf("\nOK\n");
+    else                    printf("\nFail\n");
+}
+
+
+//---------------------------------------------------------------------
+{
+    module = v_get_module();
+
+    v_finish_module(module);
+
+    //----------------------------------------------------------
+    v_debug_print_module(2);
+
+    //----------------------------------------------------------
+    v_verify_module(module);
+
+    LLVMSetModuleDataLayout(module, data_layout);
+    LLVMSetTarget(module, triple);
+
+    //----------------------------------------------------------
+    tr: &LLVMTargetRef := undef;
+
+    LLVMGetTargetFromTriple(triple, &tr, 0);
+
+    cpu_name     = "generic";
+    cpu_features = "";
+
+    target_machine =
+        LLVMCreateTargetMachine
+        (
+            tr,
+            triple,
+            cpu_name,
+            cpu_features,
+            LLVMCodeGenLevelDefault,
+            LLVMRelocPIC,                   //- WTF !?!
+            LLVMCodeModelDefault
+        );
+
+    //----------------------------------------------------------
+    {   opts = LLVMCreatePassBuilderOptions();
+
+        err = LLVMRunPasses(module, "default<O3>", target_machine, opts);
+        if (err)
+        {
+            msg = LLVMGetErrorMessage(err);
+
+            printf: (*const char, ...) ~> int;
+
+            printf("LLVMRunPasses: %s\n", msg);
+
+            LLVMDisposeErrorMessage(msg);
+        }
+
+        LLVMDisposePassBuilderOptions(opts);
+    }
+
+    //----------------------------------------------------------
+    v_verify_module(module);
+
+    //----------------------------------------------------------
+    LLVMTargetMachineEmitToFile(target_machine, module, "/tmp/hello.o", LLVMObjectFile, 0);
+
+    //----------------------------------------------------------
+    LLVMDisposeModule(module);
+
+//  LLVMDisposeTargetData(data_layout);
+
+    LLVMDisposeTargetMachine(target_machine);
+
+    //----------------------------------------------------------
+    lctx = v_target_get_local_ctx();
+    gctx = v_target_get_global_ctx();
+
+    v_target_set_global_ctx(v_target_get_voidc_global_ctx());
+
+    v_target_destroy_local_ctx(lctx);
+    v_target_destroy_global_ctx(gctx);
+}
+
+
+//---------------------------------------------------------------------
+{
+    system: (*const char) ~> int;
+
+    system("armv7a-unknown-linux-gnueabihft64-cc /tmp/hello.o -o /tmp/hello");
+
+    system("qemu-arm -L /usr/armv7a-unknown-linux-gnueabihft64 /tmp/hello");
+}
+
+
+
+

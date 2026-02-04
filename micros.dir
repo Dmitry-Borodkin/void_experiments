@@ -1,6 +1,9 @@
                          ****  ?  ****                         │*
                                                                │
+try_cross.void                                                 │try_cross.void
                                                                │
+                                                               │
+───────────────────────────────────────────────────────────────│
 try_hz24.void                                                  │try_hz24.void -T
 try_hz23.void                                                  │try_hz23.void
                                                                │
