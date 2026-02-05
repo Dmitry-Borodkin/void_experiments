@@ -250,7 +250,7 @@ main: (argc: int, argv: **const char) ~> int
 {
     system: (*const char) ~> int;
 
-    system("armv7a-unknown-linux-gnueabihft64-cc /tmp/hello.o -o /tmp/hello");
+    system("armv7a-unknown-linux-gnueabihft64-gcc /tmp/hello.o -o /tmp/hello");
 
     system("qemu-arm -L /usr/armv7a-unknown-linux-gnueabihft64 /tmp/hello");
 }
