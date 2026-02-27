@@ -1,8 +1,5 @@
 { v_import("libvoidc.void"); }
 {
-//    voidc_set_target_triple("armv7a-unknown-linux-gnueabihft64");
-//    voidc_set_target_sysroot("/usr/armv7a-unknown-linux-gnueabihft64");
-
     voidc_set_target_triple("aarch64-unknown-linux-gnu");
     voidc_set_target_sysroot("/usr/aarch64-unknown-linux-gnu");
 
@@ -54,10 +51,6 @@ main: (argc: int, argv: **const char) ~> int
 //---------------------------------------------------------------------
 {
     system: (*const char) ~> int;
-
-//    system("armv7a-unknown-linux-gnueabihft64-gcc /tmp/hello.o -o /tmp/hello");
-//
-//    system("qemu-arm -L /usr/armv7a-unknown-linux-gnueabihft64 /tmp/hello");
 
     system("aarch64-unknown-linux-gnu-gcc /tmp/hello.o -o /tmp/hello");
 
