@@ -1,0 +1,129 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+
+//---------------------------------------------------------------------
+printf: (*const char, ...) ~> int;
+
+
+//---------------------------------------------------------------------
+#define v_instantiate_init: (T: v_static_type_t)
+{'unit_defn'
+
+    inlinehint
+    (v_initialize(_)): (p: *T, n: size_t) ~> void
+    {
+        for (e = p+n, p: &*T := p; p < e; ++p)  p.v_initialize();
+    }
+
+'unit_defn'}
+
+#define v_instantiate_term: (T: v_static_type_t)
+{'unit_defn'
+
+    inlinehint
+    (v_terminate(_)): (p: *T, n: size_t) ~> void
+    {
+        for (e = p+n, p: &*T := p; p < e; ++p)  p.v_terminate();
+    }
+
+'unit_defn'}
+
+#define v_instantiate_copy: (T: v_static_type_t)
+{'unit_defn'
+
+    inlinehint
+    (v_copy(_)): (d: *T, s: *const T, n: size_t) ~> void
+    {
+        for (e = d+n, d: &*T := d, s: &*const T := s; d < e; ++d, ++s)  d.v_copy(s);
+    }
+
+'unit_defn'}
+
+#define v_instantiate_move: (T: v_static_type_t)
+{'unit_defn'
+
+    inlinehint
+    (v_move(_)): (d: *T, s: *T, n: size_t) ~> void
+    {
+        for (e = d+n, d: &*T := d, s: &*T := s; d < e; ++d, ++s)  d.v_move(s);
+    }
+
+'unit_defn'}
+
+//---------------------------------------------------------------------
+#define v_instantiate_init_term: (T: v_static_type_t)
+{'unit_defn'
+
+    #do (v_instantiate_init(T), v_instantiate_term(T))
+
+'unit_defn'}
+
+#define v_instantiate_copy_move: (T: v_static_type_t)
+{'unit_defn'
+
+    #do (v_instantiate_copy(T), v_instantiate_move(T))
+
+'unit_defn'}
+
+#define v_instantiate_itc: (T: v_static_type_t)
+{'unit_defn'
+
+    #do (v_instantiate_init_term(T), v_instantiate_copy(T))
+
+'unit_defn'}
+
+#define v_instantiate_itm: (T: v_static_type_t)
+{'unit_defn'
+
+    #do (v_instantiate_init_term(T), v_instantiate_move(T))
+
+'unit_defn'}
+
+#define v_instantiate_itcm: (T: v_static_type_t)
+{'unit_defn'
+
+    #do (v_instantiate_init_term(T), v_instantiate_copy_move(T))
+
+'unit_defn'}
+
+
+//---------------------------------------------------------------------
+struct some_t { i: int; };
+
+(_.v_initialize()): (d: *some_t) ~> void
+{
+    printf("init: %p\n", d);
+}
+
+(_.v_terminate()): (d: *some_t) ~> void
+{
+    printf("term: %p\n", d);
+}
+
+(_.v_copy()): (d: *some_t, s: *const some_t) ~> void
+{
+    printf("copy: %p %p\n", d, s);
+}
+
+(_.v_move()): (d: *some_t, s: *some_t) ~> void
+{
+    printf("move: %p %p\n", d, s);
+}
+
+
+//---------------------------------------------------------------------
+#do (v_instantiate_itcm(some_t))
+
+(_:=_): (a: &some_t, b: some_t) ~> &some_t  =  { v_copy(&a, &b); a };
+
+
+//---------------------------------------------------------------------
+{   a: &some_t := {};
+    b: &some_t := {};
+
+
+    a := b;
+
+}
+
+
