@@ -10,7 +10,7 @@ try_cross.void                                                 │try_cross.void
                                                                │
 ───────────────────────────────────────────────────────────────│
 try_hz24.void                                                  │try_hz24.void -T
-try_hz23.void                                                  │try_hz23.void
+try_hz23.void       Prime numbers generation ...               │try_hz23.void
                                                                │
 try_gir3.void                                                  │try_gir3.void -T
 try_gir2.void                                                  │try_gir2.void

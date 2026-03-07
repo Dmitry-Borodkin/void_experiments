@@ -6,54 +6,73 @@ printf: (*const char, ...) ~> int;
 
 
 //---------------------------------------------------------------------
+struct intgen_vtab_t;
+
 struct intgen_t
 {
-    num: *((*void) ~> int);
-    fun: *((*void) ~> intgen_t);
-    cpy: *((*void) ~> *void);
-    del: *((*void) ~> void);
+    vtab: *intgen_vtab_t;
 
-    aux: *void;
+    data: *void;
 };
 
 inlinehint
+(v_initialize(_)): (d: *intgen_t, n: size_t) ~> void;
+
+
+//---------------------------------------------------------------------
+struct intgen_vtab_t
+{
+    num: *((*void) ~> int);
+    fun: *((*void) ~> intgen_t);
+
+    cpy: *((*void) ~> *void);
+    del: *((*void) ~> void);
+};
+
+intgen_dummy_num: (*void) ~> int       { v_assert(false); }
+intgen_dummy_fun: (*void) ~> intgen_t  { v_assert(false); }
+
+intgen_dummy_cpy: (p: *void) ~> *void  =  p;
+intgen_dummy_del: (*void) ~> void {}
+
+intgen_dummy_vtab: &const intgen_vtab_t :=
+{
+    intgen_dummy_num,
+    intgen_dummy_fun,
+    intgen_dummy_cpy,
+    intgen_dummy_del,
+};
+
+
+//---------------------------------------------------------------------
+inlinehint
 (v_initialize(_)): (d: *intgen_t, n: size_t) ~> void
 {
-    for (i: &size_t := 0; i < n; ++i)
+    for (e = d+n, d: &*intgen_t := d; d < e; ++d)
     {
-        d[i].cpy := 0;
-        d[i].del := 0;
+        d->vtab := &intgen_dummy_vtab;
     }
 }
 
 inlinehint
 (v_terminate(_)): (d: *intgen_t, n: size_t) ~> void
 {
-    for (i: &size_t := 0; i < n; ++i)
+    for (e = d+n, d: &*intgen_t := d; d < e; ++d)
     {
-        di = d[i];
-
-        if (del = di.del)   del(di.aux);
+        d->vtab->del(d->data);
     }
 }
 
 inlinehint
 (v_copy(_)): (d: *intgen_t, s: *const intgen_t, n: size_t) ~> void
 {
-    for (i: &size_t := 0; i < n; ++i)
+    for (e = d+n, d: &*intgen_t := d, s: &*const intgen_t := s; d < e; ++d, ++s)
     {
-        di = d[i];
-        si = s[i];
+        d->vtab->del(d->data);
 
-        if (del = di.del)   del(di.aux);
+        d->vtab := s->vtab;
 
-        di.num := si.num;
-        di.fun := si.fun;
-        di.cpy := si.cpy;
-        di.del := si.del;
-
-        if (cpy = di.cpy)   di.aux := cpy(si.aux);
-        else                di.aux := si.aux;
+        d->data := s->vtab->cpy(s->data);
     }
 }
 
@@ -64,9 +83,8 @@ inlinehint
     return d;
 }
 
-#define (_.head): (v: intgen_t) ~> int       =  v.num(v.aux);
-#define (_.tail): (v: intgen_t) ~> intgen_t  =  v.fun(v.aux);
-
+#define (_.head): (v: intgen_t) ~> int       =  v.vtab->num(v.data);
+#define (_.tail): (v: intgen_t) ~> intgen_t  =  v.vtab->fun(v.data);
 
 //---------------------------------------------------------------------
 print_intgen: (ig: intgen_t, n: int) ~> void
@@ -89,13 +107,24 @@ print_intgen: (ig: intgen_t, n: int) ~> void
 
 
 //---------------------------------------------------------------------
-private
+intgen_s_num: (*void) ~> int;
+intgen_s_fun: (*void) ~> intgen_t;
+
+intgen_s_vtab: &const intgen_vtab_t :=
+{
+    intgen_s_num,
+    intgen_s_fun,
+    intgen_dummy_cpy,       //- ?!?
+    intgen_dummy_del,       //- ?!?
+};
+
+alwaysinline
+mk_intgen_s: (p: int) ~> intgen_t  =  { &intgen_s_vtab, (p: *void) };
+
+
 intgen_s_num: (aux: *void) ~> int  =  (aux: int);
 
-private
-intgen_s_fun: (aux: *void) ~> intgen_t  =  { intgen_s_num, intgen_s_fun, 0, 0, ((aux: int) + 1 : *void) };
-
-mk_intgen_s: (p: int) ~> intgen_t  =  { intgen_s_num, intgen_s_fun, 0, 0, (p: *void) };
+intgen_s_fun: (aux: *void) ~> intgen_t  =  mk_intgen_s((aux: int) + 1);
 
 
 //---------------------------------------------------------------------
@@ -121,42 +150,49 @@ struct intgen_filt_data_t
 {
     cur: intgen_t;
 
-    fun: *((*void, int) ~> bool);
-    aux: *void;
+    num: int;
 };
 
 #do (derive_itc(intgen_filt_data_t))
 
-private intgen_filt_num: (aux: *void) ~> int;
-private intgen_filt_fun: (aux: *void) ~> intgen_t;
-private intgen_filt_cpy: (aux: *void) ~> *void;
-private intgen_filt_del: (aux: *void) ~> void;
+intgen_filt_num: (aux: *void) ~> int;
+intgen_filt_fun: (aux: *void) ~> intgen_t;
+intgen_filt_cpy: (aux: *void) ~> *void;
+intgen_filt_del: (aux: *void) ~> void;
 
-private
+intgen_filt_vtab: &const intgen_vtab_t :=
+{
+    intgen_filt_num,
+    intgen_filt_fun,
+    intgen_filt_cpy,
+    intgen_filt_del,
+};
+
+alwaysinline
+mk_intgen_filt: (p: int, ig: intgen_t) ~> intgen_t  =
+{
+    filt = new intgen_filt_data_t {{ig, p}};
+
+    { &intgen_filt_vtab, filt }
+};
+
+
 intgen_filt_num: (aux: *void) ~> int  =  (aux: *const intgen_filt_data_t)->cur.head;
 
-private
 intgen_filt_fun: (aux: *void) ~> intgen_t  =
 {
     filt = *(aux: *const intgen_filt_data_t);
 
     igr: &intgen_t := filt.cur.tail;
 
-    while(!filt.fun(filt.aux, igr.head))
+    while(igr.head % filt.num == 0)
     {
         igr := igr.tail;
     }
 
-    rflt = new intgen_filt_data_t;
-
-    rflt->cur := igr;
-    rflt->fun := filt.fun;
-    rflt->aux := filt.aux;
-
-    { intgen_filt_num, intgen_filt_fun, intgen_filt_cpy, intgen_filt_del, (rflt: *void) }
+    mk_intgen_filt(filt.num, igr)
 };
 
-private
 intgen_filt_cpy: (aux: *void) ~> *void
 {
     ret = new intgen_filt_data_t;
@@ -166,33 +202,10 @@ intgen_filt_cpy: (aux: *void) ~> *void
     return ret;
 }
 
-private
 intgen_filt_del: (aux: *void) ~> void
 {
     delete (aux: *intgen_filt_data_t);
 }
-
-
-private
-intgen_filt_fun_mod: (aux: *void, n: int) ~> bool
-{
-    p = (aux: int);
-
-//  if (p*p > n)  return true;
-
-    return  n % p != 0;
-}
-
-mk_intgen_filt: (p: int, ig: intgen_t) ~> intgen_t  =
-{
-    filt = new intgen_filt_data_t;
-
-    filt->cur := ig;
-    filt->fun := intgen_filt_fun_mod;
-    filt->aux := (p: *void);
-
-    { intgen_filt_num, intgen_filt_fun, intgen_filt_cpy, intgen_filt_del, (filt: *void) }
-};
 
 
 //---------------------------------------------------------------------
@@ -210,17 +223,32 @@ struct intgen_primes_data_t
 
 #do (derive_itc(intgen_primes_data_t))
 
-private intgen_primes_num: (aux: *void) ~> int;
-private intgen_primes_fun: (aux: *void) ~> intgen_t;
-private intgen_primes_cpy: (aux: *void) ~> *void;
-private intgen_primes_del: (aux: *void) ~> void;
+intgen_primes_num: (aux: *void) ~> int;
+intgen_primes_fun: (aux: *void) ~> intgen_t;
+intgen_primes_cpy: (aux: *void) ~> *void;
+intgen_primes_del: (aux: *void) ~> void;
 
 mk_intgen_primes: (ig: intgen_t) ~> intgen_t;
 
-private
+intgen_primes_vtab: &const intgen_vtab_t :=
+{
+    intgen_primes_num,
+    intgen_primes_fun,
+    intgen_primes_cpy,
+    intgen_primes_del,
+};
+
+alwaysinline
+mk_intgen_primes: (ig: intgen_t) ~> intgen_t  =
+{
+    primes = new intgen_primes_data_t {{ig}};
+
+    { &intgen_primes_vtab, primes }
+};
+
+
 intgen_primes_num: (aux: *void) ~> int  =  (aux: *const intgen_primes_data_t)->this.head;
 
-private
 intgen_primes_fun: (aux: *void) ~> intgen_t  =
 {
     ig = (aux: *const intgen_primes_data_t)->this;
@@ -232,7 +260,6 @@ intgen_primes_fun: (aux: *void) ~> intgen_t  =
     mk_intgen_primes(mk_intgen_filt(p, t))
 };
 
-private
 intgen_primes_cpy: (aux: *void) ~> *void
 {
     ret = new intgen_primes_data_t;
@@ -242,27 +269,19 @@ intgen_primes_cpy: (aux: *void) ~> *void
     return ret;
 }
 
-private
 intgen_primes_del: (aux: *void) ~> void
 {
     delete (aux: *intgen_primes_data_t);
 }
 
-mk_intgen_primes: (ig: intgen_t) ~> intgen_t  =
-{
-    primes = new intgen_primes_data_t;
-
-    primes->this := ig;
-
-    { intgen_primes_num, intgen_primes_fun, intgen_primes_cpy, intgen_primes_del, (primes: *void) }
-};
-
 
 //---------------------------------------------------------------------
 {   printf("\n");
 
-    print_intgen(mk_intgen_primes(mk_intgen_s(2)), 500);
+    print_intgen(mk_intgen_primes(mk_intgen_s(2)), 300);
 }
+
+
 
 
 
