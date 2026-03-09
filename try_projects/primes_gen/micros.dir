@@ -1,29 +1,22 @@
-                     ****  Projects  ****                      │*
-                                                               │
-Clang Tooling                                                  │clang_tooling/micros.dir
+                 ****  Primes generator  ****                  │*
                                                                │
                                                                │
-Polyhedra2D/                                                   │polyhedra2d/micros.dir
                                                                │
                                                                │
-string_test/                                                   │string_test/micros.dir
-                                                               │
-                                                               │
-GTK tries                                                      │gtk_tries/micros.dir
-                                                               │
-                                                               │
-Primes generator                                               │primes_gen/micros.dir
+try_some.void                                                  │try_some.void -T
                                                                │
                                                                │
                                                                │
                                                                │
                                                                │
                                                                │
+---------------------------------------------------------------│
+refcnt_ptr      ... old ...                                    │old/refcnt_ptr.void
                                                                │
                                                                │
                                                                │
-                                                               │
-Ninja/                                                         │ninja/micros.dir
+───────────────────────────────────────────────────────────────│
+void.doit                                                      │void.doit
                                                                │
                                                                │
                                                                │
