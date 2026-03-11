@@ -15,6 +15,16 @@
 //---------------------------------------------------------------------
 #do (std.instantiate_refcnt_ptr(int))
 
+check: () ~> std.refcnt_ptr(int)  =
+{
+    ret = v_get_return_value();
+
+    ret := std.make_refcnt(int);
+
+    std.make_refcnt(int)        //- Sic !!!
+};
+
+check2: () ~> std.refcnt_ptr(int)   =  check();
 
 //---------------------------------------------------------------------
 {
@@ -23,6 +33,12 @@
     *p := 42;
 
     printf("*p: %d\n", *p);
+
+    q = check2();
+
+    *q := 77;
+
+    printf("*q: %d\n", *q);
 }
 
 
