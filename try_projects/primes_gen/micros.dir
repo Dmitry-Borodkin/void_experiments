@@ -1,18 +1,15 @@
                  ****  Primes generator  ****                  │*
                                                                │
                                                                │
+try_primes.void                                                │try_primes.void
+                                                               │
+                                                               │
                                                                │
                                                                │
 try_some.void                                                  │try_some.void -T
                                                                │
-                                                               │
-                                                               │
-                                                               │
-                                                               │
-                                                               │
 ---------------------------------------------------------------│
 refcnt_ptr      ... old ...                                    │old/refcnt_ptr.void
-                                                               │
                                                                │
                                                                │
 ───────────────────────────────────────────────────────────────│

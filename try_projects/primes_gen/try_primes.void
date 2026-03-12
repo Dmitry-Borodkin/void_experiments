@@ -1,0 +1,253 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+//---------------------------------------------------------------------
+{
+    v_import("cstdio.void");
+//  v_import("string.void");
+
+    v_import("refcnt_ptr.void");
+}
+
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+struct _intgen_data_t
+{
+    *void;
+    *void;
+    int;
+};
+
+inlinehint
+(v_initialize(_)): (d: *_intgen_data_t, n: size_t) ~> void;
+
+inlinehint
+(v_terminate(_)): (d: *_intgen_data_t, n: size_t) ~> void;
+
+
+//---------------------------------------------------------------------
+#do (std.instantiate_refcnt_ptr(_intgen_data_t))
+
+intgen_t = std.refcnt_ptr(_intgen_data_t);
+
+
+//---------------------------------------------------------------------
+struct intgen_vtab_t;
+
+struct intgen_data_t
+{
+    vtab: *const intgen_vtab_t;
+
+    intgen: intgen_t;
+    number: int;
+};
+
+struct intgen_vtab_t
+{
+    num: *((&const intgen_data_t) ~> int);
+    fun: *((&const intgen_data_t) ~> intgen_t);
+};
+
+
+//---------------------------------------------------------------------
+//inlinehint
+(v_initialize(_)): (*intgen_data_t, size_t) ~> void  =  derive;
+
+//inlinehint
+(v_terminate(_)): (*intgen_data_t, size_t) ~> void  = derive;
+
+//---------------------------------------------------------------------
+inlinehint
+(v_initialize(_)): (d: *_intgen_data_t, n: size_t) ~> void
+{
+    v_initialize((d: *intgen_data_t), n);
+}
+
+inlinehint
+(v_terminate(_)): (d: *_intgen_data_t, n: size_t) ~> void
+{
+    v_terminate((d: *intgen_data_t), n);
+}
+
+
+//---------------------------------------------------------------------
+{   t0_obj = v_find_type("_intgen_data_t");
+    t0_ptr = v_pointer_type(t0_obj, 0);
+    t0_ref = v_reference_type(t0_obj, 0);
+
+    t1_obj = v_find_type("intgen_data_t");
+    t1_ptr = v_pointer_type(t1_obj, 0);
+    t1_ref = v_reference_type(t1_obj, 0);
+
+    q_obj = v_quark_from_string("my.intgen_coercion_obj");
+    q_ptr = v_quark_from_string("my.intgen_coercion_ptr");
+    q_ref = v_quark_from_string("my.intgen_coercion_ref");
+
+    v_add_intrinsic_q(q_obj, voidc_trivial_coercion_intrinsic, t1_obj);
+    v_add_intrinsic_q(q_ptr, voidc_trivial_coercion_intrinsic, t1_ptr);
+    v_add_intrinsic_q(q_ref, voidc_trivial_coercion_intrinsic, t1_ref);
+
+    q_fake = v_quark_from_string("my.intgen_coercion_fake");
+
+    v_add_coercion(v_coe_single, q_obj, q_fake, t0_obj, t1_obj);
+    v_add_coercion(v_coe_single, q_ptr, q_fake, t0_ptr, t1_ptr);
+    v_add_coercion(v_coe_single, q_ref, q_fake, t0_ref, t1_ref);
+}
+
+
+//---------------------------------------------------------------------
+alwaysinline
+mk_intgen: (vtab: &const intgen_vtab_t) ~> intgen_t
+{
+    ret = v_get_return_value();
+
+    ret := std.make_refcnt(_intgen_data_t);
+
+    ret->vtab := &vtab;
+}
+
+#define (_.head): (v: intgen_t) ~> int       =  v->vtab->num(*v);
+#define (_.tail): (v: intgen_t) ~> intgen_t  =  v->vtab->fun(*v);
+
+
+//---------------------------------------------------------------------
+print_intgen: (ig: intgen_t, n: int) ~> void
+{
+    ig: &intgen_t := ig;
+
+    prev: &int := 0;
+
+    for (i: &int := 1; i <= n; ++i)
+    {
+        igh = ig.head;
+
+        printf("%d: %d %d\n", i, igh, igh-prev);
+
+        prev := igh;
+
+        ig := ig.tail;
+    }
+}
+
+
+//---------------------------------------------------------------------
+intgen_s_num: (&const intgen_data_t) ~> int;
+intgen_s_fun: (&const intgen_data_t) ~> intgen_t;
+
+intgen_s_vtab: &const intgen_vtab_t :=
+{
+    intgen_s_num,
+    intgen_s_fun,
+};
+
+alwaysinline
+mk_intgen_s: (p: int) ~> intgen_t
+{
+    ret = v_get_return_value();
+
+    ret := mk_intgen(intgen_s_vtab);
+
+    ret->number := p;
+}
+
+intgen_s_num: (d: &const intgen_data_t) ~> int       =  d.number;
+intgen_s_fun: (d: &const intgen_data_t) ~> intgen_t  =  mk_intgen_s(d.number + 1);
+
+
+//---------------------------------------------------------------------
+//{   printf("\n");
+//
+//    print_intgen(mk_intgen_s(0), 9);
+//}
+
+
+//---------------------------------------------------------------------
+intgen_filt_num: (&const intgen_data_t) ~> int;
+intgen_filt_fun: (&const intgen_data_t) ~> intgen_t;
+
+intgen_filt_vtab: &const intgen_vtab_t :=
+{
+    intgen_filt_num,
+    intgen_filt_fun,
+};
+
+alwaysinline
+mk_intgen_filt: (p: int, ig: intgen_t) ~> intgen_t
+{
+    ret = v_get_return_value();
+
+    ret := mk_intgen(intgen_filt_vtab);
+
+    ret->intgen := ig;
+    ret->number := p;
+}
+
+intgen_filt_num: (d: &const intgen_data_t) ~> int  =  d.intgen.head;
+
+intgen_filt_fun: (d: &const intgen_data_t) ~> intgen_t  =
+{
+    ig: &intgen_t := d.intgen.tail;
+
+    while(ig.head % d.number == 0)
+    {
+        ig := ig.tail;
+    }
+
+    mk_intgen_filt(d.number, ig)
+};
+
+
+//---------------------------------------------------------------------
+//{   printf("\n");
+//
+//    print_intgen(mk_intgen_filt(2, mk_intgen_s(0)), 10);
+//}
+
+
+//---------------------------------------------------------------------
+intgen_primes_num: (&const intgen_data_t) ~> int;
+intgen_primes_fun: (&const intgen_data_t) ~> intgen_t;
+
+intgen_primes_vtab: &const intgen_vtab_t :=
+{
+    intgen_primes_num,
+    intgen_primes_fun,
+};
+
+alwaysinline
+mk_intgen_primes: (ig: intgen_t) ~> intgen_t
+{
+    ret = v_get_return_value();
+
+    ret := mk_intgen(intgen_primes_vtab);
+
+    ret->intgen := ig;
+}
+
+intgen_primes_num: (d: &const intgen_data_t) ~> int  =  d.intgen.head;
+
+intgen_primes_fun: (d: &const intgen_data_t) ~> intgen_t  =
+{
+    p = d.intgen.head;
+    t = d.intgen.tail;
+
+    mk_intgen_primes(mk_intgen_filt(p, t))
+};
+
+
+//---------------------------------------------------------------------
+{   printf("\n");
+
+    print_intgen(mk_intgen_primes(mk_intgen_s(2)), 2000);
+}
+
+
+
+
+
+
+
+
+
