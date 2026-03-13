@@ -1,7 +1,9 @@
                  ****  Primes generator  ****                  │*
                                                                │
                                                                │
-try_primes.void                                                │try_primes.void
+try_primes.void                                                │try_primes.void -T
+                                                               │
+try_primes2.void                                               │try_primes2.void -T
                                                                │
                                                                │
                                                                │

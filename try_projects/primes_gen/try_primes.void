@@ -10,6 +10,8 @@
 { v_import("stack_trace.void"); }
 { voidc_enable_stack_trace(); }
 
+{ v_set_export_flag(true); }
+
 
 //---------------------------------------------------------------------
 namespace intgen
@@ -93,6 +95,8 @@ namespace intgen
 
 
     //-----------------------------------------------------------------
+    //- !
+    //-----------------------------------------------------------------
     {   t0_obj = v_find_type("_data_t");
         t0_ptr = v_pointer_type(t0_obj, 0);
         t0_ref = v_reference_type(t0_obj, 0);
@@ -115,6 +119,7 @@ namespace intgen
         v_add_coercion(v_coe_single, q_ptr, q_fake, t0_ptr, t1_ptr);
         v_add_coercion(v_coe_single, q_ref, q_fake, t0_ref, t1_ref);
     }
+
 
 //---------------------------------------------------------------------
 }   //- namespace intgen
@@ -158,27 +163,20 @@ mk_intgen: (vtab: &const intgen.vtab_t) ~> intgen_t
 //---------------------------------------------------------------------
 namespace intgen
 {
+    namespace step { #do (define_vtab()) }
 
+    alwaysinline
+    mk_step: (p: int) ~> intgen_t
+    {
+        ret = v_get_return_value();
 
-//---------------------------------------------------------------------
-namespace step   { #do (define_vtab()) }
-namespace filt   { #do (define_vtab()) }
-namespace primes { #do (define_vtab()) }
+        ret := mk_intgen(step.vtab);
 
+        ret->number := p;
+    }
 
-//---------------------------------------------------------------------
-alwaysinline
-mk_step: (p: int) ~> intgen_t
-{
-    ret = v_get_return_value();
-
-    ret := mk_intgen(step.vtab);
-
-    ret->number := p;
-}
-
-step.num: (d: &const data_t) ~> int       =  d.number;
-step.fun: (d: &const data_t) ~> intgen_t  =  mk_step(d.number + 1);
+    step.num: (d: &const data_t) ~> int       =  d.number;
+    step.fun: (d: &const data_t) ~> intgen_t  =  mk_step(d.number + 1);
 
 
 //---------------------------------------------------------------------
@@ -188,24 +186,23 @@ step.fun: (d: &const data_t) ~> intgen_t  =  mk_step(d.number + 1);
 //}
 
 
-//---------------------------------------------------------------------
-alwaysinline
-mk_filt: (p: int, ig: intgen_t) ~> intgen_t
-{
-    ret = v_get_return_value();
+    //-----------------------------------------------------------------
+    namespace filt { #do (define_vtab()) }
 
-    ret := mk_intgen(filt.vtab);
+    alwaysinline
+    mk_filt: (p: int, ig: intgen_t) ~> intgen_t
+    {
+        ret = v_get_return_value();
 
-    ret->intgen := ig;
-    ret->number := p;
-}
+        ret := mk_intgen(filt.vtab);
 
-//---------------------------------------------------------------------
-namespace filt
-{
-    num: (d: &const data_t) ~> int  =  d.intgen.head;
+        ret->intgen := ig;
+        ret->number := p;
+    }
 
-    fun: (d: &const data_t) ~> intgen_t  =
+    filt.num: (d: &const data_t) ~> int  =  d.intgen.head;
+
+    filt.fun: (d: &const data_t) ~> intgen_t  =
     {
         ig: &intgen_t := d.intgen.tail;
 
@@ -217,9 +214,6 @@ namespace filt
         mk_filt(d.number, ig)
     };
 
-//---------------------------------------------------------------------
-}   //- namespace filt
-
 
 //---------------------------------------------------------------------
 //{   printf("\n");
@@ -228,23 +222,22 @@ namespace filt
 //}
 
 
-//---------------------------------------------------------------------
-alwaysinline
-mk_primes: (ig: intgen_t) ~> intgen_t
-{
-    ret = v_get_return_value();
+    //-----------------------------------------------------------------
+    namespace primes { #do (define_vtab()) }
 
-    ret := mk_intgen(primes.vtab);
+    alwaysinline
+    mk_primes: (ig: intgen_t) ~> intgen_t
+    {
+        ret = v_get_return_value();
 
-    ret->intgen := ig;
-}
+        ret := mk_intgen(primes.vtab);
 
-//---------------------------------------------------------------------
-namespace primes
-{
-    num: (d: &const data_t) ~> int  =  d.intgen.head;
+        ret->intgen := ig;
+    }
 
-    fun: (d: &const data_t) ~> intgen_t  =
+    primes.num: (d: &const data_t) ~> int  =  d.intgen.head;
+
+    primes.fun: (d: &const data_t) ~> intgen_t  =
     {
         p = d.intgen.head;
         t = d.intgen.tail;
@@ -252,23 +245,21 @@ namespace primes
         mk_primes(mk_filt(p, t))
     };
 
-//---------------------------------------------------------------------
-}   //- namespace primes
-
 
 //---------------------------------------------------------------------
-{   printf("\n");
+{
+    printf("\n");
 
-    mk_primes(mk_step(2)).print(2000);
+    mk_primes(mk_step(2)).print(1000);
 }
-
-
-
 
 
 
 
 //---------------------------------------------------------------------
 }   //- namespace intgen
+
+
+
 
 
