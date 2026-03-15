@@ -7,11 +7,10 @@
     v_import("try_primes.void");
 }
 
-{ v_import("stack_trace.void"); }
-{ voidc_enable_stack_trace(); }
+//{ v_import("stack_trace.void"); }
+//{ voidc_enable_stack_trace(); }
 
 
-//{ v_debug_print_module(999); }
 //---------------------------------------------------------------------
 {
     printf("\n");

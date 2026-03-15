@@ -7,8 +7,8 @@
     v_import("refcnt_ptr.void");
 }
 
-{ v_import("stack_trace.void"); }
-{ voidc_enable_stack_trace(); }
+//{ v_import("stack_trace.void"); }
+//{ voidc_enable_stack_trace(); }
 
 
 //=====================================================================
@@ -17,7 +17,6 @@
 
 { v_set_export_flag(true); }
 
-//{ v_debug_print_module(999); }
 
 //---------------------------------------------------------------------
 namespace intgen
@@ -29,10 +28,10 @@ namespace intgen
         int;
     };
 
-    inlinehint
+    alwaysinline
     (v_initialize(_)): (d: *_data_t, n: size_t) ~> void;
 
-    inlinehint
+    alwaysinline
     (v_terminate(_)): (d: *_data_t, n: size_t) ~> void;
 
 //---------------------------------------------------------------------
@@ -80,20 +79,20 @@ namespace intgen
 
 
     //-----------------------------------------------------------------
-    //inlinehint
+    inlinehint
     (v_initialize(_)): (*data_t, size_t) ~> void  =  derive;
 
-    //inlinehint
+    inlinehint
     (v_terminate(_)): (*data_t, size_t) ~> void  = derive;
 
     //-----------------------------------------------------------------
-    inlinehint
+    alwaysinline
     (v_initialize(_)): (d: *_data_t, n: size_t) ~> void
     {
         v_initialize((d: *data_t), n);
     }
 
-    inlinehint
+    alwaysinline
     (v_terminate(_)): (d: *_data_t, n: size_t) ~> void
     {
         v_terminate((d: *data_t), n);
@@ -260,17 +259,11 @@ namespace intgen
 //}
 
 
-
-
 //---------------------------------------------------------------------
 }   //- namespace intgen
 
 
-//{ voidc_verify_jit_module_optimized(true); }
-//{ v_debug_print_module(999); }
 //=====================================================================
 {   voidc_unit_end_module(); }
-
-
 
 
