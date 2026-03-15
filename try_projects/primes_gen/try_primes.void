@@ -10,8 +10,14 @@
 { v_import("stack_trace.void"); }
 { voidc_enable_stack_trace(); }
 
+
+//=====================================================================
+{   voidc_unit_begin_module("try_primes_module"); }
+
+
 { v_set_export_flag(true); }
 
+//{ v_debug_print_module(999); }
 
 //---------------------------------------------------------------------
 namespace intgen
@@ -247,11 +253,11 @@ namespace intgen
 
 
 //---------------------------------------------------------------------
-{
-    printf("\n");
-
-    mk_primes(mk_step(2)).print(1000);
-}
+//{
+//    printf("\n");
+//
+//    mk_primes(mk_step(2)).print(1000);
+//}
 
 
 
@@ -259,6 +265,11 @@ namespace intgen
 //---------------------------------------------------------------------
 }   //- namespace intgen
 
+
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(999); }
+//=====================================================================
+{   voidc_unit_end_module(); }
 
 
 

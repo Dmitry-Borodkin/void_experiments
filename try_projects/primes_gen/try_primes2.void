@@ -1,2 +1,26 @@
-{ v_import("try_primes.void"); }
-?
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+//---------------------------------------------------------------------
+{
+    v_import("cstdio.void");
+
+    v_import("try_primes.void");
+}
+
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//{ v_debug_print_module(999); }
+//---------------------------------------------------------------------
+{
+    printf("\n");
+
+    using namespace intgen;
+
+    mk_primes(mk_step(2)).print(1000);
+}
+
+
+
+
