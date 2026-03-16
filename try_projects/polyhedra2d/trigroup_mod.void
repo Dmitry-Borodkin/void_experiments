@@ -80,23 +80,23 @@ struct BorderItem
 {
     kind: int;                  //- 0, 1, 2
 
-    ceil: *GroupElementData;
+    cell: *GroupElementData;
 
     order:  unsigned;
     filled: unsigned;
 };
 
 private
-mk_BorderItem: (group: TriGroup, kind: int, ceil: *GroupElementData) ~> BorderItem  =
+mk_BorderItem: (group: TriGroup, kind: int, cell: *GroupElementData) ~> BorderItem  =
 {
     prev_kind: &int := undef;
 
-    if (ceil->height & 1)   prev_kind := (kind+1) % 3;          //- Odd ceil
-    else                    prev_kind := (kind+(3-1)) % 3;      //- Even ceil
+    if (cell->height & 1)   prev_kind := (kind+1) % 3;          //- Odd cell
+    else                    prev_kind := (kind+(3-1)) % 3;      //- Even cell
 
     order = 2*group.order[prev_kind][kind];     //- "Order" of axis...
 
-    {kind, ceil, order, 0}
+    {kind, cell, order, 0}
 };
 
 
@@ -515,7 +515,7 @@ build_layer: (group: &TriGroup) ~> void
 
     if (b_len == 0) return;
 
-    l_height = group.border(0).ceil->height + 1;
+    l_height = group.border(0).cell->height + 1;
 
     //- Determine new layer size
 
@@ -557,10 +557,10 @@ build_layer: (group: &TriGroup) ~> void
         b  = group.border(s);
         bn = group.border(s+1);
 
-        e_s[b.kind] := b.ceil;
+        e_s[b.kind] := b.cell;
         e_d[b.kind] := -1;
 
-        b.ceil->set_step(b.kind, e);
+        b.cell->set_step(b.kind, e);
 
         t: &int := 0;
 
@@ -574,12 +574,12 @@ build_layer: (group: &TriGroup) ~> void
             b1 = n_border->data[d];
             b2 = n_border->data[d+1];
 
-            if (l_height & 1)       //- Odd ceil
+            if (l_height & 1)       //- Odd cell
             {
                 b1 := mk_BorderItem(group, (b.kind+(3-1))%3, &e);
                 b2 := mk_BorderItem(group, (b.kind+(3-2))%3, &e);
             }
-            else                    //- Even ceil
+            else                    //- Even cell
             {
                 b1 := mk_BorderItem(group, (b.kind+1)%3, &e);
                 b2 := mk_BorderItem(group, (b.kind+2)%3, &e);
@@ -595,18 +595,18 @@ build_layer: (group: &TriGroup) ~> void
 
         case 1:     //- Drop the first vertex
 
-            e_s[bp.kind] := bp.ceil;
+            e_s[bp.kind] := bp.cell;
             e_d[bp.kind] := -1;
 
-            bp.ceil->set_step(bp.kind, e);
+            bp.cell->set_step(bp.kind, e);
 
             b2 = n_border->data[d];
 
-            if (l_height & 1)       //- Odd ceil
+            if (l_height & 1)       //- Odd cell
             {
                 b2 := mk_BorderItem(group, (b.kind+(3-2))%3, &e);
             }
-            else                    //- Even ceil
+            else                    //- Even cell
             {
                 b2 := mk_BorderItem(group, (b.kind+2)%3, &e);
             }
@@ -620,18 +620,18 @@ build_layer: (group: &TriGroup) ~> void
 
         case 2:     //- Drop the second vertex
 
-            e_s[bn.kind] := bn.ceil;
+            e_s[bn.kind] := bn.cell;
             e_d[bn.kind] := -1;
 
-            bn.ceil->set_step(bn.kind, e);
+            bn.cell->set_step(bn.kind, e);
 
             b1 = n_border->data[d];
 
-            if (l_height & 1)       //- Odd ceil
+            if (l_height & 1)       //- Odd cell
             {
                 b1 := mk_BorderItem(group, (b.kind+(3-1))%3, &e);
             }
-            else                    //- Even ceil
+            else                    //- Even cell
             {
                 b1 := mk_BorderItem(group, (b.kind+1)%3, &e);
             }
@@ -645,15 +645,15 @@ build_layer: (group: &TriGroup) ~> void
 
         default:    //- Drop both vertices - the last element
 
-            e_s[bp.kind] := bp.ceil;
+            e_s[bp.kind] := bp.cell;
             e_d[bp.kind] := -1;
 
-            bp.ceil->set_step(bp.kind, e);
+            bp.cell->set_step(bp.kind, e);
 
-            e_s[bn.kind] := bn.ceil;
+            e_s[bn.kind] := bn.cell;
             e_d[bn.kind] := -1;
 
-            bn.ceil->set_step(bn.kind, e);
+            bn.cell->set_step(bn.kind, e);
 
             break;
         }
