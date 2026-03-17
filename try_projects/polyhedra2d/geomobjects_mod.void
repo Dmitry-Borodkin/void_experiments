@@ -102,7 +102,7 @@ namespace Geometry
 //=====================================================================
 (v_initialize(_)): (p: *Polygon, N: size_t) ~> void
 {
-    memset(p, 0, N*Polygon.sizeof);
+    memset(p, 0, N*sizeof(Polygon));
 }
 
 (v_terminate(_)):  (p: *Polygon, N: size_t) ~> void
@@ -127,7 +127,7 @@ namespace Geometry
 
         dv = new Point[sn];
 
-        memcpy(dv, sv, sn*Point.sizeof);
+        memcpy(dv, sv, sn*sizeof(Point));
 
         dn := sn;
     }
@@ -149,7 +149,7 @@ namespace Geometry
         dn := sn;
     }
 
-    memset(s, 0, N*Polygon.sizeof);
+    memset(s, 0, N*sizeof(Polygon));
 }
 
 //---------------------------------------------------------------------

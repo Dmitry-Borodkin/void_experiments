@@ -18,7 +18,7 @@ C =   43736126779286972578612526023713901528165375581616136186214379933784234677
 {
     #define print: (a, s: *const char)  =
     {
-        t = v_typeof(a);
+        t = typeof(a);
 
         w = t.width;
 
@@ -96,26 +96,26 @@ my_type2string_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~>
 
     #define MACRO: ()  =  0;
 
-    printf("MACRO: %s\n", type2str(v_typeof(MACRO)));
+    printf("MACRO: %s\n", type2str(typeof(MACRO)));
 
-    printf("\"Hello world!\\n\": %s\n", type2str(v_typeof("Hello world!\n")));
+    printf("\"Hello world!\\n\": %s\n", type2str(typeof("Hello world!\n")));
 
-    printf("A: %s\n", type2str(v_typeof(A)));
-    printf("B: %s\n", type2str(v_typeof(B)));
-    printf("C: %s\n", type2str(v_typeof(C)));
+    printf("A: %s\n", type2str(typeof(A)));
+    printf("B: %s\n", type2str(typeof(B)));
+    printf("C: %s\n", type2str(typeof(C)));
 }
 
 
 {
-    #define pair: (a, b)  =  v_typed(v_struct({v_typeof(a), v_typeof(b)}), {a, b});
+    #define pair: (a, b)  =  v_typed(v_struct({typeof(a), typeof(b)}), {a, b});
 
-    printf("pair(42, 0.5): %s\n", type2str(v_typeof(pair(42, 0.5))));
+    printf("pair(42, 0.5): %s\n", type2str(typeof(pair(42, 0.5))));
 
-    printf("pair(pair(42, 0.5), true): %s\n", type2str(v_typeof(pair(pair(42, 0.5), true))));
+    printf("pair(pair(42, 0.5), true): %s\n", type2str(typeof(pair(pair(42, 0.5), true))));
 
-    printf("pair(1, 2): %s\n", type2str(v_typeof(pair(1, 2))));
+    printf("pair(1, 2): %s\n", type2str(typeof(pair(1, 2))));
 
-    printf("pair(pair(1, 2), pair(3, 4)): %s\n", type2str(v_typeof(pair(pair(1, 2), pair(3, 4)))));
+    printf("pair(pair(1, 2), pair(3, 4)): %s\n", type2str(typeof(pair(pair(1, 2), pair(3, 4)))));
 }
 
 

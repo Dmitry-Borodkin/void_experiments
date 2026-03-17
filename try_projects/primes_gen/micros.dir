@@ -13,9 +13,6 @@ try_some.void       refcnt_ptr                                 │try_some.void 
 try_some2.void      unique_ptr                                 │try_some2.void -T
                                                                │
                                                                │
----------------------------------------------------------------│
-refcnt_ptr      ... old ...                                    │old/refcnt_ptr.void
-                                                               │
                                                                │
 ───────────────────────────────────────────────────────────────│
 void.doit                                                      │void.doit

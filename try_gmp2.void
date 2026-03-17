@@ -123,7 +123,7 @@ inlinehint
 block
 {
     n = _n;
-    t = v_typeof(n);
+    t = typeof(n);
 
     #if (t.is_reference)
 
@@ -439,8 +439,8 @@ __gmp_printf: (*const char, ...) ~> int;
 
     bnum: &mpz_t := {};
 
-//  __gmpz_import(&bnum, num_t.sizeof, -1, 1, 0, 0, &num);
-    __gmpz_import(&bnum, 1, 1, num_t.sizeof, 0, 0, &num);
+//  __gmpz_import(&bnum, sizeof(num_t), -1, 1, 0, 0, &num);
+    __gmpz_import(&bnum, 1, 1, sizeof(num_t), 0, 0, &num);
 
     __gmp_printf("%Zd\n", &bnum);
 

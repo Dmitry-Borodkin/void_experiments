@@ -16,7 +16,7 @@ fabs: (double) ~> double;
 //---------------------------------------------------------------------
 #define (_<<_): (f: *FILE, v) ~> *FILE  =
 {
-    t = v_typeof(v);
+    t = typeof(v);
 
   #if (t.is_reference)
 
@@ -133,7 +133,7 @@ alwaysinline
 
 #define (_-_): (a: Point, b)  =
 {
-    t = v_typeof(b);
+    t = typeof(b);
 
   #if (t.is_reference)  t = t.element_type;   #endif
 

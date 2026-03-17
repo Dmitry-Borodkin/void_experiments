@@ -57,8 +57,8 @@ namespace intgen
         number: int;
     };
 
-    #assert (data_t.alignof == _data_t.alignof)
-    #assert (data_t.sizeof  == _data_t.sizeof)
+    #assert (alignof(data_t) == alignof(_data_t))
+    #assert (sizeof(data_t)  == sizeof(_data_t))
 
     struct vtab_t
     {
