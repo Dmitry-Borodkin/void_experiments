@@ -125,22 +125,22 @@ namespace intgen
         v_add_coercion(v_coe_single, q_ref, q_fake, t0_ref, t1_ref);
     }
 
+    //-----------------------------------------------------------------
+    alwaysinline
+    mk_intgen: (vtab: &const vtab_t) ~> intgen_t
+    {
+        ret = v_get_return_value();
+
+        ret := std.make_refcnt(_data_t);
+
+        ret->vtab := &vtab;
+    }
 
 //---------------------------------------------------------------------
 }   //- namespace intgen
 
 
 //---------------------------------------------------------------------
-alwaysinline
-mk_intgen: (vtab: &const intgen.vtab_t) ~> intgen_t
-{
-    ret = v_get_return_value();
-
-    ret := std.make_refcnt(intgen._data_t);
-
-    ret->vtab := &vtab;
-}
-
 #define (_.head): (v: intgen_t) ~> int       =  v->vtab->num(*v);
 #define (_.tail): (v: intgen_t) ~> intgen_t  =  v->vtab->fun(*v);
 

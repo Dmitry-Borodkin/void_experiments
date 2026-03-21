@@ -1,0 +1,30 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+{
+    v_import("cstdio.void");
+    v_import("type_traits.void");
+}
+
+//---------------------------------------------------------------------
+{
+    t = v_generic(qwe, T[bool, char, short, int, long], N[7, 77, 777]);
+
+    printf("t.arg_count: %d\n", t.arg_count);
+
+    printf("t.args[0].count: %zd\n", t.args[0].count);
+
+    printf("t.args[0].types[0].width: %d\n", t.args[0].types[0].width);
+    printf("t.args[0].types[1].width: %d\n", t.args[0].types[1].width);
+    printf("t.args[0].types[2].width: %d\n", t.args[0].types[2].width);
+    printf("t.args[0].types[3].width: %d\n", t.args[0].types[3].width);
+    printf("t.args[0].types[4].width: %d\n", t.args[0].types[4].width);
+
+    printf("t.args[1].count: %zd\n", t.args[1].count);
+
+    printf("t.args[1].numbers[0]: %llu\n", t.args[1].numbers[0]);
+    printf("t.args[1].numbers[1]: %llu\n", t.args[1].numbers[1]);
+    printf("t.args[1].numbers[2]: %llu\n", t.args[1].numbers[2]);
+}
+
+
+
