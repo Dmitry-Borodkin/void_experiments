@@ -6,24 +6,45 @@
 }
 
 //---------------------------------------------------------------------
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(2); }
 {
-    t = v_generic(qwe, T[bool, char, short, int, long], N[7, 77, 777]);
+    t = v_generic(foo, T[bool, char, short, int, long, int(1024)], N[7, 77, 777, 7777, 77777]);
+
+    #assert(t.is_generic);
+
+    printf("t.cons: %s\n", t.cons.string);
 
     printf("t.arg_count: %d\n", t.arg_count);
 
+    #assert(t.args[0].is_type_list);
+
     printf("t.args[0].count: %zd\n", t.args[0].count);
 
-    printf("t.args[0].types[0].width: %d\n", t.args[0].types[0].width);
-    printf("t.args[0].types[1].width: %d\n", t.args[0].types[1].width);
-    printf("t.args[0].types[2].width: %d\n", t.args[0].types[2].width);
-    printf("t.args[0].types[3].width: %d\n", t.args[0].types[3].width);
-    printf("t.args[0].types[4].width: %d\n", t.args[0].types[4].width);
+    #define doit: (some, n, i = 0)
+    {'stmt'
+
+        #if (i < n)
+
+            some(i);
+
+            doit(some, n, i+1);
+
+        #endif
+
+    'stmt'}
+
+    #define some: (i)  =  printf("t.args[0].types[%d].width: %u\n", i, t.args[0].types[i].width);
+
+    doit(some, t.args[0].count);
 
     printf("t.args[1].count: %zd\n", t.args[1].count);
 
-    printf("t.args[1].numbers[0]: %llu\n", t.args[1].numbers[0]);
-    printf("t.args[1].numbers[1]: %llu\n", t.args[1].numbers[1]);
-    printf("t.args[1].numbers[2]: %llu\n", t.args[1].numbers[2]);
+    #assert(t.args[1].is_number_list);
+
+    #define some: (i)  =  printf("t.args[1].numbers[%d]: %llu\n", i, t.args[1].numbers[i]);
+
+    doit(some, t.args[1].count);
 }
 
 
