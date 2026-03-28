@@ -9,7 +9,11 @@
 //{ voidc_verify_jit_module_optimized(true); }
 //{ v_debug_print_module(2); }
 {
-    t = v_generic(foo, T[bool, char, short, int, long, int(1024)], N[7, 77, 777, 7777, 77777]);
+    t = v_generic(foo,
+                  T[bool, char, short, int, long, int(1024)],
+                  N[7, 77, 777, 7777, 77777],
+                  S["qwe", "asdf", "zxcvb"]
+                  );
 
     #assert(t.is_generic);
 
@@ -45,6 +49,12 @@
     #define some: (i)  =  printf("t.args[1].numbers[%d]: %llu\n", i, t.args[1].numbers[i]);
 
     doit(some, t.args[1].count);
+
+    #assert(t.args[2].is_string_list);
+
+    #define some: (i)  =  printf("t.args[2].strings[%d].string: %s\n", i, t.args[2].strings[i].string);
+
+    doit(some, t.args[2].count);
 }
 
 

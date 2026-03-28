@@ -1,0 +1,133 @@
+{ voidc_import("libvoidc.void"); }
+{ voidc_make_header("fnv1a"); }
+//---------------------------------------------------------------------
+{
+    v_export_import("cstdio.void");
+    v_export_import("type_traits.void");
+}
+
+
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+namespace my
+{
+namespace hash
+{
+
+namespace detail
+{
+
+//---------------------------------------------------------------------
+#define fnv1a_const: (T: v_static_type_t) ~> v_static_namespace_t  =  .my.hash.detail.v_generic_ns(fnv1a_const, t(T));
+
+namespace fnv1a_const(uint(32))
+{
+    basis: uint(32) = 0x811c9dc5;
+    prime: uint(32) = (1u32 << 24) + 0x193;
+}
+
+namespace fnv1a_const(uint(64))
+{
+    basis: uint(64) = 0xcbf29ce484222325;
+    prime: uint(64) = (1u64 << 40) + 0x1b3;
+}
+
+namespace fnv1a_const(uint(128))
+{
+    basis: uint(128) = 0x6c62272e07bb014262b821756295c58d;
+    prime: uint(128) = (1u128 << 88) + 0x13b;
+}
+
+namespace fnv1a_const(uint(256))
+{
+    basis: uint(256) = 0xdd268dbcaac550362d98c384c4e576ccc8b1536847b6bbb31023b4c8caee0535;
+    prime: uint(256) = (1u256 << 168) + 0x163;
+}
+
+namespace fnv1a_const(uint(512))
+{
+    basis: uint(512) = 0xb86db0b1171f4416dca1e50f309990acac87d059c90000000000000000000d21e948f68a34c192f62ea79bc942dbe7ce182036415f56e34bac982aac4afe9fd9;
+    prime: uint(512) = (1u512 << 344) + 0x157;
+}
+
+namespace fnv1a_const(uint(1024))
+{
+    basis: uint(1024) = 0x0000000000000000005f7a76758ecc4d32e56d5a591028b74b29fc4223fdada16c3bf34eda3674da9a21d9000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004c6d7eb6e73802734510a555f256cc005ae556bde8cc9c6a93b21aff4b16c71ee90b3;
+    prime: uint(1024) = (1u1024 << 680) + 0x18d;
+}
+
+
+//---------------------------------------------------------------------
+#define fnv1a: (T: v_static_type_t) ~> v_static_type_t  =  v_generic(fnv1a, t(T));
+
+//---------------------------------------------------------------------
+#define instantiate_fnv1a: (T: v_static_type_t)
+{'unit_defn_list'
+
+  namespace .my.hash.detail
+  {
+    #do (v_set_implementation_type(fnv1a(T), T))
+
+    private
+    namespace v_generic_ns(fnv1a_detail, t(T))
+    {
+        impl_t = v_get_implementation_type(fnv1a(T));
+
+        alwaysinline
+        (_.impl): (s: &fnv1a(T)) ~> &impl_t  =  *(&s : *impl_t);
+    }
+
+    private
+    detail_ns = v_generic_ns(fnv1a_detail, t(T));
+
+    //-------------------------------------------------------------
+    inlinehint
+    (v_initialize(_)): (d: *fnv1a(T), n: size_t) ~> void
+    {
+        for (e = d+n, d: &*fnv1a(T) := d; d < e; ++d)   d->impl := fnv1a_const(T).basis;
+    }
+
+    alwaysinline
+    (v_terminate(_)): (*fnv1a(T), size_t) ~> void {}
+
+    alwaysinline
+    (v_copy(_)): (d: *fnv1a(T), s: *const fnv1a(T), n: size_t) ~> void
+    {
+        .memcpy: (*void, *const void, size_t) ~> *void;
+
+        .memcpy(d, s, n*sizeof(fnv1a(T)));
+    }
+
+
+
+
+
+
+
+
+
+
+
+  } //- namespace .my.hash.detail
+
+'unit_defn_list'}
+
+
+
+
+
+}   //- namespace detail
+
+
+
+
+}   //- namespace hash
+}   //- namespace my
+
+
+
+
+

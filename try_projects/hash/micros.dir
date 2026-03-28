@@ -1,16 +1,15 @@
-                 ****  Primes generator  ****                  │*
+                       ****  Hash  ****                        │*
                                                                │
                                                                │
-try_primes.void                                                │try_primes.void -T
-                                                               │
-try_primes2.void                                               │try_primes2.void -T
+try_fnv1a.void                                                 │try_fnv1a.void
                                                                │
                                                                │
+try_some.void                                                  │try_some.void -T
                                                                │
                                                                │
-try_some.void       refcnt_ptr                                 │try_some.void -T
                                                                │
-try_some2.void      unique_ptr                                 │try_some2.void -T
+                                                               │
+                                                               │
                                                                │
                                                                │
                                                                │

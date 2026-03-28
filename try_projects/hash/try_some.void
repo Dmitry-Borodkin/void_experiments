@@ -1,0 +1,32 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+//---------------------------------------------------------------------
+{
+    v_import("cstdio.void");
+
+    v_import("try_fnv1a.void");
+}
+
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+
+//---------------------------------------------------------------------
+{   using namespace my.hash.detail.fnv1a_const(uint(32));
+
+    printf("basis: 0x%08x\n", basis);
+    printf("prime: 0x%08x\n", prime);
+}
+
+
+//---------------------------------------------------------------------
+#do (my.hash.detail.instantiate_fnv1a(uint(32)))
+
+
+
+
+
+
+
+
