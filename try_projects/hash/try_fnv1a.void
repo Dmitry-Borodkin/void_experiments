@@ -101,15 +101,32 @@ namespace fnv1a_const(uint(1024))
         .memcpy(d, s, n*sizeof(fnv1a(T)));
     }
 
+    //-------------------------------------------------------------
+    inlinehint
+    (_.update()): (d: &fnv1a(T), pv: *const void, n: size_t) ~> void
+    {
+        p = (pv: *const uint(8));
 
+        h: &T := d.impl;
 
+        for (i: &size_t := 0; i < n; ++i)
+        {
+            h ^= p[i];
+            h *= fnv1a_const(T).prime;
+        }
 
+        d.impl := h;
+    }
 
+    inlinehint
+    (_.result): (d: &fnv1a(T)) ~> T
+    {
+        v_get_return_value() := d.impl;
 
+        //- ?!?!?
 
-
-
-
+        d.impl := (d.impl ^ 0xFF) * fnv1a_const(T).prime;
+    }
 
   } //- namespace .my.hash.detail
 
