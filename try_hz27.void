@@ -1,0 +1,44 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+{
+    v_import("cstdio.void");
+}
+
+//---------------------------------------------------------------------
+#define iterate: (stmt, n: int)
+{'stmt_list'
+
+    #define doit: (l: int, r: int)
+    {'stmt_list'
+
+        #if (l < r)
+
+            #if (l < r-1)
+
+                doit(l, (l+r)/2);
+                doit((l+r)/2, r);
+
+            #else
+
+                stmt(l);
+
+            #endif
+
+        #endif
+
+    'stmt_list'}
+
+    doit(0, n);
+
+'stmt_list'}
+
+
+{   #define stmt: (i)  =  printf("%d\n", i);
+
+    iterate(stmt, 999);
+}
+
+
+
+
+
