@@ -51,7 +51,6 @@
 print_value_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
-
     arg0 = v_list_get_item(args, 0);
 
     v_push_result();

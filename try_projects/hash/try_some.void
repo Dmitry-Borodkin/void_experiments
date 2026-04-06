@@ -13,7 +13,11 @@
 
 
 //---------------------------------------------------------------------
-{   using namespace my.hash.detail.fnv1a_const(uint(32));
+using namespace my.hash.detail;         //- ?
+
+
+//---------------------------------------------------------------------
+{   using namespace fnv1a_const(uint(32));
 
     printf("basis: 0x%08x\n", basis);
     printf("prime: 0x%08x\n", prime);
@@ -21,12 +25,18 @@
 
 
 //---------------------------------------------------------------------
-#do (my.hash.detail.instantiate_fnv1a(uint(32)))
+#do (instantiate_fnv1a(uint(32)))
 
+{   hash: &fnv1a(uint(32)) := {};
 
+    data = "Hello World";
 
+    hash.update(&data, 11);
 
+    h = hash.result;
 
+    printf("h: %x\n", h);
+}
 
 
 
