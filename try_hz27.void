@@ -2,43 +2,99 @@
 { v_enable_mainline(); }
 {
     v_import("cstdio.void");
+
+    v_import("llvm-c/Core.void");
 }
 
 //---------------------------------------------------------------------
-#define iterate: (stmt, n: int)
+#define iterate: (stmt, n)
 {'stmt_list'
 
-    #define doit: (l: int, r: int)
-    {'stmt_list'
+    #define doit: (l, r)
+    {'stmt'
 
-        #if (l < r)
+        #if (l < r-1)
 
-            #if (l < r-1)
+            #define some: (m)
+            {'stmt_list'
 
-                doit(l, (l+r)/2);
-                doit((l+r)/2, r);
+                doit(l, m);
+                doit(m, r);
 
-            #else
+            'stmt_list'}
 
-                stmt(l);
+            some((l+r)/2);
 
-            #endif
+        #else
+
+            stmt(l);
 
         #endif
 
-    'stmt_list'}
+    'stmt'}
+
+    #assert (0 < n)
 
     doit(0, n);
 
 'stmt_list'}
 
 
-{   #define stmt: (i)  =  printf("%d\n", i);
+//---------------------------------------------------------------------
+//{   #define stmt: (i)  =  printf("%d\n", i);
+//
+//    iterate(stmt, 99);
+//}
 
-    iterate(stmt, 999);
+
+//---------------------------------------------------------------------
+print_value_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    arg0 = v_list_get_item(args, 0);
+
+    v_push_result();
+
+    v_ast_accept_visitor(arg0, vis);
+
+    val = v_get_result_value();
+
+    str = LLVMPrintValueToString(val);
+    defer LLVMDisposeMessage(str);
+
+    expr: &v_ast_expr_t := {};
+
+    v_ast_make_expr_string(&expr, str);
+
+    v_pop_result();
+
+    v_ast_accept_visitor(&expr, vis);
+}
+
+{   v_add_intrinsic("print_value", print_value_intrinsic, 0);
 }
 
 
+//---------------------------------------------------------------------
+{   num_t = int(694);
 
+    v: num_t[2] = { 1, 0 };
+
+    #define stmt: (i)
+    {'stmt_list'
+
+//      printf("i: %d; v: %s\n", i, print_value(v[1]));
+
+        v: num_t[2] = { v[1], v[0]+v[1] };
+
+    'stmt_list'}
+
+    n = 999;
+
+    iterate(stmt, n);
+
+    printf("n: %d; v: %s\n", n, print_value(v[1]));
+}
 
 
