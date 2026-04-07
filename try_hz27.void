@@ -1,9 +1,10 @@
 { v_import("mainline.void"); }
 { v_enable_mainline(); }
 {
-    v_import("cstdio.void");
-
     v_import("llvm-c/Core.void");
+
+    v_import("cstdio.void");
+    v_import("type_traits.void");
 }
 
 //---------------------------------------------------------------------
@@ -76,16 +77,24 @@ print_value_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> vo
 
 
 //---------------------------------------------------------------------
-{   num_t = int(694);
+{   t = uint(2);
 
-    v: num_t[2] = { 1, 0 };
+    v: t[2] = { 1, 0 };         //- Sic!
 
     #define stmt: (i)
     {'stmt_list'
 
-//      printf("i: %d; v: %s\n", i, print_value(v[1]));
+        printf("i: %d; v: %s\n", i, print_value(v[1]));
 
-        v: num_t[2] = { v[1], v[0]+v[1] };
+        vv = v[0] + v[1];
+
+        #if ((vv: int(t.width)) < 0)
+
+            t = uint(t.width+1);
+
+        #endif
+
+        v: t[2] = { v[1], vv };
 
     'stmt_list'}
 
