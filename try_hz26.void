@@ -58,4 +58,171 @@
 }
 
 
+//---------------------------------------------------------------------
+struct Qwe {};
+
+alwaysinline
+(_.asd): (q: Qwe) ~> int  =  777;
+
+alwaysinline
+(_.zxc): (q: Qwe) ~> int  =  q.asd + 7000;
+
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(2); }
+{
+    q: Qwe = {};
+
+    printf("q.zxc: %d, sizeof(Qwe): %zu\n", q.zxc, sizeof(Qwe));
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+namespace_get_name_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    arg0 = v_list_get_item(args, 0);        //- namespace
+
+    v_push_result();
+
+    v_set_result_type(v_find_type("v_static_namespace_t"));
+
+    v_ast_accept_visitor(arg0, vis);
+
+    ns = (v_get_result_value() : *v_namespace_t);
+
+    expr: &v_ast_expr_t := {};
+
+    v_ast_make_expr_string(&expr, v_quark_to_string(ns->name));
+
+    v_pop_result();
+
+    v_ast_accept_visitor(&expr, vis);
+}
+
+{   v_add_intrinsic("namespace_get_name", namespace_get_name_intrinsic, 0);
+}
+
+
+#define base_ns: (DerivedNS: v_static_namespace_t) ~> v_static_namespace_t
+  =  v_generic_ns("base_ns", S(namespace_get_name(DerivedNS)));
+
+#define args_ns: (NS: v_static_namespace_t, ArgsT: v_static_type_t) ~> v_static_namespace_t
+  =  NS.v_generic_ns("args_ns", S(namespace_get_name(NS)), T(ArgsT));
+
+#define instantiate_base_ns: (DerivedNS: v_static_namespace_t)
+{'unit_defn_list'
+
+    using namespace base_ns(DerivedNS);
+
+    namespace base_ns(DerivedNS)
+    {
+        base_ns    = base_ns(DerivedNS);
+        derived_ns = DerivedNS;
+
+        #define instantiate_args_ns: (ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+            namespace args_ns(base_ns, ArgsT) {}
+
+            namespace args_ns(derived_ns, ArgsT)
+            {
+                using namespace args_ns(base_ns, ArgsT);
+            }
+
+        'unit_defn_list'}
+
+        #define instantiate_do_leaf: (ArgsT: v_static_type_t)
+        {'unit_defn'
+
+            alwaysinline
+            args_ns(base_ns, ArgsT).do_leaf: (ArgsT) ~> void
+            {
+                printf("args_ns.do_leaf: %s\n", namespace_get_name(args_ns(derived_ns, ArgsT)));
+            }
+
+        'unit_defn'}
+
+        #define instantiate_do_node: (ArgsT: v_static_type_t)
+        {'unit_defn'
+
+            alwaysinline
+            args_ns(base_ns, ArgsT).do_node: (args: ArgsT) ~> void
+            {
+                printf("args_ns.do_node: %s\n", namespace_get_name(args_ns(derived_ns, ArgsT)));
+                args_ns(derived_ns, ArgsT).do_leaf(args);
+            }
+
+        'unit_defn'}
+    }
+
+'unit_defn_list'}
+
+
+namespace my_derived_ns
+{
+    #do
+    (
+        instantiate_base_ns(my_derived_ns),
+
+        instantiate_args_ns(int),
+
+        instantiate_do_leaf(int),
+        instantiate_do_node(int),
+    )
+
+    namespace args_ns(my_derived_ns, int)
+    {
+        alwaysinline
+        do_leaf: (n: int) ~> void
+        {
+            printf("my_derived_ns.do_leaf: %d\n", n);
+
+            args_ns(base_ns, int).do_leaf(n);
+        }
+
+        alwaysinline
+        do_node: (n: int) ~> void
+        {
+            printf("my_derived_ns.do_node: %d\n", n);
+
+            args_ns(base_ns, int).do_node(n);
+
+            do_leaf(n+111);
+        }
+    }
+
+    using namespace args_ns(my_derived_ns, int);        //- ?
+}
+
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(2); }
+{
+    args_ns(my_derived_ns, int).do_node(777);
+
+    my_derived_ns.do_node(888);                         //- ?
+}
+
+
+//---------------------------------------------------------------------
+{
+    return printf("Hello!\n");
+}
+
+
+
+
+
+
+
+
+
+
+
+
 

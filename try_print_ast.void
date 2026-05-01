@@ -69,7 +69,7 @@ append_char32_repr: (str: v_std_string_ptr, c: char32_t) ~> void
 //---------------------------------------------------------------------
 my_accept_visitor: (ast: *v_ast_base_t, vis: *voidc_visitor_t) ~> void
 {
-    q = v_ast_base_get_visitor_method_tag(ast);
+    q = v_ast_base_get_tag(ast);
 
 //  printf("q: %s\n", v_quark_to_string(q));
 
@@ -139,7 +139,7 @@ print_generic_list: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> 
 
     v_std_string_append(ctx.sstr, "generic_list(");
 
-    q = v_ast_base_get_visitor_method_tag(self);
+    q = v_ast_base_get_tag(self);
 
     append_string_repr(ctx.sstr, v_quark_to_string(q));
 
@@ -692,9 +692,7 @@ mk_test_stmt_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_
     voidc_visitor_set_method(vis, vis, q("operator_binary"),    print_operator_binary,   &ctx);
     voidc_visitor_set_method(vis, vis, q("projection_payload"), print_generic_list,      &ctx);
 
-    gr0: &v_peg_grammar_t := {};        gr0 = &gr0;
-
-    v_peg_get_grammar(gr0);
+    gr0 = v_peg_get_grammar();
 
     grammar gr0
     {
@@ -704,8 +702,6 @@ mk_test_stmt_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_
     parsers:
         stmt += "$print_ast" _ s:stmt   { mk_test_stmt(s) };
     }
-
-    v_peg_set_grammar(gr0);
 }
 
 
