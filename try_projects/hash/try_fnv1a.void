@@ -85,13 +85,13 @@ namespace fnv1a_const(uint(1024))
 
     //-------------------------------------------------------------
     inlinehint
-    (v_initialize(_)): (d: *fnv1a(T), n: size_t) ~> void
+    (v_initialize(_)): (d: *fnv1a(T)) ~> void
     {
-        for (e = d+n, d: &*fnv1a(T) := d; d < e; ++d)   d->impl := fnv1a_const(T).basis;
+        d->impl := fnv1a_const(T).basis;
     }
 
     alwaysinline
-    (v_terminate(_)): (*fnv1a(T), size_t) ~> void {}
+    (v_terminate(_)): (*fnv1a(T)) ~> void {}
 
     alwaysinline
     (v_copy(_)): (d: *fnv1a(T), s: *const fnv1a(T), n: size_t) ~> void

@@ -16,7 +16,7 @@ struct intgen_t
 };
 
 inlinehint
-(v_initialize(_)): (d: *intgen_t, n: size_t) ~> void;
+(v_initialize(_)): (d: *intgen_t) ~> void;
 
 
 //---------------------------------------------------------------------
@@ -46,34 +46,25 @@ intgen_dummy_vtab: &const intgen_vtab_t :=
 
 //---------------------------------------------------------------------
 inlinehint
-(v_initialize(_)): (d: *intgen_t, n: size_t) ~> void
+(v_initialize(_)): (d: *intgen_t) ~> void
 {
-    for (e = d+n, d: &*intgen_t := d; d < e; ++d)
-    {
-        d->vtab := &intgen_dummy_vtab;
-    }
+    d->vtab := &intgen_dummy_vtab;
 }
 
 inlinehint
-(v_terminate(_)): (d: *intgen_t, n: size_t) ~> void
+(v_terminate(_)): (d: *intgen_t) ~> void
 {
-    for (e = d+n, d: &*intgen_t := d; d < e; ++d)
-    {
-        d->vtab->del(d->data);
-    }
+    d->vtab->del(d->data);
 }
 
 inlinehint
-(v_copy(_)): (d: *intgen_t, s: *const intgen_t, n: size_t) ~> void
+(v_copy(_)): (d: *intgen_t, s: *const intgen_t) ~> void
 {
-    for (e = d+n, d: &*intgen_t := d, s: &*const intgen_t := s; d < e; ++d, ++s)
-    {
-        d->vtab->del(d->data);
+    d->vtab->del(d->data);
 
-        d->vtab := s->vtab;
+    d->vtab := s->vtab;
 
-        d->data := s->vtab->cpy(s->data);
-    }
+    d->data := s->vtab->cpy(s->data);
 }
 
 (_:=_): (d: &intgen_t, ig: intgen_t) ~> &intgen_t
@@ -138,9 +129,9 @@ intgen_s_fun: (aux: *void) ~> intgen_t  =  mk_intgen_s((aux: int) + 1);
 #define derive_itc: (T: v_static_type_t)
 {'unit_defn_list'
 
-    alwaysinline (v_initialize(_)): (*T, size_t) ~> void = derive;
-    alwaysinline (v_terminate(_)):  (*T, size_t) ~> void = derive;
-    alwaysinline (v_copy(_)):       (*T, *const T, size_t) ~> void = derive;
+    alwaysinline (v_initialize(_)): (*T) ~> void = derive;
+    alwaysinline (v_terminate(_)):  (*T) ~> void = derive;
+    alwaysinline (v_copy(_)):       (*T, *const T) ~> void = derive;
 
 'unit_defn_list'}
 

@@ -29,10 +29,10 @@ namespace intgen
     };
 
     alwaysinline
-    (v_initialize(_)): (d: *_data_t, n: size_t) ~> void;
+    (v_initialize(_)): (d: *_data_t) ~> void;
 
     alwaysinline
-    (v_terminate(_)): (d: *_data_t, n: size_t) ~> void;
+    (v_terminate(_)): (d: *_data_t) ~> void;
 
 //---------------------------------------------------------------------
 }   //- namespace intgen
@@ -80,10 +80,10 @@ namespace intgen
 
     //-----------------------------------------------------------------
     inlinehint
-    (v_initialize(_)): (*data_t, size_t) ~> void  =  derive;
+    (v_initialize(_)): (*data_t) ~> void  =  derive;
 
     inlinehint
-    (v_terminate(_)): (*data_t, size_t) ~> void  = derive;
+    (v_terminate(_)): (*data_t) ~> void  = derive;
 
     //-----------------------------------------------------------------
     alwaysinline

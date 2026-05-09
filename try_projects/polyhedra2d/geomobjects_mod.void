@@ -105,32 +105,26 @@ namespace Geometry
     memset(p, 0, N*sizeof(Polygon));
 }
 
-(v_terminate(_)):  (p: *Polygon, N: size_t) ~> void
+(v_terminate(_)):  (p: *Polygon) ~> void
 {
-    for (i: &size_t := 0; i < N; ++i)
-    {
-        if (v = p[i].v)   delete[] v;
-    }
+    if (v = p->v)   delete[] v;
 }
 
-(v_copy(_)): (d: *Polygon, s: *const Polygon, N: size_t) ~> void
+(v_copy(_)): (d: *Polygon, s: *const Polygon) ~> void
 {
-    for (i: &size_t := 0; i < N; ++i)
-    {
-        sv = s[i].v;
-        sn = s[i].n;
+    sv = s->v;
+    sn = s->n;
 
-        dv = d[i].v;
-        dn = d[i].n;
+    dv = d->v;
+    dn = d->n;
 
-        if (dv)   delete[] dv;
+    if (dv)   delete[] dv;
 
-        dv = new Point[sn];
+    dv = new Point[sn];
 
-        memcpy(dv, sv, sn*sizeof(Point));
+    memcpy(dv, sv, sn*sizeof(Point));
 
-        dn := sn;
-    }
+    dn := sn;
 }
 
 (v_move(_)): (d: *Polygon, s: *Polygon, N: size_t) ~> void

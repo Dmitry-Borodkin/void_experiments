@@ -107,11 +107,11 @@ struct TriGroup
 
 //---------------------------------------------------------------------
 alwaysinline
-(v_initialize(_)): (*TriGroup, size_t) ~> void  =  derive;      //- Sic !!!
+(v_initialize(_)): (*TriGroup) ~> void  =  derive;      //- Sic !!!
 
-TriGroup._build: (&unsigned[3][3]) ~> TriGroup;                 //- Sic !!!
+TriGroup._build: (&unsigned[3][3]) ~> TriGroup;         //- Sic !!!
 
-(v_terminate(_)):  (*TriGroup, size_t) ~> void;
+(v_terminate(_)):  (*TriGroup) ~> void;
 
 //---------------------------------------------------------------------
 (_.gr_ident): (TriGroup) ~> GroupElement;

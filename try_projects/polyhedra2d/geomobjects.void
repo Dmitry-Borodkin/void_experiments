@@ -55,11 +55,11 @@ struct Polygon
     n: unsigned;
 };
 
-(v_initialize(_)): (*Polygon, size_t) ~> void;
-(v_terminate(_)):  (*Polygon, size_t) ~> void;
+(v_initialize(_)): (*Polygon) ~> void;
+(v_terminate(_)):  (*Polygon) ~> void;
 
-(v_copy(_)): (*Polygon, *const Polygon, size_t) ~> void;
-(v_move(_)): (*Polygon, *Polygon, size_t) ~> void;
+(v_copy(_)): (*Polygon, *const Polygon) ~> void;
+(v_move(_)): (*Polygon, *Polygon) ~> void;
 
 //---------------------------------------------------------------------
 (_.print_to_file()): (p: Polygon, f: *FILE) ~> void;

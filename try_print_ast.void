@@ -692,6 +692,35 @@ mk_test_stmt_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_
     voidc_visitor_set_method(vis, vis, q("operator_binary"),    print_operator_binary,   &ctx);
     voidc_visitor_set_method(vis, vis, q("projection_payload"), print_generic_list,      &ctx);
 
+    voidc_visitor_set_method(vis, vis, q("defn_list_unit"),      print_generic_list, &ctx);
+    voidc_visitor_set_method(vis, vis, q("unit_defn_list"),      print_generic_list, &ctx);
+    voidc_visitor_set_method(vis, vis, q("unit_fun_defn"),       print_generic_list, &ctx);
+    voidc_visitor_set_method(vis, vis, q("unit_var_defn"),       print_generic_list, &ctx);
+    voidc_visitor_set_method(vis, vis, q("unit_val_defn"),       print_generic_list, &ctx);
+    voidc_visitor_set_method(vis, vis, q("unit_ccif_list"),      print_generic_list, &ctx);
+    voidc_visitor_set_method(vis, vis, q("unit_struct_defn"),    print_generic_list, &ctx);
+    voidc_visitor_set_method(vis, vis, q("unit_spec_fun_defn"),  print_generic_list, &ctx);
+    voidc_visitor_set_method(vis, vis, q("unit_spec_fun_renm"),  print_generic_list, &ctx);
+    voidc_visitor_set_method(vis, vis, q("unit_union_defn"),     print_generic_list, &ctx);
+    voidc_visitor_set_method(vis, vis, q("unit_namespace_open"), print_generic_list, &ctx);
+    voidc_visitor_set_method(vis, vis, q("unit_defn_close"),     print_generic_list, &ctx);
+    voidc_visitor_set_method(vis, vis, q("unit_defn_using"),     print_generic_list, &ctx);
+    voidc_visitor_set_method(vis, vis, q("stmt_ccif_list"),      print_generic_list, &ctx);
+    voidc_visitor_set_method(vis, vis, q("expr_ccif_list"),      print_generic_list, &ctx);
+    voidc_visitor_set_method(vis, vis, q("br_item_list"),        print_generic_list, &ctx);
+    voidc_visitor_set_method(vis, vis, q("cc_message"),          print_generic_list, &ctx);
+    voidc_visitor_set_method(vis, vis, q("cc_do"),               print_generic_list, &ctx);
+    voidc_visitor_set_method(vis, vis, q("cc_assert"),           print_generic_list, &ctx);
+
+    voidc_visitor_set_method(vis, vis, q("macro_defn"),      print_generic_list, &ctx);
+    voidc_visitor_set_method(vis, vis, q("macro_spec_defn"), print_generic_list, &ctx);
+    voidc_visitor_set_method(vis, vis, q("macro_params"),    print_generic_list, &ctx);
+
+    //- unit
+    //- unit_stmt_init
+    //- unit_stmt_term
+    //- operator_nullary
+
     gr0 = v_peg_get_grammar();
 
     grammar gr0
@@ -1105,6 +1134,29 @@ $print_ast
 $print_ast
 {
     (_/__): (int, int) ~> int;
+}
+
+$print_ast
+{
+    #define qwe: ()
+    {'unit_defn'
+
+        (v_initialize(_)): (p: *some_t, n: size_t) ~> void
+        {
+            printf("%p %zu\n", p, n);
+        }
+
+    'unit_defn'}
+}
+
+$print_ast
+{
+    #define qwe: ()
+    {'unit_defn'
+
+        (v_initialize(_)): (p: *some_t, n: size_t) ~> void  =  derive;
+
+    'unit_defn'}
 }
 
 
