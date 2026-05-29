@@ -1,31 +1,25 @@
-                     ****  Projects  ****                      │*
+                 ****  Immer/detail/rbts  ****                 │*
                                                                │
-Clang Tooling                                                  │clang_tooling/micros.dir
-                                                               │
-                                                               │
-Polyhedra2D/                                                   │polyhedra2d/micros.dir
+Bits                                                           │bits.void
                                                                │
                                                                │
-string_test/                                                   │string_test/micros.dir
                                                                │
-                                                               │
-GTK tries                                                      │gtk_tries/micros.dir
-                                                               │
-                                                               │
-Primes generator                                               │primes_gen/micros.dir
-                                                               │
-                                                               │
-Hash                                                           │hash/micros.dir
-                                                               │
-                                                               │
-Immer                                                          │immer/micros.dir
+Visitor                                                        │visitor.void
                                                                │
                                                                │
                                                                │
                                                                │
                                                                │
-Ninja/                                                         │ninja/micros.dir
                                                                │
                                                                │
                                                                │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+───────────────────────────────────────────────────────────────│
+void.doit                                                      │void.doit
+═══════════════════════════════════════════════════════════════│
                                                                │

@@ -1,0 +1,39 @@
+{ voidc_import("libvoidc.void"); }
+{ voidc_make_header("bits"); }
+//---------------------------------------------------------------------
+
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+
+//---------------------------------------------------------------------
+//- <immer/detail/rbts/bits.hpp>
+//---------------------------------------------------------------------
+namespace immer {
+namespace detail {
+namespace rbts {
+
+
+//---------------------------------------------------------------------
+bits_t  = uint(32);
+shift_t = uint(32);
+count_t = uint(32);
+size_t  = .size_t;          //- ?
+
+
+#define branches: (B: bits_t, T: v_static_type_t = count_t) ~> T  =  (1: T) << B;
+
+#define mask: (B: bits_t, T: v_static_type_t = size_t) ~> T  =  branches(B, T) - 1;
+
+#define endshift: (B: bits_t, BL: bits_t) ~> shift_t  =  (BL: shift_t) - (B: shift_t);
+
+
+//---------------------------------------------------------------------
+}   //- namespace rbts
+}   //- namespace detail
+}   //- namespace immer
+
