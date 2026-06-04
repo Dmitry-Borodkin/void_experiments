@@ -1,0 +1,37 @@
+{ voidc_import("libvoidc.void"); }
+{ voidc_make_header("malloc_heap"); }
+//---------------------------------------------------------------------
+//{
+//    v_import("../config.void");
+//}
+
+
+//---------------------------------------------------------------------
+//- <immer/heap/malloc_heap.hpp>
+//---------------------------------------------------------------------
+namespace .immer {
+
+
+namespace malloc_heap_ns
+{
+    alwaysinline
+    allocate: (size: size_t) ~> *void
+    {
+        p = v_malloc(char, size);
+
+        v_assert(p);        //- ???
+
+        return  p;
+    }
+
+    alwaysinline
+    deallocate: (size_t, data: *void) ~> void
+    {
+        v_free(data);
+    }
+}
+
+
+//---------------------------------------------------------------------
+}   //- namespace .immer
+

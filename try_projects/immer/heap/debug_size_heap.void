@@ -1,0 +1,66 @@
+{ voidc_import("libvoidc.void"); }
+{ voidc_make_header("debug_size_heap"); }
+//---------------------------------------------------------------------
+{
+    v_import("../config.void");
+    v_export_import("../detail/util.void");         //- ?
+
+    v_import("identity_heap.void");
+}
+
+
+//---------------------------------------------------------------------
+//- <immer/heap/debug_size_heap.hpp>
+//---------------------------------------------------------------------
+namespace .immer {
+
+
+#if (IMMER_ENABLE_DEBUG_SIZE_HEAP)
+
+  //---------------------------------------------------------------------
+  #define debug_size_heap_ns: (HeapNS: v_static_namespace_t) ~> v_static_namespace_t
+    =  .immer.v_generic_ns("debug_size_heap_ns", S(v_namespace_get_prefix(HeapNS)));
+
+  //---------------------------------------------------------------------
+  #define instantiate_debug_size_heap_ns: (HeapNS: v_static_namespace_t)
+  {'unit_defn_list'
+
+    namespace .immer.debug_size_heap_ns(HeapNS)
+    {
+        extra_size = 16;            //- Kinda  alignof(max_align_t)
+
+        alwaysinline
+        allocate: (size: size_t) ~> *void
+        {
+            p = HeapNS.allocate(extra_size + size);
+
+            *(p: *size_t) := size;
+
+            return  (p: *char) + extra_size;
+        }
+
+        alwaysinline
+        deallocate: (size: size_t, data: *void) ~> void
+        {
+            p = (data: *char) - extra_size;
+
+            v_assert(*(p: *size_t) == size);
+
+            HeapNS.deallocate(extra_size + size, p);
+        }
+    }
+
+  'unit_defn_list'}
+
+#else   //- IMMER_ENABLE_DEBUG_SIZE_HEAP
+
+  debug_size_heap_ns = identity_heap_ns;
+
+  instantiate_debug_size_heap_ns = instantiate_identity_heap_ns;
+
+#endif  //- IMMER_ENABLE_DEBUG_SIZE_HEAP
+
+
+//---------------------------------------------------------------------
+}   //- namespace .immer
+

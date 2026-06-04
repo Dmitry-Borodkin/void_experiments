@@ -1,0 +1,42 @@
+{ voidc_import("libvoidc.void"); }
+{ voidc_make_header("identity_heap"); }
+//---------------------------------------------------------------------
+{
+    v_import("../config.void");
+    v_export_import("../detail/util.void");         //- ?
+}
+
+
+//---------------------------------------------------------------------
+//- <immer/heap/identity_heap.hpp>
+//---------------------------------------------------------------------
+namespace .immer {
+
+
+//---------------------------------------------------------------------
+#define identity_heap_ns: (HeapNS: v_static_namespace_t) ~> v_static_namespace_t
+  =  .immer.v_generic_ns("identity_heap_ns", S(v_namespace_get_prefix(HeapNS)));
+
+
+//---------------------------------------------------------------------
+#define instantiate_identity_heap_ns: (HeapNS: v_static_namespace_t)
+{'unit_defn_list'
+
+    namespace .immer.identity_heap_ns(HeapNS)
+    {
+        alwaysinline
+        allocate: (size: size_t) ~> *void  =  HeapNS.allocate(size);
+
+        alwaysinline
+        deallocate: (size: size_t, data: *void) ~> void
+        {
+            HeapNS.deallocate(size, data);
+        }
+    }
+
+'unit_defn_list'}
+
+
+//---------------------------------------------------------------------
+}   //- namespace .immer
+

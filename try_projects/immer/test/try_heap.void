@@ -1,0 +1,53 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+//---------------------------------------------------------------------
+{
+    v_import("cstdio.void");
+
+    v_import("../heap/malloc_heap.void");
+    v_import("../heap/identity_heap.void");
+    v_import("../heap/debug_size_heap.void");
+    v_import("../heap/heap_policy.void");
+
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+namespace .immer
+{
+//  #do (instantiate_identity_heap_ns(malloc_heap_ns))
+    #do (instantiate_debug_size_heap_ns(malloc_heap_ns))
+
+    #do (instantiate_heap_policy_ns(debug_size_heap_ns(malloc_heap_ns)))
+
+    policy = heap_policy_ns(debug_size_heap_ns(malloc_heap_ns));
+
+    #do (policy.instantiate_optimized_ns(777))
+
+    heap = policy.optimized_ns(777).heap;
+
+//---------------------------------------------------------------------
+}   //- namespace .immer
+
+
+{
+    heap = immer.heap;
+
+    p = (heap.allocate(sizeof(int[7])) : *int);
+
+    printf("p: %p\n", p);
+
+    heap.deallocate(sizeof(int[7]), p);
+}
+
+
+
+
+
+
+

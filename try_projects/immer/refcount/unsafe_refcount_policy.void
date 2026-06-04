@@ -1,0 +1,42 @@
+{ voidc_import("libvoidc.void"); }
+{ voidc_make_header("unsafe_refcount_policy"); }
+//---------------------------------------------------------------------
+//{
+//    v_import("../config.void");
+//}
+
+
+//---------------------------------------------------------------------
+//- <immer/refcount/unsafe_refcount_policy.hpp>
+//---------------------------------------------------------------------
+namespace .immer {
+
+
+struct unsafe_refcount_policy
+{
+    refcount: int;
+};
+
+alwaysinline
+(v_initialize(_)): (p: *unsafe_refcount_policy) ~> void
+{
+    p->refcount := 1;
+}
+
+alwaysinline
+(v_terminate(_)): (p: *unsafe_refcount_policy) ~> void  {}
+
+
+alwaysinline
+(_.inc): (p: &unsafe_refcount_policy) ~> void  { ++p.refcount; }
+
+alwaysinline
+(_.dec): (p: &unsafe_refcount_policy) ~> bool  =  --p.refcount == 0;
+
+alwaysinline
+(_.unique): (p: &unsafe_refcount_policy) ~> bool  =  p.refcount == 1;
+
+
+//---------------------------------------------------------------------
+}   //- namespace .immer
+

@@ -1,0 +1,85 @@
+{ voidc_import("libvoidc.void"); }
+{ voidc_make_header("util"); }
+//---------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+//- <immer/detail/util.hpp>     ?
+//---------------------------------------------------------------------
+namespace .immer {
+namespace detail {
+
+
+//---------------------------------------------------------------------
+{   gctx = v_target_get_global_ctx();
+    vctx = v_target_get_voidc_global_ctx();
+
+    v_target_set_global_ctx(vctx);      //- Sic!
+
+    v_add_symbol("cur_gctx", v_target_global_ctx_t, gctx);
+}
+
+//=====================================================================
+{ voidc_unit_begin_module("utility_module"); }
+
+export
+v_internal_namespace_get_prefix_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    arg0 = v_list_get_item(args, 0);        //- namespace
+
+    v_push_result();
+
+    v_set_result_type(v_find_type("v_static_namespace_t"));
+
+    v_ast_accept_visitor(arg0, vis);
+
+    ns = (v_get_result_value() : *v_namespace_t);
+
+    expr: &v_ast_expr_t := {};
+
+    v_ast_make_expr_string(&expr, v_std_string_get(&ns->prefix));
+
+    v_pop_result();
+
+    v_ast_accept_visitor(&expr, vis);
+}
+
+//---------------------------------------------------------------------
+{   if (v_find_symbol_value("v_internal_namespace_get_prefix_intrinsic"))
+    {
+        voidc_skip_object_file_load(1);
+    }
+}
+
+//=====================================================================
+{ voidc_unit_end_module(); }
+
+//---------------------------------------------------------------------
+{   v_target_set_global_ctx(cur_gctx);
+
+    v_export_intrinsic("v_namespace_get_prefix", v_internal_namespace_get_prefix_intrinsic, 0);
+}
+
+
+
+//---------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------
+}   //- namespace detail
+}   //- namespace .immer
+

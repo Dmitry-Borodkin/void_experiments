@@ -13,7 +13,7 @@
 //---------------------------------------------------------------------
 //- <immer/detail/rbts/bits.hpp>
 //---------------------------------------------------------------------
-namespace immer {
+namespace .immer {
 namespace detail {
 namespace rbts {
 
@@ -35,5 +35,5 @@ size_t  = .size_t;          //- ?
 //---------------------------------------------------------------------
 }   //- namespace rbts
 }   //- namespace detail
-}   //- namespace immer
+}   //- namespace .immer
 

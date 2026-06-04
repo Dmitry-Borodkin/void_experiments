@@ -1,0 +1,53 @@
+{ voidc_import("libvoidc.void"); }
+{ voidc_make_header("heap_policy"); }
+//---------------------------------------------------------------------
+{
+    v_import("../config.void");
+    v_export_import("malloc_heap.void");
+    v_export_import("debug_size_heap.void");
+}
+
+
+//---------------------------------------------------------------------
+//- <immer/heap/heap_policy.hpp>
+//---------------------------------------------------------------------
+namespace .immer {
+
+
+//---------------------------------------------------------------------
+#define heap_policy_ns: (HeapNS: v_static_namespace_t) ~> v_static_namespace_t
+  =  .immer.v_generic_ns("heap_policy_ns", S(v_namespace_get_prefix(HeapNS)));
+
+
+//---------------------------------------------------------------------
+#define instantiate_heap_policy_ns: (HeapNS: v_static_namespace_t)
+{'unit_defn_list'
+
+    namespace .immer.heap_policy_ns(HeapNS)
+    {
+        heap = HeapNS;
+
+        #define optimized_ns: [HeapNS](Size: size_t) ~> v_static_namespace_t
+          =  .immer.heap_policy_ns(HeapNS).v_generic_ns("optimized_ns", N(Size));
+
+        #define instantiate_optimized_ns: [HeapNS](Size: size_t)
+        {'unit_defn_list'
+
+            namespace .immer.heap_policy_ns(HeapNS).optimized_ns(Size)
+            {
+                heap = HeapNS;          //- Sic!
+            }
+
+        'unit_defn_list'}
+    }
+
+'unit_defn_list'}
+
+
+
+
+
+
+//---------------------------------------------------------------------
+}   //- namespace .immer
+
