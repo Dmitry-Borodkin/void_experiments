@@ -12,7 +12,7 @@
 namespace .immer {
 
 
-namespace malloc_heap_ns
+namespace malloc_heap
 {
     alwaysinline
     allocate: (size: size_t) ~> *void

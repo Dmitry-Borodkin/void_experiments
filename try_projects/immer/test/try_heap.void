@@ -4,11 +4,7 @@
 {
     v_import("cstdio.void");
 
-    v_import("../heap/malloc_heap.void");
-    v_import("../heap/identity_heap.void");
-    v_import("../heap/debug_size_heap.void");
-    v_import("../heap/heap_policy.void");
-
+    v_import("../memory_policy.void");
 }
 
 
@@ -20,16 +16,13 @@
 //---------------------------------------------------------------------
 namespace .immer
 {
-//  #do (instantiate_identity_heap_ns(malloc_heap_ns))
-    #do (instantiate_debug_size_heap_ns(malloc_heap_ns))
+    #do (instantiate_default_memory_policy())
 
-    #do (instantiate_heap_policy_ns(debug_size_heap_ns(malloc_heap_ns)))
+    policy = default_memory_policy;
 
-    policy = heap_policy_ns(debug_size_heap_ns(malloc_heap_ns));
+    #do (policy.heap.instantiate_optimized(777))
 
-    #do (policy.instantiate_optimized_ns(777))
-
-    heap = policy.optimized_ns(777).heap;
+    heap = policy.heap.optimized(777).heap;
 
 //---------------------------------------------------------------------
 }   //- namespace .immer

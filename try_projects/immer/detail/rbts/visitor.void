@@ -20,32 +20,32 @@ namespace rbts {
 
 
 //---------------------------------------------------------------------
-#define visitor_base_ns: (DerivedNS: v_static_namespace_t) ~> v_static_namespace_t
+#define visitor_base: (DerivedNS: v_static_namespace_t) ~> v_static_namespace_t
   =  .immer.detail.rbts.v_generic_ns("visitor_base_ns", S(v_namespace_get_prefix(DerivedNS)));
 
-#define visitor_args_ns: (NS: v_static_namespace_t, AT: v_static_type_t, RT: v_static_type_t = void) ~> v_static_namespace_t
+#define visitor_args: (NS: v_static_namespace_t, AT: v_static_type_t, RT: v_static_type_t = void) ~> v_static_namespace_t
   =  NS.v_generic_ns("visitor_args_ns", T[AT,RT]);
 
 
 //---------------------------------------------------------------------
-#define instantiate_visitor_base_ns: (DerivedNS: v_static_namespace_t)
+#define instantiate_visitor_base: (DerivedNS: v_static_namespace_t)
 {'unit_defn_list'
 
-    using namespace visitor_base_ns(DerivedNS);
+    using namespace visitor_base(DerivedNS);
 
-    namespace visitor_base_ns(DerivedNS)
+    namespace visitor_base(DerivedNS)
     {
-        base_ns    = visitor_base_ns(DerivedNS);
+        base_ns    = visitor_base(DerivedNS);
         derived_ns = DerivedNS;
 
-        #define instantiate_args_ns: (ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_args: (ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
-            namespace visitor_args_ns(base_ns, ArgsT, RetT) {}
+            namespace visitor_args(base_ns, ArgsT, RetT) {}
 
-            namespace visitor_args_ns(derived_ns, ArgsT, RetT)
+            namespace visitor_args(derived_ns, ArgsT, RetT)
             {
-                using namespace visitor_args_ns(base_ns, ArgsT, RetT);
+                using namespace visitor_args(base_ns, ArgsT, RetT);
             }
 
         'unit_defn_list'}
@@ -55,7 +55,7 @@ namespace rbts {
 //        {'unit_defn'
 //
 //            alwaysinline
-//            visitor_args_ns(base_ns, ArgsT, RetT).visit_node: (ArgsT) ~> RetT
+//            visitor_args(base_ns, ArgsT, RetT).visit_node: (ArgsT) ~> RetT
 //            {
 //                #error("???");
 //            }
@@ -66,9 +66,9 @@ namespace rbts {
         {'unit_defn'
 
             alwaysinline
-            visitor_args_ns(base_ns, ArgsT, RetT).visit_relaxed: (args: ArgsT) ~> RetT
+            visitor_args(base_ns, ArgsT, RetT).visit_relaxed: (args: ArgsT) ~> RetT
             {
-                return  visitor_args_ns(derived_ns, ArgsT, RetT).visit_inner(args);
+                return  visitor_args(derived_ns, ArgsT, RetT).visit_inner(args);
             }
 
         'unit_defn'}
@@ -77,9 +77,9 @@ namespace rbts {
         {'unit_defn'
 
             alwaysinline
-            visitor_args_ns(base_ns, ArgsT, RetT).visit_regular: (args: ArgsT) ~> RetT
+            visitor_args(base_ns, ArgsT, RetT).visit_regular: (args: ArgsT) ~> RetT
             {
-                return  visitor_args_ns(derived_ns, ArgsT, RetT).visit_inner(args);
+                return  visitor_args(derived_ns, ArgsT, RetT).visit_inner(args);
             }
 
         'unit_defn'}
@@ -88,9 +88,9 @@ namespace rbts {
         {'unit_defn'
 
             alwaysinline
-            visitor_args_ns(base_ns, ArgsT, RetT).visit_inner: (args: ArgsT) ~> RetT
+            visitor_args(base_ns, ArgsT, RetT).visit_inner: (args: ArgsT) ~> RetT
             {
-                return  visitor_args_ns(derived_ns, ArgsT, RetT).visit_node(args);
+                return  visitor_args(derived_ns, ArgsT, RetT).visit_node(args);
             }
 
         'unit_defn'}
@@ -99,9 +99,9 @@ namespace rbts {
         {'unit_defn'
 
             alwaysinline
-            visitor_args_ns(base_ns, ArgsT, RetT).visit_leaf: (args: ArgsT) ~> RetT
+            visitor_args(base_ns, ArgsT, RetT).visit_leaf: (args: ArgsT) ~> RetT
             {
-                return  visitor_args_ns(derived_ns, ArgsT, RetT).visit_node(args);
+                return  visitor_args(derived_ns, ArgsT, RetT).visit_node(args);
             }
 
         'unit_defn'}

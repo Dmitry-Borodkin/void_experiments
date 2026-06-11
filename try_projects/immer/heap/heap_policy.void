@@ -15,25 +15,25 @@ namespace .immer {
 
 
 //---------------------------------------------------------------------
-#define heap_policy_ns: (HeapNS: v_static_namespace_t) ~> v_static_namespace_t
+#define heap_policy: (HeapNS: v_static_namespace_t) ~> v_static_namespace_t
   =  .immer.v_generic_ns("heap_policy_ns", S(v_namespace_get_prefix(HeapNS)));
 
 
 //---------------------------------------------------------------------
-#define instantiate_heap_policy_ns: (HeapNS: v_static_namespace_t)
+#define instantiate_heap_policy: (HeapNS: v_static_namespace_t)
 {'unit_defn_list'
 
-    namespace .immer.heap_policy_ns(HeapNS)
+    namespace .immer.heap_policy(HeapNS)
     {
         heap = HeapNS;
 
-        #define optimized_ns: [HeapNS](Size: size_t) ~> v_static_namespace_t
-          =  .immer.heap_policy_ns(HeapNS).v_generic_ns("optimized_ns", N(Size));
+        #define optimized: [HeapNS](Size: size_t) ~> v_static_namespace_t
+          =  .immer.heap_policy(HeapNS).v_generic_ns("optimized_ns", N(Size));
 
-        #define instantiate_optimized_ns: [HeapNS](Size: size_t)
+        #define instantiate_optimized: [HeapNS](Size: size_t)
         {'unit_defn_list'
 
-            namespace .immer.heap_policy_ns(HeapNS).optimized_ns(Size)
+            namespace .immer.heap_policy(HeapNS).optimized(Size)
             {
                 heap = HeapNS;          //- Sic!
             }

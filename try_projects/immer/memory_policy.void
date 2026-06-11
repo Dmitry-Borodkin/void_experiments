@@ -1,0 +1,67 @@
+{ voidc_import("libvoidc.void"); }
+{ voidc_make_header("memory_policy"); }
+//---------------------------------------------------------------------
+{
+    v_import("config.void");
+    v_export_import("heap/heap_policy.void");
+    v_export_import("refcount/unsafe_refcount_policy.void");
+    v_export_import("detail/util.void");
+}
+
+
+//---------------------------------------------------------------------
+//- <immer/memory_policy.hpp>
+//---------------------------------------------------------------------
+namespace .immer {
+
+//---------------------------------------------------------------------
+#define memory_policy: (HeapPolicy:     v_static_namespace_t,
+                        RefcountPolicy: v_static_type_t
+                       ) ~> v_static_namespace_t
+  =  .immer.v_generic_ns("memory_policy_ns",
+                         S(v_namespace_get_prefix(HeapPolicy)),
+                         T(RefcountPolicy)
+                        );
+
+//---------------------------------------------------------------------
+#define instantiate_memory_policy: (HeapPolicy:     v_static_namespace_t,
+                                    RefcountPolicy: v_static_type_t
+                                   )
+{'unit_defn_list'
+
+    namespace .immer.memory_policy(HeapPolicy, RefcountPolicy)
+    {
+        heap     = HeapPolicy;
+        refcount = RefcountPolicy;
+
+        //- ...
+    }
+
+'unit_defn_list'}
+
+
+//---------------------------------------------------------------------
+#define instantiate_default_memory_policy: ()
+{'unit_defn_list'
+
+    namespace .immer
+    {
+        #do (instantiate_debug_size_heap(malloc_heap),
+             instantiate_heap_policy(debug_size_heap(malloc_heap)))
+
+        default_heap_policy     = heap_policy(debug_size_heap(malloc_heap));
+        default_refcount_policy = unsafe_refcount_policy;
+
+        #do (instantiate_memory_policy(default_heap_policy, default_refcount_policy))
+
+        default_memory_policy = memory_policy(default_heap_policy,
+                                              default_refcount_policy);
+    }
+
+'unit_defn_list'}
+
+
+
+//---------------------------------------------------------------------
+}   //- namespace .immer
+

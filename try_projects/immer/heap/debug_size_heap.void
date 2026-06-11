@@ -18,14 +18,14 @@ namespace .immer {
 #if (IMMER_ENABLE_DEBUG_SIZE_HEAP)
 
   //---------------------------------------------------------------------
-  #define debug_size_heap_ns: (HeapNS: v_static_namespace_t) ~> v_static_namespace_t
+  #define debug_size_heap: (HeapNS: v_static_namespace_t) ~> v_static_namespace_t
     =  .immer.v_generic_ns("debug_size_heap_ns", S(v_namespace_get_prefix(HeapNS)));
 
   //---------------------------------------------------------------------
-  #define instantiate_debug_size_heap_ns: (HeapNS: v_static_namespace_t)
+  #define instantiate_debug_size_heap: (HeapNS: v_static_namespace_t)
   {'unit_defn_list'
 
-    namespace .immer.debug_size_heap_ns(HeapNS)
+    namespace .immer.debug_size_heap(HeapNS)
     {
         extra_size = 16;            //- Kinda  alignof(max_align_t)
 
@@ -54,9 +54,9 @@ namespace .immer {
 
 #else   //- IMMER_ENABLE_DEBUG_SIZE_HEAP
 
-  debug_size_heap_ns = identity_heap_ns;
+  debug_size_heap = identity_heap;
 
-  instantiate_debug_size_heap_ns = instantiate_identity_heap_ns;
+  instantiate_debug_size_heap = instantiate_identity_heap;
 
 #endif  //- IMMER_ENABLE_DEBUG_SIZE_HEAP
 

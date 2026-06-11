@@ -1,6 +1,8 @@
                          ****  ?  ****                         │*
                                                                │
                                                                │
+Array index                                                    │try_array_index.void
+                                                               │
 try_hz27.void       Fibonacci 999                              │try_hz27.void -T
 try_hz26.void                                                  │try_hz26.void
 try_hz25.void                                                  │try_hz25.void
