@@ -21,10 +21,10 @@ namespace rbts {
 
 //---------------------------------------------------------------------
 #define visitor_base: (DerivedNS: v_static_namespace_t) ~> v_static_namespace_t
-  =  .immer.detail.rbts.v_generic_ns("visitor_base_ns", Q(v_namespace_get_name(DerivedNS)));
+  =  .immer.detail.rbts.v_generic_ns(visitor_base_ns, Q(v_namespace_get_name(DerivedNS)));
 
 #define visitor_args: (NS: v_static_namespace_t, AT: v_static_type_t, RT: v_static_type_t = void) ~> v_static_namespace_t
-  =  NS.v_generic_ns("visitor_args_ns", T[AT,RT]);
+  =  NS.v_generic_ns(visitor_args_ns, T[AT,RT]);
 
 
 //---------------------------------------------------------------------

@@ -19,7 +19,7 @@ namespace .immer {
 
   //---------------------------------------------------------------------
   #define debug_size_heap: (HeapNS: v_static_namespace_t) ~> v_static_namespace_t
-    =  .immer.v_generic_ns("debug_size_heap_ns", Q(v_namespace_get_name(HeapNS)));
+    =  .immer.v_generic_ns(debug_size_heap_ns, Q(v_namespace_get_name(HeapNS)));
 
   //---------------------------------------------------------------------
   #define instantiate_debug_size_heap: (HeapNS: v_static_namespace_t)

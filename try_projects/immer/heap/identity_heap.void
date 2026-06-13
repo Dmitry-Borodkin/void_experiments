@@ -15,7 +15,7 @@ namespace .immer {
 
 //---------------------------------------------------------------------
 #define identity_heap: (HeapNS: v_static_namespace_t) ~> v_static_namespace_t
-  =  .immer.v_generic_ns("identity_heap_ns", Q(v_namespace_get_name(HeapNS)));
+  =  .immer.v_generic_ns(identity_heap_ns, Q(v_namespace_get_name(HeapNS)));
 
 
 //---------------------------------------------------------------------
