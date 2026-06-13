@@ -19,7 +19,7 @@ namespace .immer {
                         RefcountPolicy: v_static_type_t
                        ) ~> v_static_namespace_t
   =  .immer.v_generic_ns("memory_policy_ns",
-                         S(v_namespace_get_prefix(HeapPolicy)),
+                         Q(v_namespace_get_name(HeapPolicy)),
                          T(RefcountPolicy)
                         );
 

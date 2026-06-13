@@ -28,7 +28,7 @@ namespace detail {
 { voidc_unit_begin_module("utility_module"); }
 
 export
-v_internal_namespace_get_prefix_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+v_internal_namespace_get_name_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
 
@@ -44,7 +44,7 @@ v_internal_namespace_get_prefix_intrinsic: (*void, vis: *voidc_visitor_t, self: 
 
     expr: &v_ast_expr_t := {};
 
-    v_ast_make_expr_string(&expr, v_std_string_get(&ns->prefix));
+    v_ast_make_expr_string(&expr, v_quark_to_string(ns->name));
 
     v_pop_result();
 
@@ -52,7 +52,7 @@ v_internal_namespace_get_prefix_intrinsic: (*void, vis: *voidc_visitor_t, self: 
 }
 
 //---------------------------------------------------------------------
-{   if (v_find_symbol_value("v_internal_namespace_get_prefix_intrinsic"))
+{   if (v_find_symbol_value("v_internal_namespace_get_name_intrinsic"))
     {
         voidc_skip_object_file_load(1);
     }
@@ -64,7 +64,7 @@ v_internal_namespace_get_prefix_intrinsic: (*void, vis: *voidc_visitor_t, self: 
 //---------------------------------------------------------------------
 {   v_target_set_global_ctx(cur_gctx);
 
-    v_export_intrinsic("v_namespace_get_prefix", v_internal_namespace_get_prefix_intrinsic, 0);
+    v_export_intrinsic("v_namespace_get_name", v_internal_namespace_get_name_intrinsic, 0);
 }
 
 
