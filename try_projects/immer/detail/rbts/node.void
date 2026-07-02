@@ -1,0 +1,201 @@
+{ voidc_import("libvoidc.void"); }
+{ voidc_make_header("node"); }
+//---------------------------------------------------------------------
+{
+    v_export_import("bits.void");
+    v_export_import("../util.void");
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+//- <immer/detail/rbts/node.hpp>
+//---------------------------------------------------------------------
+namespace .immer {
+namespace detail {
+namespace rbts {
+
+
+//---------------------------------------------------------------------
+#define node: [bits_t](T: v_static_type_t, MemoryPolicy: v_static_namespace_t,
+                       B: bits_t, BL: bits_t)
+                       ~> v_static_type_t
+  =  v_generic(".immer.detail.rbts.node", T(T), Q(v_namespace_get_name(MemoryPolicy)), N[B,BL]);
+
+
+//---------------------------------------------------------------------
+#define instantiate_node: [bits_t](T: v_static_type_t, MemoryPolicy: v_static_namespace_t,
+                                   B: bits_t, BL: bits_t)
+{'unit_defn_list'
+
+  namespace .immer.detail.rbts
+  {
+    namespace node(T, MemoryPolicy, B, BL)
+    {
+        node_t      = node(T, MemoryPolicy, B, BL);
+        memory      = MemoryPolicy;
+        heap_policy = memory.heap;
+        refs_t      = memory.refcount;
+        value_t     = T;
+
+        embed_relaxed = false;          //- Sic!
+
+        struct relaxed_data_t
+        {
+            count: count_t;
+            sizes: size_t[branches(B)];
+        };
+
+        relaxed_data_with_meta_t = struct { refs: refs_t; d: relaxed_data_t; };
+        relaxed_data_no_meta_t   = struct { d: relaxed_data_t; };
+
+        #if (embed_relaxed) relaxed_t = relaxed_data_no_meta_t;
+        #else               relaxed_t = relaxed_data_with_meta_t;
+        #endif
+
+        struct leaf_t
+        {
+            buffer: T[0];       //- Sic!
+        };
+
+        struct inner_t
+        {
+            relaxed: *relaxed_t;
+            buffer:  (*node_t)[0];      //- Sic!
+        };
+
+        union data_t
+        {
+            inner: inner_t;
+            leaf:  leaf_t;
+        };
+
+        struct impl_data_t
+        {
+            data: data_t;
+        };
+
+        impl_t = struct { refs: refs_t; d: impl_data_t; };
+
+    }   //- namespace node(T, MemoryPolicy, B, BL)
+
+    private
+    node_t = node(T, MemoryPolicy, B, BL);
+
+    private
+    impl_t = node_t.impl_t;
+
+    #do (v_set_implementation_type(node_t, impl_t))
+
+    alwaysinline
+    (_.impl): (n: &node_t) ~> &impl_t  =  *(&n : *impl_t);
+
+
+    namespace node_t
+    {
+        keep_headroom = true;        //- Sic!
+
+        #define sizeof_packed_leaf_n_: [count_t, impl_t](count: count_t) ~> size_t              //- Sic !!!
+          =  ((&(0: *impl_t)->d.data.leaf.buffer[count] : *char) : size_t);
+
+        #define sizeof_packed_leaf_n: [count_t, T](count: count_t) ~> size_t                    //- ?!?!?!?
+          =  sizeof(*void) + sizeof(T)*count;
+
+        #define sizeof_packed_inner_n_: [count_t, impl_t](count: count_t) ~> size_t             //- Sic !!!
+          =  ((&(0: *impl_t)->d.data.inner.buffer[count] : *char) : size_t);
+
+        #define sizeof_packed_inner_n: [count_t](count: count_t) ~> size_t                      //- ?!?!?!?
+          =  sizeof(*void) + sizeof(*void) + sizeof(*void)*count;
+
+        #define sizeof_packed_relaxed_n_: [count_t, relaxed_t](count: count_t) ~> size_t        //- Sic !!!
+          =  ((&(0: *relaxed_t)->d.sizes[count] : *char) : size_t);
+
+        #define sizeof_packed_relaxed_n: [count_t](count: count_t) ~> size_t  =                 //- ?!?!?!?
+        {
+            using namespace node_t;
+
+            #if (embed_relaxed)  sizeof(size_t) + sizeof(size_t)*count
+            #else                sizeof(*void) + sizeof(size_t) + sizeof(size_t)*count
+            #endif
+        };
+
+        #define sizeof_packed_inner_r_n: [count_t, node_t](count: count_t) ~> size_t  =
+        {
+            using namespace node_t;
+
+            #if (embed_relaxed) sizeof_packed_inner_n(count) + sizeof_packed_relaxed_n(count)
+            #else               sizeof_packed_inner_n(count)
+            #endif
+        };
+
+        max_sizeof_leaf    = sizeof_packed_leaf_n(branches(BL));
+        max_sizeof_inner   = sizeof_packed_inner_n(branches(B));
+        max_sizeof_relaxed = sizeof_packed_relaxed_n(branches(B));
+        max_sizeof_inner_r = sizeof_packed_inner_r_n(branches(B));
+
+        #define sizeof_inner_n: [count_t, node_t](n: count_t) ~> size_t  =
+        {
+            using namespace node_t;
+
+            #if (keep_headroom) max_sizeof_inner
+            #else               sizeof_packed_inner_n(n)
+            #endif
+        };
+
+        #define sizeof_inner_r_n: [count_t, node_t](n: count_t) ~> size_t  =
+        {
+            using namespace node_t;
+
+            #if (keep_headroom) max_sizeof_inner_r
+            #else               sizeof_packed_inner_r_n(n)
+            #endif
+        };
+
+        #define sizeof_relaxed_n: [count_t, node_t](n: count_t) ~> size_t  =
+        {
+            using namespace node_t;
+
+            #if (keep_headroom) max_sizeof_relaxed
+            #else               sizeof_packed_relaxed_n(n)
+            #endif
+        };
+
+        #define sizeof_leaf_n: [count_t, node_t](n: count_t) ~> size_t  =
+        {
+            using namespace node_t;
+
+            #if (keep_headroom) max_sizeof_leaf
+            #else               sizeof_packed_leaf_n(n)
+            #endif
+        };
+
+        #do (heap_policy.instantiate_optimized(max_sizeof_inner))
+
+        heap = heap_policy.optimized(max_sizeof_inner).heap;
+
+
+
+
+
+    }   //- namespace node_t
+
+
+
+
+  }   //- namespace .immer.detail.rbts
+
+'unit_defn_list'}
+
+
+
+
+
+//---------------------------------------------------------------------
+}   //- namespace rbts
+}   //- namespace detail
+}   //- namespace .immer
+

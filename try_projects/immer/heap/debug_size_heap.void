@@ -5,7 +5,7 @@
     v_import("../config.void");
     v_export_import("../detail/util.void");         //- ?
 
-    v_import("identity_heap.void");
+    v_export_import("identity_heap.void");
 }
 
 

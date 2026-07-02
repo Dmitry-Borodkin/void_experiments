@@ -1,0 +1,82 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+//---------------------------------------------------------------------
+{
+    v_import("cstdio.void");
+
+    v_import("../memory_policy.void");
+
+    v_import("../detail/rbts/node.void");
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+namespace .immer
+{
+    #do (instantiate_default_memory_policy())
+
+    policy = default_memory_policy;
+
+//    #do (policy.heap.instantiate_optimized(777))
+//
+//    heap = policy.heap.optimized(777).heap;
+
+
+    #do (detail.rbts.instantiate_node(int, policy, 5, 7))
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------
+}   //- namespace .immer
+
+
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(2); }
+{
+    node_t = .immer.detail.rbts.node(int, .immer.policy, 5, 7);
+
+    printf("spln:  %zd\n", node_t.sizeof_packed_leaf_n(19));
+    printf("spln_: %zd\n", node_t.sizeof_packed_leaf_n_(19));
+
+    printf("spin:  %zd\n", node_t.sizeof_packed_inner_n(19));
+    printf("spin_: %zd\n", node_t.sizeof_packed_inner_n_(19));
+
+    printf("spir:  %zd\n", node_t.sizeof_packed_relaxed_n(19));
+    printf("spir_: %zd\n", node_t.sizeof_packed_relaxed_n_(19));
+
+    printf("spirn: %zd\n", node_t.sizeof_packed_inner_r_n(19));
+
+    printf("msl: %zd\n", node_t.max_sizeof_leaf);
+    printf("msi: %zd\n", node_t.max_sizeof_inner);
+    printf("msr: %zd\n", node_t.max_sizeof_relaxed);
+    printf("msir: %zd\n", node_t.max_sizeof_inner_r);
+
+
+
+    heap = node_t.heap;
+
+    p = (heap.allocate(sizeof(int[7])) : *int);
+
+    printf("p: %p\n", p);
+
+    heap.deallocate(sizeof(int[7]), p);
+
+
+}
+
+
+
+
+
+
