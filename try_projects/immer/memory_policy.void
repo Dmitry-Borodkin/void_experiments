@@ -34,6 +34,8 @@ namespace .immer {
         heap     = HeapPolicy;
         refcount = RefcountPolicy;
 
+        prefer_fewer_bigger_objects = false;            //- Sic!
+
         //- ...
     }
 

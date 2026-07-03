@@ -16,6 +16,10 @@
 
 
 //---------------------------------------------------------------------
+//my_type = struct { char[3]; };
+//my_type = v_std_string_t;
+my_type = int;
+
 namespace .immer
 {
     #do (instantiate_default_memory_policy())
@@ -27,7 +31,7 @@ namespace .immer
 //    heap = policy.heap.optimized(777).heap;
 
 
-    #do (detail.rbts.instantiate_node(int, policy, 5, 7))
+    #do (detail.rbts.instantiate_node(my_type, policy, 5, 7))
 
 
 
@@ -44,7 +48,7 @@ namespace .immer
 //{ voidc_verify_jit_module_optimized(true); }
 //{ v_debug_print_module(2); }
 {
-    node_t = .immer.detail.rbts.node(int, .immer.policy, 5, 7);
+    node_t = .immer.detail.rbts.node(my_type, .immer.policy, 5, 7);
 
     printf("spln:  %zd\n", node_t.sizeof_packed_leaf_n(19));
     printf("spln_: %zd\n", node_t.sizeof_packed_leaf_n_(19));
@@ -70,7 +74,19 @@ namespace .immer
 
     printf("p: %p\n", p);
 
+    printf("i: %zu\n", ((0: *node_t)->inner : size_t));
+    printf("l: %zu\n", ((0: *node_t)->leaf : size_t));
+
+    printf("r: %zu\n", (&(0: *node_t)->refs : size_t));
+
+
     heap.deallocate(sizeof(int[7]), p);
+
+
+
+
+
+
 
 
 }

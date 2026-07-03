@@ -2,6 +2,9 @@
 { voidc_make_header("node"); }
 //---------------------------------------------------------------------
 {
+    v_export_import("type_traits.void");
+    v_export_import("cstring.void");
+
     v_export_import("bits.void");
     v_export_import("../util.void");
 }
@@ -42,7 +45,7 @@ namespace rbts {
         refs_t      = memory.refcount;
         value_t     = T;
 
-        embed_relaxed = false;          //- Sic!
+        embed_relaxed = memory.prefer_fewer_bigger_objects;
 
         struct relaxed_data_t
         {
@@ -94,11 +97,26 @@ namespace rbts {
     alwaysinline
     (_.impl): (n: &node_t) ~> &impl_t  =  *(&n : *impl_t);
 
+    alwaysinline
+    (v_initialize(_)): (p: *impl_t) ~> void  =  derive;
+
+    alwaysinline
+    (v_terminate(_)): (p: *impl_t) ~> void  =  derive;
+
+    alwaysinline
+    (v_initialize(_)): (p: *node_t) ~> void  { v_initialize(&p->impl); }
+
+    alwaysinline
+    (v_terminate(_)): (p: *node_t) ~> void  { v_terminate(&p->impl); }
+
+    alwaysinline
+    (v_initialize(_)): (p: *node_t.relaxed_t) ~> void  =  derive;
+
+    alwaysinline
+    (v_terminate(_)): (p: *node_t.relaxed_t) ~> void  =  derive;
 
     namespace node_t
     {
-        keep_headroom = true;        //- Sic!
-
         #define sizeof_packed_leaf_n_: [count_t, impl_t](count: count_t) ~> size_t              //- Sic !!!
           =  ((&(0: *impl_t)->d.data.leaf.buffer[count] : *char) : size_t);
 
@@ -137,51 +155,375 @@ namespace rbts {
         max_sizeof_relaxed = sizeof_packed_relaxed_n(branches(B));
         max_sizeof_inner_r = sizeof_packed_inner_r_n(branches(B));
 
-        #define sizeof_inner_n: [count_t, node_t](n: count_t) ~> size_t  =
-        {
-            using namespace node_t;
-
-            #if (keep_headroom) max_sizeof_inner
-            #else               sizeof_packed_inner_n(n)
-            #endif
-        };
-
-        #define sizeof_inner_r_n: [count_t, node_t](n: count_t) ~> size_t  =
-        {
-            using namespace node_t;
-
-            #if (keep_headroom) max_sizeof_inner_r
-            #else               sizeof_packed_inner_r_n(n)
-            #endif
-        };
-
-        #define sizeof_relaxed_n: [count_t, node_t](n: count_t) ~> size_t  =
-        {
-            using namespace node_t;
-
-            #if (keep_headroom) max_sizeof_relaxed
-            #else               sizeof_packed_relaxed_n(n)
-            #endif
-        };
-
-        #define sizeof_leaf_n: [count_t, node_t](n: count_t) ~> size_t  =
-        {
-            using namespace node_t;
-
-            #if (keep_headroom) max_sizeof_leaf
-            #else               sizeof_packed_leaf_n(n)
-            #endif
-        };
+        #define sizeof_inner_n:   [count_t, node_t](count_t) ~> size_t  =  node_t.max_sizeof_inner;
+        #define sizeof_inner_r_n: [count_t, node_t](count_t) ~> size_t  =  node_t.max_sizeof_inner_r;
+        #define sizeof_relaxed_n: [count_t, node_t](count_t) ~> size_t  =  node_t.max_sizeof_relaxed;
+        #define sizeof_leaf_n:    [count_t, node_t](count_t) ~> size_t  =  node_t.max_sizeof_leaf;
 
         #do (heap_policy.instantiate_optimized(max_sizeof_inner))
 
         heap = heap_policy.optimized(max_sizeof_inner).heap;
+
+        #define (_.relaxed): [node_t](n: &node_t) ~> *node_t.relaxed_t  =  n.impl.d.data.inner.relaxed;
+
+        #define (_.inner): [node_t](n: &node_t) ~> **node_t  =  (&n.impl.d.data.inner.buffer : **node_t);
+
+        #define (_.leaf): [node_t, T](n: &node_t) ~> *T  =  (&n.impl.d.data.leaf.buffer : *T);
+
+        #define (_.refs): [node_t, refs_t](n: &node_t) ~> &refs_t  =  n.impl.refs;
+
+        inlinehint
+        make_inner_n_into: (buffer: *void, size: size_t, n: count_t) ~> *node_t
+        {
+            v_assert(n <= branches(B));
+            v_assert(size >= sizeof_inner_n(n));
+            p = (buffer: *node_t);  v_initialize(p);
+            p->impl.d.data.inner.relaxed := 0;
+            return  p;
+        }
+
+        inlinehint
+        make_inner_n: (n: count_t) ~> *node_t
+        {
+            v_assert(n <= branches(B));
+            m = heap.allocate(sizeof_inner_n(n));
+            return  make_inner_n_into(m, sizeof_inner_n(n), n);
+        }
+
+        inlinehint
+        make_inner_r_n: (n: count_t) ~> *node_t
+        {
+            v_assert(n <= branches(B));
+            mp = heap.allocate(sizeof_inner_r_n(n));
+
+            #if (embed_relaxed) mr = (mp: *char) + sizeof_inner_n(n);
+            #else               mr = heap.allocate(sizeof_relaxed_n(n));
+            #endif
+
+            p = (mp: *node_t);      v_initialize(p);
+            r = (mr: *relaxed_t);   v_initialize(r);
+
+            r->d.count := 0;
+            p->impl.d.data.inner.relaxed := r;
+
+            return  p;
+        }
+
+        inlinehint
+        make_inner_sr_n: (n: count_t, r: *relaxed_t) ~> *node_t
+        {
+          #if (embed_relaxed)
+
+            return  make_inner_r_n(n);
+
+          #else
+
+            p = (heap.allocate(sizeof_inner_r_n(n)) : *node_t);     v_initialize(p);
+            v_assert(r->d.count >= n);
+            r->refs.inc;
+            p->impl.d.data.inner.relaxed := r;
+
+            return  p;
+
+          #endif
+        }
+
+        inlinehint
+        make_leaf_n_into: (buffer: *void, size: size_t, n: count_t) ~> *node_t
+        {
+            v_assert(n <= branches(BL));
+            v_assert(size >= sizeof_leaf_n(n));
+            p = (buffer: *node_t);  v_initialize(p);
+            return  p;
+        }
+
+        inlinehint
+        make_leaf_n: (n: count_t) ~> *node_t
+        {
+            v_assert(n <= branches(BL));
+            m = heap.allocate(sizeof_leaf_n(n));
+            return  make_leaf_n_into(m, sizeof_leaf_n(n), n);
+        }
+
+        inlinehint
+        make_inner_n1: (n: count_t, x: *node_t) ~> *node_t
+        {
+            v_assert(n >= 1);
+            p = make_inner_n(n);
+            p->inner[0] := x;
+            return  p;
+        }
+
+        inlinehint
+        make_inner_n2: (n: count_t, x: *node_t, y: *node_t) ~> *node_t
+        {
+            v_assert(n >= 2);
+            p = make_inner_n(n);
+            p->inner[0] := x;
+            p->inner[1] := y;
+            return  p;
+        }
+
+        inlinehint
+        make_inner_r_n1: (n: count_t, x: *node_t) ~> *node_t
+        {
+            v_assert(n >= 1);
+            p = make_inner_r_n(n);
+            r = p->relaxed;
+            p->inner[0] := x;
+            r->d.count  := 1;
+            return  p;
+        }
+
+        inlinehint
+        make_inner_r_n1s: (n: count_t, x: *node_t, xs: size_t) ~> *node_t
+        {
+            v_assert(n >= 1);
+            v_assert(xs);
+            p = make_inner_r_n(n);
+            r = p->relaxed;
+            p->inner[0]   := x;
+            r->d.sizes[0] := xs;
+            r->d.count    := 1;
+            return  p;
+        }
+
+        inlinehint
+        make_inner_r_n2: (n: count_t, x: *node_t, y: *node_t) ~> *node_t
+        {
+            v_assert(n >= 2);
+            p = make_inner_r_n(n);
+            r = p->relaxed;
+            p->inner[0] := x;
+            p->inner[1] := y;
+            r->d.count  := 2;
+            return  p;
+        }
+
+        inlinehint
+        make_inner_r_n1s1: (n: count_t, x: *node_t, xs: size_t, y: *node_t) ~> *node_t
+        {
+            v_assert(n >= 2);
+            v_assert(xs);
+            p = make_inner_r_n(n);
+            r = p->relaxed;
+            p->inner[0]   := x;
+            p->inner[1]   := y;
+            r->d.sizes[0] := xs;
+            r->d.count    := 2;
+            return  p;
+        }
+
+        inlinehint
+        make_inner_r_n1s1s: (n: count_t, x: *node_t, xs: size_t, y: *node_t, ys: size_t) ~> *node_t
+        {
+            v_assert(n >= 2);
+            v_assert(xs);
+            v_assert(ys);
+            p = make_inner_r_n(n);
+            r = p->relaxed;
+            p->inner[0]   := x;
+            p->inner[1]   := y;
+            r->d.sizes[0] := xs;
+            r->d.sizes[1] := xs + ys;
+            r->d.count    := 2;
+            return  p;
+        }
+
+        inlinehint
+        make_inner_r_n1s1s1s: (n: count_t,
+                               x: *node_t, xs: size_t,
+                               y: *node_t, ys: size_t,
+                               z: *node_t, zs: size_t
+                               ) ~> *node_t
+        {
+            v_assert(n >= 3);
+            v_assert(xs);
+            v_assert(ys);
+            v_assert(zs);
+            p = make_inner_r_n(n);
+            r = p->relaxed;
+            p->inner[0]   := x;
+            p->inner[1]   := y;
+            p->inner[2]   := z;
+            r->d.sizes[0] := xs;
+            r->d.sizes[1] := xs + ys;
+            r->d.sizes[2] := xs + ys + zs;
+            r->d.count    := 3;
+            return  p;
+        }
+
+        inlinehint
+        make_leaf_n1: (n: count_t, x: &T) ~> *node_t
+        {
+            v_assert(n >= 1);
+            p = make_leaf_n(n);
+
+            #if (T.is_special(v_initialize))  v_initialize(p->leaf);    #endif
+
+            #if (T.is_special(v_copy))  v_copy(p->leaf, &x);
+            #else                       p->leaf[0] := x;
+            #endif
+
+            return  p;
+        }
+
+        inlinehint
+        make_path: (shift: shift_t, node: *node_t) ~> *node_t
+        {
+            if (shift == endshift(B, BL))
+            {
+                return  node;
+            }
+            else
+            {
+                n = make_inner_n(1);
+
+                n->inner[0] := make_path(shift - B, node);
+
+                return  n;
+            }
+        }
+
+    }   //- namespace node_t
+
+    inlinehint
+    (_.inc): (self: &node_t) ~> &node_t  =  { self.refs.inc; self };
+
+    inlinehint
+    (_.dec): (self: &node_t) ~> bool  =  self.refs.dec;
+
+    namespace node_t
+    {
+        inlinehint
+        inc_nodes: (p: **node_t, n: count_t) ~> void
+        {
+            for (i: &**node_t := p, e = p + n; i != e; ++i)
+            {
+                (*i)->refs.inc;
+            }
+        }
+
+        inlinehint
+        do_copy_inner: (dst: *node_t, src: *node_t, n: count_t) ~> *node_t
+        {
+            p = src->inner;
+            inc_nodes(p, n);
+            memmove(dst->inner, p, n*sizeof(*node_t));
+            return  dst;
+        }
+
+        inlinehint
+        do_copy_inner_replace: (dst: *node_t, src: *node_t, n: count_t,
+                                offset: count_t, child: *node_t) ~> *node_t
+        {
+            p = src->inner;
+            inc_nodes(p, offset);
+            inc_nodes(p + offset + 1, n - offset - 1);
+            memmove(dst->inner, p, n*sizeof(*node_t));
+            dst->inner[offset] := child;
+            return  dst;
+        }
+
+        inlinehint
+        copy_inner: (src: *node_t, n: count_t) ~> *node_t
+        {
+            return  do_copy_inner(make_inner_n(n), src, n);
+        }
+
+        inlinehint
+        copy_inner_n: (allocn: count_t, src: *node_t, n: count_t) ~> *node_t
+        {
+            v_assert(allocn >= n);
+            return  do_copy_inner(make_inner_n(allocn), src, n);
+        }
+
+        inlinehint
+        do_copy_inner_r: (dst: *node_t, src: *node_t, n: count_t) ~> *node_t
+        {
+            src_r = src->relaxed;
+            dst_r = dst->relaxed;
+            inc_nodes(src->inner, n);
+            memmove(dst->inner, src->inner, n*sizeof(*node_t));
+            memmove(dst_r->d.sizes, src_r->d.sizes, n*sizeof(size_t));
+            dst_r->d.count := n;
+            return  dst;
+        }
+
+        inlinehint
+        do_copy_inner_replace_r: (dst: *node_t, src: *node_t, n: count_t,
+                                  offset: count_t, child: *node_t) ~> *node_t
+        {
+            src_r = src->relaxed;
+            dst_r = dst->relaxed;
+            p = src->inner;
+            inc_nodes(p, offset);
+            inc_nodes(p + offset + 1, n - offset - 1);
+            memmove(dst->inner, p, n*sizeof(*node_t));
+            memmove(dst_r->d.sizes, src_r->d.sizes, n*sizeof(size_t));
+            dst_r->d.count     := n;
+            dst->inner[offset] := child;
+            return  dst;
+        }
+
+        inlinehint
+        do_copy_inner_sr: (dst: *node_t, src: *node_t, n: count_t) ~> *node_t
+        {
+          #if (embed_relaxed)
+
+            return  do_copy_inner_r(dst, src, n);
+
+          #else
+
+            inc_nodes(src->inner, n);
+            memmove(dst->inner, src->inner, n*sizeof(*node_t));
+            return  dst;
+
+          #endif
+        }
+
+        inlinehint
+        do_copy_inner_replace_sr: (dst: *node_t, src: *node_t, n: count_t,
+                                   offset: count_t, child: *node_t) ~> *node_t
+        {
+          #if (embed_relaxed)
+
+            return  do_copy_inner_replace_r(dst, src, n, offset, child);
+
+          #else
+
+            p = src->inner;
+            inc_nodes(p, offset);
+            inc_nodes(p + offset + 1, n - offset - 1);
+            memmove(dst->inner, p, n*sizeof(*node_t));
+            dst->inner[offset] := child;
+            return  dst;
+
+          #endif
+        }
+
+        inlinehint
+        copy_inner_r: (src: *node_t, n: count_t) ~> *node_t
+        {
+            return  do_copy_inner_r(make_inner_r_n(n), src, n);
+        }
+
+        inlinehint
+        copy_inner_r_n: (allocn: count_t, src: *node_t, n: count_t) ~> *node_t
+        {
+            v_assert(allocn >= n);
+            return  do_copy_inner_r(make_inner_r_n(allocn), src, n);
+        }
+
+
+
 
 
 
 
 
     }   //- namespace node_t
+
 
 
 
