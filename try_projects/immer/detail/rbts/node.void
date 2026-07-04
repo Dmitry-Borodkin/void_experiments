@@ -2,9 +2,6 @@
 { voidc_make_header("node"); }
 //---------------------------------------------------------------------
 {
-    v_export_import("type_traits.void");
-    v_export_import("cstring.void");
-
     v_export_import("bits.void");
     v_export_import("../util.void");
 }
@@ -353,18 +350,14 @@ namespace rbts {
             return  p;
         }
 
+        #do (instantiate_uninitialized_copy(T))
+
         inlinehint
         make_leaf_n1: (n: count_t, x: &T) ~> *node_t
         {
             v_assert(n >= 1);
             p = make_leaf_n(n);
-
-            #if (T.is_special(v_initialize))  v_initialize(p->leaf);    #endif
-
-            #if (T.is_special(v_copy))  v_copy(p->leaf, &x);
-            #else                       p->leaf[0] := x;
-            #endif
-
+            util(T).uninitialized_copy(p->leaf, &x, 1);
             return  p;
         }
 
@@ -515,22 +508,185 @@ namespace rbts {
             return  do_copy_inner_r(make_inner_r_n(allocn), src, n);
         }
 
+        inlinehint
+        copy_leaf: (src: *node_t, n: count_t) ~> *node_t
+        {
+            dst = make_leaf_n(n);
+            util(T).uninitialized_copy(dst->leaf, src->leaf, n);
+            return  dst;
+        }
 
+        inlinehint
+        copy_leaf_n: (allocn: count_t, src: *node_t, n: count_t) ~> *node_t
+        {
+            v_assert(allocn >= n);
+            dst = make_leaf_n(allocn);
+            util(T).uninitialized_copy(dst->leaf, src->leaf, n);
+            return  dst;
+        }
 
+        inlinehint
+        copy_leaf_2: (src1: *node_t, n1: count_t, src2: *node_t, n2: count_t) ~> *node_t
+        {
+            dst = make_leaf_n(n1 + n2);
+            util(T).uninitialized_copy(dst->leaf,      src1->leaf, n1);
+            util(T).uninitialized_copy(dst->leaf + n1, src2->leaf, n2);
+            return  dst;
+        }
 
+        inlinehint
+        copy_leaf_last: (src: *node_t, idx: count_t, last: count_t) ~> *node_t
+        {
+            n = last - idx;
+            dst = make_leaf_n(n);
+            util(T).uninitialized_copy(dst->leaf, src->leaf + idx, n);
+            return  dst;
+        }
 
+        inlinehint
+        copy_leaf_emplace: (src: *node_t, n: count_t, x: &T) ~> *node_t
+        {
+            dst = copy_leaf_n(n + 1, src, n);
+            util(T).uninitialized_copy(dst->leaf + n, &x, 1);
+            return  dst;
+        }
 
+        inlinehint
+        delete_inner: (p: *node_t, n: count_t) ~> void
+        {
+            v_assert(!p->relaxed);
+            heap.deallocate(sizeof_inner_n(n), p);
+        }
 
+        inlinehint
+        delete_inner_r: (p: *node_t, n: count_t) ~> void
+        {
+            r = p->relaxed;
+            v_assert(r);
+
+            #if (!embed_relaxed)
+
+                if (r->refs.dec)  heap.deallocate(sizeof_relaxed_n(n), r);
+
+            #endif
+
+            heap.deallocate(sizeof_inner_r_n(n), p);
+        }
+
+        inlinehint
+        delete_inner_any: (p: *node_t, n: count_t) ~> void
+        {
+            if (p->relaxed) delete_inner_r(p, n);
+            else            delete_inner(p, n);
+        }
+
+        #do (instantiate_conditional_terminate(T))
+
+        inlinehint
+        delete_leaf: (p: *node_t, n: count_t) ~> void
+        {
+            util(T).conditional_terminate(p->leaf, n);
+            heap.deallocate(sizeof_leaf_n(n), p);
+        }
 
     }   //- namespace node_t
 
+    alwaysinline
+    (_.can_mutate): (self: &const node_t) ~> bool  =  self.refs.unique;
+
+    alwaysinline
+    (_.can_relax): (self: &const node_t) ~> bool  =  node_t.embed_relaxed  ||  self.relaxed;
+
+    inlinehint
+    (_.ensure_mutable_relaxed): (self: &node_t) ~> *node_t.relaxed_t
+    {
+        src_r = self.relaxed;
+
+        using namespace node_t;
+
+        #if (embed_relaxed)
+
+            return  src_r;
+
+        #else
+
+            if (src_r  &&  src_r->refs.unique)          //- ???
+            {
+                return  src_r;
+            }
+            else
+            {
+                dst_r = (heap.allocate(max_sizeof_relaxed) : *relaxed_t);   v_initialize(dst_r);
+                self.impl.d.data.inner.relaxed := dst_r;
+                if (src_r)
+                {
+                    n = src_r->d.count;
+                    dst_r->d.count := n;
+                    memmove(dst_r->d.sizes, src_r->d.sizes, n*sizeof(size_t));
+                    if (src_r->refs.dec)
+                    {
+                        heap.deallocate(sizeof_inner_r_n(n), src_r);
+                    }
+                }
+                return  dst_r;
+            }
+
+        #endif
+    }
+
+    inlinehint
+    (_.ensure_mutable_relaxed_n()): (self: &node_t, n: count_t) ~> *node_t.relaxed_t
+    {
+        src_r = self.relaxed;
+
+        using namespace node_t;
+
+        #if (embed_relaxed)
+
+            return  src_r;
+
+        #else
+
+            if (src_r  &&  src_r->refs.unique)          //- ???
+            {
+                return  src_r;
+            }
+            else
+            {
+                dst_r = (heap.allocate(max_sizeof_relaxed) : *relaxed_t);   v_initialize(dst_r);
+                self.impl.d.data.inner.relaxed := dst_r;
+                if (src_r)
+                {
+                    memmove(dst_r->d.sizes, src_r->d.sizes, n*sizeof(size_t));
+                    if (src_r->refs.dec)
+                    {
+                        heap.deallocate(sizeof_inner_r_n(n), src_r);
+                    }
+                }
+                dst_r->d.count := n;
+                return  dst_r;
+            }
+
+        #endif
+    }
 
 
+    //- ...
 
 
   }   //- namespace .immer.detail.rbts
 
 'unit_defn_list'}
+
+
+
+
+
+
+
+
+
+
 
 
 

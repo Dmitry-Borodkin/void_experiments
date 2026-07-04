@@ -1,6 +1,10 @@
 { voidc_import("libvoidc.void"); }
 { voidc_make_header("util"); }
 //---------------------------------------------------------------------
+{
+    v_export_import("type_traits.void");
+    v_export_import("cstring.void");
+}
 
 
 //---------------------------------------------------------------------
@@ -13,6 +17,146 @@
 //---------------------------------------------------------------------
 namespace .immer {
 namespace detail {
+
+
+//---------------------------------------------------------------------
+#define util: (T: v_static_type_t) ~> v_static_namespace_t
+  =  .immer.detail.v_generic_ns(util_ns, T(T));
+
+//---------------------------------------------------------------------
+#define instantiate_conditional_initialize: (T: v_static_type_t)
+{'unit_defn_list'
+
+    namespace .immer.detail.util(T)
+    {
+      #if (!v_defined(immer_detail_util_conditional_initialize))
+
+        immer_detail_util_conditional_initialize = true;
+
+        alwaysinline
+        conditional_initialize: (p: *T, n: size_t) ~> void
+        {
+            #if (T.is_special(v_initialize))  v_initialize(p);  #endif
+        }
+
+      #endif
+    }
+
+'unit_defn_list'}
+
+#define instantiate_conditional_terminate: (T: v_static_type_t)
+{'unit_defn_list'
+
+    namespace .immer.detail.util(T)
+    {
+      #if (!v_defined(immer_detail_util_conditional_terminate))
+
+        immer_detail_util_conditional_terminate = true;
+
+        alwaysinline
+        conditional_terminate: (p: *T, n: size_t) ~> void
+        {
+            #if (T.is_special(v_terminate))   v_terminate(p);   #endif
+        }
+
+      #endif
+    }
+
+'unit_defn_list'}
+
+//---------------------------------------------------------------------
+#define instantiate_conditional_copy: (T: v_static_type_t)
+{'unit_defn_list'
+
+    namespace .immer.detail.util(T)
+    {
+      #if (!v_defined(immer_detail_util_conditional_copy))
+
+        immer_detail_util_conditional_copy = true;
+
+        alwaysinline
+        conditional_copy: (d: *T, s: *const T, n: size_t) ~> void
+        {
+            #if (T.is_special(v_copy))  v_copy(d, s, n);
+            #else                       memmove(d, s, n*sizeof(T));
+            #endif
+        }
+
+      #endif
+    }
+
+'unit_defn_list'}
+
+#define instantiate_conditional_move: (T: v_static_type_t)
+{'unit_defn_list'
+
+    namespace .immer.detail.util(T)
+    {
+      #if (!v_defined(immer_detail_util_conditional_move))
+
+        immer_detail_util_conditional_move = true;
+
+        alwaysinline
+        conditional_move: (d: *T, s: *T, n: size_t) ~> void
+        {
+            #if (T.is_special(v_move))  v_move(d, s, n);
+            #else                       memmove(d, s, n*sizeof(T));
+            #endif
+        }
+
+      #endif
+    }
+
+'unit_defn_list'}
+
+//---------------------------------------------------------------------
+#define instantiate_uninitialized_copy: (T: v_static_type_t)
+{'unit_defn_list'
+
+    namespace .immer.detail.util(T)
+    {
+      #if (!v_defined(immer_detail_util_uninitialized_copy))
+
+        immer_detail_util_uninitialized_copy = true;
+
+        #do (instantiate_conditional_initialize(T))
+        #do (instantiate_conditional_copy(T))
+
+        alwaysinline
+        uninitialized_copy: (d: *T, s: *const T, n: size_t) ~> void
+        {
+            conditional_initialize(d);
+            conditional_copy(d, s, n);
+        }
+
+      #endif
+    }
+
+'unit_defn_list'}
+
+#define instantiate_uninitialized_move: (T: v_static_type_t)
+{'unit_defn_list'
+
+    namespace .immer.detail.util(T)
+    {
+      #if (!v_defined(immer_detail_util_uninitialized_move))
+
+        immer_detail_util_uninitialized_move = true;
+
+        #do (instantiate_conditional_initialize(T))
+        #do (instantiate_conditional_move(T))
+
+        alwaysinline
+        uninitialized_move: (d: *T, s: *T, n: size_t) ~> void
+        {
+            conditional_initialize(d);
+            conditional_move(d, s, n);
+        }
+
+      #endif
+    }
+
+'unit_defn_list'}
 
 
 //---------------------------------------------------------------------
