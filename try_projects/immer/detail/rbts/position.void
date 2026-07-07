@@ -1,0 +1,57 @@
+{ voidc_import("libvoidc.void"); }
+{ voidc_make_header("position"); }
+//---------------------------------------------------------------------
+{
+    v_export_import("bits.void");
+//  v_export_import("../util.void");
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+//- <immer/detail/rbts/position.hpp>
+//---------------------------------------------------------------------
+namespace .immer {
+namespace detail {
+namespace rbts {
+
+//---------------------------------------------------------------------
+#define bits:      [bits_t](Pos: v_static_type_t) ~> bits_t  =  Pos.node_t.bits;
+#define bits_leaf: [bits_t](Pos: v_static_type_t) ~> bits_t  =  Pos.node_t.bits_leaf;
+
+#define node_type: (Pos: v_static_type_t) ~> v_static_type_t  =  Pos.node_t;
+
+
+//---------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------
+}   //- namespace rbts
+}   //- namespace detail
+}   //- namespace .immer
+

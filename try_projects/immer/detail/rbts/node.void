@@ -670,26 +670,25 @@ namespace rbts {
         #endif
     }
 
-
-    //- ...
-
-
   }   //- namespace .immer.detail.rbts
 
 'unit_defn_list'}
 
 
+//---------------------------------------------------------------------
+#define derive_bits_leaf: [bits_t](T: v_static_type_t, MP: v_static_namespace_t, B: bits_t) ~> bits_t  =
+{
+//  node_t = .immer.detail.rbts.node(T, MP, B, B);                          //- Sic !!!
+    sizeof_elems = sizeof(T);
+//  space = node_t.max_sizeof_inner - node_t.sizeof_packed_leaf_n(0);       //- Sic !!!
 
+    space = sizeof(*void) + sizeof(*void)*(1u32 << B);                      //- Sic !!!
 
+    full_elems = space / sizeof_elems;
+    BL = v_static_log2(full_elems);
 
-
-
-
-
-
-
-
-
+    BL
+};
 
 
 //---------------------------------------------------------------------

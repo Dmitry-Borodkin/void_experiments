@@ -19,6 +19,7 @@
 //my_type = struct { char[3]; };
 //my_type = v_std_string_t;
 my_type = int;
+//my_type = char;
 
 namespace .immer
 {
@@ -30,8 +31,11 @@ namespace .immer
 //
 //    heap = policy.heap.optimized(777).heap;
 
+//  #do (detail.rbts.instantiate_node(my_type, policy, 5, 5))
 
-    #do (detail.rbts.instantiate_node(my_type, policy, 5, 7))
+    BL = detail.rbts.derive_bits_leaf(my_type, policy, 5);
+
+    #do (detail.rbts.instantiate_node(my_type, policy, 5, BL))
 
 
 
@@ -44,7 +48,9 @@ namespace .immer
 //{ voidc_verify_jit_module_optimized(true); }
 //{ v_debug_print_module(2); }
 {
-    node_t = .immer.detail.rbts.node(my_type, .immer.policy, 5, 7);
+    printf("BL: %d\n", .immer.BL);
+
+    node_t = .immer.detail.rbts.node(my_type, .immer.policy, 5, .immer.BL);
 
     printf("spln:  %zd\n", node_t.sizeof_packed_leaf_n(19));
     printf("spln_: %zd\n", node_t.sizeof_packed_leaf_n_(19));
@@ -79,7 +85,11 @@ namespace .immer
     heap.deallocate(sizeof(int[7]), p);
 
 
-
+    n = 7;      printf("n: %d, %d\n", n, v_static_log2(n));
+    n = 77;     printf("n: %d, %d\n", n, v_static_log2(n));
+    n = 777;    printf("n: %d, %d\n", n, v_static_log2(n));
+    n = 7777;   printf("n: %d, %d\n", n, v_static_log2(n));
+    n = 77777;  printf("n: %d, %d\n", n, v_static_log2(n));
 
 
 

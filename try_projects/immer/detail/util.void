@@ -2,6 +2,8 @@
 { voidc_make_header("util"); }
 //---------------------------------------------------------------------
 {
+    v_import("llvm-c/Core.void");
+
     v_export_import("type_traits.void");
     v_export_import("cstring.void");
 }
@@ -195,6 +197,35 @@ v_internal_namespace_get_name_intrinsic: (*void, vis: *voidc_visitor_t, self: *v
     v_ast_accept_visitor(&expr, vis);
 }
 
+export
+v_internal_static_log2_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    arg0 = v_list_get_item(args, 0);        //- number
+
+    v_push_result();
+
+    v_ast_accept_visitor(arg0, vis);
+
+    v = v_get_result_value();
+
+    n = LLVMConstIntGetZExtValue(v);
+
+    .log2: (float(64)) ~> float(64);
+
+    r = (.log2(n) : unsigned);
+
+    t = v_uint_type(32);
+
+    v = LLVMConstInt(v_type_get_llvm_type(t), r, 0);
+
+    v_pop_result();
+
+    v_adopt_result(t, v);
+}
+
+
 //---------------------------------------------------------------------
 {   if (v_find_symbol_value("v_internal_namespace_get_name_intrinsic"))
     {
@@ -209,18 +240,8 @@ v_internal_namespace_get_name_intrinsic: (*void, vis: *voidc_visitor_t, self: *v
 {   v_target_set_global_ctx(cur_gctx);
 
     v_export_intrinsic("v_namespace_get_name", v_internal_namespace_get_name_intrinsic, 0);
+    v_export_intrinsic("v_static_log2",        v_internal_static_log2_intrinsic,        0);
 }
-
-
-
-//---------------------------------------------------------------------
-
-
-
-
-
-
-
 
 
 //---------------------------------------------------------------------

@@ -1,8 +1,8 @@
                        ****  Immer  ****                       │*
                                                                │
-                                                               │
 Detail                                                         │detail/micros.dir
                                                                │
+---------------------------------------------------------------│
 Heap                                                           │heap/micros.dir
                                                                │
 Reference counting                                             │refcount/micros.dir
@@ -14,14 +14,8 @@ Config                                                         │config.void
 Memory Policy                                                  │memory_policy.void
                                                                │
                                                                │
-                                                               │
 ───────────────────────────────────────────────────────────────│
 Tests                                                          │test/micros.dir
-                                                               │
-                                                               │
-                                                               │
-                                                               │
-                                                               │
                                                                │
                                                                │
 ───────────────────────────────────────────────────────────────│
