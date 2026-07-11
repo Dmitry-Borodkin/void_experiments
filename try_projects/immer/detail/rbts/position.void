@@ -27,6 +27,22 @@ namespace rbts {
 
 
 //---------------------------------------------------------------------
+#define empty_regular_pos: (NodeT: v_static_type_t) ~> v_static_type_t
+  =  v_generic(".immer.detail.rbts.empty_regular_pos", T(NodeT));
+
+//---------------------------------------------------------------------
+#define instantiate_empty_regular_pos: (NodeT: v_static_type_t)
+{'unit_defn_list'
+
+  namespace .immer.detail.rbts
+  {
+    namespace empty_regular_pos(NodeT)
+    {
+
+
+
+
+        node_t = NodeT;
 
 
 
@@ -34,9 +50,17 @@ namespace rbts {
 
 
 
+    }   //- namespace empty_regular_pos(NodeT)
 
 
 
+
+
+
+
+  }   //- namespace .immer.detail.rbts
+
+'unit_defn_list'}
 
 
 

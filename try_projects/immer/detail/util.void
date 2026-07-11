@@ -15,164 +15,33 @@
 
 
 //---------------------------------------------------------------------
-//- <immer/detail/util.hpp>     ?
-//---------------------------------------------------------------------
-namespace .immer {
-namespace detail {
-
-
-//---------------------------------------------------------------------
-#define util: (T: v_static_type_t) ~> v_static_namespace_t
-  =  .immer.detail.v_generic_ns(util_ns, T(T));
-
-//---------------------------------------------------------------------
-#define instantiate_conditional_initialize: (T: v_static_type_t)
-{'unit_defn_list'
-
-    namespace .immer.detail.util(T)
-    {
-      #if (!v_defined(immer_detail_util_conditional_initialize))
-
-        immer_detail_util_conditional_initialize = true;
-
-        alwaysinline
-        conditional_initialize: (p: *T, n: size_t) ~> void
-        {
-            #if (T.is_special(v_initialize))  v_initialize(p);  #endif
-        }
-
-      #endif
-    }
-
-'unit_defn_list'}
-
-#define instantiate_conditional_terminate: (T: v_static_type_t)
-{'unit_defn_list'
-
-    namespace .immer.detail.util(T)
-    {
-      #if (!v_defined(immer_detail_util_conditional_terminate))
-
-        immer_detail_util_conditional_terminate = true;
-
-        alwaysinline
-        conditional_terminate: (p: *T, n: size_t) ~> void
-        {
-            #if (T.is_special(v_terminate))   v_terminate(p);   #endif
-        }
-
-      #endif
-    }
-
-'unit_defn_list'}
-
-//---------------------------------------------------------------------
-#define instantiate_conditional_copy: (T: v_static_type_t)
-{'unit_defn_list'
-
-    namespace .immer.detail.util(T)
-    {
-      #if (!v_defined(immer_detail_util_conditional_copy))
-
-        immer_detail_util_conditional_copy = true;
-
-        alwaysinline
-        conditional_copy: (d: *T, s: *const T, n: size_t) ~> void
-        {
-            #if (T.is_special(v_copy))  v_copy(d, s, n);
-            #else                       memmove(d, s, n*sizeof(T));
-            #endif
-        }
-
-      #endif
-    }
-
-'unit_defn_list'}
-
-#define instantiate_conditional_move: (T: v_static_type_t)
-{'unit_defn_list'
-
-    namespace .immer.detail.util(T)
-    {
-      #if (!v_defined(immer_detail_util_conditional_move))
-
-        immer_detail_util_conditional_move = true;
-
-        alwaysinline
-        conditional_move: (d: *T, s: *T, n: size_t) ~> void
-        {
-            #if (T.is_special(v_move))  v_move(d, s, n);
-            #else                       memmove(d, s, n*sizeof(T));
-            #endif
-        }
-
-      #endif
-    }
-
-'unit_defn_list'}
-
-//---------------------------------------------------------------------
-#define instantiate_uninitialized_copy: (T: v_static_type_t)
-{'unit_defn_list'
-
-    namespace .immer.detail.util(T)
-    {
-      #if (!v_defined(immer_detail_util_uninitialized_copy))
-
-        immer_detail_util_uninitialized_copy = true;
-
-        #do (instantiate_conditional_initialize(T))
-        #do (instantiate_conditional_copy(T))
-
-        alwaysinline
-        uninitialized_copy: (d: *T, s: *const T, n: size_t) ~> void
-        {
-            conditional_initialize(d);
-            conditional_copy(d, s, n);
-        }
-
-      #endif
-    }
-
-'unit_defn_list'}
-
-#define instantiate_uninitialized_move: (T: v_static_type_t)
-{'unit_defn_list'
-
-    namespace .immer.detail.util(T)
-    {
-      #if (!v_defined(immer_detail_util_uninitialized_move))
-
-        immer_detail_util_uninitialized_move = true;
-
-        #do (instantiate_conditional_initialize(T))
-        #do (instantiate_conditional_move(T))
-
-        alwaysinline
-        uninitialized_move: (d: *T, s: *T, n: size_t) ~> void
-        {
-            conditional_initialize(d);
-            conditional_move(d, s, n);
-        }
-
-      #endif
-    }
-
-'unit_defn_list'}
-
-
-//---------------------------------------------------------------------
 {   gctx = v_target_get_global_ctx();
     vctx = v_target_get_voidc_global_ctx();
 
     v_target_set_global_ctx(vctx);      //- Sic!
 
     v_add_symbol("cur_gctx", v_target_global_ctx_t, gctx);
+
+    q_ref = v_reference_type(v_quark_t, 0);
+
+    q = v_quark_ptr_from_string;
+
+    v_add_symbol("true_q", q_ref, q("true"));
+
+    v_add_symbol("unit_val_defn_q", q_ref, q("unit_val_defn"));
+
+    v_add_symbol("unit_namespace_open_q", q_ref, q("unit_namespace_open"));
+    v_add_symbol("unit_defn_close_q",     q_ref, q("unit_defn_close"));
+
+    v_add_symbol("q_current_namespace_list", q_ref, q("v.current_namespace_list"));
+
+    v_add_symbol("q_internal_namespace_guard", q_ref, q("v.internal.namespace_guard"));
 }
 
 //=====================================================================
 { voidc_unit_begin_module("utility_module"); }
 
+//---------------------------------------------------------------------
 export
 v_internal_namespace_get_name_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
@@ -197,6 +66,7 @@ v_internal_namespace_get_name_intrinsic: (*void, vis: *voidc_visitor_t, self: *v
     v_ast_accept_visitor(&expr, vis);
 }
 
+//---------------------------------------------------------------------
 export
 v_internal_static_log2_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
@@ -225,6 +95,82 @@ v_internal_static_log2_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_ba
     v_adopt_result(t, v);
 }
 
+//---------------------------------------------------------------------
+export
+v_internal_guard_ns_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    v_push_result();
+
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    n = v_list_get_size(args);
+
+    if (n)      //- Got custom namespace...
+    {
+        arg0 = v_list_get_item(args, 0);
+
+        qualif: &v_ast_expr_t := {};
+
+        v_ast_make_expr_integer(&qualif, 0);
+
+        list: &v_ast_generic_list_t := {};
+
+        v_make_list(&list, unit_namespace_open_q, &qualif);
+
+        v_list_append(&list, &list, arg0);
+
+        //- Open custom namespace
+
+        v_ast_accept_visitor(&list, vis);
+    }
+
+    lst = v_std_any_get_pointer(v_util_list_t, v_get_property_q(q_current_namespace_list));
+
+    s = v_list_get_size(lst);
+    v_assert(s);
+
+    r = v_list_get_item(lst, s-1);
+
+    cur_ns = (v_std_any_get_value(intptr_t, r) : *v_namespace_t);
+
+    ret = v_map_find(&cur_ns->map, (q_internal_namespace_guard: intptr_t)) == 0;
+
+    if (ret)    //- Not found!
+    {
+        expr: &v_ast_expr_t[4] := {};
+
+        v_ast_make_expr_integer(expr+0, 0);
+
+        v_ast_make_expr_identifier_q(expr+1, q_internal_namespace_guard);
+
+        v_ast_make_expr_identifier_q(expr+3, true_q);
+
+        list: &v_ast_generic_list_t := {};
+
+        v_make_list(&list, unit_val_defn_q, expr+0, 4);
+
+        //- Define guard constant...
+
+        v_ast_accept_visitor(&list, vis);
+    }
+
+    if (n)      //- Got custom namespace...
+    {
+        list: &v_ast_generic_list_t := {};
+
+        v_make_list_nil(&list, unit_defn_close_q);
+
+        //- Close custom namespace
+
+        v_ast_accept_visitor(&list, vis);
+    }
+
+    v_pop_result();
+
+    bool_ = v_uint_type(1);
+
+    v_adopt_result(bool_, LLVMConstInt(v_type_get_llvm_type(bool_), ret, 0));
+}
 
 //---------------------------------------------------------------------
 {   if (v_find_symbol_value("v_internal_namespace_get_name_intrinsic"))
@@ -241,7 +187,143 @@ v_internal_static_log2_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_ba
 
     v_export_intrinsic("v_namespace_get_name", v_internal_namespace_get_name_intrinsic, 0);
     v_export_intrinsic("v_static_log2",        v_internal_static_log2_intrinsic,        0);
+    v_export_intrinsic("v_guard_ns",           v_internal_guard_ns_intrinsic,           0);
 }
+
+
+//---------------------------------------------------------------------
+//- <immer/detail/util.hpp>     ?
+//---------------------------------------------------------------------
+namespace .immer {
+namespace detail {
+
+
+//---------------------------------------------------------------------
+#define util: (T: v_static_type_t) ~> v_static_namespace_t
+  =  .immer.detail.v_generic_ns(util_ns, T(T));
+
+//---------------------------------------------------------------------
+#define instantiate_conditional_initialize: (T: v_static_type_t)
+{'unit_defn_list'
+
+    namespace .immer.detail.util(T)
+    {
+      #if (v_guard_ns(guard_conditional_initialize))
+
+        alwaysinline
+        conditional_initialize: (p: *T, n: size_t) ~> void
+        {
+            #if (T.is_special(v_initialize))  v_initialize(p, n);   #endif
+        }
+
+      #endif
+    }
+
+'unit_defn_list'}
+
+#define instantiate_conditional_terminate: (T: v_static_type_t)
+{'unit_defn_list'
+
+    namespace .immer.detail.util(T)
+    {
+      #if (v_guard_ns(guard_conditional_terminate))
+
+        alwaysinline
+        conditional_terminate: (p: *T, n: size_t) ~> void
+        {
+            #if (T.is_special(v_terminate))   v_terminate(p, n);    #endif
+        }
+
+      #endif
+    }
+
+'unit_defn_list'}
+
+//---------------------------------------------------------------------
+#define instantiate_conditional_copy: (T: v_static_type_t)
+{'unit_defn_list'
+
+    namespace .immer.detail.util(T)
+    {
+      #if (v_guard_ns(guard_conditional_copy))
+
+        alwaysinline
+        conditional_copy: (d: *T, s: *const T, n: size_t) ~> void
+        {
+            #if (T.is_special(v_copy))  v_copy(d, s, n);
+            #else                       memmove(d, s, n*sizeof(T));
+            #endif
+        }
+
+      #endif
+    }
+
+'unit_defn_list'}
+
+#define instantiate_conditional_move: (T: v_static_type_t)
+{'unit_defn_list'
+
+    namespace .immer.detail.util(T)
+    {
+      #if (v_guard_ns(guard_conditional_move))
+
+        alwaysinline
+        conditional_move: (d: *T, s: *T, n: size_t) ~> void
+        {
+            #if (T.is_special(v_move))  v_move(d, s, n);
+            #else                       memmove(d, s, n*sizeof(T));
+            #endif
+        }
+
+      #endif
+    }
+
+'unit_defn_list'}
+
+//---------------------------------------------------------------------
+#define instantiate_uninitialized_copy: (T: v_static_type_t)
+{'unit_defn_list'
+
+    namespace .immer.detail.util(T)
+    {
+      #if (v_guard_ns(guard_uninitialized_copy))
+
+        #do (instantiate_conditional_initialize(T))
+        #do (instantiate_conditional_copy(T))
+
+        alwaysinline
+        uninitialized_copy: (d: *T, s: *const T, n: size_t) ~> void
+        {
+            conditional_initialize(d, n);
+            conditional_copy(d, s, n);
+        }
+
+      #endif
+    }
+
+'unit_defn_list'}
+
+#define instantiate_uninitialized_move: (T: v_static_type_t)
+{'unit_defn_list'
+
+    namespace .immer.detail.util(T)
+    {
+      #if (v_guard_ns(guard_uninitialized_move))
+
+        #do (instantiate_conditional_initialize(T))
+        #do (instantiate_conditional_move(T))
+
+        alwaysinline
+        uninitialized_move: (d: *T, s: *T, n: size_t) ~> void
+        {
+            conditional_initialize(d, n);
+            conditional_move(d, s, n);
+        }
+
+      #endif
+    }
+
+'unit_defn_list'}
 
 
 //---------------------------------------------------------------------

@@ -31,12 +31,16 @@ namespace .immer {
 
     namespace .immer.memory_policy(HeapPolicy, RefcountPolicy)
     {
+      #if (v_guard_ns())
+
         heap     = HeapPolicy;
         refcount = RefcountPolicy;
 
         prefer_fewer_bigger_objects = false;            //- Sic!
 
         //- ...
+
+      #endif
     }
 
 'unit_defn_list'}
@@ -48,6 +52,8 @@ namespace .immer {
 
     namespace .immer
     {
+      #if (v_guard_ns(guard_default_memory_policy))
+
         #do (instantiate_debug_size_heap(malloc_heap),
              instantiate_heap_policy(debug_size_heap(malloc_heap)))
 
@@ -58,6 +64,8 @@ namespace .immer {
 
         default_memory_policy = memory_policy(default_heap_policy,
                                               default_refcount_policy);
+
+      #endif
     }
 
 'unit_defn_list'}

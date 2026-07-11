@@ -27,6 +27,8 @@ namespace .immer {
 
     namespace .immer.debug_size_heap(HeapNS)
     {
+      #if (v_guard_ns())
+
         extra_size = 16;            //- Kinda  alignof(max_align_t)
 
         alwaysinline
@@ -48,6 +50,8 @@ namespace .immer {
 
             HeapNS.deallocate(extra_size + size, p);
         }
+
+      #endif
     }
 
   'unit_defn_list'}

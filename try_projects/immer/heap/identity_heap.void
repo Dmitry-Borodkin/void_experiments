@@ -24,6 +24,8 @@ namespace .immer {
 
     namespace .immer.identity_heap(HeapNS)
     {
+      #if (v_guard_ns())
+
         alwaysinline
         allocate: (size: size_t) ~> *void  =  HeapNS.allocate(size);
 
@@ -32,6 +34,8 @@ namespace .immer {
         {
             HeapNS.deallocate(size, data);
         }
+
+      #endif
     }
 
 'unit_defn_list'}
