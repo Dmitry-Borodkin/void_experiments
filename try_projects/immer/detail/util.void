@@ -42,8 +42,8 @@
 { voidc_unit_begin_module("utility_module"); }
 
 //---------------------------------------------------------------------
-export
-v_internal_namespace_get_name_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+private
+namespace_get_name_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
 
@@ -67,8 +67,8 @@ v_internal_namespace_get_name_intrinsic: (*void, vis: *voidc_visitor_t, self: *v
 }
 
 //---------------------------------------------------------------------
-export
-v_internal_static_log2_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+private
+static_log2_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
 
@@ -96,8 +96,8 @@ v_internal_static_log2_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_ba
 }
 
 //---------------------------------------------------------------------
-export
-v_internal_guard_ns_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+private
+guard_ns_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     v_push_result();
 
@@ -172,8 +172,18 @@ v_internal_guard_ns_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_
     v_adopt_result(bool_, LLVMConstInt(v_type_get_llvm_type(bool_), ret, 0));
 }
 
+
 //---------------------------------------------------------------------
-{   if (v_find_symbol_value("v_internal_namespace_get_name_intrinsic"))
+export
+v_internal_immer_detail_util_enable: () ~> void
+{
+    v_export_intrinsic("v_namespace_get_name", namespace_get_name_intrinsic, 0);
+    v_export_intrinsic("v_static_log2",        static_log2_intrinsic,        0);
+    v_export_intrinsic("v_guard_ns",           guard_ns_intrinsic,           0);
+}
+
+//---------------------------------------------------------------------
+{   if (v_find_symbol_value("v_internal_immer_detail_util_enable"))
     {
         voidc_skip_object_file_load(1);
     }
@@ -185,9 +195,7 @@ v_internal_guard_ns_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_
 //---------------------------------------------------------------------
 {   v_target_set_global_ctx(cur_gctx);
 
-    v_export_intrinsic("v_namespace_get_name", v_internal_namespace_get_name_intrinsic, 0);
-    v_export_intrinsic("v_static_log2",        v_internal_static_log2_intrinsic,        0);
-    v_export_intrinsic("v_guard_ns",           v_internal_guard_ns_intrinsic,           0);
+    v_internal_immer_detail_util_enable();
 }
 
 
