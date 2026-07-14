@@ -51,16 +51,16 @@ namespace rbts {
         'unit_defn_list'}
 
 
-//        #define instantiate_visit_node: (ArgsT: v_static_type_t, RetT: v_static_type_t = void)
-//        {'unit_defn'
-//
-//            alwaysinline
-//            visitor_args(base_ns, ArgsT, RetT).visit_node: (ArgsT) ~> RetT
-//            {
-//                #error("???");
-//            }
-//
-//        'unit_defn'}
+        #define instantiate_visit_node: (ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn'
+
+            alwaysinline
+            visitor_args(base_ns, ArgsT, RetT).visit_node: (ArgsT) ~> RetT
+            {
+                v_assert(false && "Kinda, unreachable...");
+            }
+
+        'unit_defn'}
 
         #define instantiate_visit_relaxed: (ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn'
