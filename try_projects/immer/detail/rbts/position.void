@@ -776,7 +776,13 @@ namespace rbts {
 
 
       alwaysinline
-      make_regular_pos: (node: *NodeT) ~> regular_pos  =  {node};
+      make_regular_pos: (node: *NodeT, shift: shift_t, size: size_t) ~> regular_pos  =
+      {
+          v_assert(node);
+          v_assert(shift >= NodeT.bits_leaf);
+          v_assert(size > 0);
+          {node, shift, size}
+      };
 
     #endif
 
@@ -857,7 +863,7 @@ namespace rbts {
              instantiate_regular_pos(node_type(Pos)))
 
         linkonce_odr
-        each_pred_regular: (p: Pos, args: ArgsT) ~> void
+        each_pred_regular: (p: Pos, args: ArgsT) ~> bool
         {
             NT = node_type(Pos);
 
@@ -915,7 +921,7 @@ namespace rbts {
              instantiate_regular_pos(node_type(Pos)))
 
         linkonce_odr
-        each_pred_zip_regular: (p: Pos, other: *node_type(Pos), args: ArgsT) ~> void
+        each_pred_zip_regular: (p: Pos, other: *node_type(Pos), args: ArgsT) ~> bool
         {
             NT = node_type(Pos);
 
@@ -976,7 +982,7 @@ namespace rbts {
              instantiate_regular_pos(node_type(Pos)))
 
         linkonce_odr
-        each_pred_i_regular: (p: Pos, f: count_t, l: count_t, args: ArgsT) ~> void
+        each_pred_i_regular: (p: Pos, f: count_t, l: count_t, args: ArgsT) ~> bool
         {
             NT = node_type(Pos);
 
@@ -1057,6 +1063,548 @@ namespace rbts {
     }
 
 'unit_defn_list'}
+
+//---------------------------------------------------------------------
+#define instantiate_each_pred_left_regular: (Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+{'unit_defn_list'
+
+    namespace position_args(Pos, Vis, ArgsT, bool)
+    {
+      #if (v_guard_ns(each_pred_left_regular_ns))
+
+        #do (instantiate_full_leaf_pos(node_type(Pos)),
+             instantiate_full_pos(node_type(Pos)))
+
+        linkonce_odr
+        each_pred_left_regular: (p: Pos, last: count_t, args: ArgsT) ~> bool
+        {
+            NT = node_type(Pos);
+
+            using namespace position(NT);
+
+            B  = bits(Pos);
+            BL = bits_leaf(Pos);
+
+            v_assert(last < p.count);
+
+            if (p.shift == BL)
+            {
+                n: &*NT := p.node->inner;
+                e:  *NT  = n + last;
+
+                for (; n != e; ++n)
+                {
+                    ns = position_args(full_leaf_pos, Vis, ArgsT, bool);
+                    if (!ns.visit(make_full_leaf_pos(*n), args))  return false;
+                }
+            }
+            else
+            {
+                n: &*NT := p.node->inner;
+                e:  *NT  = n + last;
+
+                ss = p.shift - B;
+
+                for (; n != e; ++n)
+                {
+                    ns = position_args(full_pos, Vis, ArgsT, bool);
+                    if (!ns.visit(make_full_pos(*n, ss), args))  return false;
+                }
+            }
+
+            return  true;
+        }
+
+      #endif
+    }
+
+'unit_defn_list'}
+
+//---------------------------------------------------------------------
+#define instantiate_each_pred_right_regular: (Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+{'unit_defn_list'
+
+    namespace position_args(Pos, Vis, ArgsT, bool)
+    {
+      #if (v_guard_ns(each_pred_right_regular_ns))
+
+        #do (instantiate_full_leaf_pos(node_type(Pos)),
+             instantiate_leaf_pos(node_type(Pos)),
+             instantiate_full_pos(node_type(Pos)),
+             instantiate_regular_pos(node_type(Pos)))
+
+        linkonce_odr
+        each_pred_right_regular: (p: Pos, start: count_t, args: ArgsT) ~> bool
+        {
+            NT = node_type(Pos);
+
+            using namespace position(NT);
+
+            B  = bits(Pos);
+            BL = bits_leaf(Pos);
+
+            if (p.shift == BL)
+            {
+                n: &*NT := p.node->inner + start;
+                last     = p.count - 1;
+                e:  *NT  = n.node->inner + last;
+
+                if (n <= e)
+                {
+                    for (; n != e; ++n)
+                    {
+                        ns = position_args(full_leaf_pos, Vis, ArgsT, bool);
+                        if (!ns.visit(make_full_leaf_pos(*n), args))  return false;
+                    }
+
+                    ns = position_args(leaf_pos, Vis, ArgsT, bool);
+                    if (!ns.visit(make_leaf_pos(*n, p.size), args))  return false;
+                }
+            }
+            else
+            {
+                n: &*NT := p.node->inner + start;
+                last     = p.count - 1;
+                e:  *NT  = n.node->inner + last;
+
+                ss = p.shift - B;
+
+                if (n <= e)
+                {
+                    for (; n != e; ++n)
+                    {
+                        ns = position_args(full_pos, Vis, ArgsT, bool);
+                        if (!ns.visit(make_full_pos(*n, ss), args))  return false;
+                    }
+
+                    ns = position_args(regular_pos, Vis, ArgsT, bool);
+                    if (!ns.visit(make_regular_pos(*n, ss, p.size), args))  return false;
+                }
+            }
+
+            return  true;
+        }
+
+      #endif
+    }
+
+'unit_defn_list'}
+
+//---------------------------------------------------------------------
+#define instantiate_each_i_regular: (Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+{'unit_defn_list'
+
+    namespace position_args(Pos, Vis, ArgsT)
+    {
+      #if (v_guard_ns(each_i_regular_ns))
+
+        #do (instantiate_full_leaf_pos(node_type(Pos)),
+             instantiate_leaf_pos(node_type(Pos)),
+             instantiate_full_pos(node_type(Pos)),
+             instantiate_regular_pos(node_type(Pos)))
+
+        linkonce_odr
+        each_i_regular: (p: Pos, f: count_t, l: count_t, args: ArgsT) ~> void
+        {
+            NT = node_type(Pos);
+
+            using namespace position(NT);
+
+            B  = bits(Pos);
+            BL = bits_leaf(Pos);
+
+            if (p.shift == BL)
+            {
+                if (l > f)
+                {
+                    if (l < p.count)
+                    {
+                        n: &*NT := p.node->inner + f;
+                        e:  *NT  = p.node->inner + l;
+
+                        for (; n != e; ++n)
+                        {
+                            ns = position_args(full_leaf_pos, Vis, ArgsT);
+                            ns.visit(make_full_leaf_pos(*n), args);
+                        }
+                    }
+                    else
+                    {
+                        n: &*NT := p.node->inner + f;
+                        e:  *NT  = p.node->inner + l - 1;
+
+                        for (; n != e; ++n)
+                        {
+                            ns = position_args(full_leaf_pos, Vis, ArgsT);
+                            ns.visit(make_full_leaf_pos(*n), args);
+                        }
+
+                        ns = position_args(leaf_pos, Vis, ArgsT);
+                        ns.visit(make_leaf_pos(*n, p.size), args);
+                    }
+                }
+            }
+            else
+            {
+                if (l > f)
+                {
+                    ss = p.shift - B;
+
+                    if (l < p.count)
+                    {
+                        n: &*NT := p.node->inner + f;
+                        e:  *NT  = p.node->inner + l;
+
+                        for (; n != e; ++n)
+                        {
+                            ns = position_args(full_pos, Vis, ArgsT);
+                            ns.visit(make_full_pos(*n, ss), args);
+                        }
+                    }
+                    else
+                    {
+                        n: &*NT := p.node->inner + f;
+                        e:  *NT  = p.node->inner + l - 1;
+
+                        for (; n != e; ++n)
+                        {
+                            ns = position_args(full_pos, Vis, ArgsT);
+                            ns.visit(make_full_pos(*n, ss), args);
+                        }
+
+                        ns = position_args(regular_pos, Vis, ArgsT);
+                        ns.visit(make_regular_pos(*n, ss, p.size), args);
+                    }
+                }
+            }
+        }
+
+      #endif
+    }
+
+'unit_defn_list'}
+
+//---------------------------------------------------------------------
+#define instantiate_each_left_regular: (Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+{'unit_defn_list'
+
+    namespace position_args(Pos, Vis, ArgsT)
+    {
+      #if (v_guard_ns(each_left_regular_ns))
+
+        #do (instantiate_full_leaf_pos(node_type(Pos)),
+             instantiate_full_pos(node_type(Pos)))
+
+        linkonce_odr
+        each_left_regular: (p: Pos, start: count_t, args: ArgsT) ~> void
+        {
+            NT = node_type(Pos);
+
+            using namespace position(NT);
+
+            B  = bits(Pos);
+            BL = bits_leaf(Pos);
+
+            v_assert(last < p.count);
+
+            if (p.shift == BL)
+            {
+                n: &*NT := p.node->inner;
+                e:  *NT  = n + last;
+
+                for (; n != e; ++n)
+                {
+                    ns = position_args(full_leaf_pos, Vis, ArgsT);
+                    ns.visit(make_full_leaf_pos(*n), args);
+                }
+            }
+            else
+            {
+                n: &*NT := p.node->inner;
+                e:  *NT  = n + last;
+
+                ss = p.shift - B;
+
+                for (; n != e; ++n)
+                {
+                    ns = position_args(full_pos, Vis, ArgsT);
+                    ns.visit(make_full_pos(*n, ss), args);
+                }
+            }
+        }
+
+      #endif
+    }
+
+'unit_defn_list'}
+
+//---------------------------------------------------------------------
+#define instantiate_each_right_regular: (Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+{'unit_defn_list'
+
+    namespace position_args(Pos, Vis, ArgsT)
+    {
+      #if (v_guard_ns(each_right_regular_ns))
+
+        #do (instantiate_full_leaf_pos(node_type(Pos)),
+             instantiate_leaf_pos(node_type(Pos)),
+             instantiate_full_pos(node_type(Pos)),
+             instantiate_regular_pos(node_type(Pos)))
+
+        linkonce_odr
+        each_right_regular: (p: Pos, start: count_t, args: ArgsT) ~> void
+        {
+            NT = node_type(Pos);
+
+            using namespace position(NT);
+
+            B  = bits(Pos);
+            BL = bits_leaf(Pos);
+
+            if (p.shift == BL)
+            {
+                n: &*NT := p.node->inner + start;
+                last     = p.count - 1;
+                e:  *NT  = n.node->inner + last;
+
+                if (n <= e)
+                {
+                    for (; n != e; ++n)
+                    {
+                        ns = position_args(full_leaf_pos, Vis, ArgsT);
+                        ns.visit(make_full_leaf_pos(*n), args);
+                    }
+
+                    ns = position_args(leaf_pos, Vis, ArgsT);
+                    ns.visit(make_leaf_pos(*n, p.size), args);
+                }
+            }
+            else
+            {
+                n: &*NT := p.node->inner + start;
+                last     = p.count - 1;
+                e:  *NT  = n.node->inner + last;
+
+                ss = p.shift - B;
+
+                if (n <= e)
+                {
+                    for (; n != e; ++n)
+                    {
+                        ns = position_args(full_pos, Vis, ArgsT);
+                        ns.visit(make_full_pos(*n, ss), args);
+                    }
+
+                    ns = position_args(regular_pos, Vis, ArgsT);
+                    ns.visit(make_regular_pos(*n, ss, p.size), args);
+                }
+            }
+        }
+
+      #endif
+    }
+
+'unit_defn_list'}
+
+//---------------------------------------------------------------------
+#define instantiate_towards_oh_ch_regular: (Pos: v_static_type_t, Vis: v_static_namespace_t,
+                                            ArgsT: v_static_type_t, RetT: v_static_type_t)
+{'unit_defn_list'
+
+    namespace position_args(Pos, Vis, ArgsT, RetT)
+    {
+      #if (v_guard_ns(towards_oh_ch_regular_ns))
+
+        #do (instantiate_full_leaf_pos(node_type(Pos)),
+             instantiate_leaf_pos(node_type(Pos)),
+             instantiate_full_pos(node_type(Pos)),
+             instantiate_regular_pos(node_type(Pos)))
+
+        linkonce_odr
+        towards_oh_ch_regular: (p: Pos,
+                                idx: size_t,
+                                offset_hint: count_t,
+                                count_hint: count_t,
+                                args: ArgsT) ~> RetT
+        {
+            NT = node_type(Pos);
+
+            using namespace position(NT);
+
+            B  = bits(Pos);
+            BL = bits_leaf(Pos);
+
+            v_assert(offset_hint == p.index(idx));
+            v_assert(count_hint == pcount);
+
+            is_leaf = p.shift == BL;
+            child   = p.node->inner[offset_hint];
+            is_full = offset_hint + 1 != count_hint;
+
+            AT = struct { size_t; ArgsT; };
+
+            if (is_full)
+            {
+                if (is_leaf)
+                {
+                    ns = position_args(full_leaf_pos, Vis, AT, RetT);
+                    return  ns.visit(make_full_leaf_pos(child), {idx, args});
+                }
+                else
+                {
+                    ns = position_args(full_pos, Vis, AT, RetT);
+                    return  ns.visit(make_full_pos(child, p.shift - B), {idx, args});
+                }
+            }
+            else
+            {
+                if (is_leaf)
+                {
+                    ns = position_args(leaf_pos, Vis, AT, RetT);
+                    return  ns.visit(make_leaf_pos(child, p.size), {idx, args});
+                }
+                else
+                {
+                    ns = position_args(regular_pos, Vis, AT, RetT);
+                    return  ns.visit(make_regular_pos(child, p.shift - B, p.size), {idx, args});
+                }
+            }
+        }
+
+      #endif
+    }
+
+'unit_defn_list'}
+
+//---------------------------------------------------------------------
+#define instantiate_towards_sub_oh_regular: (Pos: v_static_type_t, Vis: v_static_namespace_t,
+                                            ArgsT: v_static_type_t, RetT: v_static_type_t)
+{'unit_defn_list'
+
+    namespace position_args(Pos, Vis, ArgsT, RetT)
+    {
+      #if (v_guard_ns(towards_sub_oh_regular_ns))
+
+        #do (instantiate_full_leaf_pos(node_type(Pos)),
+             instantiate_full_pos(node_type(Pos)),
+             instantiate_leaf_sub_pos(node_type(Pos)),
+             instantiate_regular_sub_pos(node_type(Pos)))
+
+        linkonce_odr
+        towards_sub_oh_regular: (p: Pos,
+                                 idx: size_t,
+                                 offset_hint: count_t,
+                                 args: ArgsT) ~> RetT
+        {
+            NT = node_type(Pos);
+
+            using namespace position(NT);
+
+            B  = bits(Pos);
+            BL = bits_leaf(Pos);
+
+            v_assert(offset_hint == p.index(idx));
+
+            is_leaf = p.shift == BL;
+            child   = p.node->inner[offset_hint];
+            lsize   = offset_hint << p.shift;
+            size    = p.this_size;
+            is_full = (size - lsize) >= ((1: size_t) << p.shift);
+
+            AT = struct { size_t; ArgsT; };
+
+            if (is_full)
+            {
+                if (is_leaf)
+                {
+                    ns = position_args(full_leaf_pos, Vis, AT, RetT);
+                    return  ns.visit(make_full_leaf_pos(child), {idx - lsize, args});
+                }
+                else
+                {
+                    ns = position_args(full_pos, Vis, AT, RetT);
+                    return  ns.visit(make_full_pos(child, p.shift - B), {idx - lsize, args});
+                }
+            }
+            else
+            {
+                if (is_leaf)
+                {
+                    ns = position_args(leaf_sub_pos, Vis, AT, RetT);
+                    return  ns.visit(make_leaf_sub_pos(child, p.size - lsize), {idx - lsize, args});
+                }
+                else
+                {
+                    ns = position_args(regular_sub_pos, Vis, AT, RetT);
+                    return  ns.visit(make_regular_sub_pos(child, p.shift - B, size - lsize), {idx - lsize, args});
+                }
+            }
+        }
+
+      #endif
+    }
+
+'unit_defn_list'}
+
+//---------------------------------------------------------------------
+#define instantiate_last_oh_regular: (Pos: v_static_type_t, Vis: v_static_namespace_t,
+                                     ArgsT: v_static_type_t, RetT: v_static_type_t)
+{'unit_defn_list'
+
+    namespace position_args(Pos, Vis, ArgsT, RetT)
+    {
+      #if (v_guard_ns(last_oh_regular_ns))
+
+        #do (instantiate_leaf_pos(node_type(Pos)),
+             instantiate_regular_pos(node_type(Pos)))
+
+        linkonce_odr
+        last_oh_regular: (p: Pos, offset_hint: count_t, args: ArgsT) ~> RetT
+        {
+            NT = node_type(Pos);
+
+            using namespace position(NT);
+
+            B  = bits(Pos);
+            BL = bits_leaf(Pos);
+
+            v_assert(offset_hint == p.count - 1);
+
+            is_leaf = p.shift == BL;
+            child   = p.node->inner[offset_hint];
+
+            if (is_leaf)
+            {
+                ns = position_args(leaf_pos, Vis, ArgsT, RetT);
+                return  ns.visit(make_leaf_pos(child, p.size), args);
+            }
+            else
+            {
+                ns = position_args(regular_pos, Vis, ArgsT, RetT);
+                return  ns.visit(make_regular_pos(child, p.shift - B, p.size), args);
+            }
+        }
+
+      #endif
+    }
+
+'unit_defn_list'}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
