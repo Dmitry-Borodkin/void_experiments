@@ -1,0 +1,19 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+//---------------------------------------------------------------------
+{
+    v_import("cstdio.void");
+
+    v_import("../memory_policy.void");
+
+    v_import("../detail/rbts/position.void");
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+
+
