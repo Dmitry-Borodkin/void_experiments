@@ -962,10 +962,10 @@ namespace rbts {
         private
         NT = node_type(Pos);
 
-        #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT),
-             instantiate_leaf_pos(NT),      position(NT).leaf_pos.instantiate_visit(Vis, ArgsT),
-             instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT),
-             instantiate_regular_pos(NT),   position(NT).regular_pos.instantiate_visit(Vis, ArgsT),
+        #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, bool),
+             instantiate_leaf_pos(NT),      position(NT).leaf_pos.instantiate_visit(Vis, ArgsT, bool),
+             instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT, bool),
+             instantiate_regular_pos(NT),   position(NT).regular_pos.instantiate_visit(Vis, ArgsT, bool),
              )
 
         linkonce_odr
@@ -1019,20 +1019,18 @@ namespace rbts {
     {
       #if (v_guard_ns(each_pred_zip_regular_ns))
 
-        private
-        NT = node_type(Pos);
+        private NT = node_type(Pos);
+        private AT = struct { *NT; ArgsT; };
 
-        #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT),
-             instantiate_leaf_pos(NT),      position(NT).leaf_pos.instantiate_visit(Vis, ArgsT),
-             instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT),
-             instantiate_regular_pos(NT),   position(NT).regular_pos.instantiate_visit(Vis, ArgsT),
+        #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, AT, bool),
+             instantiate_leaf_pos(NT),      position(NT).leaf_pos.instantiate_visit(Vis, AT, bool),
+             instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, AT, bool),
+             instantiate_regular_pos(NT),   position(NT).regular_pos.instantiate_visit(Vis, AT, bool),
              )
 
         linkonce_odr
-        each_pred_zip_regular: (p: Pos, other: *node_type(Pos), args: ArgsT) ~> bool
+        each_pred_zip_regular: (p: Pos, other: *NT, args: ArgsT) ~> bool
         {
-            NT = node_type(Pos);
-
             using namespace position(NT);
 
             B  = bits(Pos);
@@ -1042,8 +1040,6 @@ namespace rbts {
             n2: &*NT := other->inner;
             last      = p.count - 1;
             e         = n + last;
-
-            AT = struct { *NT; ArgsT; };
 
             if (p.shift == BL)
             {
@@ -1087,10 +1083,10 @@ namespace rbts {
         private
         NT = node_type(Pos);
 
-        #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT),
-             instantiate_leaf_pos(NT),      position(NT).leaf_pos.instantiate_visit(Vis, ArgsT),
-             instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT),
-             instantiate_regular_pos(NT),   position(NT).regular_pos.instantiate_visit(Vis, ArgsT),
+        #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, bool),
+             instantiate_leaf_pos(NT),      position(NT).leaf_pos.instantiate_visit(Vis, ArgsT, bool),
+             instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT, bool),
+             instantiate_regular_pos(NT),   position(NT).regular_pos.instantiate_visit(Vis, ArgsT, bool),
              )
 
         linkonce_odr
@@ -1185,8 +1181,8 @@ namespace rbts {
         private
         NT = node_type(Pos);
 
-        #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT),
-             instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT),
+        #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, bool),
+             instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT, bool),
              )
 
         linkonce_odr
@@ -1243,10 +1239,10 @@ namespace rbts {
         private
         NT = node_type(Pos);
 
-        #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT),
-             instantiate_leaf_pos(NT),      position(NT).leaf_pos.instantiate_visit(Vis, ArgsT),
-             instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT),
-             instantiate_regular_pos(NT),   position(NT).regular_pos.instantiate_visit(Vis, ArgsT),
+        #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, bool),
+             instantiate_leaf_pos(NT),      position(NT).leaf_pos.instantiate_visit(Vis, ArgsT, bool),
+             instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT, bool),
+             instantiate_regular_pos(NT),   position(NT).regular_pos.instantiate_visit(Vis, ArgsT, bool),
              )
 
         linkonce_odr
@@ -1535,13 +1531,13 @@ namespace rbts {
     {
       #if (v_guard_ns(towards_oh_ch_regular_ns))
 
-        private
-        NT = node_type(Pos);
+        private NT = node_type(Pos);
+        private AT = struct { size_t; ArgsT; };
 
-        #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT),
-             instantiate_leaf_pos(NT),      position(NT).leaf_pos.instantiate_visit(Vis, ArgsT),
-             instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT),
-             instantiate_regular_pos(NT),   position(NT).regular_pos.instantiate_visit(Vis, ArgsT),
+        #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, AT, RetT),
+             instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, AT, RetT),
+             instantiate_leaf_pos(NT),      position(NT).leaf_pos.instantiate_visit(Vis, AT, RetT),
+             instantiate_regular_pos(NT),   position(NT).regular_pos.instantiate_visit(Vis, AT, RetT),
              )
 
         linkonce_odr
@@ -1562,8 +1558,6 @@ namespace rbts {
             is_leaf = p.shift == BL;
             child   = p.node->inner[offset_hint];
             is_full = offset_hint + 1 != count_hint;
-
-            AT = struct { size_t; ArgsT; };
 
             if (is_full)
             {
@@ -1607,13 +1601,13 @@ namespace rbts {
     {
       #if (v_guard_ns(towards_sub_oh_regular_ns))
 
-        private
-        NT = node_type(Pos);
+        private NT = node_type(Pos);
+        private AT = struct { size_t; ArgsT; };
 
-        #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT),
-             instantiate_leaf_pos(NT),      position(NT).leaf_pos.instantiate_visit(Vis, ArgsT),
-             instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT),
-             instantiate_regular_pos(NT),   position(NT).regular_pos.instantiate_visit(Vis, ArgsT),
+        #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, AT, RetT),
+             instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, AT, RetT),
+             instantiate_leaf_pos(NT),      position(NT).leaf_pos.instantiate_visit(Vis, AT, RetT),
+             instantiate_regular_pos(NT),   position(NT).regular_pos.instantiate_visit(Vis, AT, RetT),
              )
 
         linkonce_odr
@@ -1634,8 +1628,6 @@ namespace rbts {
             lsize   = offset_hint << p.shift;
             size    = p.this_size;
             is_full = (size - lsize) >= ((1: size_t) << p.shift);
-
-            AT = struct { size_t; ArgsT; };
 
             if (is_full)
             {
@@ -1682,8 +1674,8 @@ namespace rbts {
         private
         NT = node_type(Pos);
 
-        #do (instantiate_leaf_pos(NT),      position(NT).leaf_pos.instantiate_visit(Vis, ArgsT),
-             instantiate_regular_pos(NT),   position(NT).regular_pos.instantiate_visit(Vis, ArgsT),
+        #do (instantiate_leaf_pos(NT),      position(NT).leaf_pos.instantiate_visit(Vis, ArgsT, RetT),
+             instantiate_regular_pos(NT),   position(NT).regular_pos.instantiate_visit(Vis, ArgsT, RetT),
              )
 
         linkonce_odr
@@ -2471,8 +2463,8 @@ namespace rbts {
               private
               NT = node_type(regular_sub_pos);
 
-              #do (instantiate_full_leaf_pos(NT),   position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT),
-                   instantiate_full_pos(NT),        position(NT).full_pos.instantiate_visit(Vis, ArgsT),
+              #do (instantiate_full_leaf_pos(NT),   position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, RetT),
+                   instantiate_full_pos(NT),        position(NT).full_pos.instantiate_visit(Vis, ArgsT, RetT),
                    instantiate_leaf_sub_pos(NT),    position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, RetT),
                    instantiate_regular_sub_pos(NT), position(NT).regular_sub_pos.instantiate_visit(Vis, ArgsT, RetT),
                    )
@@ -2529,7 +2521,7 @@ namespace rbts {
               private
               NT = node_type(regular_sub_pos);
 
-              #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT),
+              #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, RetT),
                    instantiate_leaf_sub_pos(NT),  position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, RetT),
                    )
 
@@ -2569,7 +2561,7 @@ namespace rbts {
               private
               NT = node_type(regular_sub_pos);
 
-              #do (instantiate_full_pos(NT),        position(NT).full_pos.instantiate_visit(Vis, ArgsT),
+              #do (instantiate_full_pos(NT),        position(NT).full_pos.instantiate_visit(Vis, ArgsT, RetT),
                    instantiate_regular_sub_pos(NT), position(NT).regular_sub_pos.instantiate_visit(Vis, ArgsT, RetT),
                    )
 
@@ -2609,8 +2601,8 @@ namespace rbts {
               private
               NT = node_type(regular_sub_pos);
 
-              #do (instantiate_full_leaf_pos(NT),   position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT),
-                   instantiate_full_pos(NT),        position(NT).full_pos.instantiate_visit(Vis, ArgsT),
+              #do (instantiate_full_leaf_pos(NT),   position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, RetT),
+                   instantiate_full_pos(NT),        position(NT).full_pos.instantiate_visit(Vis, ArgsT, RetT),
                    instantiate_leaf_sub_pos(NT),    position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, RetT),
                    instantiate_regular_sub_pos(NT), position(NT).regular_sub_pos.instantiate_visit(Vis, ArgsT, RetT),
                    )
@@ -2669,7 +2661,7 @@ namespace rbts {
               private
               NT = node_type(regular_sub_pos);
 
-              #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT),
+              #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, RetT),
                    instantiate_leaf_sub_pos(NT),  position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, RetT),
                    )
 
@@ -2936,13 +2928,771 @@ namespace rbts {
 'unit_defn_list'}
 
 
+//---------------------------------------------------------------------
+//- full_pos
+//---------------------------------------------------------------------
+#define instantiate_full_pos: (NodeT: v_static_type_t)
+{'unit_defn_list'
+
+  namespace position(NodeT)
+  {
+    struct full_pos;
+
+    #if (v_guard_ns(full_pos))
+
+      struct full_pos
+      {
+          node_:  *NodeT;
+          shift_: shift_t;
+      };
+
+      full_pos.node_t = NodeT;
+      full_pos.B      = NodeT.bits;
+      full_pos.BL     = NodeT.bits_leaf;
+
+      alwaysinline
+      (_.count): (full_pos) ~> count_t  =  branches(full_pos.B);
+
+      alwaysinline
+      (_.node): (pos: full_pos) ~> *NodeT  =  pos.node_;
+
+      alwaysinline
+      (_.size): (pos: full_pos) ~> size_t  =  branches(full_pos.B, size_t) << pos.shift_;
+
+      alwaysinline
+      (_.shift): (pos: full_pos) ~> shift_t  =  pos.shift_;
+
+      alwaysinline
+      (_.index()): (pos: full_pos, idx: size_t) ~> count_t  =  (idx >> pos.shift_) & mask(full_pos.B);
+
+      alwaysinline
+      (_.subindex()): (pos: full_pos, idx: size_t) ~> count_t  =  idx >> pos.shift_;
+
+      alwaysinline
+      (_.size()): (pos: full_pos, count_t) ~> size_t  =  (1: size_t) << pos.shift_;
+
+      alwaysinline
+      (_.size_sbh()): (pos: full_pos, count_t, size_t) ~> size_t  =  (1: size_t) << pos.shift_;
+
+      alwaysinline
+      (_.size_before()): (pos: full_pos, offset: count_t) ~> size_t  =  (offset: size_t) << pos.shift_;
+
+      inlinehint
+      (_.copy_sizes()): (pos: full_pos, offset: count_t, n: count_t, init: size_t, sizes: *size_t) ~> void
+      {
+          e = sizes + n;
+
+          sizes: &*size_t := sizes;
+          init:  &size_t  := init;
+
+          for (; sizes != e; ++sizes)
+          {
+              init := *sizes := init + ((1: size_t) << pos.shift_);
+              v_assert(init);
+          }
+      }
 
 
+      namespace full_pos
+      {
+        #define instantiate_each: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(full_pos, Vis, ArgsT)
+          {
+            #if (v_guard_ns(each_ns))
+
+              private
+              NT = node_type(full_pos);
+
+              #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT),
+                   instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT),
+                   )
+
+              inlinehint
+              each: (pos: full_pos, args: ArgsT) ~> void
+              {
+                  p: &*NT := pos.node_->inner;
+                  e        = p + branches(B);
+
+                  if (pos.shift_ == BL)
+                  {
+                      for (; p != e; ++p)
+                      {
+                          ns = position_args(full_leaf_pos, Vis, ArgsT);
+                          ns.visit(make_full_leaf_pos(*p), args);
+                      }
+                  }
+                  else
+                  {
+                      ss = pos.shift_ - B;
+
+                      for (; p != e; ++p)
+                      {
+                          ns = position_args(full_pos, Vis, ArgsT);
+                          ns.visit(make_full_pos(*p, ss), args);
+                      }
+                  }
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_each_pred: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(full_pos, Vis, ArgsT, bool)
+          {
+            #if (v_guard_ns(each_pred_ns))
+
+              private
+              NT = node_type(full_pos);
+
+              #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, bool),
+                   instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT, bool),
+                   )
+
+              inlinehint
+              each_pred: (pos: full_pos, args: ArgsT) ~> bool
+              {
+                  p: &*NT := pos.node_->inner;
+                  e        = p + branches(B);
+
+                  if (pos.shift_ == BL)
+                  {
+                      for (; p != e; ++p)
+                      {
+                          ns = position_args(full_leaf_pos, Vis, ArgsT, bool);
+                          if (!ns.visit(make_full_leaf_pos(*p), args))  return false;
+                      }
+                  }
+                  else
+                  {
+                      ss = pos.shift_ - B;
+
+                      for (; p != e; ++p)
+                      {
+                          ns = position_args(full_pos, Vis, ArgsT, bool);
+                          if (!ns.visit(make_full_pos(*p, ss), args))   return false;
+                      }
+                  }
+
+                  return true;
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_each_pred_zip: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(full_pos, Vis, ArgsT, bool)
+          {
+            #if (v_guard_ns(each_pred_zip_ns))
+
+              private NT = node_type(full_pos);
+              private AT = struct { *NT; ArgsT; };
+
+              #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, AT, bool),
+                   instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, AT, bool),
+                   )
+
+              inlinehint
+              each_pred_zip: (pos: full_pos, other: *NT, args: ArgsT) ~> bool
+              {
+                  p:  &*NT := pos.node_->inner;
+                  p2: &*NT := other->inner;
+                  e         = p + branches(B);
+
+                  if (pos.shift_ == BL)
+                  {
+                      for (; p != e; ++p, ++p2)
+                      {
+                          ns = position_args(full_leaf_pos, Vis, AT, bool);
+                          if (!ns.visit(make_full_leaf_pos(*p), {*p2, args}))  return false;
+                      }
+                  }
+                  else
+                  {
+                      ss = pos.shift_ - B;
+
+                      for (; p != e; ++p, ++p2)
+                      {
+                          ns = position_args(full_pos, Vis, AT, bool);
+                          if (!ns.visit(make_full_pos(*p, ss), {*p2, args}))  return false;
+                      }
+                  }
+
+                  return true;
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_each_pred_i: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(full_pos, Vis, ArgsT, bool)
+          {
+            #if (v_guard_ns(each_pred_i_ns))
+
+              private NT = node_type(full_pos);
+
+              #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, bool),
+                   instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT, bool),
+                   )
+
+              inlinehint
+              each_pred_i: (pos: full_pos, i: count_t, n: count_t, args: ArgsT) ~> bool
+              {
+                  p: &*NT := pos.node_->inner + i;
+                  e        = pos.node_->inner + n;
+
+                  if (pos.shift_ == BL)
+                  {
+                      for (; p != e; ++p)
+                      {
+                          ns = position_args(full_leaf_pos, Vis, ArgsT, bool);
+                          if (!ns.visit(make_full_leaf_pos(*p), args))  return false;
+                      }
+                  }
+                  else
+                  {
+                      ss = pos.shift_ - B;
+
+                      for (; p != e; ++p)
+                      {
+                          ns = position_args(full_pos, Vis, ArgsT, bool);
+                          if (!ns.visit(make_full_pos(*p, ss), args))  return false;
+                      }
+                  }
+
+                  return true;
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_each_i: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(full_pos, Vis, ArgsT)
+          {
+            #if (v_guard_ns(each_i_ns))
+
+              private NT = node_type(full_pos);
+
+              #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT),
+                   instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT),
+                   )
+
+              inlinehint
+              each_i: (pos: full_pos, i: count_t, n: count_t, args: ArgsT) ~> void
+              {
+                  p: &*NT := pos.node_->inner + i;
+                  e        = pos.node_->inner + n;
+
+                  if (pos.shift_ == BL)
+                  {
+                      for (; p != e; ++p)
+                      {
+                          ns = position_args(full_leaf_pos, Vis, ArgsT);
+                          ns.visit(make_full_leaf_pos(*p), args);
+                      }
+                  }
+                  else
+                  {
+                      ss = pos.shift_ - B;
+
+                      for (; p != e; ++p)
+                      {
+                          ns = position_args(full_pos, Vis, ArgsT);
+                          ns.visit(make_full_pos(*p, ss), args);
+                      }
+                  }
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_each_pred_right: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(full_pos, Vis, ArgsT, bool)
+          {
+            #if (v_guard_ns(each_pred_right_ns))
+
+              #do (instantiate_each_pred_i(Vis, ArgsT))
+
+              alwaysinline
+              each_pred_right: (pos: full_pos, start: count_t, args: ArgsT) ~> bool
+              {
+                  ns = position_args(full_pos, Vis, ArgsT, bool);
+                  return  ns.each_pred_i(pos, start, branches(B), args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_each_pred_left: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(full_pos, Vis, ArgsT, bool)
+          {
+            #if (v_guard_ns(each_pred_left_ns))
+
+              #do (instantiate_each_pred_i(Vis, ArgsT))
+
+              alwaysinline
+              each_pred_right: (pos: full_pos, last: count_t, args: ArgsT) ~> bool
+              {
+                  ns = position_args(full_pos, Vis, ArgsT, bool);
+                  return  ns.each_pred_i(pos, 0, last, args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_each_sub: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(full_pos, Vis, ArgsT)
+          {
+            #if (v_guard_ns(each_sub_ns))
+
+              #do (instantiate_each(Vis, ArgsT))
+
+              alwaysinline
+              each_sub: (pos: full_pos, args: ArgsT) ~> void
+              {
+                  ns = position_args(full_pos, Vis, ArgsT);
+                  ns.each(pos, args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_each_left_sub: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(full_pos, Vis, ArgsT)
+          {
+            #if (v_guard_ns(each_left_sub_ns))
+
+              #do (instantiate_each_i(Vis, ArgsT))
+
+              alwaysinline
+              each_left_sub: (pos: full_pos, args: ArgsT) ~> void
+              {
+                  ns = position_args(full_pos, Vis, ArgsT);
+                  ns.each_i(pos, 0, branches(B) - 1, args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_each_right_sub: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(full_pos, Vis, ArgsT)
+          {
+            #if (v_guard_ns(each_right_sub_ns))
+
+              #do (instantiate_each_i(Vis, ArgsT))
+
+              alwaysinline
+              each_right_sub: (pos: full_pos, args: ArgsT) ~> void
+              {
+                  ns = position_args(full_pos, Vis, ArgsT);
+                  ns.each_i(pos, 1, branches(B), args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_each_right: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(full_pos, Vis, ArgsT)
+          {
+            #if (v_guard_ns(each_right_ns))
+
+              #do (instantiate_each_i(Vis, ArgsT))
+
+              alwaysinline
+              each_right: (pos: full_pos, start: count_t, args: ArgsT) ~> void
+              {
+                  ns = position_args(full_pos, Vis, ArgsT);
+                  ns.each_i(pos, start, branches(B), args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_each_left: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(full_pos, Vis, ArgsT)
+          {
+            #if (v_guard_ns(each_left_ns))
+
+              #do (instantiate_each_i(Vis, ArgsT))
+
+              alwaysinline
+              each_right: (pos: full_pos, last: count_t, args: ArgsT) ~> void
+              {
+                  ns = position_args(full_pos, Vis, ArgsT);
+                  ns.each_i(pos, 0, last, args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_towards: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(full_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(towards_ns))
+
+              #do (instantiate_towards_oh(Vis, ArgsT, RetT))
+
+              alwaysinline
+              towards: (pos: full_pos, idx: size_t, args: ArgsT) ~> RetT
+              {
+                  ns = position_args(full_pos, Vis, ArgsT, RetT);
+                  ns.towards_oh(pos, idx, pos.index(idx), args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_towards_oh_ch: (Vis: v_static_namespace_t,
+                                            ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(full_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(towards_oh_ch_ns))
+
+              #do (instantiate_towards_oh(Vis, ArgsT, RetT))
+
+              alwaysinline
+              towards_oh_ch: (pos: full_pos, idx: size_t, offset_hint: count_t, count_t, args: ArgsT) ~> RetT
+              {
+                  ns = position_args(full_pos, Vis, ArgsT, RetT);
+                  ns.towards_oh(pos, idx, offset_hint, args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_towards_oh: (Vis: v_static_namespace_t,
+                                         ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(full_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(towards_oh_ns))
+
+              private NT = node_type(full_pos);
+              private AT = struct { size_t; ArgsT; };
+
+              #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, AT, RetT),
+                   instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, AT, RetT),
+                   )
+
+              inlinehint
+              towards_oh: (pos: full_pos, idx: size_t, offset_hint: count_t, args: ArgsT) ~> RetT
+              {
+                  v_assert(offset_hint == pos.index(idx));
+
+                  is_leaf = pos.shift_ == BL;
+                  child   = pos.node_->inner[offset_hint];
+
+                  if (is_leaf)
+                  {
+                      ns = position_args(full_leaf_pos, Vis, AT, RetT);
+                      return  ns.visit(make_full_leaf_pos(child), {idx, args});
+                  }
+                  else
+                  {
+                      ns = position_args(full_pos, Vis, AT, RetT);
+                      return  ns.visit(make_full_pos(child, pos.shift_ - B), {idx, args});
+                  }
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_towards_sub_oh: (Vis: v_static_namespace_t,
+                                             ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(full_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(towards_sub_oh_ns))
+
+              private NT = node_type(full_pos);
+              private AT = struct { size_t; ArgsT; };
+
+              #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, AT, RetT),
+                   instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, AT, RetT),
+                   )
+
+              inlinehint
+              towards_sub_oh: (pos: full_pos, idx: size_t, offset_hint: count_t, args: ArgsT) ~> RetT
+              {
+                  v_assert(offset_hint == pos.index(idx));
+
+                  is_leaf = pos.shift_ == BL;
+                  child   = pos.node_->inner[offset_hint];
+                  lsize   = (offset_hint: size_t) << pos.shift_;
+
+                  if (is_leaf)
+                  {
+                      ns = position_args(full_leaf_pos, Vis, AT, RetT);
+                      return  ns.visit(make_full_leaf_pos(child), {idx - lsize, args});
+                  }
+                  else
+                  {
+                      ns = position_args(full_pos, Vis, AT, RetT);
+                      return  ns.visit(make_full_pos(child, pos.shift_ - B), {idx - lsize, args});
+                  }
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_first_sub: (Vis: v_static_namespace_t,
+                                        ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(full_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(first_sub_ns))
+
+              private NT = node_type(full_pos);
+
+              #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, RetT),
+                   instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT, RetT),
+                   )
+
+              inlinehint
+              first_sub: (pos: full_pos, args: ArgsT) ~> RetT
+              {
+                  v_assert(offset_hint == pos.index(idx));
+
+                  is_leaf = pos.shift_ == BL;
+                  child   = pos.node_->inner[0];
+
+                  if (is_leaf)
+                  {
+                      ns = position_args(full_leaf_pos, Vis, ArgsT, RetT);
+                      return  ns.visit(make_full_leaf_pos(child), args);
+                  }
+                  else
+                  {
+                      ns = position_args(full_pos, Vis, ArgsT, RetT);
+                      return  ns.visit(make_full_pos(child, pos.shift_ - B), args);
+                  }
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_first_sub_leaf: (Vis: v_static_namespace_t,
+                                             ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(full_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(first_sub_leaf_ns))
+
+              private NT = node_type(full_pos);
+
+              #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, RetT))
+
+              inlinehint
+              first_sub_leaf: (pos: full_pos, args: ArgsT) ~> RetT
+              {
+                  v_assert(pos.shift_ == BL);
+                  child = pos.node_->inner[0];
+
+                  ns = position_args(full_leaf_pos, Vis, ArgsT, RetT);
+                  return  ns.visit(make_full_leaf_pos(child), args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_first_sub_inner: (Vis: v_static_namespace_t,
+                                              ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(full_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(first_sub_inner_ns))
+
+              private NT = node_type(full_pos);
+
+              #do (instantiate_full_pos(NT), position(NT).full_pos.instantiate_visit(Vis, ArgsT, RetT))
+
+              inlinehint
+              first_sub_inner: (pos: full_pos, args: ArgsT) ~> RetT
+              {
+                  v_assert(pos.shift_ >= BL);
+                  child = pos.node_->inner[0];
+
+                  ns = position_args(full_pos, Vis, ArgsT, RetT);
+                  return  ns.visit(make_full_pos(child, pos.shift_ - B), args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_nth_sub: (Vis: v_static_namespace_t,
+                                      ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(full_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(nth_sub_ns))
+
+              private NT = node_type(full_pos);
+
+              #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, RetT),
+                   instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT, RetT),
+                   )
+
+              inlinehint
+              nth_sub: (pos: full_pos, idx: count_t, args: ArgsT) ~> RetT
+              {
+                  v_assert(idx < pos.count);
+
+                  is_leaf = pos.shift_ == BL;
+                  child   = pos.node_->inner[idx];
+
+                  if (is_leaf)
+                  {
+                      ns = position_args(full_leaf_pos, Vis, ArgsT, RetT);
+                      return  ns.visit(make_full_leaf_pos(child), args);
+                  }
+                  else
+                  {
+                      ns = position_args(full_pos, Vis, ArgsT, RetT);
+                      return  ns.visit(make_full_pos(child, pos.shift_ - B), args);
+                  }
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_nth_sub_leaf: (Vis: v_static_namespace_t,
+                                           ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(full_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(nth_sub_leaf_ns))
+
+              private NT = node_type(full_pos);
+
+              #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, RetT))
+
+              inlinehint
+              nth_sub_leaf: (pos: full_pos, idx: count_t, args: ArgsT) ~> RetT
+              {
+                  v_assert(pos.shift_ == BL);
+                  v_assert(idx < pos.count);
+                  child = pos.node_->inner[idx];
+
+                  ns = position_args(full_leaf_pos, Vis, ArgsT, RetT);
+                  return  ns.visit(make_full_leaf_pos(child), args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_visit: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(full_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(visit_ns))
+
+              #do (Vis.instantiate_visit_regular(struct {full_pos; ArgsT;}, RetT))
+
+              alwaysinline
+              visit: (pos: full_pos, args: ArgsT) ~> RetT
+              {
+                  ns = visitor_args(Vis, struct {full_pos; ArgsT;}, RetT);
+                  return  ns.visit_regular({pos, args});
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+      }     //- namespace full_pos
 
 
+      alwaysinline
+      make_full_pos: (node: *NodeT, shift: shift_t) ~> full_pos  =
+      {
+          v_assert(node);
+          v_assert(shift >= NodeT.bits_leaf);
+          {node, shift}
+      };
 
+    #endif
 
+  }     //- namespace position(NodeT)
 
+'unit_defn_list'}
 
 
 
