@@ -22,10 +22,10 @@ namespace .immer {
     =  .immer.v_generic_ns(debug_size_heap_ns, Q(v_namespace_get_name(HeapNS)));
 
   //---------------------------------------------------------------------
-  #define instantiate_debug_size_heap: (HeapNS: v_static_namespace_t)
+  #define instantiate_debug_size_heap: [](HeapNS: v_static_namespace_t)
   {'unit_defn_list'
 
-    namespace .immer.debug_size_heap(HeapNS)
+    namespace debug_size_heap(HeapNS)
     {
       #if (v_guard_ns())
 

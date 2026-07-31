@@ -19,10 +19,10 @@ namespace .immer {
 
 
 //---------------------------------------------------------------------
-#define instantiate_identity_heap: (HeapNS: v_static_namespace_t)
+#define instantiate_identity_heap: [](HeapNS: v_static_namespace_t)
 {'unit_defn_list'
 
-    namespace .immer.identity_heap(HeapNS)
+    namespace identity_heap(HeapNS)
     {
       #if (v_guard_ns())
 

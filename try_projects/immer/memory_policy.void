@@ -24,12 +24,12 @@ namespace .immer {
                         );
 
 //---------------------------------------------------------------------
-#define instantiate_memory_policy: (HeapPolicy:     v_static_namespace_t,
-                                    RefcountPolicy: v_static_type_t
-                                   )
+#define instantiate_memory_policy: [](HeapPolicy:     v_static_namespace_t,
+                                      RefcountPolicy: v_static_type_t
+                                     )
 {'unit_defn_list'
 
-    namespace .immer.memory_policy(HeapPolicy, RefcountPolicy)
+    namespace memory_policy(HeapPolicy, RefcountPolicy)
     {
       #if (v_guard_ns())
 
@@ -47,26 +47,23 @@ namespace .immer {
 
 
 //---------------------------------------------------------------------
-#define instantiate_default_memory_policy: ()
+#define instantiate_default_memory_policy: []()
 {'unit_defn_list'
 
-    namespace .immer
-    {
-      #if (v_guard_ns(guard_default_memory_policy))
+  #if (v_guard_ns(guard_default_memory_policy))
 
-        #do (instantiate_debug_size_heap(malloc_heap),
-             instantiate_heap_policy(debug_size_heap(malloc_heap)))
+    #do (instantiate_debug_size_heap(malloc_heap),
+         instantiate_heap_policy(debug_size_heap(malloc_heap)))
 
-        default_heap_policy     = heap_policy(debug_size_heap(malloc_heap));
-        default_refcount_policy = unsafe_refcount_policy;
+    default_heap_policy     = heap_policy(debug_size_heap(malloc_heap));
+    default_refcount_policy = unsafe_refcount_policy;
 
-        #do (instantiate_memory_policy(default_heap_policy, default_refcount_policy))
+    #do (instantiate_memory_policy(default_heap_policy, default_refcount_policy))
 
-        default_memory_policy = memory_policy(default_heap_policy,
-                                              default_refcount_policy);
+    default_memory_policy = memory_policy(default_heap_policy,
+                                          default_refcount_policy);
 
-      #endif
-    }
+  #endif
 
 'unit_defn_list'}
 

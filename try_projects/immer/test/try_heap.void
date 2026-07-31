@@ -14,23 +14,16 @@
 
 
 //---------------------------------------------------------------------
-namespace .immer
-{
-    #do (instantiate_default_memory_policy())
+#do (immer.instantiate_default_memory_policy())
 
-    policy = default_memory_policy;
+policy = immer.default_memory_policy;
 
-    #do (policy.heap.instantiate_optimized(777))
+#do (policy.heap.instantiate_optimized(777))
 
-    heap = policy.heap.optimized(777).heap;
-
-//---------------------------------------------------------------------
-}   //- namespace .immer
+heap = policy.heap.optimized(777).heap;
 
 
 {
-    heap = immer.heap;
-
     p = (heap.allocate(sizeof(int[7])) : *int);
 
     printf("p: %p\n", p);

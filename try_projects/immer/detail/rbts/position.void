@@ -20,8 +20,8 @@ namespace detail {
 namespace rbts {
 
 //---------------------------------------------------------------------
-#define bits:      [bits_t](Pos: v_static_type_t) ~> bits_t  =  Pos.node_t.bits;
-#define bits_leaf: [bits_t](Pos: v_static_type_t) ~> bits_t  =  Pos.node_t.bits_leaf;
+#define bits:      [](Pos: v_static_type_t) ~> bits_t  =  Pos.node_t.bits;
+#define bits_leaf: [](Pos: v_static_type_t) ~> bits_t  =  Pos.node_t.bits_leaf;
 
 #define node_type: (Pos: v_static_type_t) ~> v_static_type_t  =  Pos.node_t;
 
@@ -36,7 +36,7 @@ namespace rbts {
 
 
 //---------------------------------------------------------------------
-#define position_shift: [shift_t](NodeT: v_static_type_t, Shift: shift_t) ~> v_static_namespace_t
+#define position_shift: [](NodeT: v_static_type_t, Shift: shift_t) ~> v_static_namespace_t
   =  .immer.detail.rbts.v_generic_ns(position_shift_ns, T(NodeT), N(Shift));
 
 #define regular_descent_args: (NT: v_static_type_t, VS: v_static_namespace_t,
@@ -47,7 +47,7 @@ namespace rbts {
 //---------------------------------------------------------------------
 //- empty_regular_pos
 //---------------------------------------------------------------------
-#define instantiate_empty_regular_pos: (NodeT: v_static_type_t)
+#define instantiate_empty_regular_pos: [](NodeT: v_static_type_t)
 {'unit_defn_list'
 
   namespace position(NodeT)
@@ -78,7 +78,9 @@ namespace rbts {
 
       namespace empty_regular_pos
       {
-        #define instantiate_each: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        using namespace position(NodeT);
+
+        #define instantiate_each: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(empty_regular_pos, Vis, ArgsT)
@@ -93,7 +95,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_pred: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_pred: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(empty_regular_pos, Vis, ArgsT, bool)
@@ -108,7 +110,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_visit: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_visit: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(empty_regular_pos, Vis, ArgsT, RetT)
@@ -145,7 +147,7 @@ namespace rbts {
 //---------------------------------------------------------------------
 //- empty_leaf_pos
 //---------------------------------------------------------------------
-#define instantiate_empty_leaf_pos: (NodeT: v_static_type_t)
+#define instantiate_empty_leaf_pos: [](NodeT: v_static_type_t)
 {'unit_defn_list'
 
   namespace position(NodeT)
@@ -176,7 +178,9 @@ namespace rbts {
 
       namespace empty_leaf_pos
       {
-        #define instantiate_visit: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        using namespace position(NodeT);
+
+        #define instantiate_visit: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(empty_leaf_pos, Vis, ArgsT, RetT)
@@ -213,7 +217,7 @@ namespace rbts {
 //---------------------------------------------------------------------
 //- leaf_pos
 //---------------------------------------------------------------------
-#define instantiate_leaf_pos: (NodeT: v_static_type_t)
+#define instantiate_leaf_pos: [](NodeT: v_static_type_t)
 {'unit_defn_list'
 
   namespace position(NodeT)
@@ -253,7 +257,9 @@ namespace rbts {
 
       namespace leaf_pos
       {
-        #define instantiate_visit: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        using namespace position(NodeT);
+
+        #define instantiate_visit: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(leaf_pos, Vis, ArgsT, RetT)
@@ -295,7 +301,7 @@ namespace rbts {
 //---------------------------------------------------------------------
 //- leaf_sub_pos
 //---------------------------------------------------------------------
-#define instantiate_leaf_sub_pos: (NodeT: v_static_type_t)
+#define instantiate_leaf_sub_pos: [](NodeT: v_static_type_t)
 {'unit_defn_list'
 
   namespace position(NodeT)
@@ -335,7 +341,9 @@ namespace rbts {
 
       namespace leaf_sub_pos
       {
-        #define instantiate_visit: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        using namespace position(NodeT);
+
+        #define instantiate_visit: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(leaf_sub_pos, Vis, ArgsT, RetT)
@@ -377,7 +385,7 @@ namespace rbts {
 //---------------------------------------------------------------------
 //- leaf_descent_pos
 //---------------------------------------------------------------------
-#define instantiate_leaf_descent_pos: (NodeT: v_static_type_t)
+#define instantiate_leaf_descent_pos: [](NodeT: v_static_type_t)
 {'unit_defn_list'
 
   namespace position(NodeT)
@@ -407,7 +415,9 @@ namespace rbts {
 
       namespace leaf_descent_pos
       {
-        #define instantiate_descend: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        using namespace position(NodeT);
+
+        #define instantiate_descend: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(leaf_descent_pos, Vis, ArgsT, RetT)
@@ -422,7 +432,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_visit: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_visit: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(leaf_descent_pos, Vis, ArgsT, RetT)
@@ -463,7 +473,7 @@ namespace rbts {
 //---------------------------------------------------------------------
 //- full_leaf_pos
 //---------------------------------------------------------------------
-#define instantiate_full_leaf_pos: (NodeT: v_static_type_t)
+#define instantiate_full_leaf_pos: [](NodeT: v_static_type_t)
 {'unit_defn_list'
 
   namespace position(NodeT)
@@ -502,7 +512,9 @@ namespace rbts {
 
       namespace full_leaf_pos
       {
-        #define instantiate_visit: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        using namespace position(NodeT);
+
+        #define instantiate_visit: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(full_leaf_pos, Vis, ArgsT, RetT)
@@ -543,7 +555,7 @@ namespace rbts {
 //---------------------------------------------------------------------
 //- regular_pos
 //---------------------------------------------------------------------
-#define instantiate_regular_pos: (NodeT: v_static_type_t)
+#define instantiate_regular_pos: [](NodeT: v_static_type_t)
 {'unit_defn_list'
 
   namespace position(NodeT)
@@ -588,7 +600,9 @@ namespace rbts {
 
       namespace regular_pos
       {
-        #define instantiate_each: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        using namespace position(NodeT);
+
+        #define instantiate_each: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(regular_pos, Vis, ArgsT)
@@ -608,7 +622,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_pred: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_pred: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(regular_pos, Vis, ArgsT, bool)
@@ -625,7 +639,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_pred_zip: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_pred_zip: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(regular_pos, Vis, ArgsT, bool)
@@ -643,7 +657,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_pred_i: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_pred_i: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(regular_pos, Vis, ArgsT, bool)
@@ -661,7 +675,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_pred_right: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_pred_right: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(regular_pos, Vis, ArgsT, bool)
@@ -679,7 +693,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_pred_left: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_pred_left: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(regular_pos, Vis, ArgsT, bool)
@@ -697,7 +711,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_i: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_i: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(regular_pos, Vis, ArgsT)
@@ -717,7 +731,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_right: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_right: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(regular_pos, Vis, ArgsT)
@@ -737,7 +751,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_left: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_left: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(regular_pos, Vis, ArgsT)
@@ -757,7 +771,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_towards: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_towards: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(regular_pos, Vis, ArgsT, RetT)
@@ -775,7 +789,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_towards_oh: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_towards_oh: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(regular_pos, Vis, ArgsT, RetT)
@@ -793,7 +807,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_towards_oh_ch: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_towards_oh_ch: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(regular_pos, Vis, ArgsT, RetT)
@@ -815,7 +829,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_towards_sub_oh: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_towards_sub_oh: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(regular_pos, Vis, ArgsT, RetT)
@@ -833,7 +847,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_last_oh: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_last_oh: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(regular_pos, Vis, ArgsT, RetT)
@@ -851,7 +865,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_visit: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_visit: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(regular_pos, Vis, ArgsT, RetT)
@@ -892,7 +906,7 @@ namespace rbts {
 
 
 //---------------------------------------------------------------------
-#define instantiate_each_regular: (Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+#define instantiate_each_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT)
@@ -952,7 +966,7 @@ namespace rbts {
 'unit_defn_list'}
 
 //---------------------------------------------------------------------
-#define instantiate_each_pred_regular: (Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+#define instantiate_each_pred_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT, bool)
@@ -1012,7 +1026,7 @@ namespace rbts {
 'unit_defn_list'}
 
 //---------------------------------------------------------------------
-#define instantiate_each_pred_zip_regular: (Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+#define instantiate_each_pred_zip_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT, bool)
@@ -1073,7 +1087,7 @@ namespace rbts {
 'unit_defn_list'}
 
 //---------------------------------------------------------------------
-#define instantiate_each_pred_i_regular: (Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+#define instantiate_each_pred_i_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT, bool)
@@ -1171,7 +1185,7 @@ namespace rbts {
 'unit_defn_list'}
 
 //---------------------------------------------------------------------
-#define instantiate_each_pred_left_regular: (Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+#define instantiate_each_pred_left_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT, bool)
@@ -1229,7 +1243,7 @@ namespace rbts {
 'unit_defn_list'}
 
 //---------------------------------------------------------------------
-#define instantiate_each_pred_right_regular: (Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+#define instantiate_each_pred_right_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT, bool)
@@ -1301,7 +1315,7 @@ namespace rbts {
 'unit_defn_list'}
 
 //---------------------------------------------------------------------
-#define instantiate_each_i_regular: (Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+#define instantiate_each_i_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT)
@@ -1397,7 +1411,7 @@ namespace rbts {
 'unit_defn_list'}
 
 //---------------------------------------------------------------------
-#define instantiate_each_left_regular: (Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+#define instantiate_each_left_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT)
@@ -1453,7 +1467,7 @@ namespace rbts {
 'unit_defn_list'}
 
 //---------------------------------------------------------------------
-#define instantiate_each_right_regular: (Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+#define instantiate_each_right_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT)
@@ -1523,8 +1537,8 @@ namespace rbts {
 'unit_defn_list'}
 
 //---------------------------------------------------------------------
-#define instantiate_towards_oh_ch_regular: (Pos: v_static_type_t, Vis: v_static_namespace_t,
-                                            ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+#define instantiate_towards_oh_ch_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
+                                              ArgsT: v_static_type_t, RetT: v_static_type_t = void)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT, RetT)
@@ -1593,8 +1607,8 @@ namespace rbts {
 'unit_defn_list'}
 
 //---------------------------------------------------------------------
-#define instantiate_towards_sub_oh_regular: (Pos: v_static_type_t, Vis: v_static_namespace_t,
-                                            ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+#define instantiate_towards_sub_oh_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
+                                               ArgsT: v_static_type_t, RetT: v_static_type_t = void)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT, RetT)
@@ -1663,8 +1677,8 @@ namespace rbts {
 'unit_defn_list'}
 
 //---------------------------------------------------------------------
-#define instantiate_last_oh_regular: (Pos: v_static_type_t, Vis: v_static_namespace_t,
-                                      ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+#define instantiate_last_oh_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
+                                        ArgsT: v_static_type_t, RetT: v_static_type_t = void)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT, RetT)
@@ -1674,8 +1688,8 @@ namespace rbts {
         private
         NT = node_type(Pos);
 
-        #do (instantiate_leaf_pos(NT),      position(NT).leaf_pos.instantiate_visit(Vis, ArgsT, RetT),
-             instantiate_regular_pos(NT),   position(NT).regular_pos.instantiate_visit(Vis, ArgsT, RetT),
+        #do (instantiate_leaf_pos(NT),    position(NT).leaf_pos.instantiate_visit(Vis, ArgsT, RetT),
+             instantiate_regular_pos(NT), position(NT).regular_pos.instantiate_visit(Vis, ArgsT, RetT),
              )
 
         linkonce_odr
@@ -1712,7 +1726,7 @@ namespace rbts {
 //---------------------------------------------------------------------
 //- null_sub_pos
 //---------------------------------------------------------------------
-#define instantiate_null_sub_pos: (NodeT: v_static_type_t)
+#define instantiate_null_sub_pos: [](NodeT: v_static_type_t)
 {'unit_defn_list'
 
   namespace position(NodeT)
@@ -1730,7 +1744,9 @@ namespace rbts {
 
       namespace null_sub_pos
       {
-        #define instantiate_each_sub: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        using namespace position(NodeT);
+
+        #define instantiate_each_sub: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(null_sub_pos, Vis, ArgsT)
@@ -1745,7 +1761,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_right_sub: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_right_sub: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(null_sub_pos, Vis, ArgsT)
@@ -1760,7 +1776,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_left_sub: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_left_sub: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(null_sub_pos, Vis, ArgsT)
@@ -1775,7 +1791,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_visit: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_visit: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(null_sub_pos, Vis, ArgsT)
@@ -1802,7 +1818,7 @@ namespace rbts {
 //---------------------------------------------------------------------
 //- singleton_regular_sub_pos
 //---------------------------------------------------------------------
-#define instantiate_singleton_regular_sub_pos: (NodeT: v_static_type_t)
+#define instantiate_singleton_regular_sub_pos: [](NodeT: v_static_type_t)
 {'unit_defn_list'
 
   namespace position(NodeT)
@@ -1851,7 +1867,9 @@ namespace rbts {
 
       namespace singleton_regular_sub_pos
       {
-        #define instantiate_each_left_sub: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        using namespace position(NodeT);
+
+        #define instantiate_each_left_sub: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(singleton_regular_sub_pos, Vis, ArgsT)
@@ -1866,7 +1884,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(singleton_regular_sub_pos, Vis, ArgsT)
@@ -1881,7 +1899,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_last_sub: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_last_sub: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(singleton_regular_sub_pos, Vis, ArgsT, RetT)
@@ -1905,7 +1923,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_visit: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t)
+        #define instantiate_visit: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(singleton_regular_sub_pos, Vis, ArgsT, RetT)
@@ -1948,7 +1966,7 @@ namespace rbts {
 //---------------------------------------------------------------------
 //- regular_sub_pos
 //---------------------------------------------------------------------
-#define instantiate_regular_sub_pos: (NodeT: v_static_type_t)
+#define instantiate_regular_sub_pos: [](NodeT: v_static_type_t)
 {'unit_defn_list'
 
   namespace position(NodeT)
@@ -2032,7 +2050,9 @@ namespace rbts {
 
       namespace regular_sub_pos
       {
-        #define instantiate_each: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        using namespace position(NodeT);
+
+        #define instantiate_each: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT)
@@ -2052,7 +2072,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_pred: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_pred: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT, bool)
@@ -2069,7 +2089,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_pred_zip: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_pred_zip: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT, bool)
@@ -2087,7 +2107,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_pred_i: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_pred_i: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT, bool)
@@ -2105,7 +2125,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_pred_right: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_pred_right: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT, bool)
@@ -2123,7 +2143,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_pred_left: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_pred_left: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT, bool)
@@ -2141,7 +2161,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_i: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_i: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT)
@@ -2161,7 +2181,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_right: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_right: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT)
@@ -2181,7 +2201,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_left: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_left: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT)
@@ -2201,7 +2221,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_right_sub_: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_right_sub_: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT)
@@ -2258,7 +2278,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_sub: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_sub: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT)
@@ -2278,7 +2298,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_right_sub: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_right_sub: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT)
@@ -2298,7 +2318,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_left_sub: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_left_sub: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT)
@@ -2318,7 +2338,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_towards: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_towards: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT, RetT)
@@ -2336,7 +2356,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_towards_oh: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_towards_oh: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT, RetT)
@@ -2354,7 +2374,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_towards_oh_ch: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_towards_oh_ch: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT, RetT)
@@ -2376,7 +2396,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_towards_sub_oh: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_towards_sub_oh: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT, RetT)
@@ -2394,7 +2414,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_last_oh: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_last_oh: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT, RetT)
@@ -2412,7 +2432,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_last_sub: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_last_sub: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT, RetT)
@@ -2453,7 +2473,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_first_sub: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_first_sub: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT, RetT)
@@ -2511,7 +2531,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_first_sub_leaf: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_first_sub_leaf: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT, RetT)
@@ -2551,7 +2571,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_first_sub_inner: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_first_sub_inner: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT, RetT)
@@ -2591,7 +2611,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_nth_sub: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_nth_sub: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT, RetT)
@@ -2651,7 +2671,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_nth_sub_leaf: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_nth_sub_leaf: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT, RetT)
@@ -2692,7 +2712,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_visit: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_visit: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(regular_sub_pos, Vis, ArgsT, RetT)
@@ -2736,7 +2756,7 @@ namespace rbts {
 //---------------------------------------------------------------------
 //- regular_descent_pos
 //---------------------------------------------------------------------
-#define instantiate_regular_descent_pos: (NodeT: v_static_type_t, Shift: shift_t)
+#define instantiate_regular_descent_pos: [](NodeT: v_static_type_t, Shift: shift_t)
 {'unit_defn_list'
 
   namespace position_shift(NodeT, Shift)
@@ -2770,7 +2790,9 @@ namespace rbts {
 
       namespace regular_descent_pos
       {
-        #define instantiate_descend: (Vis: v_static_namespace_t, RetT: v_static_type_t = void)
+        using namespace position(NodeT);
+
+        #define instantiate_descend: [](Vis: v_static_namespace_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(regular_descent_pos, Vis, size_t, RetT)
@@ -2818,7 +2840,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_visit: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_visit: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(regular_descent_pos, Vis, ArgsT, RetT)
@@ -2848,7 +2870,7 @@ namespace rbts {
 'unit_defn_list'}
 
 //---------------------------------------------------------------------
-#define instantiate_visit_regular_descent: (NodeT: v_static_type_t, Vis: v_static_namespace_t, RetT: v_static_type_t = void)
+#define instantiate_visit_regular_descent: [](NodeT: v_static_type_t, Vis: v_static_namespace_t, RetT: v_static_type_t = void)
 {'unit_defn_list'
 
   namespace regular_descent_args(NodeT, Vis, RetT)
@@ -2931,7 +2953,7 @@ namespace rbts {
 //---------------------------------------------------------------------
 //- full_pos
 //---------------------------------------------------------------------
-#define instantiate_full_pos: (NodeT: v_static_type_t)
+#define instantiate_full_pos: [](NodeT: v_static_type_t)
 {'unit_defn_list'
 
   namespace position(NodeT)
@@ -2995,7 +3017,9 @@ namespace rbts {
 
       namespace full_pos
       {
-        #define instantiate_each: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        using namespace position(NodeT);
+
+        #define instantiate_each: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(full_pos, Vis, ArgsT)
@@ -3040,7 +3064,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_pred: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_pred: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(full_pos, Vis, ArgsT, bool)
@@ -3087,7 +3111,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_pred_zip: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_pred_zip: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(full_pos, Vis, ArgsT, bool)
@@ -3135,7 +3159,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_pred_i: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_pred_i: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(full_pos, Vis, ArgsT, bool)
@@ -3181,7 +3205,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_i: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_i: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(full_pos, Vis, ArgsT)
@@ -3225,7 +3249,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_pred_right: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_pred_right: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(full_pos, Vis, ArgsT, bool)
@@ -3246,7 +3270,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_pred_left: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_pred_left: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(full_pos, Vis, ArgsT, bool)
@@ -3267,7 +3291,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_sub: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_sub: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(full_pos, Vis, ArgsT)
@@ -3288,7 +3312,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_left_sub: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_left_sub: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(full_pos, Vis, ArgsT)
@@ -3309,7 +3333,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_right_sub: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_right_sub: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(full_pos, Vis, ArgsT)
@@ -3330,7 +3354,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_right: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_right: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(full_pos, Vis, ArgsT)
@@ -3351,7 +3375,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_left: (Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_left: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(full_pos, Vis, ArgsT)
@@ -3372,7 +3396,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_towards: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_towards: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(full_pos, Vis, ArgsT, RetT)
@@ -3393,8 +3417,8 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_towards_oh_ch: (Vis: v_static_namespace_t,
-                                            ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_towards_oh_ch: [](Vis: v_static_namespace_t,
+                                              ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(full_pos, Vis, ArgsT, RetT)
@@ -3415,8 +3439,8 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_towards_oh: (Vis: v_static_namespace_t,
-                                         ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_towards_oh: [](Vis: v_static_namespace_t,
+                                           ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(full_pos, Vis, ArgsT, RetT)
@@ -3455,8 +3479,8 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_towards_sub_oh: (Vis: v_static_namespace_t,
-                                             ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_towards_sub_oh: [](Vis: v_static_namespace_t,
+                                               ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(full_pos, Vis, ArgsT, RetT)
@@ -3496,8 +3520,8 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_first_sub: (Vis: v_static_namespace_t,
-                                        ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_first_sub: [](Vis: v_static_namespace_t,
+                                          ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(full_pos, Vis, ArgsT, RetT)
@@ -3535,8 +3559,8 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_first_sub_leaf: (Vis: v_static_namespace_t,
-                                             ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_first_sub_leaf: [](Vis: v_static_namespace_t,
+                                               ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(full_pos, Vis, ArgsT, RetT)
@@ -3562,8 +3586,8 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_first_sub_inner: (Vis: v_static_namespace_t,
-                                              ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_first_sub_inner: [](Vis: v_static_namespace_t,
+                                                ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(full_pos, Vis, ArgsT, RetT)
@@ -3589,8 +3613,8 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_nth_sub: (Vis: v_static_namespace_t,
-                                      ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_nth_sub: [](Vis: v_static_namespace_t,
+                                        ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(full_pos, Vis, ArgsT, RetT)
@@ -3628,8 +3652,8 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_nth_sub_leaf: (Vis: v_static_namespace_t,
-                                           ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_nth_sub_leaf: [](Vis: v_static_namespace_t,
+                                             ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(full_pos, Vis, ArgsT, RetT)
@@ -3656,7 +3680,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_visit: (Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_visit: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(full_pos, Vis, ArgsT, RetT)

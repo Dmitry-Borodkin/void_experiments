@@ -20,10 +20,10 @@ namespace .immer {
 
 
 //---------------------------------------------------------------------
-#define instantiate_heap_policy: (HeapNS: v_static_namespace_t)
+#define instantiate_heap_policy: [](HeapNS: v_static_namespace_t)
 {'unit_defn_list'
 
-    namespace .immer.heap_policy(HeapNS)
+    namespace heap_policy(HeapNS)
     {
       #if (v_guard_ns())
 
