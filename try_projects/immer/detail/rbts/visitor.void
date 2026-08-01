@@ -31,6 +31,8 @@ namespace rbts {
 #define instantiate_visitor_base: (DerivedNS: v_static_namespace_t)
 {'unit_defn_list'
 
+  #if (v_guard_ns(visitor_base(DerivedNS)))
+
     using namespace visitor_base(DerivedNS);
 
     namespace visitor_base(DerivedNS)
@@ -63,7 +65,7 @@ namespace rbts {
               alwaysinline
               visit_node: (ArgsT) ~> RetT
               {
-                  v_assert(false && "Kinda, unreachable...");
+                  v_assert(false && "Kinda, unreachable...");           //- Sic !!!
               }
 
             #endif
@@ -149,6 +151,8 @@ namespace rbts {
 
         'unit_defn_list'}
     }
+
+  #endif
 
 'unit_defn_list'}
 

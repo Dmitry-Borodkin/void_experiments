@@ -237,10 +237,10 @@ namespace rbts {
       leaf_pos.BL     = NodeT.bits_leaf;
 
       alwaysinline
-      (_.index()): (leaf_pos, idx: size_t) ~> count_t  =  idx & mask(leaf_pos.BL);
+      (_.index()): (leaf_pos, idx: size_t) ~> count_t  =  (idx & mask(leaf_pos.BL) : count_t);
 
       alwaysinline
-      (_.subindex()): (leaf_pos, idx: size_t) ~> count_t  =  idx;
+      (_.subindex()): (leaf_pos, idx: size_t) ~> count_t  =  (idx: count_t);
 
       alwaysinline
       (_.count): (pos: leaf_pos) ~> count_t  =  pos.index(pos.size_ -1) + 1;
@@ -321,10 +321,10 @@ namespace rbts {
       leaf_sub_pos.BL     = NodeT.bits_leaf;
 
       alwaysinline
-      (_.index()): (leaf_sub_pos, idx: size_t) ~> count_t  =  idx & mask(leaf_sub_pos.BL);
+      (_.index()): (leaf_sub_pos, idx: size_t) ~> count_t  =  (idx & mask(leaf_sub_pos.BL) : count_t);
 
       alwaysinline
-      (_.subindex()): (leaf_sub_pos, idx: size_t) ~> count_t  =  idx;
+      (_.subindex()): (leaf_sub_pos, idx: size_t) ~> count_t  =  (idx: count_t);
 
       alwaysinline
       (_.count): (pos: leaf_sub_pos) ~> count_t  =  pos.count_;
@@ -404,7 +404,7 @@ namespace rbts {
       leaf_descent_pos.BL     = NodeT.bits_leaf;
 
       alwaysinline
-      (_.index()): (leaf_descent_pos, idx: size_t) ~> count_t  =  idx & mask(leaf_descent_pos.BL);
+      (_.index()): (leaf_descent_pos, idx: size_t) ~> count_t  =  (idx & mask(leaf_descent_pos.BL) : count_t);
 
       alwaysinline
       (_.node): (pos: leaf_descent_pos) ~> *NodeT  =  pos.node_;
@@ -492,10 +492,10 @@ namespace rbts {
       full_leaf_pos.BL     = NodeT.bits_leaf;
 
       alwaysinline
-      (_.index()): (full_leaf_pos, idx: size_t) ~> count_t  =  idx & mask(full_leaf_pos.BL);
+      (_.index()): (full_leaf_pos, idx: size_t) ~> count_t  =  (idx & mask(full_leaf_pos.BL) : count_t);
 
       alwaysinline
-      (_.subindex()): (full_leaf_pos, idx: size_t) ~> count_t  =  idx;
+      (_.subindex()): (full_leaf_pos, idx: size_t) ~> count_t  =  (idx: count_t);
 
       alwaysinline
       (_.count): (full_leaf_pos) ~> count_t  =  branches(full_leaf_pos.BL);
@@ -576,10 +576,10 @@ namespace rbts {
       regular_pos.BL     = NodeT.bits_leaf;
 
       alwaysinline
-      (_.index()): (pos: regular_pos, idx: size_t) ~> count_t  =  (idx >> pos.shift_) & mask(regular_pos.B);
+      (_.index()): (pos: regular_pos, idx: size_t) ~> count_t  =  ((idx >> pos.shift_) & mask(regular_pos.B) : count_t);
 
       alwaysinline
-      (_.subindex()): (pos: regular_pos, idx: size_t) ~> count_t  =  idx >> pos.shift_;
+      (_.subindex()): (pos: regular_pos, idx: size_t) ~> count_t  =  (idx >> pos.shift_ : count_t);
 
       alwaysinline
       (_.count): (pos: regular_pos) ~> count_t  =  pos.index(pos.size_ - 1) + 1;
@@ -1987,10 +1987,10 @@ namespace rbts {
       regular_sub_pos.BL     = NodeT.bits_leaf;
 
       alwaysinline
-      (_.index()): (pos: regular_sub_pos, idx: size_t) ~> count_t  =  (idx >> pos.shift_) & mask(regular_sub_pos.B);
+      (_.index()): (pos: regular_sub_pos, idx: size_t) ~> count_t  =  ((idx >> pos.shift_) & mask(regular_sub_pos.B) : count_t);
 
       alwaysinline
-      (_.subindex()): (pos: regular_sub_pos, idx: size_t) ~> count_t  =  idx >> pos.shift_;
+      (_.subindex()): (pos: regular_sub_pos, idx: size_t) ~> count_t  =  (idx >> pos.shift_ : count_t);
 
       alwaysinline
       (_.count): (pos: regular_sub_pos) ~> count_t  =  pos.subindex(pos.size_ - 1) + 1;
@@ -2785,7 +2785,7 @@ namespace rbts {
       (_.shift): (regular_descent_pos) ~> shift_t  =  Shift;
 
       alwaysinline
-      (_.index()): (regular_descent_pos, idx: size_t) ~> count_t  =  (idx >> Shift) & mask(regular_descent_pos.BL);
+      (_.index()): (regular_descent_pos, idx: size_t) ~> count_t  =  ((idx >> Shift) & mask(regular_descent_pos.BL) : count_t);
 
 
       namespace regular_descent_pos
@@ -2985,10 +2985,10 @@ namespace rbts {
       (_.shift): (pos: full_pos) ~> shift_t  =  pos.shift_;
 
       alwaysinline
-      (_.index()): (pos: full_pos, idx: size_t) ~> count_t  =  (idx >> pos.shift_) & mask(full_pos.B);
+      (_.index()): (pos: full_pos, idx: size_t) ~> count_t  =  ((idx >> pos.shift_) & mask(full_pos.B) : count_t);
 
       alwaysinline
-      (_.subindex()): (pos: full_pos, idx: size_t) ~> count_t  =  idx >> pos.shift_;
+      (_.subindex()): (pos: full_pos, idx: size_t) ~> count_t  =  (idx >> pos.shift_ : count_t);
 
       alwaysinline
       (_.size()): (pos: full_pos, count_t) ~> size_t  =  (1: size_t) << pos.shift_;

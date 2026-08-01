@@ -12,6 +12,8 @@
 }
 
 
+{ printf("here\n"); }
+
 //---------------------------------------------------------------------
 { v_import("stack_trace.void"); }
 { voidc_enable_stack_trace(); }
@@ -40,16 +42,16 @@ namespace my
     node_t = node(my_type, policy, 5, BL);
 
 
-    #do (instantiate_array_for_visitor(my_type))
+    #do (instantiate_get_visitor(my_type))
 
-    visitor = array_for_visitor(my_type);
+    visitor = get_visitor(my_type);
 
 
     using namespace position(node_t);
 
-    #do (instantiate_empty_leaf_pos(node_t))
+    #do (instantiate_leaf_pos(node_t))
 
-    #do (empty_leaf_pos.instantiate_visit(visitor, size_t, *my_type))
+    #do (leaf_pos.instantiate_visit(visitor, size_t, &const my_type))
 
 
 
@@ -62,14 +64,13 @@ namespace my
 { v_debug_print_module(2); }
 
 
-some: (node: *my.node_t) ~> *my_type
+some: (node: *my.node_t) ~> &const my_type  =
 {
-    pos = my.make_empty_leaf_pos(node);
+    pos = my.make_leaf_pos(node, 10);
 
-    ns = my.position_args(my.empty_leaf_pos, my.visitor, size_t, *my_type);
-
-    return ns.visit(pos, 7);
-}
+    ns = my.position_args(my.leaf_pos, my.visitor, size_t, &const my_type);
+    ns.visit(pos, 8)
+};
 
 
 
