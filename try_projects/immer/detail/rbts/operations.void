@@ -1,0 +1,142 @@
+{ voidc_import("libvoidc.void"); }
+{ voidc_make_header("operations"); }
+//---------------------------------------------------------------------
+{
+    v_export_import("position.void");
+    v_export_import("visitor.void");
+    v_export_import("../util.void");
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+//- <immer/detail/rbts/operations.hpp>
+//---------------------------------------------------------------------
+namespace .immer {
+namespace detail {
+namespace rbts {
+
+
+//---------------------------------------------------------------------
+//- array_for_visitor
+//---------------------------------------------------------------------
+#define array_for_visitor: [](T: v_static_type_t) ~> v_static_namespace_t
+  =  v_generic_ns(array_for_visitor_ns, T(T));
+
+#define instantiate_array_for_visitor: [](T: v_static_type_t)
+{'unit_defn_list'
+
+    namespace array_for_visitor(T)
+    {
+      #if (v_guard_ns())
+
+        value_t = T;
+
+        #do (instantiate_visitor_base(array_for_visitor(T)))
+
+        #define instantiate_args_derived: [](ArgsT: v_static_type_t, RetT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace visitor_args(derived_ns, ArgsT, RetT)
+          {
+            #if (v_guard_ns(args_derived_ns))
+
+              #assert (ArgsT.is_struct  &&  ArgsT.element_count == 2)
+              #assert (ArgsT.element_types[1] == size_t)
+              #assert (RetT == *value_t)
+              #assert (value_t == ArgsT.element_types[0].node_t.value_t)      //- ?
+
+              #do (instantiate_args(ArgsT, RetT))
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_visit_inner: [](ArgsT: v_static_type_t, RetT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace visitor_args(derived_ns, ArgsT, RetT)
+          {
+            #if (v_guard_ns(visit_inner_ns))
+
+              #do (instantiate_args_derived(ArgsT, RetT),
+                   ArgsT.element_types[0].instantiate_descend(derived_ns, size_t, RetT)
+                   )
+
+              alwaysinline
+              visit_inner: (args: ArgsT) ~> RetT  =
+              {
+                  Pos = ArgsT.element_types[0];
+
+                  pos = args[0];
+                  idx = args[1];
+
+                  ns = position_args(Pos, derived_ns, size_t, RetT);
+                  ns.descend(pos, idx)
+              };
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_visit_leaf: [](ArgsT: v_static_type_t, RetT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace visitor_args(derived_ns, ArgsT, RetT)
+          {
+            #if (v_guard_ns(visit_inner_ns))
+
+              #do (instantiate_args_derived(ArgsT, RetT))
+
+              alwaysinline
+              visit_leaf: (args: ArgsT) ~> RetT  =
+              {
+                  pos = args[0];
+
+                  pos.node->leaf
+              };
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+      #endif
+    }
+
+'unit_defn_list'}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------
+}   //- namespace rbts
+}   //- namespace detail
+}   //- namespace .immer
+

@@ -27,8 +27,8 @@ namespace rbts {
 
 
 //---------------------------------------------------------------------
-#define position: (NodeT: v_static_type_t) ~> v_static_namespace_t
-  =  .immer.detail.rbts.v_generic_ns(position_ns, T(NodeT));
+#define position: [](NodeT: v_static_type_t) ~> v_static_namespace_t
+  =  v_generic_ns(position_ns, T(NodeT));
 
 #define position_args: (PS: v_static_namespace_t, VS: v_static_namespace_t,
                         AT: v_static_type_t, RT: v_static_type_t = void) ~> v_static_namespace_t
@@ -37,11 +37,11 @@ namespace rbts {
 
 //---------------------------------------------------------------------
 #define position_shift: [](NodeT: v_static_type_t, Shift: shift_t) ~> v_static_namespace_t
-  =  .immer.detail.rbts.v_generic_ns(position_shift_ns, T(NodeT), N(Shift));
+  =  v_generic_ns(position_shift_ns, T(NodeT), N(Shift));
 
-#define regular_descent_args: (NT: v_static_type_t, VS: v_static_namespace_t,
-                               RT: v_static_type_t = void) ~> v_static_namespace_t
-  =  .immer.detail.rbts.v_generic_ns(regular_descent_args_ns, Q(v_namespace_get_name(VS)), T[NT,RT]);
+#define regular_descent_args: [](NT: v_static_type_t, VS: v_static_namespace_t,
+                                 RT: v_static_type_t = void) ~> v_static_namespace_t
+  =  v_generic_ns(regular_descent_args_ns, Q(v_namespace_get_name(VS)), T[NT,RT]);
 
 
 //---------------------------------------------------------------------

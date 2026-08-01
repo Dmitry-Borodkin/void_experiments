@@ -207,8 +207,8 @@ namespace detail {
 
 
 //---------------------------------------------------------------------
-#define util: (T: v_static_type_t) ~> v_static_namespace_t
-  =  .immer.detail.v_generic_ns(util_ns, T(T));
+#define util: [](T: v_static_type_t) ~> v_static_namespace_t
+  =  v_generic_ns(util_ns, T(T));
 
 //---------------------------------------------------------------------
 #define instantiate_conditional_initialize: [](T: v_static_type_t)

@@ -1,0 +1,83 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+//---------------------------------------------------------------------
+{
+    v_import("cstdio.void");
+
+    v_import("../memory_policy.void");
+
+    v_import("../detail/rbts/node.void");
+    v_import("../detail/rbts/position.void");
+    v_import("../detail/rbts/operations.void");
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+//my_type = struct { char[3]; };
+//my_type = v_std_string_t;
+my_type = int;
+//my_type = char;
+
+
+namespace my
+{
+    using namespace immer.detail.rbts;
+
+    #do (instantiate_default_memory_policy())
+
+    policy = default_memory_policy;
+
+    BL = derive_bits_leaf(my_type, policy, 5);
+
+    #do (instantiate_node(my_type, policy, 5, BL))
+
+
+    node_t = node(my_type, policy, 5, BL);
+
+
+    #do (instantiate_array_for_visitor(my_type))
+
+    visitor = array_for_visitor(my_type);
+
+
+    using namespace position(node_t);
+
+    #do (instantiate_empty_leaf_pos(node_t))
+
+    #do (empty_leaf_pos.instantiate_visit(visitor, size_t, *my_type))
+
+
+
+
+//---------------------------------------------------------------------
+}   //- namespace my
+
+
+{ voidc_verify_jit_module_optimized(true); }
+{ v_debug_print_module(2); }
+
+
+some: (node: *my.node_t) ~> *my_type
+{
+    pos = my.make_empty_leaf_pos(node);
+
+    ns = my.position_args(my.empty_leaf_pos, my.visitor, size_t, *my_type);
+
+    return ns.visit(pos, 7);
+}
+
+
+
+
+
+
+
+
+
+
+

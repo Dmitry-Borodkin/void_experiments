@@ -2,14 +2,15 @@
                                                                │
 Bits                                                           │bits.void
                                                                │
+Visitor                                                        │visitor.void
+                                                               │
 Node                                                           │node.void
                                                                │
 Position                                                       │position.void
                                                                │
+Operations                                                     │operations.void
                                                                │
                                                                │
-                                                               │
-Visitor                                                        │visitor.void
                                                                │
                                                                │
                                                                │

@@ -20,8 +20,8 @@ namespace rbts {
 
 
 //---------------------------------------------------------------------
-#define visitor_base: (DerivedNS: v_static_namespace_t) ~> v_static_namespace_t
-  =  .immer.detail.rbts.v_generic_ns(visitor_base_ns, Q(v_namespace_get_name(DerivedNS)));
+#define visitor_base: [](DerivedNS: v_static_namespace_t) ~> v_static_namespace_t
+  =  v_generic_ns(visitor_base_ns, Q(v_namespace_get_name(DerivedNS)));
 
 #define visitor_args: (NS: v_static_namespace_t, AT: v_static_type_t, RT: v_static_type_t = void) ~> v_static_namespace_t
   =  NS.v_generic_ns(visitor_args_ns, T[AT,RT]);
@@ -38,73 +38,116 @@ namespace rbts {
         base_ns    = visitor_base(DerivedNS);
         derived_ns = DerivedNS;
 
-        #define instantiate_args: (ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_args: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
-            namespace visitor_args(base_ns, ArgsT, RetT) {}
+          #if (v_guard_ns(visitor_args(base_ns, ArgsT, RetT)))
 
             namespace visitor_args(derived_ns, ArgsT, RetT)
             {
                 using namespace visitor_args(base_ns, ArgsT, RetT);
             }
 
+          #endif
+
         'unit_defn_list'}
 
 
-        #define instantiate_visit_node: (ArgsT: v_static_type_t, RetT: v_static_type_t = void)
-        {'unit_defn'
+        #define instantiate_visit_node: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
 
-            alwaysinline
-            visitor_args(base_ns, ArgsT, RetT).visit_node: (ArgsT) ~> RetT
-            {
-                v_assert(false && "Kinda, unreachable...");
-            }
+          namespace visitor_args(base_ns, ArgsT, RetT)
+          {
+            #if (v_guard_ns(visit_node_ns))
 
-        'unit_defn'}
+              alwaysinline
+              visit_node: (ArgsT) ~> RetT
+              {
+                  v_assert(false && "Kinda, unreachable...");
+              }
 
-        #define instantiate_visit_relaxed: (ArgsT: v_static_type_t, RetT: v_static_type_t = void)
-        {'unit_defn'
+            #endif
+          }
 
-            alwaysinline
-            visitor_args(base_ns, ArgsT, RetT).visit_relaxed: (args: ArgsT) ~> RetT
-            {
-                return  visitor_args(derived_ns, ArgsT, RetT).visit_inner(args);
-            }
+        'unit_defn_list'}
 
-        'unit_defn'}
+        #define instantiate_visit_relaxed: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
 
-        #define instantiate_visit_regular: (ArgsT: v_static_type_t, RetT: v_static_type_t = void)
-        {'unit_defn'
+          namespace visitor_args(base_ns, ArgsT, RetT)
+          {
+            #if (v_guard_ns(visit_relaxed_ns))
 
-            alwaysinline
-            visitor_args(base_ns, ArgsT, RetT).visit_regular: (args: ArgsT) ~> RetT
-            {
-                return  visitor_args(derived_ns, ArgsT, RetT).visit_inner(args);
-            }
+              #do (instantiate_args(ArgsT, RetT),
+                   derived_ns.instantiate_visit_inner(ArgsT, RetT))
 
-        'unit_defn'}
+              alwaysinline
+              visit_relaxed: (args: ArgsT) ~> RetT
+              {
+                  return  visitor_args(derived_ns, ArgsT, RetT).visit_inner(args);
+              }
 
-        #define instantiate_visit_inner: (ArgsT: v_static_type_t, RetT: v_static_type_t = void)
-        {'unit_defn'
+            #endif
+          }
 
-            alwaysinline
-            visitor_args(base_ns, ArgsT, RetT).visit_inner: (args: ArgsT) ~> RetT
-            {
-                return  visitor_args(derived_ns, ArgsT, RetT).visit_node(args);
-            }
+        'unit_defn_list'}
 
-        'unit_defn'}
+        #define instantiate_visit_regular: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
 
-        #define instantiate_visit_leaf: (ArgsT: v_static_type_t, RetT: v_static_type_t = void)
-        {'unit_defn'
+            #if (v_guard_ns(visit_regular_ns))
 
-            alwaysinline
-            visitor_args(base_ns, ArgsT, RetT).visit_leaf: (args: ArgsT) ~> RetT
-            {
-                return  visitor_args(derived_ns, ArgsT, RetT).visit_node(args);
-            }
+              #do (instantiate_args(ArgsT, RetT),
+                   derived_ns.instantiate_visit_inner(ArgsT, RetT))
 
-        'unit_defn'}
+              alwaysinline
+              visit_regular: (args: ArgsT) ~> RetT
+              {
+                  return  visitor_args(derived_ns, ArgsT, RetT).visit_inner(args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_visit_inner: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+            #if (v_guard_ns(visit_inner_ns))
+
+              #do (instantiate_args(ArgsT, RetT),
+                   derived_ns.instantiate_visit_node(ArgsT, RetT))
+
+              alwaysinline
+              visit_inner: (args: ArgsT) ~> RetT
+              {
+                  return  visitor_args(derived_ns, ArgsT, RetT).visit_node(args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_visit_leaf: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+            #if (v_guard_ns(visit_leaf_ns))
+
+              #do (instantiate_args(ArgsT, RetT),
+                   derived_ns.instantiate_visit_node(ArgsT, RetT))
+
+              alwaysinline
+              visit_leaf: (args: ArgsT) ~> RetT
+              {
+                  return  visitor_args(derived_ns, ArgsT, RetT).visit_node(args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
     }
 
 'unit_defn_list'}
