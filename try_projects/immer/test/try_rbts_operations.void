@@ -12,8 +12,6 @@
 }
 
 
-{ printf("here\n"); }
-
 //---------------------------------------------------------------------
 { v_import("stack_trace.void"); }
 { voidc_enable_stack_trace(); }

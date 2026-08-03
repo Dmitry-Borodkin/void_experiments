@@ -2830,7 +2830,7 @@ namespace rbts {
                     PT = position_shift(NT, Shift - B).regular_descent_pos;
 
                     ns = position_args(PT, Vis, size_t, RetT);
-                    return  ns.visit(v_typed(PT, {child}), idx);
+                    return  ns.visit({child}, idx);
 
                   #endif
               }
@@ -2913,7 +2913,7 @@ namespace rbts {
               PT = position_shift(NT, BL+B*n).regular_descent_pos;
 
               ns = position_args(PT, Vis, size_t, RetT);
-              return  ns.visit(v_typed(PT, {node}), idx);
+              return  ns.visit({node}, idx);
             }
           'stmt'}
 
@@ -3719,14 +3719,1255 @@ namespace rbts {
 'unit_defn_list'}
 
 
+//---------------------------------------------------------------------
+//- relaxed_pos
+//---------------------------------------------------------------------
+#define instantiate_relaxed_pos: [](NodeT: v_static_type_t)
+{'unit_defn_list'
+
+  namespace position(NodeT)
+  {
+    struct relaxed_pos;
+
+    #if (v_guard_ns(relaxed_pos))
+
+      struct relaxed_pos
+      {
+          node_:    *NodeT;
+          shift_:   shift_t;
+          relaxed_: *relaxedt;
+      };
+
+      relaxed_pos.node_t    = NodeT;
+      relaxed_pos.relaxed_t = NodeT.relaxed_t;
+      relaxed_pos.B         = NodeT.bits;
+      relaxed_pos.BL        = NodeT.bits_leaf;
+
+      alwaysinline
+      (_.count): (pos: relaxed_pos) ~> count_t  =  pos.relaxed_->d.count;
+
+      alwaysinline
+      (_.node): (pos: relaxed_pos) ~> *NodeT  =  pos.node_;
+
+      alwaysinline
+      (_.size): (pos: relaxed_pos) ~> size_t  =  pos.relaxed_->d.sizes[pos.relaxed_->d.count - 1];
+
+      alwaysinline
+      (_.shift): (pos: relaxed_pos) ~> shift_t  =  pos.shift_;
+
+      inlinehint
+      (_.index()): (pos: relaxed_pos, idx: size_t) ~> count_t  =
+      {
+          offset: &count_t := (idx >> pos.shift_ : count_t);
+
+          while (pos.relaxed_->d.sizes[offset] <= idx)  ++offset;
+
+          offset
+      };
+
+      alwaysinline
+      (_.subindex()): (pos: relaxed_pos, idx: size_t) ~> count_t  =  pos.index(idx);
+
+      alwaysinline
+      (_.relaxed): (pos: relaxed_pos) ~> *relaxed_t  =  pos.relaxed_;
+
+      alwaysinline
+      (_.size_before()): (pos: relaxed_pos, offset: count_t) ~> size_t
+      {
+          if (offset)  return  pos.relaxed_->d.sizes[offset - 1];
+          else         return  0;
+      }
+
+      alwaysinline
+      (_.size_sbh()): (pos: relaxed_pos, offset: count_t, size_before_hint: size_t) ~> size_t
+      {
+          v_assert(size_before_hint == pos.size_before(offset));
+          return  pos.relaxed_->d.sizes[offset] - size_before_hint;
+      }
+
+      alwaysinline
+      (_.size()): (pos: relaxed_pos, offset: count_t) ~> size_t
+        =  pos.size_sbh(offset, pos.size_before(offset));
+
+      inlinehint
+      (_.copy_sizes()): (pos: relaxed_pos, offset: count_t, n: count_t, init: size_t, sizes: *size_t) ~> void
+      {
+          e = sizes + n;
+          prev:  &size_t  := pos.size_before(offset);
+          these: &*size_t := pos.relaxed_->d.sizes + offset;
+          sizes: &*size_t := sizes;
+          init:  &size_t  := init;
+          for (; sizes != e; ++sizes, ++these)
+          {
+              this_size = *these;
+              init := *sizes := init + (this_size - prev);
+              v_assert(init);
+              prev := this_size;
+          }
+      }
 
 
+      namespace relaxed_pos
+      {
+        using namespace position(NodeT);
+
+        #define instantiate_each: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT)
+          {
+            #if (v_guard_ns(each_ns))
+
+              #do (instantiate_each_left(relaxed_pos, Vis, ArgsT))
+
+              alwaysinline
+              each: (pos: relaxed_pos, args: ArgsT) ~> void
+              {
+                  each_left(pos, pos.relaxed_->d.count, args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_each_pred: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT, bool)
+          {
+            #if (v_guard_ns(each_pred_ns))
+
+              private NT = node_t;          //- ?
+
+              #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, bool),
+                   instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT, bool),
+                   )
+
+              inlinehint
+              each_pred: (pos: relaxed_pos, args: ArgsT) ~> bool
+              {
+                  p = pos.node_->inner;
+                  n = pos.count;
+                  s: &size_t := 0;
+
+                  if (pos.shift_ == BL)
+                  {
+                      for (i: &count_t := 0; i < n; ++i)
+                      {
+                          ns = position_args(leaf_sub_pos, Vis, ArgsT, bool);
+                          if (!ns.visit(make_leaf_sub_pos(p[i], pos.relaxed_->d.sizes[i] - s), args))  return  false;
+                          s := pos.relaxed_->d.sizes[i];
+                      }
+                  }
+                  else
+                  {
+                      ss = pos.shift_ - B;
+                      for (i: &count_t := 0; i < n; ++i)
+                      {
+                          ns = relaxed_sub_args(NT, Vis, ArgsT, bool);
+                          if (!ns.visit_maybe_relaxed_sub(p[i], ss, pos.relaxed_->d.sizes[i] - s, args))  return  false;
+                          s := pos.relaxed_->d.sizes[i];
+                      }
+                  }
+
+                  return  true;
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_each_pred_i: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT, bool)
+          {
+            #if (v_guard_ns(each_pred_i_ns))
+
+              private NT = node_t;          //- ?
+
+              #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, bool),
+                   instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT, bool),
+                   )
+
+              inlinehint
+              each_pred_i: (pos: relaxed_pos, i: count_t, n: count_t, args: ArgsT) ~> bool
+              {
+                  p = pos.node_->inner;
+                  s: &size_t := undef;
+                  if (i > 0)  s := pos.relaxed_->d.sizes[i - 1];
+                  else        s := 0;
+
+                  if (pos.shift_ == BL)
+                  {
+                      for (i: &count_t := i; i < n; ++i)
+                      {
+                          ns = position_args(leaf_sub_pos, Vis, ArgsT, bool);
+                          if (!ns.visit(make_leaf_sub_pos(p[i], pos.relaxed_->d.sizes[i] - s), args))  return  false;
+                          s := pos.relaxed_->d.sizes[i];
+                      }
+                  }
+                  else
+                  {
+                      ss = pos.shift_ - B;
+                      for (i: &count_t := i; i < n; ++i)
+                      {
+                          ns = relaxed_sub_args(NT, Vis, ArgsT, bool);
+                          if (!ns.visit_maybe_relaxed_sub(p[i], ss, pos.relaxed_->d.sizes[i] - s, args))  return  false;
+                          s := pos.relaxed_->d.sizes[i];
+                      }
+                  }
+
+                  return  true;
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_each_pred_left: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT, bool)
+          {
+            #if (v_guard_ns(each_pred_left_ns))
+
+              private NT = node_t;          //- ?
+
+              #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, bool),
+                   instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT, bool),
+                   )
+
+              inlinehint
+              each_pred_left: (pos: relaxed_pos, n: count_t, args: ArgsT) ~> bool
+              {
+                  p = pos.node_->inner;
+                  s: &size_t := 0;
+
+                  if (pos.shift_ == BL)
+                  {
+                      for (i: &count_t := 0; i < n; ++i)
+                      {
+                          ns = position_args(leaf_sub_pos, Vis, ArgsT, bool);
+                          if (!ns.visit(make_leaf_sub_pos(p[i], pos.relaxed_->d.sizes[i] - s), args))  return  false;
+                          s := pos.relaxed_->d.sizes[i];
+                      }
+                  }
+                  else
+                  {
+                      ss = pos.shift_ - B;
+                      for (i: &count_t := 0; i < n; ++i)
+                      {
+                          ns = relaxed_sub_args(NT, Vis, ArgsT, bool);
+                          if (!ns.visit_maybe_relaxed_sub(p[i], ss, pos.relaxed_->d.sizes[i] - s, args))  return  false;
+                          s := pos.relaxed_->d.sizes[i];
+                      }
+                  }
+
+                  return  true;
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_each_pred_right: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT, bool)
+          {
+            #if (v_guard_ns(each_pred_right_ns))
+
+              private NT = node_t;          //- ?
+
+              #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, bool),
+                   instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT, bool),
+                   )
+
+              inlinehint
+              each_pred_right: (pos: relaxed_pos, start: count_t, args: ArgsT) ~> bool
+              {
+                  v_assert(start > 0);
+                  v_assert(start <= pos.relaxed_->d.count);
+                  s: &size_t := pos.relaxed_->d.sizes[start - 1];
+                  p = pos.node_->inner;
+
+                  if (pos.shift_ == BL)
+                  {
+                      for (i: &count_t := start; i < pos.relaxed_->d.count; ++i)
+                      {
+                          ns = position_args(leaf_sub_pos, Vis, ArgsT, bool);
+                          if (!ns.visit(make_leaf_sub_pos(p[i], pos.relaxed_->d.sizes[i] - s), args))  return  false;
+                          s := pos.relaxed_->d.sizes[i];
+                      }
+                  }
+                  else
+                  {
+                      ss = pos.shift_ - B;
+                      for (i: &count_t := start; i < pos.relaxed_->d.count; ++i)
+                      {
+                          ns = relaxed_sub_args(NT, Vis, ArgsT, bool);
+                          if (!ns.visit_maybe_relaxed_sub(p[i], ss, pos.relaxed_->d.sizes[i] - s, args))  return  false;
+                          s := pos.relaxed_->d.sizes[i];
+                      }
+                  }
+
+                  return  true;
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_each_pred: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT)
+          {
+            #if (v_guard_ns(each_pred_ns))
+
+              private NT = node_t;          //- ?
+
+              #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT),
+                   instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT),
+                   )
+
+              inlinehint
+              each_i: (pos: relaxed_pos, i: count_t, n: count_t, args: ArgsT) ~> void
+              {
+                  p = pos.node_->inner;
+                  s: &size_t := undef;
+                  if (i > 0)  s := pos.relaxed_->d.sizes[i - 1];
+                  else        s := 0;
+
+                  if (pos.shift_ == BL)
+                  {
+                      for (i: &count_t := i; i < n; ++i)
+                      {
+                          ns = position_args(leaf_sub_pos, Vis, ArgsT, bool);
+                          ns.visit(make_leaf_sub_pos(p[i], pos.relaxed_->d.sizes[i] - s), args);
+                          s := pos.relaxed_->d.sizes[i];
+                      }
+                  }
+                  else
+                  {
+                      ss = pos.shift_ - B;
+                      for (i: &count_t := i; i < n; ++i)
+                      {
+                          ns = relaxed_sub_args(NT, Vis, ArgsT, bool);
+                          ns.visit_maybe_relaxed_sub(p[i], ss, pos.relaxed_->d.sizes[i] - s, args);
+                          s := pos.relaxed_->d.sizes[i];
+                      }
+                  }
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_each_sub: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT)
+          {
+            #if (v_guard_ns(each_sub_ns))
+
+              #do (instantiate_each_left(relaxed_pos, Vis, ArgsT))
+
+              alwaysinline
+              each_sub: (pos: relaxed_pos, args: ArgsT) ~> void
+              {
+                  each_left(pos, pos.relaxed_->d.count, args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_each_left_sub: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT)
+          {
+            #if (v_guard_ns(each_left_sub_ns))
+
+              #do (instantiate_each_left(relaxed_pos, Vis, ArgsT))
+
+              alwaysinline
+              each_left_sub: (pos: relaxed_pos, args: ArgsT) ~> void
+              {
+                  each_left(pos, pos.relaxed_->d.count - 1, args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_each_left: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT, bool)
+          {
+            #if (v_guard_ns(each_left_ns))
+
+              private NT = node_t;          //- ?
+
+              #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT),
+                   instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT),
+                   )
+
+              inlinehint
+              each_left: (pos: relaxed_pos, n: count_t, args: ArgsT) ~> void
+              {
+                  p = pos.node_->inner;
+                  s: &size_t := 0;
+
+                  if (pos.shift_ == BL)
+                  {
+                      for (i: &count_t := 0; i < n; ++i)
+                      {
+                          ns = position_args(leaf_sub_pos, Vis, ArgsT);
+                          ns.visit(make_leaf_sub_pos(p[i], pos.relaxed_->d.sizes[i] - s), args);
+                          s := pos.relaxed_->d.sizes[i];
+                          v_assert(s);
+                      }
+                  }
+                  else
+                  {
+                      ss = pos.shift_ - B;
+                      for (i: &count_t := 0; i < n; ++i)
+                      {
+                          ns = relaxed_sub_args(NT, Vis, ArgsT);
+                          ns.visit_maybe_relaxed_sub(p[i], ss, pos.relaxed_->d.sizes[i] - s, args);
+                          s := pos.relaxed_->d.sizes[i];
+                          v_assert(s);
+                      }
+                  }
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_each_right_sub: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT)
+          {
+            #if (v_guard_ns(each_right_sub_ns))
+
+              #do (instantiate_each_right(relaxed_pos, Vis, ArgsT))
+
+              alwaysinline
+              each_right_sub: (pos: relaxed_pos, args: ArgsT) ~> void
+              {
+                  each_right(pos, 1, args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_each_right: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT, bool)
+          {
+            #if (v_guard_ns(each_right_ns))
+
+              private NT = node_t;          //- ?
+
+              #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT),
+                   instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT),
+                   )
+
+              inlinehint
+              each_right: (pos: relaxed_pos, start: count_t, args: ArgsT) ~> void
+              {
+                  v_assert(start > 0);
+                  v_assert(start <= pos.relaxed_->d.count);
+                  s: &size_t := pos.relaxed_->d.sizes[start - 1];
+                  p = pos.node_->inner;
+
+                  if (pos.shift_ == BL)
+                  {
+                      for (i: &count_t := start; i < pos.relaxed_->d.count; ++i)
+                      {
+                          ns = position_args(leaf_sub_pos, Vis, ArgsT);
+                          ns.visit(make_leaf_sub_pos(p[i], pos.relaxed_->d.sizes[i] - s), args);
+                          s := pos.relaxed_->d.sizes[i];
+                          v_assert(s);
+                      }
+                  }
+                  else
+                  {
+                      ss = pos.shift_ - B;
+                      for (i: &count_t := start; i < pos.relaxed_->d.count; ++i)
+                      {
+                          ns = relaxed_sub_args(NT, Vis, ArgsT);
+                          ns.visit_maybe_relaxed_sub(p[i], ss, pos.relaxed_->d.sizes[i] - s, args);
+                          s := pos.relaxed_->d.sizes[i];
+                          v_assert(s);
+                      }
+                  }
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_towards: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(towards_ns))
+
+              #do (instantiate_towards_oh(Vis, ArgsT, RetT))
+
+              alwaysinline
+              towards: (pos: relaxed_pos, idx: size_t, args: ArgsT) ~> RetT
+                =  towards_oh(pos, idx, pos.subindex(idx), args);
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_towards_oh: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(towards_oh_ns))
+
+              #do (instantiate_towards_oh_sbh(Vis, ArgsT, RetT))
+
+              alwaysinline
+              towards_oh: (pos: regular_pos, idx: size_t, offset_hint: count_t, args: ArgsT) ~> RetT
+              {
+                  v_assert(offset_hint == pos.index(idx));
+                  left_size: &size_t := undef;
+                  if (offset_hint)  left_size := pos.relaxed_->d.sizes[offset_hint - 1];
+                  else              left_size := 0;
+
+                  return  towards_oh_sbh(pos, idx, offset_hint, left_size, args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_towards_oh_sbh: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(towards_oh_sbh_ns))
+
+              #do (instantiate_towards_sub_oh_sbh(Vis, ArgsT, RetT))
+
+              alwaysinline
+              towards_oh_sbh: (pos: regular_pos,
+                               idx: size_t,
+                               offset_hint: count_t,
+                               left_size_hint: size_t,
+                               args: ArgsT) ~> RetT
+              {
+                  return  towards_sub_oh_sbh(pos, idx, offset_hint, left_size_hint, args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_towards_sub_oh: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(towards_sub_oh_ns))
+
+              #do (instantiate_towards_sub_oh_sbh(Vis, ArgsT, RetT))
+
+              alwaysinline
+              towards_sub_oh: (pos: regular_pos, idx: size_t, offset_hint: count_t, args: ArgsT) ~> RetT
+              {
+                  v_assert(offset_hint == pos.index(idx));
+                  left_size: &size_t := undef;
+                  if (offset_hint)  left_size := pos.relaxed_->d.sizes[offset_hint - 1];
+                  else              left_size := 0;
+
+                  return  towards_sub_oh_sbh(pos, idx, offset_hint, left_size, args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_towards_sub_oh_sbh: [](Vis: v_static_namespace_t,
+                                                   ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(towards_sub_oh_sbh_ns))
+
+              private NT = node_t;          //- ?
+              private AT = struct { size_t; ArgsT; };
+
+              #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, AT, RetT),
+                   instantiate_visit_maybe_relaxed_sub(NT, Vis, AT, RetT),
+                   )
+
+              inlinehint
+              towards_sub_oh_sbh: (pos: regular_pos,
+                                   idx: size_t,
+                                   offset_hint: count_t,
+                                   left_size_hint: size_t,
+                                   args: ArgsT) ~> RetT
+              {
+                  v_assert(offset_hint == pos.index(idx));
+                  v_assert({ lsh: &size_t := undef;
+                             if (offset_hint)  lsh := pos.relaxed_->d.sizes[offset_hint - 1];
+                             else              lsh := 0;
+                             left_size_hint == lsh });
+
+                  child     = pos.node_->inner[offset_hint];
+                  is_leaf   = pos.shift_ == BL;
+                  next_size = pos.relaxed_->d.sizes[offset_hint] - left_size_hint;
+                  next_idx  = idx - left_size_hint;
+
+                  if (is_leaf)
+                  {
+                      ns = position_args(leaf_sub_pos, Vis, AT, RetT);
+                      return  ns.visit(make_leaf_sub_pos(child, next_size), {next_idx, args});
+                  }
+                  else
+                  {
+                      ns = relaxed_sub_args(NT, Vis, AT, RetT);
+                      return  ns.visit_maybe_relaxed_sub(child, pos.shift_ - B, next_size, {next_idx, args});
+                  }
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_last_oh_csh: [](Vis: v_static_namespace_t,
+                                            ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(last_oh_csh_ns))
+
+              private NT = node_t;          //- ?
+
+              #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, RetT),
+                   instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT, RetT),
+                   )
+
+              inlinehint
+              last_oh_csh: (pos: regular_pos,
+                            offset_hint: count_t,
+                            child_size_hint: size_t,
+                            args: ArgsT) ~> RetT
+              {
+                  v_assert(offset_hint == pos.count - 1);
+                  v_assert(child_size_hint == pos.size(offset_hint));
+                  child   = pos.node_->inner[offset_hint];
+                  is_leaf = pos.shift_ == BL;
+
+                  if (is_leaf)
+                  {
+                      ns = position_args(leaf_sub_pos, Vis, ArgsT, RetT);
+                      return  ns.visit(make_leaf_sub_pos(child, child_size_hint), args);
+                  }
+                  else
+                  {
+                      ns = relaxed_sub_args(NT, Vis, ArgsT, RetT);
+                      return  ns.visit_maybe_relaxed_sub(child, pos.shift_ - B, child_size_hint, args);
+                  }
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_last_sub: [](Vis: v_static_namespace_t,
+                                         ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(last_sub_ns))
+
+              private NT = node_t;          //- ?
+
+              #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, RetT),
+                   instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT, RetT),
+                   )
+
+              inlinehint
+              last_sub: (pos: regular_pos, args: ArgsT) ~> RetT
+              {
+                  offset     = pos.relaxed_->d.count - 1;
+                  child      = pos.node_->inner[offset];
+                  child_size = pos.size(offset);
+                  is_leaf    = pos.shift_ == BL;
+
+                  if (is_leaf)
+                  {
+                      ns = position_args(leaf_sub_pos, Vis, ArgsT, RetT);
+                      return  ns.visit(make_leaf_sub_pos(child, child_size), args);
+                  }
+                  else
+                  {
+                      ns = relaxed_sub_args(NT, Vis, ArgsT, RetT);
+                      return  ns.visit_maybe_relaxed_sub(child, pos.shift_ - B, child_size, args);
+                  }
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_first_sub: [](Vis: v_static_namespace_t,
+                                          ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(first_sub_ns))
+
+              private NT = node_t;          //- ?
+
+              #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, RetT),
+                   instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT, RetT),
+                   )
+
+              inlinehint
+              first_sub: (pos: regular_pos, args: ArgsT) ~> RetT
+              {
+                  child      = pos.node_->inner[0];
+                  child_size = pos.relaxed_->d.sizes[0];
+                  is_leaf    = pos.shift_ == BL;
+                  v_assert(child_size);
+
+                  if (is_leaf)
+                  {
+                      ns = position_args(leaf_sub_pos, Vis, ArgsT, RetT);
+                      return  ns.visit(make_leaf_sub_pos(child, child_size), args);
+                  }
+                  else
+                  {
+                      ns = relaxed_sub_args(NT, Vis, ArgsT, RetT);
+                      return  ns.visit_maybe_relaxed_sub(child, pos.shift_ - B, child_size, args);
+                  }
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_first_sub_leaf: [](Vis: v_static_namespace_t,
+                                               ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(first_sub_leaf_ns))
+
+              private NT = node_t;          //- ?
+
+              #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, RetT))
+
+              inlinehint
+              first_sub_leaf: (pos: regular_pos, args: ArgsT) ~> RetT
+              {
+                  v_assert(pos.shift_ == BL);
+                  child      = pos.node_->inner[0];
+                  child_size = pos.relaxed_->d.sizes[0];
+
+                  ns = position_args(leaf_sub_pos, Vis, ArgsT, RetT);
+                  return  ns.visit(make_leaf_sub_pos(child, child_size), args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_first_sub_inner: [](Vis: v_static_namespace_t,
+                                                ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(first_sub_inner_ns))
+
+              private NT = node_t;          //- ?
+
+              #do (instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT, RetT))
+
+              inlinehint
+              first_sub_inner: (pos: regular_pos, args: ArgsT) ~> RetT
+              {
+                  v_assert(pos.shift_ > BL);
+                  child      = pos.node_->inner[0];
+                  child_size = pos.relaxed_->d.sizes[0];
+
+                  ns = relaxed_sub_args(NT, Vis, ArgsT, RetT);
+                  return  ns.visit_maybe_relaxed_sub(child, pos.shift_ - B, child_size, args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_nth_sub: [](Vis: v_static_namespace_t,
+                                        ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(nth_sub_ns))
+
+              private NT = node_t;          //- ?
+
+              #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, RetT),
+                   instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT, RetT),
+                   )
+
+              inlinehint
+              first_sub: (pos: regular_pos, offset: count_t, args: ArgsT) ~> RetT
+              {
+                  child      = pos.node_->inner[offset];
+                  child_size = pos.size(offset);
+                  is_leaf    = pos.shift_ == BL;
+
+                  if (is_leaf)
+                  {
+                      ns = position_args(leaf_sub_pos, Vis, ArgsT, RetT);
+                      return  ns.visit(make_leaf_sub_pos(child, child_size), args);
+                  }
+                  else
+                  {
+                      ns = relaxed_sub_args(NT, Vis, ArgsT, RetT);
+                      return  ns.visit_maybe_relaxed_sub(child, pos.shift_ - B, child_size, args);
+                  }
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_nth_sub_leaf: [](Vis: v_static_namespace_t,
+                                             ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(nth_sub_leaf_ns))
+
+              private NT = node_t;          //- ?
+
+              #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, RetT))
+
+              inlinehint
+              nth_sub_leaf: (pos: relaxed_pos, offset: count_t, args: ArgsT) ~> RetT
+              {
+                  v_assert(pos.shift_ == BL);
+                  child      = pos.node_->inner[offset];
+                  child_size = pos.size(offset);
+
+                  ns = position_args(leaf_sub_pos, Vis, ArgsT, RetT);
+                  return  ns.visit(make_leaf_sub_pos(child, child_size), args);
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_visit: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(visit_ns))
+
+              #do (Vis.instantiate_visit_relaxed(struct {relaxed_pos; ArgsT;}, RetT))
+
+              alwaysinline
+              visit: (pos: relaxed_pos, args: ArgsT) ~> RetT
+              {
+                  ns = visitor_args(Vis, struct {relaxed_pos; ArgsT;}, RetT);
+                  return  ns.visit_relaxed({pos, args});
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+      }     //- namespace relaxed_pos
 
 
+      alwaysinline
+      make_relaxed_pos: (node: *NodeT, shift: shift_t, relaxed: *NodeT.relaxed_t) ~> relaxed_pos  =
+      {
+          v_assert(node);
+          v_assert(relaxed);
+          v_assert(shift >= NodeT.bits_leaf);
+          {node, shift, relaxed}
+      };
+
+    #endif
+
+  }     //- namespace position(NodeT)
+
+'unit_defn_list'}
 
 
+//---------------------------------------------------------------------
+#define is_relaxed: [](Pos: v_static_type_t) ~> bool
+  =  position(Pos.node_t).relaxed_pos == Pos;
+
+//---------------------------------------------------------------------
+#define instantiate_visit_maybe_relaxed_sub: [](NodeT: v_static_type_t, Vis: v_static_namespace_t,
+                                                ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+{'unit_defn_list'
+
+  namespace relaxed_sub_args(NodeT, Vis, ArgsT, RetT)
+  {
+    #if (v_quard_ns())
+
+      private NT = NodeT;
+
+      #do (instantiate_relaxed_pos(NT),     position(NT).relaxed_pos.instantiate_visit(Vis, ArgsT, RetT),
+           instantiate_regular_sub_pos(NT), position(NT).regular_sub_pos.instantiate_visit(Vis, ArgsT, RetT),
+           )
+
+      linkonce_odr
+      visit_maybe_relaxed_sub: (node: *NodeT, shift: shift_t, size: size_t, args: ArgsT) ~> RetT
+      {
+          v_assert(node);
+          relaxed = node->relaxed;
+
+          using namespace position(NodeT);
+
+          if (relaxed)
+          {
+              v_assert(size == pos.relaxed_->d.sizes[pos.relaxed_->d.count - 1]);
+
+              ns = position_args(relaxed_pos, Vis, ArgsT, RetT);
+              return  ns.visit(make_relaxed_pos(node, shift, relaxed), args);
+          }
+          else
+          {
+              ns = position_args(regular_sub_pos, Vis, ArgsT, RetT);
+              return  ns.visit(make_regular_sub_pos(node, shift, size), args);
+          }
+      }
+
+    #endif
+
+  }     //- namespace relaxed_sub_args(NodeT, Vis, ArgsT, RetT)
+
+'unit_defn_list'}
 
 
+//---------------------------------------------------------------------
+//- relaxed_descent_pos
+//---------------------------------------------------------------------
+#define instantiate_relaxed_descent_pos: [](NodeT: v_static_type_t, Shift: shift_t)
+{'unit_defn_list'
+
+  namespace position_shift(NodeT, Shift)
+  {
+    struct relaxed_descent_pos;
+
+    #if (v_guard_ns(relaxed_descent_pos))
+
+      #assert (Shift > 0  &&  "not leaf...")
+
+      using namespace position(NodeT);
+
+      struct relaxed_descent_pos
+      {
+          node_: *NodeT;
+          relaxed_: *NodeT.relaxed_t;
+      };
+
+      relaxed_descent_pos.node_t    = NodeT;
+      relaxed_descent_pos.relaxed_t = NodeT.relaxed_t;
+      relaxed_descent_pos.B         = NodeT.bits;
+      relaxed_descent_pos.BL        = NodeT.bits_leaf;
+
+      alwaysinline
+      (_.count): (pos: relaxed_descent_pos) ~> count_t  =  pos.relaxed_->d.count;
+
+      alwaysinline
+      (_.node): (pos: relaxed_descent_pos) ~> *NodeT  =  pos.node_;
+
+      alwaysinline
+      (_.shift): (relaxed_descent_pos) ~> shift_t  =  Shift;
+
+      alwaysinline
+      (_.size): (pos: relaxed_descent_pos) ~> size_t  =  pos.relaxed_->d.sizes[pos.relaxed_->d.count - 1];
+
+      inlinehint
+      (_.index()): (pos: relaxed_descent_pos, idx: size_t) ~> count_t
+      {
+          #if (Shift == BL) offset: &count_t := (idx >> BL) & mask(B);
+          #else             offset: &count_t := idx >> Shift;
+          #endif
+
+          while (pos.relaxed_->d.sizes[offset] <= idx)  ++offset;
+          return  offset;
+      }
+
+
+      namespace relaxed_descent_pos
+      {
+        using namespace position(NodeT);
+
+        #define instantiate_descend: [](Vis: v_static_namespace_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_descent_pos, Vis, size_t, RetT)
+          {
+            #if (v_guard_ns(descend_ns))
+
+              private
+              NT = node_type(relaxed_descent_pos);
+
+              #if (Shift == BL)
+
+                #do (instantiate_leaf_descent_pos(NT),
+                     position(NT).leaf_descent_pos.instantiate_visit(Vis, size_t, RetT))
+
+              #else
+
+                #do (instantiate_relaxed_descent_pos(NT, Shift - B),
+                     position_shift(NT, Shift - B).relaxed_descent_pos.instantiate_visit(Vis, size_t, RetT),
+                     instantiate_regular_descent_pos(NT, Shift - B),
+                     position_shift(NT, Shift - B).regular_descent_pos.instantiate_visit(Vis, size_t, RetT),
+                     )
+
+              #endif
+
+              alwaysinline
+              descend: (pos: relaxed_descent_pos, idx: size_t) ~> RetT
+              {
+                  offset = pos.index(idx);
+                  child  = pos.node_->inner[offset];
+
+                  left_size: &size_t := undef;
+                  if (offset)   left_size := pos.relaxed_->d.sizes[offset - 1];
+                  else          left_size := 0;
+
+                  next_idx = idx - left_size;
+
+                  #if (Shift == BL)
+
+                    ns = position_args(leaf_descent_pos, Vis, size_t, RetT);
+                    return  ns.visit({child}, next_idx);
+
+                  #else
+
+                    r = child->relaxed;
+
+                    if (r)
+                    {
+                        PT = position_shift(NT, Shift - B).relaxed_descent_pos;
+
+                        ns = position_args(PT, Vis, size_t, RetT);
+                        return  ns.visit({child, r}, next_idx);
+                    }
+                    else
+                    {
+                        PT = position_shift(NT, Shift - B).regular_descent_pos;
+
+                        ns = position_args(PT, Vis, size_t, RetT);
+                        return  ns.visit({child}, next_idx);
+                    }
+
+                  #endif
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_visit: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace position_args(relaxed_descent_pos, Vis, ArgsT, RetT)
+          {
+            #if (v_guard_ns(visit_ns))
+
+              #do (Vis.instantiate_visit_relaxed(struct {relaxed_descent_pos; ArgsT;}, RetT))
+
+              alwaysinline
+              visit: (pos: relaxed_descent_pos, args: ArgsT) ~> RetT
+              {
+                  ns = visitor_args(Vis, struct {relaxed_descent_pos; ArgsT;}, RetT);
+                  return  ns.visit_relaxed({pos, args});
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+      }     //- namespace relaxed_descent_pos
+
+    #endif
+
+  }     //- namespace position_shift(NodeT, Shift)
+
+'unit_defn_list'}
+
+//---------------------------------------------------------------------
+#define instantiate_visit_maybe_relaxed_descent: [](NodeT: v_static_type_t, Vis: v_static_namespace_t,
+                                                    RetT: v_static_type_t = void)
+{'unit_defn_list'
+
+  namespace relaxed_descent_args(NodeT, Vis, RetT)
+  {
+    #if (v_quard_ns())
+
+      private NT = NodeT;
+      private B  = NT.bits;
+      private BL = NT.bits_leaf;
+
+      private
+      #define instantiate: (n)
+      {'unit_defn_list'
+
+          #do (instantiate_relaxed_descent_pos(NT, BL+B*n),
+               position_shift(NT, BL+B*n).relaxed_descent_pos.instantiate_visit(Vis, size_t, RetT),
+               )
+
+      'unit_defn_list'}
+
+      #do (instantiate(0),
+           instantiate(1),
+           instantiate(2),
+           instantiate(3),
+           instantiate(4),
+           instantiate(5),
+           instantiate_leaf_descent_pos(NT),
+           position(NT).leaf_descent_pos.instantiate_visit(Vis, size_t, RetT),
+           instantiate_visit_regular_descent(NT, Vis, RetT),
+           )
+
+      linkonce_odr
+      visit_maybe_relaxed_descent: (node: *NodeT, shift: shift_t, idx: size_t) ~> RetT
+      {
+          v_assert(node);
+          v_assert(shift >= BL);
+
+          r = node->relaxed;
+
+          if (r)
+          {
+              #define doit: (n: shift_t)
+              {'stmt'
+                {
+                  PT = position_shift(NT, BL+B*n).relaxed_descent_pos;
+
+                  ns = position_args(PT, Vis, size_t, RetT);
+                  return  ns.visit({node, r}, idx);
+                }
+              'stmt'}
+
+              switch(shift)
+              {
+              case BL+B*0:  doit(0);
+              case BL+B*1:  doit(1);
+              case BL+B*2:  doit(2);
+              case BL+B*3:  doit(3);
+              case BL+B*4:  doit(4);
+              case BL+B*5:  doit(5);
+
+              default:      //- IMMER_DESCENT_DEEP...
+                {
+                  node: &*NT := node;
+
+                  for (level: &shift_t := sift; level != endshift(B, BL); level -= B)
+                  {
+                      r = node->relaxed;
+
+                      if (r)
+                      {
+                          node_idx: &size_t := (idx >> level) & mask(B);
+
+                          while (r->d.sizes[node_idx] <= idx)  ++node_idx;
+
+                          if (node_idx)  idx -= r->d.sizes[node_idx - 1];
+
+                          node := node->inner[node_idx];
+                      }
+                      else
+                      {
+                          loop
+                          {
+                              node := node->inner[(idx >> level) & mask(B)];
+
+                              if ((level -= B) == endshift(B, BL))  break;
+                          }
+
+                          using namespace position(NT);
+
+                          ns = position_args(leaf_descent_pos, Vis, size_t, RetT);
+                          return  ns.visit(make_leaf_descent_pos(node), idx);
+                      }
+                  }
+
+                  using namespace position(NT);
+
+                  ns = position_args(leaf_descent_pos, Vis, size_t, RetT);
+                  return  ns.visit(make_leaf_descent_pos(node), idx);
+                }
+              }
+          }
+          else
+          {
+              ns = regular_descent_args(NT, Vis, RetT);
+              return  ns.visit_regular_descent(node, shift, idx);
+          }
+      }
+
+    #endif
+
+  }     //- namespace relaxed_descent_args(NodeT, Vis, RetT)
+
+'unit_defn_list'}
 
 
 //---------------------------------------------------------------------
