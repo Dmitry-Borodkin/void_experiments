@@ -36,15 +36,6 @@ namespace rbts {
 
 
 //---------------------------------------------------------------------
-#define position_shift: [](NodeT: v_static_type_t, Shift: shift_t) ~> v_static_namespace_t
-  =  v_generic_ns(position_shift_ns, T(NodeT), N(Shift));
-
-#define regular_descent_args: [](NT: v_static_type_t, VS: v_static_namespace_t,
-                                 RT: v_static_type_t = void) ~> v_static_namespace_t
-  =  v_generic_ns(regular_descent_args_ns, Q(v_namespace_get_name(VS)), T[NT,RT]);
-
-
-//---------------------------------------------------------------------
 //- empty_regular_pos
 //---------------------------------------------------------------------
 #define instantiate_empty_regular_pos: [](NodeT: v_static_type_t)
@@ -2754,6 +2745,10 @@ namespace rbts {
 
 
 //---------------------------------------------------------------------
+#define position_shift: [](NodeT: v_static_type_t, Shift: shift_t) ~> v_static_namespace_t
+  =  v_generic_ns(position_shift_ns, T(NodeT), N(Shift));
+
+//---------------------------------------------------------------------
 //- regular_descent_pos
 //---------------------------------------------------------------------
 #define instantiate_regular_descent_pos: [](NodeT: v_static_type_t, Shift: shift_t)
@@ -2868,6 +2863,11 @@ namespace rbts {
   }     //- namespace position_shift(NodeT, Shift)
 
 'unit_defn_list'}
+
+//---------------------------------------------------------------------
+#define regular_descent_args: [](NT: v_static_type_t, VS: v_static_namespace_t,
+                                 RT: v_static_type_t = void) ~> v_static_namespace_t
+  =  v_generic_ns(regular_descent_args_ns, Q(v_namespace_get_name(VS)), T[NT,RT]);
 
 //---------------------------------------------------------------------
 #define instantiate_visit_regular_descent: [](NodeT: v_static_type_t, Vis: v_static_namespace_t, RetT: v_static_type_t = void)
@@ -4560,7 +4560,7 @@ namespace rbts {
                    )
 
               inlinehint
-              first_sub: (pos: regular_pos, offset: count_t, args: ArgsT) ~> RetT
+              nth_sub: (pos: regular_pos, offset: count_t, args: ArgsT) ~> RetT
               {
                   child      = pos.node_->inner[offset];
                   child_size = pos.size(offset);
@@ -4654,6 +4654,11 @@ namespace rbts {
 //---------------------------------------------------------------------
 #define is_relaxed: [](Pos: v_static_type_t) ~> bool
   =  position(Pos.node_t).relaxed_pos == Pos;
+
+//---------------------------------------------------------------------
+#define relaxed_sub_args: [](NT: v_static_type_t, VS: v_static_namespace_t,
+                             AT: v_static_type_t, RT: v_static_type_t = void) ~> v_static_namespace_t
+  =  v_generic_ns(relaxed_sub_args_ns, Q(v_namespace_get_name(VS)), T[NT,AT,RT]);
 
 //---------------------------------------------------------------------
 #define instantiate_visit_maybe_relaxed_sub: [](NodeT: v_static_type_t, Vis: v_static_namespace_t,
@@ -4851,6 +4856,11 @@ namespace rbts {
   }     //- namespace position_shift(NodeT, Shift)
 
 'unit_defn_list'}
+
+//---------------------------------------------------------------------
+#define relaxed_descent_args: [](NT: v_static_type_t, VS: v_static_namespace_t,
+                                 RT: v_static_type_t = void) ~> v_static_namespace_t
+  =  v_generic_ns(relaxed_descent_args_ns, Q(v_namespace_get_name(VS)), T[NT,RT]);
 
 //---------------------------------------------------------------------
 #define instantiate_visit_maybe_relaxed_descent: [](NodeT: v_static_type_t, Vis: v_static_namespace_t,

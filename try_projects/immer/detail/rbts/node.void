@@ -38,6 +38,8 @@ namespace rbts {
 
     namespace node(T, MemoryPolicy, B, BL)
     {
+        using namespace .immer.detail.rbts;
+
         bits      = B;
         bits_leaf = BL;
 

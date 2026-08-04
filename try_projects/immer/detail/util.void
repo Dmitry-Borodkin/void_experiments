@@ -335,23 +335,26 @@ namespace detail {
 
 
 //---------------------------------------------------------------------
-#define instantiate_equal: [](T: v_static_type_t)
+#define util2: [](T1: v_static_type_t, T2: v_static_type_t) ~> v_static_namespace_t
+  =  v_generic_ns(util2_ns, T[T1,T2]);
+
+#define instantiate_equal: [](Iter1: v_static_type_t, Iter2: v_static_type_t)
 {'unit_defn_list'
 
-    namespace util(T)
+    namespace util2(Iter1, Iter2)
     {
       #if (v_guard_ns(guard_equal))
 
         inlinehint
-        equal: (p1: *const T, p2: *const T, n: size_t) ~> bool
+        equal: (i1: Iter1, i2: Iter2, n: size_t) ~> bool
         {
-            e1 = p1 + n;
-            p1: &*const T := p1;
-            p2: &*const T := p2;
+            e1 = i1 + n;
+            i1: &Iter1 := i1;
+            i2: &Iter2 := i2;
 
-            for (; p1 < e1; ++p1, ++p2)
+            for (; i1 < e1; ++i1, ++i2)
             {
-                if (!(*p1 == *p2))  return  false;
+                if (!(*i1 == *i2))  return  false;
             }
 
             return  true;

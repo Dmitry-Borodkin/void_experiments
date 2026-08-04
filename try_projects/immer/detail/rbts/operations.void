@@ -1320,18 +1320,303 @@ namespace equals_visitor
         'unit_defn_list'}
     }
 
+    #define equal_chunk_p: [](T: v_static_type_t, Iter: v_static_type_t = *T) ~> v_static_type_t
+      =  v_generic(equal_chunk_p, T(T, Iter));
 
+    #define instantiate_equal_chunk_p: [](T: v_static_type_t, Iter: v_static_type_t = *T)
+    {'unit_defn_list'
 
+      #if (v_guard_ns(equal_chunk_p(T, Iter)))
 
+        #do (v_set_implementation_type(equal_chunk_p(T, Iter), struct {Iter;}))
 
+        inlinehint
+        (_()): (p: *equal_chunk_p(T, Iter), f: *T, e: *T) ~> bool
+        {
+            iter = (*(p: *struct {Iter;}))[0];
 
+            if (f == &*iter)
+            {
+                iter += e - f;
+                return  true;
+            }
 
+            for (f: &*T := f; f < e; ++f, ++iter)
+            {
+                if (!(*f == *iter))  return  false;
+            }
 
+            return  true;
+        }
 
+      #endif
 
+    'unit_defn_list'}
 
+    #define instantiate_args_derived: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+    {'unit_defn_list'
 
+      namespace visitor_args(derived_ns, ArgsT, RetT)
+      {
+        #if (v_guard_ns(args_derived_ns))
+
+          #assert (ArgsT.is_struct)
+          #assert (RetT == bool)
+
+          #if (ArgsT.element_count == 4)
+
+            #assert (ArgsT.element_types[3] == size_t)
+
+            PosL = ArgsT.element_types[0];
+            PosR = ArgsT.element_types[1];
+            Iter = ArgsT.element_types[2];
+
+          #elif (ArgsT.element_count == 2)
+
+            #assert (ArgsT.element_types[1].is_pointer)
+
+            Pos   = ArgsT.element_types[0];
+            NodeT = ArgsT.element_types[1].element_type;
+
+          #else
+
+            #error ("!!!")
+
+          #endif
+
+          #do (instantiate_args(ArgsT, RetT))
+
+        #endif
+      }
+
+    'unit_defn_list'}
+
+    #define instantiate_visit_relaxed: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+    {'unit_defn_list'
+
+      namespace visitor_args(derived_ns, ArgsT, RetT)
+      {
+        #if (v_guard_ns(visit_relaxed_ns))
+
+          #assert (ArgsT.element_count == 4)
+
+          #do (instantiate_args_derived(ArgsT, RetT),
+               PosR.instantiate_nth_sub(this_aux_ns, struct {PosL; Iter; size_t;}, RetT),
+               )
+
+          private T = PosR.node_t.value_t;
+
+          #do (instantiate_equal_chunk_p(T, Iter),
+               PosL.instantiate_nth_sub(for_each_chunk_p_visitor, *equal_chunk_p(T, Iter), RetT),
+               )
+
+          inlinehint
+          visit_relaxed: (args: ArgsT) ~> bool
+          {
+              posl  = args[0];
+              posr  = args[1];
+              first = args[2];
+              idx   = args[3];
+
+              nl = posl.node;
+              nr = posr.node;
+              if (nl == nr)  return  true;
+
+              cl = posl.count;
+              cr = posr.count;
+              v_assert(cr > 0);
+              sbr: &size_t  := 0;
+              i:   &count_t := 0;
+              j:   &count_t := 0;
+
+              for (; i < cl; ++i)
+              {
+                  sbl = posl.size_before(i);
+                  for (; j + 1 < cr && (sbr := posr.size_before(j)) < sbl; ++j) ;
+
+                  if (sbl == sbr)
+                  {
+                      ns = position_args(PosR, this_aux_ns, struct {PosL; Iter; size_t;}, RetT);
+                      if (!ns.nth_sub(posr, j, {posl, first, idx + sbl}))  return  false;
+                  }
+                  else
+                  {
+                      ecp: &struct {Iter;} := {first + (idx + sbl)};        //- ?!?!?
+
+                      ns = position_args(PosL, for_each_chunk_p_visitor, *equal_chunk_p(T, Iter), RetT);
+                      if (!ns.nth_sub(posl, i, (&ecp: *equal_chunk_p(T, Iter))))  return  false;
+                  }
+              }
+
+              return  true;
+          }
+
+        #endif
+      }
+
+    'unit_defn_list'}
+
+    #define instantiate_visit_regular: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+    {'unit_defn_list'
+
+      namespace visitor_args(derived_ns, ArgsT, RetT)
+      {
+        #if (v_guard_ns(visit_regular_ns))
+
+          #do (instantiate_args_derived(ArgsT, RetT))
+
+          #if (ArgsT.element_count == 4)
+
+            #if (is_relaxed(PosR))
+
+              #do (instantiate_visit_relaxed(ArgsT, RetT))
+
+            #else
+
+              #do (instantiate_visit_regular(struct {PosL; *PosR.node_t;}, RetT),
+                   instantiate_visit_regular(struct {PosR; *PosL.node_t;}, RetT),
+                   )
+
+            #endif
+
+          #else   //- (ArgsT.element_count == 2)
+
+            #do (Pos.instantiate_each_pred_zip(derived_ns, *NodeT))
+
+          #endif
+
+          alwaysinline
+          visit_regular: (args: ArgsT) ~> bool
+          {
+            #if (ArgsT.element_count == 4)
+
+              #if (is_relaxed(PosR))
+
+                return  visit_relaxed(args);
+
+              #else
+
+                posl = args[0];
+                posr = args[1];
+
+                if (posl.count >= posr.count)
+                {
+                    ns = visitor_args(struct {PosL; *PosR.node_t;}, RetT);
+                    return ns.visit_regular(posl, posr.node);
+                }
+                else
+                {
+                    ns = visitor_args(struct {PosR; *PosL.node_t;}, RetT);
+                    return ns.visit_regular(posr, posl.node);
+                }
+
+              #endif
+
+            #else   //- (ArgsT.element_count == 2)
+
+              pos   = args[0];
+              other = args[1];
+
+              node = pos.node;
+
+              if (node == other)  return  true;
+
+              ns = position_args(Pos, derived_ns, *NodeT);
+              return  ns.each_pred_zip(pos, other);
+
+            #endif
+          }
+
+        #endif
+      }
+
+    'unit_defn_list'}
+
+    #define instantiate_visit_leaf: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+    {'unit_defn_list'
+
+      namespace visitor_args(derived_ns, ArgsT, RetT)
+      {
+        #if (v_guard_ns(visit_leaf_ns))
+
+          #do (instantiate_args_derived(ArgsT, RetT))
+
+          #if (ArgsT.element_count == 4)
+
+            #do (instantiate_equal(*PosL.node_t.value_t, *PosR.node_t.value_t),
+                 instantiate_equal(*PosL.node_t.value_t, Iter),
+                 )
+
+          #else   //- (ArgsT.element_count == 2)
+
+            #do (instantiate_equal(*Pos.node_t.value_t, *NodeT.value_t))
+
+          #endif
+
+          alwaysinline
+          visit_leaf: (args: ArgsT) ~> bool
+          {
+            #if (ArgsT.element_count == 4)
+
+              posl  = args[0];
+              posr  = args[1];
+              first = args[2];
+              idx   = args[3];
+
+              if (posl.node == posr.node)  return  true;
+
+              cl = posl.count;
+              cr = posr.count;
+              mp: &count_t := undef;
+              if (cl < sr)  mp := cl;
+              else          mp := cr;
+
+              ns1 = util2(*PosL.node_t.value_t, *PosR.node_t.value_t);
+              ns2 = util2(*PosL.node_t.value_t, Iter);
+
+              return  ns1.equal(posl.node->leaf, posr.node->leaf, mp)  &&
+                      ns2.equal(posl.node->leaf + mp, first + (idx + mp), posl.count - mp);
+
+            #else   //- (ArgsT.element_count == 2)
+
+              pos   = args[0];
+              other = args[1];
+
+              node = pos.node;
+
+              if (node == other)  return  true;
+
+              ns = util2(*Pos.node_t.value_t, *NodeT.value_t);
+              return  ns.equal(node->leaf, other->leaf, pos.count);
+
+            #endif
+          }
+
+        #endif
+      }
+
+    'unit_defn_list'}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
