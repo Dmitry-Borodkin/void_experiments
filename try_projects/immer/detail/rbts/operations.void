@@ -1328,12 +1328,12 @@ namespace equals_visitor
 
       #if (v_guard_ns(equal_chunk_p(T, Iter)))
 
-        #do (v_set_implementation_type(equal_chunk_p(T, Iter), struct {Iter;}))
+        #do (v_set_implementation_type(equal_chunk_p(T, Iter), Iter))
 
         inlinehint
         (_()): (p: *equal_chunk_p(T, Iter), f: *T, e: *T) ~> bool
         {
-            iter = (*(p: *struct {Iter;}))[0];
+            iter = *(p: *Iter);
 
             if (f == &*iter)
             {
@@ -1398,15 +1398,14 @@ namespace equals_visitor
       {
         #if (v_guard_ns(visit_relaxed_ns))
 
-          #assert (ArgsT.element_count == 4)
+          #do (instantiate_args_derived(ArgsT, RetT))
 
-          #do (instantiate_args_derived(ArgsT, RetT),
-               PosR.instantiate_nth_sub(this_aux_ns, struct {PosL; Iter; size_t;}, RetT),
-               )
+          #assert (ArgsT.element_count == 4)
 
           private T = PosR.node_t.value_t;
 
-          #do (instantiate_equal_chunk_p(T, Iter),
+          #do (PosR.instantiate_nth_sub(this_aux_ns, struct {PosL; Iter; size_t;}, RetT),
+               instantiate_equal_chunk_p(T, Iter),
                PosL.instantiate_nth_sub(for_each_chunk_p_visitor, *equal_chunk_p(T, Iter), RetT),
                )
 
@@ -1441,7 +1440,7 @@ namespace equals_visitor
                   }
                   else
                   {
-                      ecp: &struct {Iter;} := {first + (idx + sbl)};        //- ?!?!?
+                      ecp: &Iter := first + (idx + sbl);        //- ?!?!?
 
                       ns = position_args(PosL, for_each_chunk_p_visitor, *equal_chunk_p(T, Iter), RetT);
                       if (!ns.nth_sub(posl, i, (&ecp: *equal_chunk_p(T, Iter))))  return  false;

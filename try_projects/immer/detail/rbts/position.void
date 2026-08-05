@@ -19,20 +19,34 @@ namespace .immer {
 namespace detail {
 namespace rbts {
 
-//---------------------------------------------------------------------
-#define bits:      [](Pos: v_static_type_t) ~> bits_t  =  Pos.node_t.bits;
-#define bits_leaf: [](Pos: v_static_type_t) ~> bits_t  =  Pos.node_t.bits_leaf;
-
-#define node_type: (Pos: v_static_type_t) ~> v_static_type_t  =  Pos.node_t;
-
 
 //---------------------------------------------------------------------
 #define position: [](NodeT: v_static_type_t) ~> v_static_namespace_t
   =  v_generic_ns(position_ns, T(NodeT));
 
-#define position_args: (PS: v_static_namespace_t, VS: v_static_namespace_t,
-                        AT: v_static_type_t, RT: v_static_type_t = void) ~> v_static_namespace_t
-  =  PS.v_generic_ns(position_args_ns, Q(v_namespace_get_name(VS)), T[AT,RT]);
+#define position_args: (Pos: v_static_type_t, Vis: v_static_namespace_t,
+                        ArgsT: v_static_type_t, RetT: v_static_type_t = void) ~> v_static_namespace_t
+  =  Pos.v_generic_ns(position_args_ns, Q(v_namespace_get_name(Vis)), T[ArgsT,RetT]);
+
+
+//---------------------------------------------------------------------
+#define instantiate_position: [](NodeT: v_static_type_t)
+{'unit_defn_list'
+
+  namespace position(NodeT)
+  {
+    #if (v_guard_ns())
+
+      node_t = NodeT;
+      B      = NodeT.bits;
+      BL     = NodeT.bits_leaf;
+
+      relaxed_t = NodeT.relaxed_t;
+
+    #endif
+  }
+
+'unit_defn_list'}
 
 
 //---------------------------------------------------------------------
@@ -43,6 +57,8 @@ namespace rbts {
 
   namespace position(NodeT)
   {
+    #do (instantiate_position(NodeT))
+
     struct empty_regular_pos;
 
     #if (v_guard_ns(empty_regular_pos))
@@ -51,8 +67,6 @@ namespace rbts {
       {
           node_: *NodeT;
       };
-
-      empty_regular_pos.node_t = NodeT;
 
       alwaysinline
       (_.count): (empty_regular_pos) ~> count_t  =  0;
@@ -143,6 +157,8 @@ namespace rbts {
 
   namespace position(NodeT)
   {
+    #do (instantiate_position(NodeT))
+
     struct empty_leaf_pos;
 
     #if (v_guard_ns(empty_leaf_pos))
@@ -151,8 +167,6 @@ namespace rbts {
       {
           node_: *NodeT;
       };
-
-      empty_leaf_pos.node_t = NodeT;
 
       alwaysinline
       (_.count): (empty_leaf_pos) ~> count_t  =  0;
@@ -213,6 +227,8 @@ namespace rbts {
 
   namespace position(NodeT)
   {
+    #do (instantiate_position(NodeT))
+
     struct leaf_pos;
 
     #if (v_guard_ns(leaf_pos))
@@ -223,12 +239,8 @@ namespace rbts {
           size_: size_t;
       };
 
-      leaf_pos.node_t = NodeT;
-      leaf_pos.B      = NodeT.bits;
-      leaf_pos.BL     = NodeT.bits_leaf;
-
       alwaysinline
-      (_.index()): (leaf_pos, idx: size_t) ~> count_t  =  (idx & mask(leaf_pos.BL) : count_t);
+      (_.index()): (leaf_pos, idx: size_t) ~> count_t  =  (idx & mask(BL) : count_t);
 
       alwaysinline
       (_.subindex()): (leaf_pos, idx: size_t) ~> count_t  =  (idx: count_t);
@@ -297,6 +309,8 @@ namespace rbts {
 
   namespace position(NodeT)
   {
+    #do (instantiate_position(NodeT))
+
     struct leaf_sub_pos;
 
     #if (v_guard_ns(leaf_sub_pos))
@@ -307,12 +321,8 @@ namespace rbts {
           count_: count_t;
       };
 
-      leaf_sub_pos.node_t = NodeT;
-      leaf_sub_pos.B      = NodeT.bits;
-      leaf_sub_pos.BL     = NodeT.bits_leaf;
-
       alwaysinline
-      (_.index()): (leaf_sub_pos, idx: size_t) ~> count_t  =  (idx & mask(leaf_sub_pos.BL) : count_t);
+      (_.index()): (leaf_sub_pos, idx: size_t) ~> count_t  =  (idx & mask(BL) : count_t);
 
       alwaysinline
       (_.subindex()): (leaf_sub_pos, idx: size_t) ~> count_t  =  (idx: count_t);
@@ -362,7 +372,7 @@ namespace rbts {
       make_leaf_sub_pos: (node: *NodeT, count: count_t) ~> leaf_sub_pos  =
       {
           v_assert(node);
-          v_assert(count <= branches(NodeT.bits_leaf));
+          v_assert(count <= branches(BL));
           {node, count}
       };
 
@@ -381,6 +391,8 @@ namespace rbts {
 
   namespace position(NodeT)
   {
+    #do (instantiate_position(NodeT))
+
     struct leaf_descent_pos;
 
     #if (v_guard_ns(leaf_descent_pos))
@@ -390,12 +402,8 @@ namespace rbts {
           node_: *NodeT;
       };
 
-      leaf_descent_pos.node_t = NodeT;
-      leaf_descent_pos.B      = NodeT.bits;
-      leaf_descent_pos.BL     = NodeT.bits_leaf;
-
       alwaysinline
-      (_.index()): (leaf_descent_pos, idx: size_t) ~> count_t  =  (idx & mask(leaf_descent_pos.BL) : count_t);
+      (_.index()): (leaf_descent_pos, idx: size_t) ~> count_t  =  (idx & mask(BL) : count_t);
 
       alwaysinline
       (_.node): (pos: leaf_descent_pos) ~> *NodeT  =  pos.node_;
@@ -469,6 +477,8 @@ namespace rbts {
 
   namespace position(NodeT)
   {
+    #do (instantiate_position(NodeT))
+
     struct full_leaf_pos;
 
     #if (v_guard_ns(full_leaf_pos))
@@ -478,18 +488,14 @@ namespace rbts {
           node_: *NodeT;
       };
 
-      full_leaf_pos.node_t = NodeT;
-      full_leaf_pos.B      = NodeT.bits;
-      full_leaf_pos.BL     = NodeT.bits_leaf;
-
       alwaysinline
-      (_.index()): (full_leaf_pos, idx: size_t) ~> count_t  =  (idx & mask(full_leaf_pos.BL) : count_t);
+      (_.index()): (full_leaf_pos, idx: size_t) ~> count_t  =  (idx & mask(BL) : count_t);
 
       alwaysinline
       (_.subindex()): (full_leaf_pos, idx: size_t) ~> count_t  =  (idx: count_t);
 
       alwaysinline
-      (_.count): (full_leaf_pos) ~> count_t  =  branches(full_leaf_pos.BL);
+      (_.count): (full_leaf_pos) ~> count_t  =  branches(BL);
 
       alwaysinline
       (_.node): (pos: full_leaf_pos) ~> *NodeT  =  pos.node_;
@@ -498,7 +504,7 @@ namespace rbts {
       (_.shift): (full_leaf_pos) ~> shift_t  =  0;
 
       alwaysinline
-      (_.size): (full_leaf_pos) ~> size_t  =  branches(full_leaf_pos.BL);
+      (_.size): (full_leaf_pos) ~> size_t  =  branches(BL);
 
 
       namespace full_leaf_pos
@@ -551,6 +557,8 @@ namespace rbts {
 
   namespace position(NodeT)
   {
+    #do (instantiate_position(NodeT))
+
     struct regular_pos;
 
     #if (v_guard_ns(regular_pos))
@@ -562,12 +570,8 @@ namespace rbts {
           size_:  size_t;
       };
 
-      regular_pos.node_t = NodeT;
-      regular_pos.B      = NodeT.bits;
-      regular_pos.BL     = NodeT.bits_leaf;
-
       alwaysinline
-      (_.index()): (pos: regular_pos, idx: size_t) ~> count_t  =  ((idx >> pos.shift_) & mask(regular_pos.B) : count_t);
+      (_.index()): (pos: regular_pos, idx: size_t) ~> count_t  =  ((idx >> pos.shift_) & mask(B) : count_t);
 
       alwaysinline
       (_.subindex()): (pos: regular_pos, idx: size_t) ~> count_t  =  (idx >> pos.shift_ : count_t);
@@ -586,7 +590,7 @@ namespace rbts {
 
       alwaysinline
       (_.this_size): (pos: regular_pos) ~> size_t
-        =  ((pos.size_ -1) & ~((-1: size_t) << (pos.shift_ + regular_pos.B))) + 1;
+        =  ((pos.size_ -1) & ~((-1: size_t) << (pos.shift_ + B))) + 1;
 
 
       namespace regular_pos
@@ -884,7 +888,7 @@ namespace rbts {
       make_regular_pos: (node: *NodeT, shift: shift_t, size: size_t) ~> regular_pos  =
       {
           v_assert(node);
-          v_assert(shift >= NodeT.bits_leaf);
+          v_assert(shift >= BL);
           v_assert(size > 0);
           {node, shift, size}
       };
@@ -904,8 +908,7 @@ namespace rbts {
     {
       #if (v_guard_ns(each_regular_ns))
 
-        private
-        NT = node_type(Pos);
+        private NT = node_t;
 
         #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT),
              instantiate_leaf_pos(NT),      position(NT).leaf_pos.instantiate_visit(Vis, ArgsT),
@@ -916,11 +919,6 @@ namespace rbts {
         linkonce_odr
         each_regular: (p: Pos, args: ArgsT) ~> void
         {
-            using namespace position(NT);
-
-            B  = bits(Pos);
-            BL = bits_leaf(Pos);
-
             n: &*NT := p.node->inner;
             last     = p.count - 1;
             e        = n + last;
@@ -964,8 +962,7 @@ namespace rbts {
     {
       #if (v_guard_ns(each_pred_regular_ns))
 
-        private
-        NT = node_type(Pos);
+        private NT = node_t;
 
         #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, bool),
              instantiate_leaf_pos(NT),      position(NT).leaf_pos.instantiate_visit(Vis, ArgsT, bool),
@@ -976,11 +973,6 @@ namespace rbts {
         linkonce_odr
         each_pred_regular: (p: Pos, args: ArgsT) ~> bool
         {
-            using namespace position(NT);
-
-            B  = bits(Pos);
-            BL = bits_leaf(Pos);
-
             n: &*NT := p.node->inner;
             last     = p.count - 1;
             e        = n + last;
@@ -1024,7 +1016,7 @@ namespace rbts {
     {
       #if (v_guard_ns(each_pred_zip_regular_ns))
 
-        private NT = node_type(Pos);
+        private NT = node_t;
         private AT = struct { *NT; ArgsT; };
 
         #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, AT, bool),
@@ -1036,11 +1028,6 @@ namespace rbts {
         linkonce_odr
         each_pred_zip_regular: (p: Pos, other: *NT, args: ArgsT) ~> bool
         {
-            using namespace position(NT);
-
-            B  = bits(Pos);
-            BL = bits_leaf(Pos);
-
             n:  &*NT := p.node->inner;
             n2: &*NT := other->inner;
             last      = p.count - 1;
@@ -1085,8 +1072,7 @@ namespace rbts {
     {
       #if (v_guard_ns(each_pred_i_regular_ns))
 
-        private
-        NT = node_type(Pos);
+        private NT = node_t;
 
         #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, bool),
              instantiate_leaf_pos(NT),      position(NT).leaf_pos.instantiate_visit(Vis, ArgsT, bool),
@@ -1097,11 +1083,6 @@ namespace rbts {
         linkonce_odr
         each_pred_i_regular: (p: Pos, f: count_t, l: count_t, args: ArgsT) ~> bool
         {
-            using namespace position(NT);
-
-            B  = bits(Pos);
-            BL = bits_leaf(Pos);
-
             if (p.shift == BL)
             {
                 if (l > f)
@@ -1183,8 +1164,7 @@ namespace rbts {
     {
       #if (v_guard_ns(each_pred_left_regular_ns))
 
-        private
-        NT = node_type(Pos);
+        private NT = node_t;
 
         #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, bool),
              instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT, bool),
@@ -1193,11 +1173,6 @@ namespace rbts {
         linkonce_odr
         each_pred_left_regular: (p: Pos, last: count_t, args: ArgsT) ~> bool
         {
-            using namespace position(NT);
-
-            B  = bits(Pos);
-            BL = bits_leaf(Pos);
-
             v_assert(last < p.count);
 
             if (p.shift == BL)
@@ -1241,8 +1216,7 @@ namespace rbts {
     {
       #if (v_guard_ns(each_pred_right_regular_ns))
 
-        private
-        NT = node_type(Pos);
+        private NT = node_t;
 
         #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, bool),
              instantiate_leaf_pos(NT),      position(NT).leaf_pos.instantiate_visit(Vis, ArgsT, bool),
@@ -1253,11 +1227,6 @@ namespace rbts {
         linkonce_odr
         each_pred_right_regular: (p: Pos, start: count_t, args: ArgsT) ~> bool
         {
-            using namespace position(NT);
-
-            B  = bits(Pos);
-            BL = bits_leaf(Pos);
-
             if (p.shift == BL)
             {
                 n: &*NT := p.node->inner + start;
@@ -1313,8 +1282,7 @@ namespace rbts {
     {
       #if (v_guard_ns(each_i_regular_ns))
 
-        private
-        NT = node_type(Pos);
+        private NT = node_t;
 
         #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT),
              instantiate_leaf_pos(NT),      position(NT).leaf_pos.instantiate_visit(Vis, ArgsT),
@@ -1325,11 +1293,6 @@ namespace rbts {
         linkonce_odr
         each_i_regular: (p: Pos, f: count_t, l: count_t, args: ArgsT) ~> void
         {
-            using namespace position(NT);
-
-            B  = bits(Pos);
-            BL = bits_leaf(Pos);
-
             if (p.shift == BL)
             {
                 if (l > f)
@@ -1409,8 +1372,7 @@ namespace rbts {
     {
       #if (v_guard_ns(each_left_regular_ns))
 
-        private
-        NT = node_type(Pos);
+        private NT = node_t;
 
         #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT),
              instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT),
@@ -1419,11 +1381,6 @@ namespace rbts {
         linkonce_odr
         each_left_regular: (p: Pos, start: count_t, args: ArgsT) ~> void
         {
-            using namespace position(NT);
-
-            B  = bits(Pos);
-            BL = bits_leaf(Pos);
-
             v_assert(last < p.count);
 
             if (p.shift == BL)
@@ -1465,8 +1422,7 @@ namespace rbts {
     {
       #if (v_guard_ns(each_right_regular_ns))
 
-        private
-        NT = node_type(Pos);
+        private NT = node_t;
 
         #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT),
              instantiate_leaf_pos(NT),      position(NT).leaf_pos.instantiate_visit(Vis, ArgsT),
@@ -1477,11 +1433,6 @@ namespace rbts {
         linkonce_odr
         each_right_regular: (p: Pos, start: count_t, args: ArgsT) ~> void
         {
-            using namespace position(NT);
-
-            B  = bits(Pos);
-            BL = bits_leaf(Pos);
-
             if (p.shift == BL)
             {
                 n: &*NT := p.node->inner + start;
@@ -1536,7 +1487,7 @@ namespace rbts {
     {
       #if (v_guard_ns(towards_oh_ch_regular_ns))
 
-        private NT = node_type(Pos);
+        private NT = node_t;
         private AT = struct { size_t; ArgsT; };
 
         #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, AT, RetT),
@@ -1552,11 +1503,6 @@ namespace rbts {
                                 count_hint: count_t,
                                 args: ArgsT) ~> RetT
         {
-            using namespace position(NT);
-
-            B  = bits(Pos);
-            BL = bits_leaf(Pos);
-
             v_assert(offset_hint == p.index(idx));
             v_assert(count_hint == pcount);
 
@@ -1606,7 +1552,7 @@ namespace rbts {
     {
       #if (v_guard_ns(towards_sub_oh_regular_ns))
 
-        private NT = node_type(Pos);
+        private NT = node_t;
         private AT = struct { size_t; ArgsT; };
 
         #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, AT, RetT),
@@ -1621,11 +1567,6 @@ namespace rbts {
                                  offset_hint: count_t,
                                  args: ArgsT) ~> RetT
         {
-            using namespace position(NT);
-
-            B  = bits(Pos);
-            BL = bits_leaf(Pos);
-
             v_assert(offset_hint == p.index(idx));
 
             is_leaf = p.shift == BL;
@@ -1676,8 +1617,7 @@ namespace rbts {
     {
       #if (v_guard_ns(last_oh_regular_ns))
 
-        private
-        NT = node_type(Pos);
+        private NT = node_t;
 
         #do (instantiate_leaf_pos(NT),    position(NT).leaf_pos.instantiate_visit(Vis, ArgsT, RetT),
              instantiate_regular_pos(NT), position(NT).regular_pos.instantiate_visit(Vis, ArgsT, RetT),
@@ -1686,11 +1626,6 @@ namespace rbts {
         linkonce_odr
         last_oh_regular: (p: Pos, offset_hint: count_t, args: ArgsT) ~> RetT
         {
-            using namespace position(NT);
-
-            B  = bits(Pos);
-            BL = bits_leaf(Pos);
-
             v_assert(offset_hint == p.count - 1);
 
             is_leaf = p.shift == BL;
@@ -1722,6 +1657,8 @@ namespace rbts {
 
   namespace position(NodeT)
   {
+    #do (instantiate_position(NodeT))
+
     struct null_sub_pos;
 
     #if (v_guard_ns(null_sub_pos))
@@ -1730,8 +1667,6 @@ namespace rbts {
 
       alwaysinline
       (_.node): (pos: null_sub_pos) ~> *NodeT  =  0;
-
-      null_sub_pos.node_t = NodeT;
 
       namespace null_sub_pos
       {
@@ -1814,6 +1749,8 @@ namespace rbts {
 
   namespace position(NodeT)
   {
+    #do (instantiate_position(NodeT))
+
     struct singleton_regular_sub_pos;
 
     #if (v_guard_ns(singleton_regular_sub_pos))
@@ -1823,10 +1760,6 @@ namespace rbts {
           leaf_:  *NodeT;
           count_: count_t;
       };
-
-      singleton_regular_sub_pos.node_t = NodeT;
-      singleton_regular_sub_pos.B      = NodeT.bits;
-      singleton_regular_sub_pos.BL     = NodeT.bits_leaf;
 
       alwaysinline
       (_.count): (singleton_regular_sub_pos) ~> count_t  =  1;
@@ -1838,7 +1771,7 @@ namespace rbts {
       (_.size): (pos: singleton_regular_sub_pos) ~> size_t  =  pos.count_;
 
       alwaysinline
-      (_.shift): (singleton_regular_sub_pos) ~> shift_t  =  singleton_regular_sub_pos.BL;
+      (_.shift): (singleton_regular_sub_pos) ~> shift_t  =  BL;
 
       alwaysinline
       (_.index()): (singleton_regular_sub_pos, size_t) ~> count_t  =  0;
@@ -1897,8 +1830,7 @@ namespace rbts {
           {
             #if (v_guard_ns(last_sub_ns))
 
-              private
-              NT = node_type(singleton_regular_sub_pos);
+              private NT = node_t;
 
               #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, RetT))
 
@@ -1962,6 +1894,8 @@ namespace rbts {
 
   namespace position(NodeT)
   {
+    #do (instantiate_position(NodeT))
+
     struct regular_sub_pos;
 
     #if (v_guard_ns(regular_sub_pos))
@@ -1973,12 +1907,8 @@ namespace rbts {
           size_:  size_t;
       };
 
-      regular_sub_pos.node_t = NodeT;
-      regular_sub_pos.B      = NodeT.bits;
-      regular_sub_pos.BL     = NodeT.bits_leaf;
-
       alwaysinline
-      (_.index()): (pos: regular_sub_pos, idx: size_t) ~> count_t  =  ((idx >> pos.shift_) & mask(regular_sub_pos.B) : count_t);
+      (_.index()): (pos: regular_sub_pos, idx: size_t) ~> count_t  =  ((idx >> pos.shift_) & mask(B) : count_t);
 
       alwaysinline
       (_.subindex()): (pos: regular_sub_pos, idx: size_t) ~> count_t  =  (idx >> pos.shift_ : count_t);
@@ -2219,8 +2149,7 @@ namespace rbts {
           {
             #if (v_guard_ns(each_right_sub__ns))
 
-              private
-              NT = node_type(regular_sub_pos);
+              private NT = node_t;
 
               #do (instantiate_full_leaf_pos(NT),   position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT),
                    instantiate_leaf_sub_pos(NT),    position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT),
@@ -2231,8 +2160,6 @@ namespace rbts {
               inlinehint
               each_right_sub_: (pos: regular_sub_pos, i: count_t, args: ArgsT) ~> void
               {
-                  using namespace position(NT);
-
                   last     = pos.count - 1;
                   lsize    = pos.size_ - (last << pos.shift_);
                   n: &*NT := pos.node->inner + i;
@@ -2430,8 +2357,7 @@ namespace rbts {
           {
             #if (v_guard_ns(last_sub_ns))
 
-              private
-              NT = node_type(regular_sub_pos);
+              private NT = node_t;
 
               #do (instantiate_leaf_sub_pos(NT),    position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, RetT),
                    instantiate_regular_sub_pos(NT), position(NT).regular_sub_pos.instantiate_visit(Vis, ArgsT, RetT),
@@ -2440,8 +2366,6 @@ namespace rbts {
               inlinehint
               last_sub: (pos: regular_sub_pos, args: ArgsT) ~> RetT
               {
-                  using namespace position(NT);
-
                   offset  = pos.count - 1;
                   child   = pos.node_->inner[offset];
                   is_leaf = pos.shift_ == BL;
@@ -2471,8 +2395,7 @@ namespace rbts {
           {
             #if (v_guard_ns(first_sub_ns))
 
-              private
-              NT = node_type(regular_sub_pos);
+              private NT = node_t;
 
               #do (instantiate_full_leaf_pos(NT),   position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, RetT),
                    instantiate_full_pos(NT),        position(NT).full_pos.instantiate_visit(Vis, ArgsT, RetT),
@@ -2483,8 +2406,6 @@ namespace rbts {
               inlinehint
               first_sub: (pos: regular_sub_pos, args: ArgsT) ~> RetT
               {
-                  using namespace position(NT);
-
                   is_leaf = pos.shift_ == BL;
                   child   = pos.node_->inner[0];
                   is_full = pos.size_ >= ((1: size_t) << pos.shift_);
@@ -2529,8 +2450,7 @@ namespace rbts {
           {
             #if (v_guard_ns(first_sub_leaf_ns))
 
-              private
-              NT = node_type(regular_sub_pos);
+              private NT = node_t;
 
               #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, RetT),
                    instantiate_leaf_sub_pos(NT),  position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, RetT),
@@ -2539,8 +2459,6 @@ namespace rbts {
               inlinehint
               first_sub_leaf: (pos: regular_sub_pos, args: ArgsT) ~> RetT
               {
-                  using namespace position(NT);
-
                   v_assert(pos.shift_ == BL);
                   child   = pos.node_->inner[0];
                   is_full = pos.size_ >= branches(BL);
@@ -2569,8 +2487,7 @@ namespace rbts {
           {
             #if (v_guard_ns(first_sub_inner_ns))
 
-              private
-              NT = node_type(regular_sub_pos);
+              private NT = node_t;
 
               #do (instantiate_full_pos(NT),        position(NT).full_pos.instantiate_visit(Vis, ArgsT, RetT),
                    instantiate_regular_sub_pos(NT), position(NT).regular_sub_pos.instantiate_visit(Vis, ArgsT, RetT),
@@ -2579,8 +2496,6 @@ namespace rbts {
               inlinehint
               first_sub_inner: (pos: regular_sub_pos, args: ArgsT) ~> RetT
               {
-                  using namespace position(NT);
-
                   v_assert(pos.shift_ == BL);
                   child   = pos.node_->inner[0];
                   is_full = pos.size_ >= branches(BL);
@@ -2609,8 +2524,7 @@ namespace rbts {
           {
             #if (v_guard_ns(nth_sub_ns))
 
-              private
-              NT = node_type(regular_sub_pos);
+              private NT = node_t;
 
               #do (instantiate_full_leaf_pos(NT),   position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, RetT),
                    instantiate_full_pos(NT),        position(NT).full_pos.instantiate_visit(Vis, ArgsT, RetT),
@@ -2621,8 +2535,6 @@ namespace rbts {
               inlinehint
               nth_sub: (pos: regular_sub_pos, idx: count_t, args: ArgsT) ~> RetT
               {
-                  using namespace position(NT);
-
                   v_assert(idx < pos.count_);
                   is_leaf = pos.shift_ == BL;
                   child   = pos.node_->inner[idx];
@@ -2669,8 +2581,7 @@ namespace rbts {
           {
             #if (v_guard_ns(nth_sub_leaf_ns))
 
-              private
-              NT = node_type(regular_sub_pos);
+              private NT = node_t;
 
               #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, RetT),
                    instantiate_leaf_sub_pos(NT),  position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, RetT),
@@ -2679,8 +2590,6 @@ namespace rbts {
               inlinehint
               nth_sub_leaf: (pos: regular_sub_pos, idx: count_t, args: ArgsT) ~> RetT
               {
-                  using namespace position(NT);
-
                   v_assert(pos.shift_ == BL);
                   child   = pos.node_->inner[idx];
                   lsize   = pos.size(idx);
@@ -2731,9 +2640,9 @@ namespace rbts {
       make_regular_sub_pos: (node: *NodeT, shift: shift_t, size: size_t) ~> regular_sub_pos  =
       {
           v_assert(node);
-          v_assert(shift >= NodeT.bits_leaf);
+          v_assert(shift >= BL);
           v_assert(size > 0);
-          v_assert(size <= (branches(NodeT.bits_leaf, size_t) << pos.shift_));
+          v_assert(size <= (branches(BL, size_t) << pos.shift_));
           {node, shift, size}
       };
 
@@ -2756,6 +2665,8 @@ namespace rbts {
 
   namespace position_shift(NodeT, Shift)
   {
+    #do (instantiate_position(NodeT))
+
     struct regular_descent_pos;
 
     #if (v_guard_ns(regular_descent_pos))
@@ -2769,10 +2680,6 @@ namespace rbts {
           node_: *NodeT;
       };
 
-      regular_descent_pos.node_t = NodeT;
-      regular_descent_pos.B      = NodeT.bits;
-      regular_descent_pos.BL     = NodeT.bits_leaf;
-
       alwaysinline
       (_.node): (pos: regular_descent_pos) ~> *NodeT  =  pos.node_;
 
@@ -2780,7 +2687,7 @@ namespace rbts {
       (_.shift): (regular_descent_pos) ~> shift_t  =  Shift;
 
       alwaysinline
-      (_.index()): (regular_descent_pos, idx: size_t) ~> count_t  =  ((idx >> Shift) & mask(regular_descent_pos.BL) : count_t);
+      (_.index()): (regular_descent_pos, idx: size_t) ~> count_t  =  ((idx >> Shift) & mask(BL) : count_t);
 
 
       namespace regular_descent_pos
@@ -2794,8 +2701,7 @@ namespace rbts {
           {
             #if (v_guard_ns(descend_ns))
 
-              private
-              NT = node_type(regular_descent_pos);
+              private NT = node_t;
 
               #if (Shift == BL)
 
@@ -2935,8 +2841,6 @@ namespace rbts {
                   node := node->inner[(idx >> level) & mask(B)];
               }
 
-              using namespace position(NT);
-
               ns = position_args(leaf_descent_pos, Vis, size_t, RetT);
               return  ns.visit(make_leaf_descent_pos(node), idx);
             }
@@ -2958,6 +2862,8 @@ namespace rbts {
 
   namespace position(NodeT)
   {
+    #do (instantiate_position(NodeT))
+
     struct full_pos;
 
     #if (v_guard_ns(full_pos))
@@ -2968,24 +2874,20 @@ namespace rbts {
           shift_: shift_t;
       };
 
-      full_pos.node_t = NodeT;
-      full_pos.B      = NodeT.bits;
-      full_pos.BL     = NodeT.bits_leaf;
-
       alwaysinline
-      (_.count): (full_pos) ~> count_t  =  branches(full_pos.B);
+      (_.count): (full_pos) ~> count_t  =  branches(B);
 
       alwaysinline
       (_.node): (pos: full_pos) ~> *NodeT  =  pos.node_;
 
       alwaysinline
-      (_.size): (pos: full_pos) ~> size_t  =  branches(full_pos.B, size_t) << pos.shift_;
+      (_.size): (pos: full_pos) ~> size_t  =  branches(B, size_t) << pos.shift_;
 
       alwaysinline
       (_.shift): (pos: full_pos) ~> shift_t  =  pos.shift_;
 
       alwaysinline
-      (_.index()): (pos: full_pos, idx: size_t) ~> count_t  =  ((idx >> pos.shift_) & mask(full_pos.B) : count_t);
+      (_.index()): (pos: full_pos, idx: size_t) ~> count_t  =  ((idx >> pos.shift_) & mask(B) : count_t);
 
       alwaysinline
       (_.subindex()): (pos: full_pos, idx: size_t) ~> count_t  =  (idx >> pos.shift_ : count_t);
@@ -3026,8 +2928,7 @@ namespace rbts {
           {
             #if (v_guard_ns(each_ns))
 
-              private
-              NT = node_type(full_pos);
+              private NT = node_t;
 
               #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT),
                    instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT),
@@ -3071,8 +2972,7 @@ namespace rbts {
           {
             #if (v_guard_ns(each_pred_ns))
 
-              private
-              NT = node_type(full_pos);
+              private NT = node_t;
 
               #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, bool),
                    instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT, bool),
@@ -3118,7 +3018,7 @@ namespace rbts {
           {
             #if (v_guard_ns(each_pred_zip_ns))
 
-              private NT = node_type(full_pos);
+              private NT = node_t;
               private AT = struct { *NT; ArgsT; };
 
               #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, AT, bool),
@@ -3166,7 +3066,7 @@ namespace rbts {
           {
             #if (v_guard_ns(each_pred_i_ns))
 
-              private NT = node_type(full_pos);
+              private NT = node_t;
 
               #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, bool),
                    instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT, bool),
@@ -3212,7 +3112,7 @@ namespace rbts {
           {
             #if (v_guard_ns(each_i_ns))
 
-              private NT = node_type(full_pos);
+              private NT = node_t;
 
               #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT),
                    instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT),
@@ -3447,7 +3347,7 @@ namespace rbts {
           {
             #if (v_guard_ns(towards_oh_ns))
 
-              private NT = node_type(full_pos);
+              private NT = node_t;
               private AT = struct { size_t; ArgsT; };
 
               #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, AT, RetT),
@@ -3487,7 +3387,7 @@ namespace rbts {
           {
             #if (v_guard_ns(towards_sub_oh_ns))
 
-              private NT = node_type(full_pos);
+              private NT = node_t;
               private AT = struct { size_t; ArgsT; };
 
               #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, AT, RetT),
@@ -3528,7 +3428,7 @@ namespace rbts {
           {
             #if (v_guard_ns(first_sub_ns))
 
-              private NT = node_type(full_pos);
+              private NT = node_t;
 
               #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, RetT),
                    instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT, RetT),
@@ -3567,7 +3467,7 @@ namespace rbts {
           {
             #if (v_guard_ns(first_sub_leaf_ns))
 
-              private NT = node_type(full_pos);
+              private NT = node_t;
 
               #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, RetT))
 
@@ -3594,7 +3494,7 @@ namespace rbts {
           {
             #if (v_guard_ns(first_sub_inner_ns))
 
-              private NT = node_type(full_pos);
+              private NT = node_t;
 
               #do (instantiate_full_pos(NT), position(NT).full_pos.instantiate_visit(Vis, ArgsT, RetT))
 
@@ -3621,7 +3521,7 @@ namespace rbts {
           {
             #if (v_guard_ns(nth_sub_ns))
 
-              private NT = node_type(full_pos);
+              private NT = node_t;
 
               #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, RetT),
                    instantiate_full_pos(NT),      position(NT).full_pos.instantiate_visit(Vis, ArgsT, RetT),
@@ -3660,7 +3560,7 @@ namespace rbts {
           {
             #if (v_guard_ns(nth_sub_leaf_ns))
 
-              private NT = node_type(full_pos);
+              private NT = node_t;
 
               #do (instantiate_full_leaf_pos(NT), position(NT).full_leaf_pos.instantiate_visit(Vis, ArgsT, RetT))
 
@@ -3708,7 +3608,7 @@ namespace rbts {
       make_full_pos: (node: *NodeT, shift: shift_t) ~> full_pos  =
       {
           v_assert(node);
-          v_assert(shift >= NodeT.bits_leaf);
+          v_assert(shift >= BL);
           {node, shift}
       };
 
@@ -3727,6 +3627,8 @@ namespace rbts {
 
   namespace position(NodeT)
   {
+    #do (instantiate_position(NodeT))
+
     struct relaxed_pos;
 
     #if (v_guard_ns(relaxed_pos))
@@ -3735,13 +3637,8 @@ namespace rbts {
       {
           node_:    *NodeT;
           shift_:   shift_t;
-          relaxed_: *relaxedt;
+          relaxed_: *relaxed_t;
       };
-
-      relaxed_pos.node_t    = NodeT;
-      relaxed_pos.relaxed_t = NodeT.relaxed_t;
-      relaxed_pos.B         = NodeT.bits;
-      relaxed_pos.BL        = NodeT.bits_leaf;
 
       alwaysinline
       (_.count): (pos: relaxed_pos) ~> count_t  =  pos.relaxed_->d.count;
@@ -3838,7 +3735,7 @@ namespace rbts {
           {
             #if (v_guard_ns(each_pred_ns))
 
-              private NT = node_t;          //- ?
+              private NT = node_t;
 
               #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, bool),
                    instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT, bool),
@@ -3886,7 +3783,7 @@ namespace rbts {
           {
             #if (v_guard_ns(each_pred_i_ns))
 
-              private NT = node_t;          //- ?
+              private NT = node_t;
 
               #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, bool),
                    instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT, bool),
@@ -3935,7 +3832,7 @@ namespace rbts {
           {
             #if (v_guard_ns(each_pred_left_ns))
 
-              private NT = node_t;          //- ?
+              private NT = node_t;
 
               #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, bool),
                    instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT, bool),
@@ -3982,7 +3879,7 @@ namespace rbts {
           {
             #if (v_guard_ns(each_pred_right_ns))
 
-              private NT = node_t;          //- ?
+              private NT = node_t;
 
               #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, bool),
                    instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT, bool),
@@ -4031,7 +3928,7 @@ namespace rbts {
           {
             #if (v_guard_ns(each_pred_ns))
 
-              private NT = node_t;          //- ?
+              private NT = node_t;
 
               #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT),
                    instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT),
@@ -4118,7 +4015,7 @@ namespace rbts {
           {
             #if (v_guard_ns(each_left_ns))
 
-              private NT = node_t;          //- ?
+              private NT = node_t;
 
               #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT),
                    instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT),
@@ -4185,7 +4082,7 @@ namespace rbts {
           {
             #if (v_guard_ns(each_right_ns))
 
-              private NT = node_t;          //- ?
+              private NT = node_t;
 
               #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT),
                    instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT),
@@ -4270,7 +4167,8 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_towards_oh_sbh: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_towards_oh_sbh: [](Vis: v_static_namespace_t,
+                                               ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(relaxed_pos, Vis, ArgsT, RetT)
@@ -4294,7 +4192,8 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_towards_sub_oh: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        #define instantiate_towards_sub_oh: [](Vis: v_static_namespace_t,
+                                               ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
           namespace position_args(relaxed_pos, Vis, ArgsT, RetT)
@@ -4327,7 +4226,7 @@ namespace rbts {
           {
             #if (v_guard_ns(towards_sub_oh_sbh_ns))
 
-              private NT = node_t;          //- ?
+              private NT = node_t;
               private AT = struct { size_t; ArgsT; };
 
               #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, AT, RetT),
@@ -4377,7 +4276,7 @@ namespace rbts {
           {
             #if (v_guard_ns(last_oh_csh_ns))
 
-              private NT = node_t;          //- ?
+              private NT = node_t;
 
               #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, RetT),
                    instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT, RetT),
@@ -4419,7 +4318,7 @@ namespace rbts {
           {
             #if (v_guard_ns(last_sub_ns))
 
-              private NT = node_t;          //- ?
+              private NT = node_t;
 
               #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, RetT),
                    instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT, RetT),
@@ -4458,7 +4357,7 @@ namespace rbts {
           {
             #if (v_guard_ns(first_sub_ns))
 
-              private NT = node_t;          //- ?
+              private NT = node_t;
 
               #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, RetT),
                    instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT, RetT),
@@ -4497,7 +4396,7 @@ namespace rbts {
           {
             #if (v_guard_ns(first_sub_leaf_ns))
 
-              private NT = node_t;          //- ?
+              private NT = node_t;
 
               #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, RetT))
 
@@ -4525,7 +4424,7 @@ namespace rbts {
           {
             #if (v_guard_ns(first_sub_inner_ns))
 
-              private NT = node_t;          //- ?
+              private NT = node_t;
 
               #do (instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT, RetT))
 
@@ -4553,7 +4452,7 @@ namespace rbts {
           {
             #if (v_guard_ns(nth_sub_ns))
 
-              private NT = node_t;          //- ?
+              private NT = node_t;
 
               #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, RetT),
                    instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT, RetT),
@@ -4591,7 +4490,7 @@ namespace rbts {
           {
             #if (v_guard_ns(nth_sub_leaf_ns))
 
-              private NT = node_t;          //- ?
+              private NT = node_t;
 
               #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, RetT))
 
@@ -4636,11 +4535,11 @@ namespace rbts {
 
 
       alwaysinline
-      make_relaxed_pos: (node: *NodeT, shift: shift_t, relaxed: *NodeT.relaxed_t) ~> relaxed_pos  =
+      make_relaxed_pos: (node: *NodeT, shift: shift_t, relaxed: *relaxed_t) ~> relaxed_pos  =
       {
           v_assert(node);
           v_assert(relaxed);
-          v_assert(shift >= NodeT.bits_leaf);
+          v_assert(shift >= BL);
           {node, shift, relaxed}
       };
 
@@ -4712,6 +4611,8 @@ namespace rbts {
 
   namespace position_shift(NodeT, Shift)
   {
+    #do (instantiate_position(NodeT))
+
     struct relaxed_descent_pos;
 
     #if (v_guard_ns(relaxed_descent_pos))
@@ -4725,11 +4626,6 @@ namespace rbts {
           node_: *NodeT;
           relaxed_: *NodeT.relaxed_t;
       };
-
-      relaxed_descent_pos.node_t    = NodeT;
-      relaxed_descent_pos.relaxed_t = NodeT.relaxed_t;
-      relaxed_descent_pos.B         = NodeT.bits;
-      relaxed_descent_pos.BL        = NodeT.bits_leaf;
 
       alwaysinline
       (_.count): (pos: relaxed_descent_pos) ~> count_t  =  pos.relaxed_->d.count;
@@ -4766,8 +4662,7 @@ namespace rbts {
           {
             #if (v_guard_ns(descend_ns))
 
-              private
-              NT = node_type(relaxed_descent_pos);
+              private NT = node_t;
 
               #if (Shift == BL)
 

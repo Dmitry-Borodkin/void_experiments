@@ -97,6 +97,8 @@ namespace rbts {
         #define instantiate_visit_regular: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
+          namespace visitor_args(base_ns, ArgsT, RetT)
+          {
             #if (v_guard_ns(visit_regular_ns))
 
               #do (instantiate_args(ArgsT, RetT),
@@ -116,6 +118,8 @@ namespace rbts {
         #define instantiate_visit_inner: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
+          namespace visitor_args(base_ns, ArgsT, RetT)
+          {
             #if (v_guard_ns(visit_inner_ns))
 
               #do (instantiate_args(ArgsT, RetT),
@@ -135,6 +139,8 @@ namespace rbts {
         #define instantiate_visit_leaf: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
         {'unit_defn_list'
 
+          namespace visitor_args(base_ns, ArgsT, RetT)
+          {
             #if (v_guard_ns(visit_leaf_ns))
 
               #do (instantiate_args(ArgsT, RetT),
