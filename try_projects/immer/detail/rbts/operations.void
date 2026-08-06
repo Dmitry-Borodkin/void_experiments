@@ -46,7 +46,7 @@ namespace rbts {
             #if (v_guard_ns(args_derived_ns))
 
               #assert (ArgsT.is_struct  &&  ArgsT.element_count == 2)
-              #assert (ArgsT.element_types[0].node_t.value_t == value_t)
+              #assert (ArgsT.element_types[0].value_t == value_t)
               #assert (ArgsT.element_types[1] == size_t)
               #assert (RetT == *value_t)
 
@@ -138,7 +138,7 @@ namespace rbts {
             #if (v_guard_ns(args_derived_ns))
 
               #assert (ArgsT.is_struct  &&  ArgsT.element_count == 2)
-              #assert (ArgsT.element_types[0].node_t.value_t == value_t)
+              #assert (ArgsT.element_types[0].value_t == value_t)
               #assert (ArgsT.element_types[1] == size_t)
               #assert (RetT == struct { *value_t; size_t; size_t; })
 
@@ -231,7 +231,7 @@ namespace rbts {
             #if (v_guard_ns(args_derived_ns))
 
               #assert (ArgsT.is_struct  &&  ArgsT.element_count == 2)
-              #assert (ArgsT.element_types[0].node_t.value_t == value_t)
+              #assert (ArgsT.element_types[0].value_t == value_t)
               #assert (ArgsT.element_types[1] == size_t)
               #assert (RetT == &const value_t)
 
@@ -1402,7 +1402,7 @@ namespace equals_visitor
 
           #assert (ArgsT.element_count == 4)
 
-          private T = PosR.node_t.value_t;
+          private T = PosR.value_t;
 
           #do (PosR.instantiate_nth_sub(this_aux_ns, struct {PosL; Iter; size_t;}, RetT),
                instantiate_equal_chunk_p(T, Iter),
@@ -1542,13 +1542,13 @@ namespace equals_visitor
 
           #if (ArgsT.element_count == 4)
 
-            #do (instantiate_equal(*PosL.node_t.value_t, *PosR.node_t.value_t),
-                 instantiate_equal(*PosL.node_t.value_t, Iter),
+            #do (instantiate_equal(*PosL.value_t, *PosR.value_t),
+                 instantiate_equal(*PosL.value_t, Iter),
                  )
 
           #else   //- (ArgsT.element_count == 2)
 
-            #do (instantiate_equal(*Pos.node_t.value_t, *NodeT.value_t))
+            #do (instantiate_equal(*Pos.value_t, *NodeT.value_t))
 
           #endif
 
@@ -1570,8 +1570,8 @@ namespace equals_visitor
               if (cl < sr)  mp := cl;
               else          mp := cr;
 
-              ns1 = util2(*PosL.node_t.value_t, *PosR.node_t.value_t);
-              ns2 = util2(*PosL.node_t.value_t, Iter);
+              ns1 = util2(*PosL.value_t, *PosR.value_t);
+              ns2 = util2(*PosL.value_t, Iter);
 
               return  ns1.equal(posl.node->leaf, posr.node->leaf, mp)  &&
                       ns2.equal(posl.node->leaf + mp, first + (idx + mp), posl.count - mp);
@@ -1585,7 +1585,7 @@ namespace equals_visitor
 
               if (node == other)  return  true;
 
-              ns = util2(*Pos.node_t.value_t, *NodeT.value_t);
+              ns = util2(*Pos.value_t, *NodeT.value_t);
               return  ns.equal(node->leaf, other->leaf, pos.count);
 
             #endif

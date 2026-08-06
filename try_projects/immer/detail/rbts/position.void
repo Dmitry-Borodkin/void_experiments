@@ -37,10 +37,10 @@ namespace rbts {
   {
     #if (v_guard_ns())
 
-      node_t = NodeT;
-      B      = NodeT.bits;
-      BL     = NodeT.bits_leaf;
-
+      node_t    = NodeT;
+      B         = NodeT.bits;
+      BL        = NodeT.bits_leaf;
+      value_t   = NodeT.value_t;
       relaxed_t = NodeT.relaxed_t;
 
     #endif

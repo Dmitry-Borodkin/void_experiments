@@ -70,9 +70,8 @@ some: (node: *my.node_t) ~> &const my_type  =
 };
 
 
-
-
-
+{   printf("BL: %d\n", my.BL);
+}
 
 
 
