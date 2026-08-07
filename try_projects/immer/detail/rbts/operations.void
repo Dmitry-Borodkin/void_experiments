@@ -471,14 +471,17 @@ namespace for_each_chunk_left_visitor
       {
         #if (v_guard_ns(args_derived_ns))
 
-          #assert (ArgsT.is_struct  &&  ArgsT.element_count == 3)
-          #assert (ArgsT.element_types[1] == size_t)
+          #assert (ArgsT.is_struct  &&  ArgsT.element_count == 2)
+          #assert (ArgsT.element_types[0].node_t == node_t)
+          #assert (ArgsT.element_types[1].is_struct)
+          #assert (ArgsT.element_types[1].element_count == 2)
+          #assert (ArgsT.element_types[1].element_types[0] == size_t)
           #assert (RetT == void)
 
           #do (instantiate_args(ArgsT, RetT))
 
           Pos = ArgsT.element_types[0];
-          Fn  = ArgsT.element_types[2];
+          Fn  = ArgsT.element_types[1].element_types[1];
 
         #endif
       }
@@ -501,8 +504,8 @@ namespace for_each_chunk_left_visitor
           visit_inner: (args: ArgsT) ~> void
           {
               pos  = args[0];
-              last = args[1];
-              fn   = args[2];
+              last = args[1][0];
+              fn   = args[1][1];
 
               l = pos.index(last);
 
@@ -531,8 +534,8 @@ namespace for_each_chunk_left_visitor
           visit_leaf: (args: ArgsT) ~> void
           {
               pos  = args[0];
-              last = args[1];
-              fn   = args[2];
+              last = args[1][0];
+              fn   = args[1][1];
 
               data = pos.node->leaf;
               l    = pos.index(last);
@@ -560,14 +563,17 @@ namespace for_each_chunk_right_visitor
       {
         #if (v_guard_ns(args_derived_ns))
 
-          #assert (ArgsT.is_struct  &&  ArgsT.element_count == 3)
-          #assert (ArgsT.element_types[1] == size_t)
+          #assert (ArgsT.is_struct  &&  ArgsT.element_count == 2)
+          #assert (ArgsT.element_types[0].node_t == node_t)
+          #assert (ArgsT.element_types[1].is_struct)
+          #assert (ArgsT.element_types[1].element_count == 2)
+          #assert (ArgsT.element_types[1].element_types[0] == size_t)
           #assert (RetT == void)
 
           #do (instantiate_args(ArgsT, RetT))
 
           Pos = ArgsT.element_types[0];
-          Fn  = ArgsT.element_types[2];
+          Fn  = ArgsT.element_types[1].element_types[1];
 
         #endif
       }
@@ -590,8 +596,8 @@ namespace for_each_chunk_right_visitor
           visit_inner: (args: ArgsT) ~> void
           {
               pos   = args[0];
-              first = args[1];
-              fn    = args[2];
+              first = args[1][0];
+              fn    = args[1][1];
 
               f = pos.index(first);
 
@@ -620,8 +626,8 @@ namespace for_each_chunk_right_visitor
           visit_leaf: (args: ArgsT) ~> void
           {
               pos   = args[0];
-              first = args[1];
-              fn    = args[2];
+              first = args[1][0];
+              fn    = args[1][1];
 
               data = pos.node->leaf;
               f    = pos.index(first);
@@ -649,15 +655,18 @@ namespace for_each_chunk_i_visitor
       {
         #if (v_guard_ns(args_derived_ns))
 
-          #assert (ArgsT.is_struct  &&  ArgsT.element_count == 4)
-          #assert (ArgsT.element_types[1] == size_t)
-          #assert (ArgsT.element_types[2] == size_t)
+          #assert (ArgsT.is_struct  &&  ArgsT.element_count == 2)
+          #assert (ArgsT.element_types[0].node_t == node_t)
+          #assert (ArgsT.element_types[1].is_struct)
+          #assert (ArgsT.element_types[1].element_count == 3)
+          #assert (ArgsT.element_types[1].element_types[0] == size_t)
+          #assert (ArgsT.element_types[1].element_types[1] == size_t)
           #assert (RetT == void)
 
           #do (instantiate_args(ArgsT, RetT))
 
           Pos = ArgsT.element_types[0];
-          Fn  = ArgsT.element_types[3];
+          Fn  = ArgsT.element_types[1].element_types[2];
 
         #endif
       }
@@ -682,9 +691,9 @@ namespace for_each_chunk_i_visitor
           visit_relaxed: (args: ArgsT) ~> void
           {
               pos   = args[0];
-              first = args[1];
-              last  = args[2];
-              fn    = args[3];
+              first = args[1][0];
+              last  = args[1][1];
+              fn    = args[1][2];
 
               f = pos.index(first);
               l = pos.index(last - 1);
@@ -734,9 +743,9 @@ namespace for_each_chunk_i_visitor
           visit_regular: (args: ArgsT) ~> void
           {
               pos   = args[0];
-              first = args[1];
-              last  = args[2];
-              fn    = args[3];
+              first = args[1][0];
+              last  = args[1][1];
+              fn    = args[1][2];
 
               if (first < last)
               {
@@ -782,9 +791,9 @@ namespace for_each_chunk_i_visitor
           visit_leaf: (args: ArgsT) ~> void
           {
               pos   = args[0];
-              first = args[1];
-              last  = args[2];
-              fn    = args[3];
+              first = args[1][0];
+              last  = args[1][1];
+              fn    = args[1][2];
 
               data = pos.node->leaf;
 
@@ -817,14 +826,17 @@ namespace for_each_chunk_p_left_visitor
       {
         #if (v_guard_ns(args_derived_ns))
 
-          #assert (ArgsT.is_struct  &&  ArgsT.element_count == 3)
-          #assert (ArgsT.element_types[1] == size_t)
+          #assert (ArgsT.is_struct  &&  ArgsT.element_count == 2)
+          #assert (ArgsT.element_types[0].node_t == node_t)
+          #assert (ArgsT.element_types[1].is_struct)
+          #assert (ArgsT.element_types[1].element_count == 2)
+          #assert (ArgsT.element_types[1].element_types[0] == size_t)
           #assert (RetT == bool)
 
           #do (instantiate_args(ArgsT, RetT))
 
           Pos = ArgsT.element_types[0];
-          Fn  = ArgsT.element_types[2];
+          Fn  = ArgsT.element_types[1].element_types[1];
 
         #endif
       }
@@ -847,8 +859,8 @@ namespace for_each_chunk_p_left_visitor
           visit_inner: (args: ArgsT) ~> bool
           {
               pos  = args[0];
-              last = args[1];
-              fn   = args[2];
+              last = args[1][0];
+              fn   = args[1][1];
 
               l = pos.index(last);
 
@@ -877,8 +889,8 @@ namespace for_each_chunk_p_left_visitor
           visit_leaf: (args: ArgsT) ~> bool
           {
               pos  = args[0];
-              last = args[1];
-              fn   = args[2];
+              last = args[1][0];
+              fn   = args[1][1];
 
               data = pos.node->leaf;
               l    = pos.index(last);
@@ -906,14 +918,17 @@ namespace for_each_chunk_p_right_visitor
       {
         #if (v_guard_ns(args_derived_ns))
 
-          #assert (ArgsT.is_struct  &&  ArgsT.element_count == 3)
-          #assert (ArgsT.element_types[1] == size_t)
+          #assert (ArgsT.is_struct  &&  ArgsT.element_count == 2)
+          #assert (ArgsT.element_types[0].node_t == node_t)
+          #assert (ArgsT.element_types[1].is_struct)
+          #assert (ArgsT.element_types[1].element_count == 2)
+          #assert (ArgsT.element_types[1].element_types[0] == size_t)
           #assert (RetT == bool)
 
           #do (instantiate_args(ArgsT, RetT))
 
           Pos = ArgsT.element_types[0];
-          Fn  = ArgsT.element_types[2];
+          Fn  = ArgsT.element_types[1].element_types[1];
 
         #endif
       }
@@ -936,8 +951,8 @@ namespace for_each_chunk_p_right_visitor
           visit_inner: (args: ArgsT) ~> bool
           {
               pos   = args[0];
-              first = args[1];
-              fn    = args[2];
+              first = args[1][0];
+              fn    = args[1][1];
 
               f = pos.index(first);
 
@@ -966,8 +981,8 @@ namespace for_each_chunk_p_right_visitor
           visit_leaf: (args: ArgsT) ~> bool
           {
               pos   = args[0];
-              first = args[1];
-              fn    = args[2];
+              first = args[1][0];
+              fn    = args[1][1];
 
               data = pos.node->leaf;
               f    = pos.index(first);
@@ -995,15 +1010,19 @@ namespace for_each_chunk_p_i_visitor
       {
         #if (v_guard_ns(args_derived_ns))
 
-          #assert (ArgsT.is_struct  &&  ArgsT.element_count == 4)
-          #assert (ArgsT.element_types[1] == size_t)
+          #assert (ArgsT.is_struct  &&  ArgsT.element_count == 2)
+          #assert (ArgsT.element_types[0].node_t == node_t)
+          #assert (ArgsT.element_types[1].is_struct)
+          #assert (ArgsT.element_types[1].element_count == 3)
+          #assert (ArgsT.element_types[1].element_types[0] == size_t)
+          #assert (ArgsT.element_types[1].element_types[1] == size_t)
           #assert (ArgsT.element_types[2] == size_t)
           #assert (RetT == bool)
 
           #do (instantiate_args(ArgsT, RetT))
 
           Pos = ArgsT.element_types[0];
-          Fn  = ArgsT.element_types[3];
+          Fn  = ArgsT.element_types[1].element_types[2];
 
         #endif
       }
@@ -1028,9 +1047,9 @@ namespace for_each_chunk_p_i_visitor
           visit_relaxed: (args: ArgsT) ~> bool
           {
               pos   = args[0];
-              first = args[1];
-              last  = args[2];
-              fn    = args[3];
+              first = args[1][0];
+              last  = args[1][1];
+              fn    = args[1][2];
 
               if (first < last)
               {
@@ -1085,9 +1104,9 @@ namespace for_each_chunk_p_i_visitor
           visit_regular: (args: ArgsT) ~> bool
           {
               pos   = args[0];
-              first = args[1];
-              last  = args[2];
-              fn    = args[3];
+              first = args[1][0];
+              last  = args[1][1];
+              fn    = args[1][2];
 
               if (first < last)
               {
@@ -1135,9 +1154,9 @@ namespace for_each_chunk_p_i_visitor
           visit_leaf: (args: ArgsT) ~> bool
           {
               pos   = args[0];
-              first = args[1];
-              last  = args[2];
-              fn    = args[3];
+              first = args[1][0];
+              last  = args[1][1];
+              fn    = args[1][2];
 
               data = pos.node->leaf;
 
@@ -1176,16 +1195,19 @@ namespace equals_visitor
           {
             #if (v_guard_ns(args_derived_ns))
 
-              #assert (ArgsT.is_struct  &&  ArgsT.element_count == 5)
-              #assert (ArgsT.element_types[1] == count_t)
-              #assert (ArgsT.element_types[4] == size_t)
+              #assert (ArgsT.is_struct  &&  ArgsT.element_count == 2)
+              #assert (ArgsT.element_types[0].node_t == node_t)
+              #assert (ArgsT.element_types[1].is_struct)
+              #assert (ArgsT.element_types[1].element_count == 4)
+              #assert (ArgsT.element_types[1].element_types[0] == count_t)
+              #assert (ArgsT.element_types[1].element_types[3] == size_t)
               #assert (RetT == bool)
 
               #do (instantiate_args(ArgsT, RetT))
 
               PosR = ArgsT.element_types[0];
-              PosL = ArgsT.element_types[2];
-              Iter = ArgsT.element_types[3];
+              PosL = ArgsT.element_types[1].element_types[1];
+              Iter = ArgsT.element_types[1].element_types[2];
 
             #endif
           }
@@ -1207,10 +1229,10 @@ namespace equals_visitor
               visit_inner: (args: ArgsT) ~> bool
               {
                   posr  = args[0];
-                  i     = args[1];
-                  posl  = args[2];
-                  first = args[3];
-                  idx   = args[4];
+                  i     = args[1][0];
+                  posl  = args[1][1];
+                  first = args[1][2];
+                  idx   = args[1][3];
 
                   ns = position_args(PosL, equals_visitor, struct {PosR; Iter; size_t;}, RetT);
                   return  ns.nth_sub(posl, i, {posr, first, idx});
@@ -1236,10 +1258,10 @@ namespace equals_visitor
               visit_leaf: (args: ArgsT) ~> bool
               {
                   posr  = args[0];
-                  i     = args[1];
-                  posl  = args[2];
-                  first = args[3];
-                  idx   = args[4];
+                  i     = args[1][0];
+                  posl  = args[1][1];
+                  first = args[1][2];
+                  idx   = args[1][3];
 
                   ns = position_args(PosL, equals_visitor, struct {PosR; Iter; size_t;}, RetT);
                   return  ns.nth_sub_leaf(posl, i, {posr, first, idx});
@@ -1262,17 +1284,20 @@ namespace equals_visitor
           {
             #if (v_guard_ns(args_derived_ns))
 
-              #assert (ArgsT.is_struct  &&  ArgsT.element_count == 5)
-              #assert (ArgsT.element_types[2].is_pointer)
-              #assert (ArgsT.element_types[3] == shift_t)
-              #assert (ArgsT.element_types[4] == size_t)
+              #assert (ArgsT.is_struct  &&  ArgsT.element_count == 2)
+              #assert (ArgsT.element_types[0].node_t == node_t)
+              #assert (ArgsT.element_types[1].is_struct)
+              #assert (ArgsT.element_types[1].element_count == 4)
+              #assert (ArgsT.element_types[1].element_types[1].is_pointer)
+              #assert (ArgsT.element_types[1].element_types[2] == shift_t)
+              #assert (ArgsT.element_types[1].element_types[3] == size_t)
               #assert (RetT == bool)
 
               #do (instantiate_args(ArgsT, RetT))
 
               PosR = ArgsT.element_types[0];
-              Iter = ArgsT.element_types[1];
-              Node = ArgsT.element_types[2].element_type;
+              Iter = ArgsT.element_types[1].element_types[0];
+              Node = ArgsT.element_types[1].element_types[1].element_type;
 
             #endif
           }
@@ -1295,10 +1320,10 @@ namespace equals_visitor
               visit_node: (args: ArgsT) ~> bool
               {
                   posr   = args[0];
-                  first  = args[1];
-                  rootl  = args[2];
-                  shiftl = args[3];
-                  sizel  = args[4];
+                  first  = args[1][0];
+                  rootl  = args[1][1];
+                  shiftl = args[1][2];
+                  sizel  = args[1][3];
 
                   v_assert(shiftl <= posr.shift);
 
@@ -1360,27 +1385,25 @@ namespace equals_visitor
       {
         #if (v_guard_ns(args_derived_ns))
 
-          #assert (ArgsT.is_struct)
+          #assert (ArgsT.is_struct  &&  ArgsT.element_count == 2)
+          #assert (ArgsT.element_types[0].node_t == node_t)
           #assert (RetT == bool)
 
-          #if (ArgsT.element_count == 4)
+          #if (ArgsT.element_types[1].is_struct)
 
-            #assert (ArgsT.element_types[3] == size_t)
+            #assert (ArgsT.element_types[1].element_count == 3)
+            #assert (ArgsT.element_types[1].element_types[2] == size_t)
 
             PosL = ArgsT.element_types[0];
-            PosR = ArgsT.element_types[1];
-            Iter = ArgsT.element_types[2];
+            PosR = ArgsT.element_types[1].element_types[0];
+            Iter = ArgsT.element_types[1].element_types[1];
 
-          #elif (ArgsT.element_count == 2)
+          #else     //- Short...
 
             #assert (ArgsT.element_types[1].is_pointer)
 
             Pos   = ArgsT.element_types[0];
             NodeT = ArgsT.element_types[1].element_type;
-
-          #else
-
-            #error ("!!!")
 
           #endif
 
@@ -1400,7 +1423,7 @@ namespace equals_visitor
 
           #do (instantiate_args_derived(ArgsT, RetT))
 
-          #assert (ArgsT.element_count == 4)
+          #assert (ArgsT.element_types[1].is_struct)
 
           private T = PosR.value_t;
 
@@ -1413,9 +1436,9 @@ namespace equals_visitor
           visit_relaxed: (args: ArgsT) ~> bool
           {
               posl  = args[0];
-              posr  = args[1];
-              first = args[2];
-              idx   = args[3];
+              posr  = args[1][0];
+              first = args[1][1];
+              idx   = args[1][2];
 
               nl = posl.node;
               nr = posr.node;
@@ -1464,7 +1487,7 @@ namespace equals_visitor
 
           #do (instantiate_args_derived(ArgsT, RetT))
 
-          #if (ArgsT.element_count == 4)
+          #if (ArgsT.element_types[1].is_struct)
 
             #if (is_relaxed(PosR))
 
@@ -1478,7 +1501,7 @@ namespace equals_visitor
 
             #endif
 
-          #else   //- (ArgsT.element_count == 2)
+          #else     //- Short...
 
             #do (Pos.instantiate_each_pred_zip(derived_ns, *NodeT))
 
@@ -1487,7 +1510,7 @@ namespace equals_visitor
           alwaysinline
           visit_regular: (args: ArgsT) ~> bool
           {
-            #if (ArgsT.element_count == 4)
+            #if (ArgsT.element_types[1].is_struct)
 
               #if (is_relaxed(PosR))
 
@@ -1496,7 +1519,7 @@ namespace equals_visitor
               #else
 
                 posl = args[0];
-                posr = args[1];
+                posr = args[1][0];
 
                 if (posl.count >= posr.count)
                 {
@@ -1511,7 +1534,7 @@ namespace equals_visitor
 
               #endif
 
-            #else   //- (ArgsT.element_count == 2)
+            #else     //- Short...
 
               pos   = args[0];
               other = args[1];
@@ -1540,13 +1563,13 @@ namespace equals_visitor
 
           #do (instantiate_args_derived(ArgsT, RetT))
 
-          #if (ArgsT.element_count == 4)
+          #if (ArgsT.element_types[1].is_struct)
 
             #do (instantiate_equal(*PosL.value_t, *PosR.value_t),
                  instantiate_equal(*PosL.value_t, Iter),
                  )
 
-          #else   //- (ArgsT.element_count == 2)
+          #else     //- Short...
 
             #do (instantiate_equal(*Pos.value_t, *NodeT.value_t))
 
@@ -1555,12 +1578,12 @@ namespace equals_visitor
           alwaysinline
           visit_leaf: (args: ArgsT) ~> bool
           {
-            #if (ArgsT.element_count == 4)
+            #if (ArgsT.element_types[1].is_struct)
 
               posl  = args[0];
-              posr  = args[1];
-              first = args[2];
-              idx   = args[3];
+              posr  = args[1][0];
+              first = args[1][1];
+              idx   = args[1][2];
 
               if (posl.node == posr.node)  return  true;
 
@@ -1576,7 +1599,7 @@ namespace equals_visitor
               return  ns1.equal(posl.node->leaf, posr.node->leaf, mp)  &&
                       ns2.equal(posl.node->leaf + mp, first + (idx + mp), posl.count - mp);
 
-            #else   //- (ArgsT.element_count == 2)
+            #else     //- Short...
 
               pos   = args[0];
               other = args[1];
@@ -1598,13 +1621,168 @@ namespace equals_visitor
 }
 
 
+//---------------------------------------------------------------------
+//- update_visitor
+//---------------------------------------------------------------------
+#define update_visitor: [](NodeT: v_static_type_t) ~> v_static_namespace_t
+  =  v_generic_ns(update_visitor_ns, T(NodeT));
 
+#define instantiate_update_visitor: [](NodeT: v_static_type_t)
+{'unit_defn_list'
 
+    namespace update_visitor(NodeT)
+    {
+      #if (v_guard_ns())
 
+        node_t  = NodeT;
+        value_t = NodeT.value_t;
 
+        #do (instantiate_visitor_base(update_visitor(NodeT)))
 
+        #define instantiate_args_derived: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
 
+          namespace visitor_args(derived_ns, ArgsT, RetT)
+          {
+            #if (v_guard_ns(args_derived_ns))
 
+              #assert (ArgsT.is_struct  &&  ArgsT.element_count == 2)
+              #assert (ArgsT.element_types[0].node_t == node_t)
+              #assert (ArgsT.element_types[1].is_struct)
+              #assert (ArgsT.element_types[1].element_count == 2)
+              #assert (ArgsT.element_types[1].element_types[0] == size_t)
+              #assert (RetT == *node_t)
+
+              #do (instantiate_args(ArgsT, RetT))
+
+              Pos = ArgsT.element_types[0];
+              Fn  = ArgsT.element_types[1].element_types[1];
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_visit_relaxed: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace visitor_args(derived_ns, ArgsT, RetT)
+          {
+            #if (v_guard_ns(visit_relaxed_ns))
+
+              #do (instantiate_args_derived(ArgsT, RetT),
+                   Pos.instantiate_towards_oh(derived_ns, Fn),
+                   )
+
+              inlinehint
+              visit_relaxed: (args: ArgsT) ~> RetT
+              {
+                  pos = args[0];
+                  idx = args[1][0];
+                  fn  = args[1][1];
+
+                  offset = pos.index(idx);
+                  count  = pos.count;
+                  node   = node_t.make_inner_sr_n(count, pos.relaxed);
+
+                  ns = position_args(Pos, derived_ns, Fn);
+                  child = ns.towards_oh(pos, idx, offset, fn);
+
+                  node_t.do_copy_inner_replace_sr(
+                      node, pos.node, count, offset, child);
+
+                  return  node;
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_visit_regular: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace visitor_args(derived_ns, ArgsT, RetT)
+          {
+            #if (v_guard_ns(visit_regular_ns))
+
+              #do (instantiate_args_derived(ArgsT, RetT),
+                   Pos.instantiate_towards_oh_ch(derived_ns, Fn),
+                   )
+
+              inlinehint
+              visit_regular: (args: ArgsT) ~> RetT
+              {
+                  pos = args[0];
+                  idx = args[1][0];
+                  fn  = args[1][1];
+
+                  offset = pos.index(idx);
+                  count  = pos.count;
+                  node   = node_t.make_inner_n(count);
+
+                  ns = position_args(Pos, derived_ns, Fn);
+                  child = ns.towards_oh_ch(pos, idx, offset, count, fn);
+
+                  node_t.do_copy_inner_replace(
+                      node, pos.node, count, offset, child);
+
+                  return  node;
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_visit_leaf: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace visitor_args(derived_ns, ArgsT, RetT)
+          {
+            #if (v_guard_ns(visit_leaf_ns))
+
+              #do (instantiate_args_derived(ArgsT, RetT),
+                   instantiate_conditional_initialize(value_t),
+                   instantiate_conditional_copy(value_t),
+                   )
+
+              inlinehint
+              visit_leaf: (args: ArgsT) ~> RetT
+              {
+                  pos = args[0];
+                  idx = args[1][0];
+                  fn  = args[1][1];
+
+                  offset = pos.index(idx);
+                  count  = pos.count;
+                  node   = node_t.make_leaf_n(count);
+
+                  dst = node->leaf;
+                  src = pos.node->leaf;
+
+                  using namespace util(value_t);
+
+                  conditional_initialize(dst, count);
+                  conditional_copy(dst, src, offset);
+
+                  dst[offset] := fn(src[offset]);           //- ...
+
+                  off1 = offset + 1;
+                  conditional_copy(dst + off1, src + off1, count - off1);
+
+                  return  node;
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+      #endif
+    }
+
+'unit_defn_list'}
 
 
 
