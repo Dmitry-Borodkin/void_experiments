@@ -191,6 +191,15 @@ namespace rbts {
         }
 
         inlinehint
+        make_inner_e: () ~> *node_t
+        {
+            m = heap.allocate(max_sizeof_inner);
+            p = (m: *node_t);  v_initialize(p);
+            p->impl.d.data.inner.relaxed := 0;
+            return  p;
+        }
+
+        inlinehint
         make_inner_r_n: (n: count_t) ~> *node_t
         {
             v_assert(n <= branches(B));
@@ -218,8 +227,44 @@ namespace rbts {
 
           #else
 
-            p = (heap.allocate(sizeof_inner_r_n(n)) : *node_t);     v_initialize(p);
+            p = (heap.allocate(sizeof_inner_r_n(n)) : *node_t);  v_initialize(p);
             v_assert(r->d.count >= n);
+            r->refs.inc;
+            p->impl.d.data.inner.relaxed := r;
+
+            return  p;
+
+          #endif
+        }
+
+        inlinehint
+        make_inner_r_e: () ~> *node_t
+        {
+            mp = heap.allocate(max_sizeof_inner_r);
+
+            #if (embed_relaxed) mr = (mp: *char) + max_sizeof_inner;
+            #else               mr = heap.allocate(max_sizeof_relaxed);
+            #endif
+
+            p = (mp: *node_t);      v_initialize(p);
+            r = (mr: *relaxed_t);   v_initialize(r);
+
+            r->d.count := 0;
+            p->impl.d.data.inner.relaxed := r;
+
+            return  p;
+        }
+
+        inlinehint
+        make_inner_sr_e: (r: *relaxed_t) ~> *node_t
+        {
+          #if (embed_relaxed)
+
+            return  make_inner_r_e();
+
+          #else
+
+            p = (heap.allocate(max_sizeof_inner_r) : *node_t);  v_initialize(p);
             r->refs.inc;
             p->impl.d.data.inner.relaxed := r;
 
@@ -243,6 +288,13 @@ namespace rbts {
             v_assert(n <= branches(BL));
             m = heap.allocate(sizeof_leaf_n(n));
             return  make_leaf_n_into(m, sizeof_leaf_n(n), n);
+        }
+
+        inlinehint
+        make_leaf_e: () ~> *node_t
+        {
+            p = (heap.allocate(max_sizeof_leaf) : *node_t);  v_initialize(p);
+            return  p;
         }
 
         inlinehint
@@ -365,6 +417,14 @@ namespace rbts {
         }
 
         inlinehint
+        make_leaf_e1: (x: &T) ~> *node_t
+        {
+            p = make_leaf_e();
+            util(T).uninitialized_copy(p->leaf, &x, 1);
+            return  p;
+        }
+
+        inlinehint
         make_path: (shift: shift_t, node: *node_t) ~> *node_t
         {
             if (shift == endshift(B, BL))
@@ -376,6 +436,23 @@ namespace rbts {
                 n = make_inner_n(1);
 
                 n->inner[0] := make_path(shift - B, node);
+
+                return  n;
+            }
+        }
+
+        inlinehint
+        make_path_e: (shift: shift_t, node: *node_t) ~> *node_t
+        {
+            if (shift == endshift(B, BL))
+            {
+                return  node;
+            }
+            else
+            {
+                n = make_inner_e();
+
+                n->inner[0] := make_path_e(shift - B, node);
 
                 return  n;
             }
@@ -432,6 +509,12 @@ namespace rbts {
         {
             v_assert(allocn >= n);
             return  do_copy_inner(make_inner_n(allocn), src, n);
+        }
+
+        inlinehint
+        copy_inner_e: (src: *node_t, n: count_t) ~> *node_t
+        {
+            return  do_copy_inner(make_inner_e(), src, n);
         }
 
         inlinehint
@@ -512,12 +595,33 @@ namespace rbts {
         }
 
         inlinehint
+        copy_inner_r_e: (src: *node_t, n: count_t) ~> *node_t
+        {
+            return  do_copy_inner_r(make_inner_r_e(), src, n);
+        }
+
+        inlinehint
+        copy_inner_sr_e: (src: *node_t, n: count_t) ~> *node_t
+        {
+            return  do_copy_inner_sr(make_inner_sr_e(src->relaxed), src, n);
+        }
+
+        inlinehint
         copy_leaf: (src: *node_t, n: count_t) ~> *node_t
         {
             dst = make_leaf_n(n);
             util(T).uninitialized_copy(dst->leaf, src->leaf, n);
             return  dst;
         }
+
+        inlinehint
+        copy_leaf_e: (src: *node_t, n: count_t) ~> *node_t
+        {
+            dst = make_leaf_e();
+            util(T).uninitialized_copy(dst->leaf, src->leaf, n);
+            return  dst;
+        }
+
 
         inlinehint
         copy_leaf_n: (allocn: count_t, src: *node_t, n: count_t) ~> *node_t
@@ -534,6 +638,24 @@ namespace rbts {
             dst = make_leaf_n(n1 + n2);
             util(T).uninitialized_copy(dst->leaf,      src1->leaf, n1);
             util(T).uninitialized_copy(dst->leaf + n1, src2->leaf, n2);
+            return  dst;
+        }
+
+        inlinehint
+        copy_leaf_e2: (src1: *node_t, n1: count_t, src2: *node_t, n2: count_t) ~> *node_t
+        {
+            dst = make_leaf_e();
+            util(T).uninitialized_copy(dst->leaf,      src1->leaf, n1);
+            util(T).uninitialized_copy(dst->leaf + n1, src2->leaf, n2);
+            return  dst;
+        }
+
+        inlinehint
+        copy_leaf_e_last: (src: *node_t, idx: count_t, last: count_t) ~> *node_t
+        {
+            n = last - idx;
+            dst = make_leaf_e();
+            util(T).uninitialized_copy(dst->leaf, src->leaf + idx, n);
             return  dst;
         }
 
@@ -635,6 +757,12 @@ namespace rbts {
             }
 
         #endif
+    }
+
+    inlinehint
+    (_.ensure_mutable_relaxed_e): (self: &node_t) ~> *node_t.relaxed_t
+    {
+        return  self.ensure_mutable_relaxed;        //- !?!
     }
 
     inlinehint

@@ -1671,7 +1671,7 @@ namespace equals_visitor
             #if (v_guard_ns(visit_relaxed_ns))
 
               #do (instantiate_args_derived(ArgsT, RetT),
-                   Pos.instantiate_towards_oh(derived_ns, Fn),
+                   Pos.instantiate_towards_oh(derived_ns, Fn, RetT),
                    )
 
               inlinehint
@@ -1685,7 +1685,7 @@ namespace equals_visitor
                   count  = pos.count;
                   node   = node_t.make_inner_sr_n(count, pos.relaxed);
 
-                  ns = position_args(Pos, derived_ns, Fn);
+                  ns = position_args(Pos, derived_ns, Fn, RetT);
                   child = ns.towards_oh(pos, idx, offset, fn);
 
                   node_t.do_copy_inner_replace_sr(
@@ -1707,7 +1707,7 @@ namespace equals_visitor
             #if (v_guard_ns(visit_regular_ns))
 
               #do (instantiate_args_derived(ArgsT, RetT),
-                   Pos.instantiate_towards_oh_ch(derived_ns, Fn),
+                   Pos.instantiate_towards_oh_ch(derived_ns, Fn, RetT),
                    )
 
               inlinehint
@@ -1721,7 +1721,7 @@ namespace equals_visitor
                   count  = pos.count;
                   node   = node_t.make_inner_n(count);
 
-                  ns = position_args(Pos, derived_ns, Fn);
+                  ns = position_args(Pos, derived_ns, Fn, RetT);
                   child = ns.towards_oh_ch(pos, idx, offset, count, fn);
 
                   node_t.do_copy_inner_replace(
@@ -1785,13 +1785,419 @@ namespace equals_visitor
 'unit_defn_list'}
 
 
+//---------------------------------------------------------------------
+//- dec_visitor
+//---------------------------------------------------------------------
+namespace dec_visitor
+{
+    #do (instantiate_visitor_base(dec_visitor))
+
+    #define instantiate_args_derived: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+    {'unit_defn_list'
+
+      namespace visitor_args(derived_ns, ArgsT, RetT)
+      {
+        #if (v_guard_ns(args_derived_ns))
+
+          #assert (RetT == void)
+
+          #do (instantiate_args(ArgsT, RetT))
+
+          Pos    = ArgsT;
+          node_t = ArgsT.node_t;
+
+        #endif
+      }
+
+    'unit_defn_list'}
+
+    #define instantiate_visit_relaxed: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+    {'unit_defn_list'
+
+      namespace visitor_args(derived_ns, ArgsT, RetT)
+      {
+        #if (v_guard_ns(visit_relaxed_ns))
+
+          #do (instantiate_args_derived(ArgsT, RetT),
+               Pos.instantiate_each(derived_ns, struct {}),
+               )
+
+          alwaysinline
+          visit_relaxed: (pos: Pos) ~> void
+          {
+              node = pos.node;
+
+              if (node.dec)
+              {
+                  ns = position_args(Pos, derived_ns, struct {});
+                  ns.each(pos, {});
+
+                  node_t.delete_inner_r(node, pos.count);
+              }
+          }
+
+        #endif
+      }
+
+    'unit_defn_list'}
+
+    #define instantiate_visit_regular: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+    {'unit_defn_list'
+
+      namespace visitor_args(derived_ns, ArgsT, RetT)
+      {
+        #if (v_guard_ns(visit_regular_ns))
+
+          #do (instantiate_args_derived(ArgsT, RetT),
+               Pos.instantiate_each(derived_ns, struct {}),
+               )
+
+          alwaysinline
+          visit_regular: (pos: Pos) ~> void
+          {
+              node = pos.node;
+
+              if (node.dec)
+              {
+                  ns = position_args(Pos, derived_ns, struct {});
+                  ns.each(pos, {});
+
+                  node_t.delete_inner(node, pos.count);
+              }
+          }
+
+        #endif
+      }
+
+    'unit_defn_list'}
+
+    #define instantiate_visit_leaf: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+    {'unit_defn_list'
+
+      namespace visitor_args(derived_ns, ArgsT, RetT)
+      {
+        #if (v_guard_ns(visit_leaf_ns))
+
+          #do (instantiate_args_derived(ArgsT, RetT))
+
+          alwaysinline
+          visit_leaf: (pos: Pos) ~> void
+          {
+              node = pos.node;
+
+              if (node.dec)
+              {
+                  node_t.delete_leaf(node, pos.count);
+              }
+          }
+
+        #endif
+      }
+
+    'unit_defn_list'}
+}
 
 
+//---------------------------------------------------------------------
+#define dec_args: [](NodeT: v_static_type_t) ~> v_static_namespace_t
+  =  v_generic_ns(dec_args_ns, T(NodeT));
+
+#define instantiate_dec_leaf: [](NodeT: v_static_type_t)
+{'unit_defn_list'
+
+  namespace dec_args(NodeT)
+  {
+    #if (v_guard_ns(dec_leaf_ns))
+
+      #do (instantiate_leaf_sub_pos(NodeT),
+           position(NodeT).leaf_sub_pos.instantiate_visit(dec_visitor, struct {}),
+           )
+
+      linkonce_odr
+      dec_leaf: (node: NodeT, n: count_t) ~> void
+      {
+          ns = position_args(leaf_sub_pos, dec_visitor, struct {});
+          ns.visit(make_leaf_sub_pos(node, n), {});
+      }
+
+    #endif
+  }
+
+'unit_defn_list'}
+
+#define instantiate_dec_inner: [](NodeT: v_static_type_t)
+{'unit_defn_list'
+
+  namespace dec_args(NodeT)
+  {
+    #if (v_guard_ns(dec_inner_ns))
+
+     #do (instantiate_visit_maybe_relaxed_sub(NodeT, dec_visitor, struct {}))
+
+      linkonce_odr
+      dec_inner: (node: NodeT, shift: shift_t, size: size_t) ~> void
+      {
+          ns = relaxed_sub_args(NodeT, dec_visitor, struct {});
+          ns.visit_maybe_relaxed_sub(node, shift, size, {});
+      }
+
+    #endif
+  }
+
+'unit_defn_list'}
+
+#define instantiate_dec_relaxed: [](NodeT: v_static_type_t)
+{'unit_defn_list'
+
+  namespace dec_args(NodeT)
+  {
+    #if (v_guard_ns(dec_relaxed_ns))
+
+      #do (instantiate_relaxed_pos(NodeT),
+           position(NodeT).relaxed_pos.instantiate_visit(dec_visitor, struct {}),
+           )
+
+      linkonce_odr
+      dec_relaxed: (node: NodeT, shift: shift_t) ~> void
+      {
+          ns = position_args(relaxed_pos, dec_visitor, struct {});
+          ns.visit(make_relaxed_pos(node, shift, node->relaxed), {});
+      }
+
+    #endif
+  }
+
+'unit_defn_list'}
+
+#define instantiate_dec_regular: [](NodeT: v_static_type_t)
+{'unit_defn_list'
+
+  namespace dec_args(NodeT)
+  {
+    #if (v_guard_ns(dec_regular_ns))
+
+      #do (instantiate_regular_pos(NodeT),
+           position(NodeT).regular_pos.instantiate_visit(dec_visitor, struct {}),
+           )
+
+      linkonce_odr
+      dec_relaxed: (node: NodeT, shift: shift_t, size: size_t) ~> void
+      {
+          ns = position_args(regular_pos, dec_visitor, struct {});
+          ns.visit(make_regular_pos(node, shift, size), {});
+      }
+
+    #endif
+  }
+
+'unit_defn_list'}
+
+#define instantiate_dec_empty_regular: [](NodeT: v_static_type_t)
+{'unit_defn_list'
+
+  namespace dec_args(NodeT)
+  {
+    #if (v_guard_ns(dec_empty_regular_ns))
+
+      #do (instantiate_empty_regular_pos(NodeT),
+           position(NodeT).empty_regular_pos.instantiate_visit(dec_visitor, struct {}),
+           )
+
+      linkonce_odr
+      dec_empty_regular: (node: NodeT) ~> void
+      {
+          ns = position_args(empty_regular_pos, dec_visitor, struct {});
+          ns.visit(make_empty_regular_pos(node), {});
+      }
+
+    #endif
+  }
+
+'unit_defn_list'}
 
 
+//---------------------------------------------------------------------
+//- get_mut_visitor
+//---------------------------------------------------------------------
+#define get_mut_visitor: [](NodeT: v_static_type_t) ~> v_static_namespace_t
+  =  v_generic_ns(get_mut_visitor_ns, T(NodeT));
 
+#define instantiate_get_mut_visitor: [](NodeT: v_static_type_t)
+{'unit_defn_list'
 
+    namespace get_mut_visitor(NodeT)
+    {
+      #if (v_guard_ns())
 
+        node_t  = NodeT;
+        value_t = NodeT.value_t;
+
+        #do (instantiate_visitor_base(get_mut_visitor(NodeT)))
+
+        #define instantiate_args_derived: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace visitor_args(derived_ns, ArgsT, RetT)
+          {
+            #if (v_guard_ns(args_derived_ns))
+
+              #assert (ArgsT.is_struct  &&  ArgsT.element_count == 2)
+              #assert (ArgsT.element_types[0].node_t == node_t)
+              #assert (ArgsT.element_types[1].is_struct)
+              #assert (ArgsT.element_types[1].element_count == 2)
+              #assert (ArgsT.element_types[1].element_types[0] == size_t)
+              #assert (ArgsT.element_types[1].element_types[1] == **node_t)
+              #assert (RetT == &value_t)
+
+              #do (instantiate_args(ArgsT, RetT))
+
+              Pos = ArgsT.element_types[0];
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_visit_relaxed: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace visitor_args(derived_ns, ArgsT, RetT)
+          {
+            #if (v_guard_ns(visit_relaxed_ns))
+
+              #do (instantiate_args_derived(ArgsT, RetT),
+                   Pos.instantiate_towards_oh(derived_ns, **node_t, RetT),
+                   Pos.instantiate_visit(derived_ns, struct {}),
+                   )
+
+              inlinehint
+              visit_relaxed: (args: ArgsT) ~> RetT
+              {
+                  pos      = args[0];
+                  idx      = args[1][0];
+                  location = args[1][1];
+
+                  offset = pos.index(idx);
+                  count  = pos.count;
+                  node   = pos.node;
+                  if (node->can_mutate)
+                  {
+                      ns = position_args(Pos, derived_ns, **node_t, RetT);
+                      return  ns.towards_oh(pos, idx, offset, &node->inner[offset]);
+                  }
+                  else
+                  {
+                      new_node = node_t.copy_inner_sr_e(node, count);
+
+                      ns = position_args(Pos, derived_ns, **node_t, RetT);
+                      res = ns.towards_oh(pos, idx, offset, &new_node->inner[offset]);
+
+                      ns = position_args(Pos, dec_visitor, struct {});
+                      ns.visit(pos, {});
+
+                      *location := new_node;
+                      return  res;
+                  }
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_visit_regular: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace visitor_args(derived_ns, ArgsT, RetT)
+          {
+            #if (v_guard_ns(visit_regular_ns))
+
+              #do (instantiate_args_derived(ArgsT, RetT),
+                   Pos.instantiate_towards_oh_ch(derived_ns, **node_t, RetT),
+                   Pos.instantiate_visit(derived_ns, struct {}),
+                   )
+
+              inlinehint
+              visit_regular: (args: ArgsT) ~> RetT
+              {
+                  pos      = args[0];
+                  idx      = args[1][0];
+                  location = args[1][1];
+
+                  v_assert(pos.node == *location);
+                  offset = pos.index(idx);
+                  count  = pos.count;
+                  node   = pos.node;
+                  if (node->can_mutate)
+                  {
+                      ns = position_args(Pos, derived_ns, **node_t, RetT);
+                      return  ns.towards_oh_ch(pos, idx, offset, count, &node->inner[offset]);
+                  }
+                  else
+                  {
+                      new_node = node_t.copy_inner_e(node, count);
+
+                      ns = position_args(Pos, derived_ns, **node_t, RetT);
+                      res = ns.towards_oh_ch(pos, idx, offset, count, &new_node->inner[offset]);
+
+                      ns = position_args(Pos, dec_visitor, struct {});
+                      ns.visit(pos, {});
+
+                      *location := new_node;
+                      return  res;
+                  }
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+        #define instantiate_visit_leaf: [](ArgsT: v_static_type_t, RetT: v_static_type_t = void)
+        {'unit_defn_list'
+
+          namespace visitor_args(derived_ns, ArgsT, RetT)
+          {
+            #if (v_guard_ns(visit_leaf_ns))
+
+              #do (instantiate_args_derived(ArgsT, RetT),
+                   Pos.instantiate_visit(derived_ns, struct {}),
+                   )
+
+              inlinehint
+              visit_regular: (args: ArgsT) ~> RetT
+              {
+                  pos      = args[0];
+                  idx      = args[1][0];
+                  location = args[1][1];
+
+                  v_assert(pos.node == *location);
+                  node   = pos.node;
+                  if (node->can_mutate)
+                  {
+                      return  node->leaf[pos.index(idx)];
+                  }
+                  else
+                  {
+                      new_node = node_t.copy_leaf_e(pos.node, pos.count);
+
+                      ns = position_args(Pos, dec_visitor, struct {});
+                      ns.visit(pos, {});
+
+                      *location := new_node;
+                      return  new_node->leaf[pos.index(idx)];
+                  }
+              }
+
+            #endif
+          }
+
+        'unit_defn_list'}
+
+      #endif
+    }
+
+'unit_defn_list'}
 
 
 

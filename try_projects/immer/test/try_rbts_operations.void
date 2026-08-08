@@ -111,6 +111,7 @@ some2: (node: *my.node_t, n: unsigned, f: Fn) ~> *my.node_t
 #endif
 
 
+//---------------------------------------------------------------------
 {   node = my.node_t.make_leaf_n(N);
 
     my.util(my_type).conditional_initialize(node->leaf, N);
