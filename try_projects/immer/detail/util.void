@@ -207,134 +207,6 @@ namespace detail {
 
 
 //---------------------------------------------------------------------
-#define util: [](T: v_static_type_t) ~> v_static_namespace_t
-  =  v_generic_ns(util_ns, T(T));
-
-//---------------------------------------------------------------------
-#define instantiate_conditional_initialize: [](T: v_static_type_t)
-{'unit_defn_list'
-
-    namespace util(T)
-    {
-      #if (v_guard_ns(guard_conditional_initialize))
-
-        alwaysinline
-        conditional_initialize: (p: *T, n: size_t) ~> void
-        {
-            #if (T.is_special(v_initialize))  v_initialize(p, n);   #endif
-        }
-
-      #endif
-    }
-
-'unit_defn_list'}
-
-#define instantiate_conditional_terminate: [](T: v_static_type_t)
-{'unit_defn_list'
-
-    namespace util(T)
-    {
-      #if (v_guard_ns(guard_conditional_terminate))
-
-        alwaysinline
-        conditional_terminate: (p: *T, n: size_t) ~> void
-        {
-            #if (T.is_special(v_terminate))   v_terminate(p, n);    #endif
-        }
-
-      #endif
-    }
-
-'unit_defn_list'}
-
-//---------------------------------------------------------------------
-#define instantiate_conditional_copy: [](T: v_static_type_t)
-{'unit_defn_list'
-
-    namespace util(T)
-    {
-      #if (v_guard_ns(guard_conditional_copy))
-
-        alwaysinline
-        conditional_copy: (d: *T, s: *const T, n: size_t) ~> void
-        {
-            #if (T.is_special(v_copy))  v_copy(d, s, n);
-            #else                       memmove(d, s, n*sizeof(T));
-            #endif
-        }
-
-      #endif
-    }
-
-'unit_defn_list'}
-
-#define instantiate_conditional_move: [](T: v_static_type_t)
-{'unit_defn_list'
-
-    namespace util(T)
-    {
-      #if (v_guard_ns(guard_conditional_move))
-
-        alwaysinline
-        conditional_move: (d: *T, s: *T, n: size_t) ~> void
-        {
-            #if (T.is_special(v_move))  v_move(d, s, n);
-            #else                       memmove(d, s, n*sizeof(T));
-            #endif
-        }
-
-      #endif
-    }
-
-'unit_defn_list'}
-
-//---------------------------------------------------------------------
-#define instantiate_uninitialized_copy: [](T: v_static_type_t)
-{'unit_defn_list'
-
-    namespace util(T)
-    {
-      #if (v_guard_ns(guard_uninitialized_copy))
-
-        #do (instantiate_conditional_initialize(T))
-        #do (instantiate_conditional_copy(T))
-
-        alwaysinline
-        uninitialized_copy: (d: *T, s: *const T, n: size_t) ~> void
-        {
-            conditional_initialize(d, n);
-            conditional_copy(d, s, n);
-        }
-
-      #endif
-    }
-
-'unit_defn_list'}
-
-#define instantiate_uninitialized_move: [](T: v_static_type_t)
-{'unit_defn_list'
-
-    namespace util(T)
-    {
-      #if (v_guard_ns(guard_uninitialized_move))
-
-        #do (instantiate_conditional_initialize(T))
-        #do (instantiate_conditional_move(T))
-
-        alwaysinline
-        uninitialized_move: (d: *T, s: *T, n: size_t) ~> void
-        {
-            conditional_initialize(d, n);
-            conditional_move(d, s, n);
-        }
-
-      #endif
-    }
-
-'unit_defn_list'}
-
-
-//---------------------------------------------------------------------
 #define util2: [](T1: v_static_type_t, T2: v_static_type_t) ~> v_static_namespace_t
   =  v_generic_ns(util2_ns, T[T1,T2]);
 
@@ -364,6 +236,85 @@ namespace detail {
     }
 
 'unit_defn_list'}
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+namespace util
+{
+
+//---------------------------------------------------------------------
+#define conditional_initialize: [](p, n: size_t = 1)
+{'stmt'
+
+    {   T = typeof(p).element_type;
+
+        #if (T.is_special(v_initialize))  v_initialize(p, n);   #endif
+    }
+
+'stmt'}
+
+#define conditional_terminate: [](p, n: size_t = 1)
+{'stmt'
+
+    {   T = typeof(p).element_type;
+
+        #if (T.is_special(v_terminate))  v_terminate(p, n);   #endif
+    }
+
+'stmt'}
+
+//---------------------------------------------------------------------
+#define conditional_copy: [](d, s, n: size_t = 1)
+{'stmt'
+
+    {   T = typeof(d).element_type;
+
+        #if (T.is_special(v_copy))  v_copy(d, s, n);
+        #else                       memmove(d, s, n*sizeof(T));
+        #endif
+    }
+
+'stmt'}
+
+#define conditional_move: [](d, s, n: size_t = 1)
+{'stmt'
+
+    {   T = typeof(d).element_type;
+
+        #if (T.is_special(v_move))  v_move(d, s, n);
+        #else                       memmove(d, s, n*sizeof(T));
+        #endif
+    }
+
+'stmt'}
+
+//---------------------------------------------------------------------
+#define uninitialized_copy: [](d, s, n: size_t = 1)
+{'stmt_list'
+
+    conditional_initialize(d, n);
+    conditional_copy(d, s, n);
+
+'stmt_list'}
+
+#define uninitialized_move: [](d, s, n: size_t = 1)
+{'stmt_list'
+
+    conditional_initialize(d, n);
+    conditional_move(d, s, n);
+
+'stmt_list'}
+
+
+//---------------------------------------------------------------------
+#define equal: [](i1, i2, n: size_t = 1) ~> bool
+  =  util2(typeof(i1), typeof(i2)).equal(i1, i2, n);
+
+
+//---------------------------------------------------------------------
+}   //- namespace util
 
 
 //---------------------------------------------------------------------

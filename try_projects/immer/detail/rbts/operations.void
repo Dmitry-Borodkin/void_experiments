@@ -1593,11 +1593,8 @@ namespace equals_visitor
             if (cl < sr)  mp := cl;
             else          mp := cr;
 
-            ns1 = util2(*PosL.value_t, *PosR.value_t);
-            ns2 = util2(*PosL.value_t, Iter);
-
-            return  ns1.equal(posl.node->leaf, posr.node->leaf, mp)  &&
-                    ns2.equal(posl.node->leaf + mp, first + (idx + mp), posl.count - mp);
+            return  util.equal(posl.node->leaf, posr.node->leaf, mp)  &&
+                    util.equal(posl.node->leaf + mp, first + (idx + mp), posl.count - mp);
 
           #else     //- Short...
 
@@ -1608,8 +1605,7 @@ namespace equals_visitor
 
             if (node == other)  return  true;
 
-            ns = util2(*Pos.value_t, *NodeT.value_t);
-            return  ns.equal(node->leaf, other->leaf, pos.count);
+            return  util.equal(node->leaf, other->leaf, pos.count);
 
           #endif
         }
@@ -1742,10 +1738,7 @@ namespace equals_visitor
         {
           #if (v_guard_ns(visit_leaf_ns))
 
-            #do (instantiate_args_derived(ArgsT, RetT),
-                 instantiate_conditional_initialize(value_t),
-                 instantiate_conditional_copy(value_t),
-                 )
+            #do (instantiate_args_derived(ArgsT, RetT))
 
             inlinehint
             visit_leaf: (args: ArgsT) ~> RetT
@@ -1761,15 +1754,13 @@ namespace equals_visitor
                 dst = node->leaf;
                 src = pos.node->leaf;
 
-                using namespace util(value_t);
-
-                conditional_initialize(dst, count);
-                conditional_copy(dst, src, offset);
+                util.conditional_initialize(dst, count);
+                util.conditional_copy(dst, src, offset);
 
                 dst[offset] := fn(src[offset]);           //- ...
 
                 off1 = offset + 1;
-                conditional_copy(dst + off1, src + off1, count - off1);
+                util.conditional_copy(dst + off1, src + off1, count - off1);
 
                 return  node;
             }
@@ -2723,7 +2714,7 @@ namespace dec_right_visitor
     #if (v_guard_ns())
 
       this_ns               = slice_right_mut_visitor(NodeT, Collapse, Mutating);
-      no_collapse_ns        = slice_right_mut_visitor(NodeT, flase, true);
+      no_collapse_ns        = slice_right_mut_visitor(NodeT, false, true);
       no_collapse_no_mut_ns = slice_right_mut_visitor(NodeT, false, false);
       no_mut_ns             = slice_right_mut_visitor(NodeT, true,  false);
 
@@ -3060,7 +3051,6 @@ namespace dec_right_visitor
           #if (v_guard_ns(visit_leaf_ns))
 
             #do (instantiate_args_derived(ArgsT, RetT),
-                 instantiate_conditional_terminate(value_t),
                  Pos.instantiate_visit(dec_visitor, struct {}),
                  )
 
@@ -3082,8 +3072,8 @@ namespace dec_right_visitor
                 }
                 else if (mutate)
                 {
-                    util(value_t).conditional_terminate(node->leaf + new_tail_size,
-                                                        old_tail_size - new_tail_size);
+                    util.conditional_terminate(node->leaf + new_tail_size,
+                                               old_tail_size - new_tail_size);
 
                     return  {0, 0, new_tail_size, node};
                 }

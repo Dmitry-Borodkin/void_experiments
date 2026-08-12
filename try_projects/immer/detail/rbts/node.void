@@ -405,14 +405,12 @@ namespace rbts {
             return  p;
         }
 
-        #do (instantiate_uninitialized_copy(T))
-
         inlinehint
         make_leaf_n1: (n: count_t, x: &T) ~> *node_t
         {
             v_assert(n >= 1);
             p = make_leaf_n(n);
-            util(T).uninitialized_copy(p->leaf, &x, 1);
+            util.uninitialized_copy(p->leaf, &x, 1);
             return  p;
         }
 
@@ -420,7 +418,7 @@ namespace rbts {
         make_leaf_e1: (x: &T) ~> *node_t
         {
             p = make_leaf_e();
-            util(T).uninitialized_copy(p->leaf, &x, 1);
+            util.uninitialized_copy(p->leaf, &x, 1);
             return  p;
         }
 
@@ -610,7 +608,7 @@ namespace rbts {
         copy_leaf: (src: *node_t, n: count_t) ~> *node_t
         {
             dst = make_leaf_n(n);
-            util(T).uninitialized_copy(dst->leaf, src->leaf, n);
+            util.uninitialized_copy(dst->leaf, src->leaf, n);
             return  dst;
         }
 
@@ -618,7 +616,7 @@ namespace rbts {
         copy_leaf_e: (src: *node_t, n: count_t) ~> *node_t
         {
             dst = make_leaf_e();
-            util(T).uninitialized_copy(dst->leaf, src->leaf, n);
+            util.uninitialized_copy(dst->leaf, src->leaf, n);
             return  dst;
         }
 
@@ -628,7 +626,7 @@ namespace rbts {
         {
             v_assert(allocn >= n);
             dst = make_leaf_n(allocn);
-            util(T).uninitialized_copy(dst->leaf, src->leaf, n);
+            util.uninitialized_copy(dst->leaf, src->leaf, n);
             return  dst;
         }
 
@@ -636,8 +634,8 @@ namespace rbts {
         copy_leaf_2: (src1: *node_t, n1: count_t, src2: *node_t, n2: count_t) ~> *node_t
         {
             dst = make_leaf_n(n1 + n2);
-            util(T).uninitialized_copy(dst->leaf,      src1->leaf, n1);
-            util(T).uninitialized_copy(dst->leaf + n1, src2->leaf, n2);
+            util.uninitialized_copy(dst->leaf,      src1->leaf, n1);
+            util.uninitialized_copy(dst->leaf + n1, src2->leaf, n2);
             return  dst;
         }
 
@@ -645,8 +643,8 @@ namespace rbts {
         copy_leaf_e2: (src1: *node_t, n1: count_t, src2: *node_t, n2: count_t) ~> *node_t
         {
             dst = make_leaf_e();
-            util(T).uninitialized_copy(dst->leaf,      src1->leaf, n1);
-            util(T).uninitialized_copy(dst->leaf + n1, src2->leaf, n2);
+            util.uninitialized_copy(dst->leaf,      src1->leaf, n1);
+            util.uninitialized_copy(dst->leaf + n1, src2->leaf, n2);
             return  dst;
         }
 
@@ -655,7 +653,7 @@ namespace rbts {
         {
             n = last - idx;
             dst = make_leaf_e();
-            util(T).uninitialized_copy(dst->leaf, src->leaf + idx, n);
+            util.uninitialized_copy(dst->leaf, src->leaf + idx, n);
             return  dst;
         }
 
@@ -664,7 +662,7 @@ namespace rbts {
         {
             n = last - idx;
             dst = make_leaf_n(n);
-            util(T).uninitialized_copy(dst->leaf, src->leaf + idx, n);
+            util.uninitialized_copy(dst->leaf, src->leaf + idx, n);
             return  dst;
         }
 
@@ -672,7 +670,7 @@ namespace rbts {
         copy_leaf_emplace: (src: *node_t, n: count_t, x: &T) ~> *node_t
         {
             dst = copy_leaf_n(n + 1, src, n);
-            util(T).uninitialized_copy(dst->leaf + n, &x, 1);
+            util.uninitialized_copy(dst->leaf + n, &x, 1);
             return  dst;
         }
 
@@ -705,12 +703,10 @@ namespace rbts {
             else            delete_inner(p, n);
         }
 
-        #do (instantiate_conditional_terminate(T))
-
         inlinehint
         delete_leaf: (p: *node_t, n: count_t) ~> void
         {
-            util(T).conditional_terminate(p->leaf, n);
+            util.conditional_terminate(p->leaf, n);
             heap.deallocate(sizeof_leaf_n(n), p);
         }
 

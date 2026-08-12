@@ -1,24 +1,26 @@
                      ****  Projects  ****                      │*
                                                                │
-Clang Tooling                                                  │clang_tooling/micros.dir
                                                                │
-                                                               │
-Polyhedra2D/                                                   │polyhedra2d/micros.dir
-                                                               │
-                                                               │
-string_test/                                                   │string_test/micros.dir
-                                                               │
-                                                               │
-GTK tries                                                      │gtk_tries/micros.dir
-                                                               │
-                                                               │
-Primes generator                                               │primes_gen/micros.dir
+Immer                                                          │immer/micros.dir
                                                                │
                                                                │
 Hash                                                           │hash/micros.dir
                                                                │
                                                                │
-Immer                                                          │immer/micros.dir
+Primes generator                                               │primes_gen/micros.dir
+                                                               │
+                                                               │
+GTK tries                                                      │gtk_tries/micros.dir
+                                                               │
+                                                               │
+string_test/                                                   │string_test/micros.dir
+                                                               │
+                                                               │
+Polyhedra2D/                                                   │polyhedra2d/micros.dir
+                                                               │
+                                                               │
+Clang Tooling                                                  │clang_tooling/micros.dir
+                                                               │
                                                                │
                                                                │
                                                                │

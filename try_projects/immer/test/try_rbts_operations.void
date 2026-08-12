@@ -61,7 +61,6 @@ namespace my
     #do (leaf_pos.instantiate_visit(upd_vis, struct {size_t; *((my_type) ~> my_type);}, *node_t))
 
 
-    #do (instantiate_conditional_initialize(my_type))
 
 
 
@@ -114,7 +113,7 @@ some2: (node: *my.node_t, n: unsigned, f: Fn) ~> *my.node_t
 //---------------------------------------------------------------------
 {   node = my.node_t.make_leaf_n(N);
 
-    my.util(my_type).conditional_initialize(node->leaf, N);
+    my.util.conditional_initialize(node->leaf, N);
 
     i = 1;
 
@@ -167,6 +166,27 @@ some2: (node: *my.node_t, n: unsigned, f: Fn) ~> *my.node_t
 }
 
 
+//---------------------------------------------------------------------
+{ v_debug_print_module(2); }
+
+#define hzns: (i: int) ~> v_static_namespace_t  =  v_generic_ns(hz_ns, N(i));
+
+bar: (i: int) ~> int
+{
+    hzns(5).qwerty: (int) ~> int;
+
+    return hzns(5).qwerty(i);
+}
+
+namespace hzns(5)
+{
+    qwerty: (i: int) ~> int  =  i + 1;
+}
+
+
+{
+    printf("%d\n", bar(7));
+}
 
 
 
