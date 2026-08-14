@@ -6,6 +6,8 @@
 
     v_export_import("type_traits.void");
     v_export_import("cstring.void");
+
+//  v_export_import("cstdio.void");
 }
 
 
@@ -137,21 +139,9 @@ guard_ns_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     if (ret)    //- Not found!
     {
-        expr: &v_ast_expr_t[4] := {};
-
-        v_ast_make_expr_integer(expr+0, 0);
-
-        v_ast_make_expr_identifier_q(expr+1, q_internal_namespace_guard);
-
-        v_ast_make_expr_identifier_q(expr+3, true_q);
-
-        list: &v_ast_generic_list_t := {};
-
-        v_make_list(&list, unit_val_defn_q, expr+0, 4);
-
         //- Define guard constant...
 
-        v_ast_accept_visitor(&list, vis);
+        v_add_constant_q(q_internal_namespace_guard, v_void_type(), 0);
     }
 
     if (n)      //- Got custom namespace...
@@ -174,12 +164,196 @@ guard_ns_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
 
 //---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
 export
-v_internal_immer_detail_util_enable: () ~> void
+struct my_util_ctx_t
 {
-    v_export_intrinsic("v_namespace_get_name", namespace_get_name_intrinsic, 0);
-    v_export_intrinsic("v_static_log2",        static_log2_intrinsic,        0);
-    v_export_intrinsic("v_guard_ns",           guard_ns_intrinsic,           0);
+    list: v_util_list_t;
+
+    push: struct { fun: *((*void) ~> void); aux: *void; };
+    pop:  struct { fun: *((*void) ~> void); aux: *void; };
+};
+
+export (v_initialize(_)): (*my_util_ctx_t) ~> void  =  derive;
+export (v_terminate(_)):  (*my_util_ctx_t) ~> void  =  derive;
+
+private
+my_util_ctx_cleaner: (aux: *void) ~> void
+{
+//printf("my_util_ctx_cleaner: start\n");
+//defer printf("my_util_ctx_cleaner: stop\n");
+
+    delete (aux: *my_util_ctx_t);
+}
+
+//---------------------------------------------------------------------
+private
+my_push_variables: (aux: *void) ~> void
+{
+//printf("my_push_variables: start\n");
+//defer printf("my_push_variables: stop\n");
+
+    ctx = (aux: *my_util_ctx_t);
+
+    if (v_get_variables_size() == 0)
+    {
+        v_assert(v_empty(&ctx->list));
+
+        v_make_list_nil(&ctx->list);
+    }
+
+    ctx->push.fun(ctx->push.aux);
+}
+
+private
+my_obtain_module: (void_mod: *void) ~> LLVMModuleRef
+{
+    mod = (void_mod: LLVMModuleRef);
+
+    v_assert(mod);
+
+    return  mod;
+}
+
+private
+my_pop_variables: (aux: *void) ~> void
+{
+//printf("my_pop_variables: start\n");
+//defer printf("my_pop_variables: stop\n");
+
+    ctx = (aux: *my_util_ctx_t);
+
+    ctx->pop.fun(ctx->pop.aux);
+
+    if (v_get_variables_size() != 0)  return;
+
+    list: &v_util_list_t := {};
+
+    v_move(&list, &ctx->list);      //- Sic!
+
+    n = v_list_get_size(&list);
+
+    if (n == 0)  return;
+
+
+    saved_obtain_module_ctx: &*void := undef;
+    saved_obtain_module_fun = v_get_obtain_module_hook(&saved_obtain_module_ctx);
+
+    saved_module = v_get_module();
+
+    v_set_obtain_module_hook(my_obtain_module, saved_module);
+
+    v_set_module(0);        //- Sic!
+
+    stmt_list = voidc_definitions_context_get_stmt_list();
+
+    saved_stmt_list = v_load(&stmt_list);
+
+    stmt_list := 0;
+
+
+    expr: &v_ast_expr_t      := {};
+    args: &v_ast_expr_list_t := {};
+
+    v_ast_make_expr_identifier(&expr, "dummy");
+
+    v_make_list_nil(&args);
+
+    v_ast_make_expr_call(&expr, &expr, &args);
+
+    vis = v_get_compiler();
+
+    for (i: &int := 0; i < n; ++i)
+    {
+        a = v_list_get_item(&list, i);
+
+        data = *v_std_any_get_pointer(intptr_t[2], a);
+
+        fun = (data[0] : *voidc_intrinsic_t);
+        aux = (data[1] : *void);
+
+        v_reset_result();
+
+        fun(aux, vis, &expr);
+
+        delete  (aux: *v_macro_definition_t);       //- Sic!
+    }
+
+
+    stmt_list := saved_stmt_list;
+
+    v_set_module(saved_module);
+
+    v_set_obtain_module_hook(saved_obtain_module_fun, saved_obtain_module_ctx);
+}
+
+//---------------------------------------------------------------------
+private
+register_inst_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+//printf("register_inst_intrinsic: start\n");
+//defer printf("register_inst_intrinsic: stop\n");
+
+    ctx = (aux: *my_util_ctx_t);
+
+    v_assert(!v_empty(&ctx->list));
+
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    arg0 = v_list_get_item(args, 0);        //- Macro
+
+    v_reset_result();
+
+    v_ast_accept_visitor(arg0, vis);
+
+    v_assert(v_get_result_type() == v_find_type("v_object_intrinsic_t"));
+
+    q = (v_get_result_value() : v_quark_t);
+
+    ptr: &*const v_macro_definition_t := 0;
+
+    fun = voidc_get_macro_definition(q, &ptr);
+
+    v_assert(fun && ptr);
+
+    ptm = new v_macro_definition_t;         //- Sic!
+
+    v_copy(ptm, ptr);
+
+    data: &intptr_t[2] := { (fun: intptr_t), (ptm: intptr_t) };
+
+    any: &v_std_any_t := {};
+
+    v_std_any_set_pointer(&any, &data);
+
+    v_list_append(&ctx->list, &ctx->list, &any);
+}
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+v_internal_immer_detail_util_effort: (*void) ~> void
+{
+//printf("v_internal_immer_detail_util_enable: start\n");
+//defer printf("v_internal_immer_detail_util_enable: stop\n");
+
+    v_add_intrinsic("v_namespace_get_name", namespace_get_name_intrinsic, 0);
+    v_add_intrinsic("v_static_log2",        static_log2_intrinsic,        0);
+    v_add_intrinsic("v_guard_ns",           guard_ns_intrinsic,           0);
+
+    ctx = new my_util_ctx_t;
+
+    v_add_local_cleaner(my_util_ctx_cleaner, ctx);
+
+    ctx->push.fun := v_get_push_variables_hook(&ctx->push.aux);
+    ctx->pop.fun  := v_get_pop_variables_hook (&ctx->pop.aux);
+
+    v_set_push_variables_hook(my_push_variables, ctx);
+    v_set_pop_variables_hook (my_pop_variables,  ctx);
+
+    v_add_intrinsic("v_register_inst", register_inst_intrinsic, ctx);
 }
 
 //---------------------------------------------------------------------
@@ -195,7 +369,7 @@ v_internal_immer_detail_util_enable: () ~> void
 //---------------------------------------------------------------------
 {   v_target_set_global_ctx(cur_gctx);
 
-    v_internal_immer_detail_util_enable();
+    v_export_effort(v_internal_immer_detail_util_effort, 0);
 }
 
 
@@ -309,8 +483,27 @@ namespace util
 
 
 //---------------------------------------------------------------------
-#define equal: [](i1, i2, n: size_t = 1) ~> bool
-  =  util2(typeof(i1), typeof(i2)).equal(i1, i2, n);
+#define equal: [](i1, i2, n: size_t = 1) ~> bool  =
+{
+    IT1 = typeof(i1);
+    IT2 = typeof(i2);
+
+    #define instantiate: [*, IT1, IT2]()
+    {'unit_defn_list'
+
+        #do (instantiate_equal(IT1, IT2))
+
+    'unit_defn_list'}
+
+    v_register_inst(instantiate);
+
+    ns = util2(IT1, IT2);
+
+    ns.equal: (IT1, IT2, size_t) ~> bool;
+
+    ns.equal(i1, i2, n)
+};
+
 
 
 //---------------------------------------------------------------------

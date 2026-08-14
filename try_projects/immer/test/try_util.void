@@ -1,0 +1,79 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+//---------------------------------------------------------------------
+{
+    v_import("cstdio.void");
+
+    v_import("../detail/util.void");
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//{ v_debug_print_module(2); }
+//---------------------------------------------------------------------
+#define some: ()
+{'stmt_list'
+
+    foo: () ~> void;
+
+    foo();
+
+    #define inst_foo: ()
+    {'unit_defn_list'
+
+        linkonce_odr
+        foo: () ~> void
+        {
+            printf("foo\n");
+        }
+
+    'unit_defn_list'}
+
+    v_register_inst(inst_foo);
+
+'stmt_list'}
+
+
+bar: () ~> void
+{
+    some();
+}
+
+//---------------------------------------------------------------------
+{
+    bar();
+
+    some();
+
+}
+
+
+//---------------------------------------------------------------------
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(2); }
+
+baz: () ~> void
+{
+    using namespace .immer.detail;
+
+    a: &int[] := { 7, 7, 8 };
+
+    f1 = util.equal(a+0, a+1);
+
+    printf("f1: %d\n", (f1: int));
+
+    f2 = util.equal(a+0, a+1, 2);
+
+    printf("f2: %d\n", (f2: int));
+}
+
+{
+    baz();
+}
+
+
+

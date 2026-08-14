@@ -7,19 +7,53 @@
 }
 
 //---------------------------------------------------------------------
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(2); }
+
+qwerty: void;
 
 
+#if (v_defined(qwerty))
+
+    #note ("yes")
+
+#else
+
+    #note ("no")
+
+#endif
 
 
+{
+    t = v_find_constant_type("qwerty");
+    v = v_find_constant_value("qwerty");
+
+    printf("qwerty: %p %p %d\n", t, v, (v_type_is_void(t): int));
+
+    t = v_find_symbol_type("qwerty");
+    v = v_find_symbol_value("qwerty");
+
+    printf("qwerty: %p %p %d\n", t, v, (v_type_is_void(t): int));
+}
 
 
+//---------------------------------------------------------------------
+{
+    v_add_constant("asdfg", v_void_type(), 0);
+}
 
+{
+    t = v_find_constant_type("asdfg");
+    v = v_find_constant_value("asdfg");
 
+    printf("asdfg: %p %p %d\n", t, v, (v_type_is_void(t): int));
 
+    t = v_find_symbol_type("asdfg");
+    v = v_find_symbol_value("asdfg");
 
+    printf("asdfg: %p %p\n", t, v);
 
-
-
+}
 
 
 

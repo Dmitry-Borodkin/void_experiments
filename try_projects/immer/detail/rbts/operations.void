@@ -1523,13 +1523,13 @@ namespace equals_visitor
 
               if (posl.count >= posr.count)
               {
-                  ns = visitor_args(struct {PosL; *PosR.node_t;}, RetT);
-                  return ns.visit_regular(posl, posr.node);
+                  ns = visitor_args(derived_ns, struct {PosL; *PosR.node_t;}, RetT);
+                  return ns.visit_regular({posl, posr.node});
               }
               else
               {
-                  ns = visitor_args(struct {PosR; *PosL.node_t;}, RetT);
-                  return ns.visit_regular(posr, posl.node);
+                  ns = visitor_args(derived_ns, struct {PosR; *PosL.node_t;}, RetT);
+                  return ns.visit_regular({posr, posl.node});
               }
 
             #endif
