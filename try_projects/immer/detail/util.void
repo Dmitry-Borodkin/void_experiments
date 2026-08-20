@@ -495,6 +495,31 @@ namespace util
 {
 
 //---------------------------------------------------------------------
+#define equal: [](i1, i2, n: size_t = 1) ~> bool  =
+{
+    IT1 = typeof(i1);
+    IT2 = typeof(i2);
+
+    ns = util2(IT1, IT2);
+
+    #if (!v_defined(ns, equal))
+
+        #define instantiate: [*, IT1, IT2]()
+        {'unit_defn_list'
+
+            #do (instantiate_equal(IT1, IT2))
+
+        'unit_defn_list'}
+
+        v_execute_inst(instantiate);
+
+    #endif
+
+    ns.equal(i1, i2, n)
+};
+
+
+//---------------------------------------------------------------------
 #define conditional_initialize: [](p, n: size_t = 1)
 {'stmt'
 
@@ -556,34 +581,6 @@ namespace util
     conditional_move(d, s, n);
 
 'stmt_list'}
-
-
-//---------------------------------------------------------------------
-#define equal: [](i1, i2, n: size_t = 1) ~> bool  =
-{
-    IT1 = typeof(i1);
-    IT2 = typeof(i2);
-
-    #define instantiate: [*, IT1, IT2]()
-    {'unit_defn_list'
-
-        #do (instantiate_equal(IT1, IT2))
-
-    'unit_defn_list'}
-
-
-    v_execute_inst(instantiate);
-
-
-//  v_register_inst(instantiate);
-
-    ns = util2(IT1, IT2);
-
-//  ns.equal: (IT1, IT2, size_t) ~> bool;
-
-    ns.equal(i1, i2, n)
-};
-
 
 
 //---------------------------------------------------------------------

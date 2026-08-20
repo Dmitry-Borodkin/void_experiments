@@ -99,10 +99,264 @@ namespace rbts {
 {
     NodeT = typeof(node).element_type;
 
-    ret: position(NodeT).empty_regular_pos = {node};
+    ns = position(NodeT);
+
+    #if (!v_defined(ns, empty_regular_pos))
+
+        #define instantiate: [*, NodeT]()
+        {'unit_defn_list'
+
+            #do (instantiate_empty_regular_pos(NodeT))
+
+        'unit_defn_list'}
+
+        v_execute_inst(instantiate);
+
+    #endif
+
+    ret: ns.empty_regular_pos = {node};
 
     ret
 };
+
+
+//---------------------------------------------------------------------
+//- empty_leaf_pos
+//---------------------------------------------------------------------
+#define instantiate_empty_leaf_pos: [](NodeT: v_static_type_t)
+{'unit_defn_list'
+
+  namespace position(NodeT)
+  {
+    #if (v_guard_ns(empty_leaf_pos_ns))
+
+      #do (instantiate_position(NodeT))
+
+      struct empty_leaf_pos
+      {
+          node_: *NodeT;
+      };
+
+      namespace empty_leaf_pos
+      {
+          using namespace position(NodeT);
+      }
+
+
+      alwaysinline
+      (_.count): (empty_leaf_pos) ~> count_t  =  0;
+
+      alwaysinline
+      (_.node): (pos: empty_leaf_pos) ~> *NodeT  =  pos.node_;
+
+      alwaysinline
+      (_.shift): (empty_leaf_pos) ~> shift_t  =  0;
+
+      alwaysinline
+      (_.size): (empty_leaf_pos) ~> size_t  =  0;
+
+
+      #define (_.visit()): [](p: empty_leaf_pos, v: v_static_namespace_t, args)
+        =  v.visit_leaf({p, args});
+
+    #endif
+
+  }     //- namespace position(NodeT)
+
+'unit_defn_list'}
+
+//---------------------------------------------------------------------
+#define make_empty_leaf_pos: [](node)  =
+{
+    NodeT = typeof(node).element_type;
+
+    ns = position(NodeT);
+
+    #if (!v_defined(ns, empty_leaf_pos))
+
+        #define instantiate: [*, NodeT]()
+        {'unit_defn_list'
+
+            #do (instantiate_empty_leaf_pos(NodeT))
+
+        'unit_defn_list'}
+
+        v_execute_inst(instantiate);
+
+    #endif
+
+    v_assert(node);
+
+    ret: ns.empty_leaf_pos = {node};
+
+    ret
+};
+
+
+//---------------------------------------------------------------------
+//- leaf_pos
+//---------------------------------------------------------------------
+#define instantiate_leaf_pos: [](NodeT: v_static_type_t)
+{'unit_defn_list'
+
+  namespace position(NodeT)
+  {
+    #if (v_guard_ns(leaf_pos_ns))
+
+      #do (instantiate_position(NodeT))
+
+      struct leaf_pos
+      {
+          node_: *NodeT;
+          size_: size_t;
+      };
+
+      namespace leaf_pos
+      {
+          using namespace position(NodeT);
+      }
+
+      alwaysinline
+      (_.index()): (leaf_pos, idx: size_t) ~> count_t  =  (idx & mask(BL) : count_t);
+
+      alwaysinline
+      (_.subindex()): (leaf_pos, idx: size_t) ~> count_t  =  (idx: count_t);
+
+      alwaysinline
+      (_.count): (pos: leaf_pos) ~> count_t  =  pos.index(pos.size_ -1) + 1;
+
+      alwaysinline
+      (_.node): (pos: leaf_pos) ~> *NodeT  =  pos.node_;
+
+      alwaysinline
+      (_.shift): (leaf_pos) ~> shift_t  =  0;
+
+      alwaysinline
+      (_.size): (pos: leaf_pos) ~> size_t  =  pos.size_;
+
+
+      #define (_.visit()): [](p: leaf_pos, v: v_static_namespace_t, args)
+        =  v.visit_leaf({p, args});
+
+    #endif
+
+  }     //- namespace position(NodeT)
+
+'unit_defn_list'}
+
+//---------------------------------------------------------------------
+#define make_leaf_pos: [](node, size: size_t)  =
+{
+    NodeT = typeof(node).element_type;
+
+    ns = position(NodeT);
+
+    #if (!v_defined(ns, leaf_pos))
+
+        #define instantiate: [*, NodeT]()
+        {'unit_defn_list'
+
+            #do (instantiate_leaf_pos(NodeT))
+
+        'unit_defn_list'}
+
+        v_execute_inst(instantiate);
+
+    #endif
+
+    v_assert(node);
+    v_assert(size > 0);
+
+    ret: ns.leaf_pos = {node, size};
+
+    ret
+};
+
+
+//---------------------------------------------------------------------
+//- leaf_sub_pos
+//---------------------------------------------------------------------
+#define instantiate_leaf_sub_pos: [](NodeT: v_static_type_t)
+{'unit_defn_list'
+
+  namespace position(NodeT)
+  {
+    #if (v_guard_ns(leaf_sub_pos_ns))
+
+      #do (instantiate_position(NodeT))
+
+      struct leaf_sub_pos
+      {
+          node_:  *NodeT;
+          count_: count_t;
+      };
+
+      namespace leaf_sub_pos
+      {
+          using namespace position(NodeT);
+      }
+
+
+      alwaysinline
+      (_.index()): (leaf_sub_pos, idx: size_t) ~> count_t  =  (idx & mask(BL) : count_t);
+
+      alwaysinline
+      (_.subindex()): (leaf_sub_pos, idx: size_t) ~> count_t  =  (idx: count_t);
+
+      alwaysinline
+      (_.count): (pos: leaf_sub_pos) ~> count_t  =  pos.count_;
+
+      alwaysinline
+      (_.node): (pos: leaf_sub_pos) ~> *NodeT  =  pos.node_;
+
+      alwaysinline
+      (_.shift): (leaf_sub_pos) ~> shift_t  =  0;
+
+      alwaysinline
+      (_.size): (pos: leaf_sub_pos) ~> size_t  =  pos.count_;
+
+
+      #define (_.visit()): [](p: leaf_sub_pos, v: v_static_namespace_t, args)
+        =  v.visit_leaf({p, args});
+
+    #endif
+
+  }     //- namespace position(NodeT)
+
+'unit_defn_list'}
+
+//---------------------------------------------------------------------
+#define make_leaf_sub_pos: [](node, count: count_t)  =
+{
+    NodeT = typeof(node).element_type;
+
+    ns = position(NodeT);
+
+    #if (!v_defined(ns, leaf_sub_pos))
+
+        #define instantiate: [*, NodeT]()
+        {'unit_defn_list'
+
+            #do (instantiate_leaf_sub_pos(NodeT))
+
+        'unit_defn_list'}
+
+        v_execute_inst(instantiate);
+
+    #endif
+
+    v_assert(node);
+    v_assert(count <= branches(BL));
+
+    ret: ns.leaf_sub_pos = {node, count};
+
+    ret
+};
+
+
+
+
+
 
 
 
