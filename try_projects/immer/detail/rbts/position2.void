@@ -1,0 +1,133 @@
+{ voidc_import("libvoidc.void"); }
+{ voidc_make_header("position"); }
+//---------------------------------------------------------------------
+{
+    v_export_import("bits.void");
+    v_export_import("../util.void");
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+//- <immer/detail/rbts/position.hpp>
+//---------------------------------------------------------------------
+namespace .immer {
+namespace detail {
+namespace rbts {
+
+
+//---------------------------------------------------------------------
+#define position: [](NodeT: v_static_type_t) ~> v_static_namespace_t
+  =  v_generic_ns(position_ns, T(NodeT));
+
+
+//---------------------------------------------------------------------
+#define instantiate_position: [](NodeT: v_static_type_t)
+{'unit_defn_list'
+
+  namespace position(NodeT)
+  {
+    #if (v_guard_ns())
+
+      node_t    = NodeT;
+      B         = NodeT.bits;
+      BL        = NodeT.bits_leaf;
+      value_t   = NodeT.value_t;
+      relaxed_t = NodeT.relaxed_t;
+
+    #endif
+  }
+
+'unit_defn_list'}
+
+
+//---------------------------------------------------------------------
+//- empty_regular_pos
+//---------------------------------------------------------------------
+#define instantiate_empty_regular_pos: [](NodeT: v_static_type_t)
+{'unit_defn_list'
+
+  namespace position(NodeT)
+  {
+    #if (v_guard_ns(empty_regular_pos_ns))
+
+      #do (instantiate_position(NodeT))
+
+      struct empty_regular_pos
+      {
+          node_: *NodeT;
+      };
+
+      namespace empty_regular_pos
+      {
+          using namespace position(NodeT);
+      }
+
+
+      alwaysinline
+      (_.count): (empty_regular_pos) ~> count_t  =  0;
+
+      alwaysinline
+      (_.node): (pos: empty_regular_pos) ~> *NodeT  =  pos.node_;
+
+      alwaysinline
+      (_.shift): (empty_regular_pos) ~> shift_t  =  0;
+
+      alwaysinline
+      (_.size): (empty_regular_pos) ~> size_t  =  0;
+
+
+      #define (_.each()): [](p: empty_regular_pos, v: v_static_namespace_t, args) ~> void  =  {};
+
+      #define (_.each_pred()): [](p: empty_regular_pos, v: v_static_namespace_t, args) ~> bool  =  true;
+
+      #define (_.visit()): [](p: empty_regular_pos, v: v_static_namespace_t, args)
+        =  v.visit_regular({p, args});
+
+    #endif
+
+  }     //- namespace position(NodeT)
+
+'unit_defn_list'}
+
+//---------------------------------------------------------------------
+#define make_empty_regular_pos: [](node)  =
+{
+    NodeT = typeof(node).element_type;
+
+    ret: position(NodeT).empty_regular_pos = {node};
+
+    ret
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------
+}   //- namespace rbts
+}   //- namespace detail
+}   //- namespace .immer
+

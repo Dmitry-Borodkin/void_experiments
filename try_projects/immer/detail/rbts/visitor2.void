@@ -1,0 +1,56 @@
+{ voidc_import("libvoidc.void"); }
+{ voidc_make_header("visitor"); }
+//---------------------------------------------------------------------
+{
+    v_import("../util.void");
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+//- <immer/detail/rbts/visitor.hpp>
+//---------------------------------------------------------------------
+namespace .immer {
+namespace detail {
+namespace rbts {
+
+
+//---------------------------------------------------------------------
+#define visitor_base: [](DerivedNS: v_static_namespace_t) ~> v_static_namespace_t
+  =  v_generic_ns(visitor_base_ns, Q(v_namespace_get_name(DerivedNS)));
+
+
+//---------------------------------------------------------------------
+#define instantiate_visitor_base: (DerivedNS: v_static_namespace_t)
+{'unit_defn_list'
+
+  #if (v_guard_ns(visitor_base(DerivedNS)))
+
+    using namespace visitor_base(DerivedNS);
+
+    namespace visitor_base(DerivedNS)
+    {
+        base_ns    = visitor_base(DerivedNS);
+        derived_ns = DerivedNS;
+
+        #define visit_node:    [](args)  =  v_assert(false && "Kinda, unreachable...");
+        #define visit_relaxed: [](args)  =  derived_ns.visit_inner(args);
+        #define visit_regular: [](args)  =  derived_ns.visit_inner(args);
+        #define visit_inner:   [](args)  =  derived_ns.visit_node(args);
+        #define visit_leaf:    [](args)  =  derived_ns.visit_node(args);
+    }
+
+  #endif
+
+'unit_defn_list'}
+
+
+//---------------------------------------------------------------------
+}   //- namespace rbts
+}   //- namespace detail
+}   //- namespace .immer
+

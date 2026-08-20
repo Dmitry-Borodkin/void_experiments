@@ -13,41 +13,45 @@
 { voidc_enable_stack_trace(); }
 
 
-//{ v_debug_print_module(2); }
+{ v_debug_print_module(2); }
 //---------------------------------------------------------------------
-#define some: ()
+#define some: (j: int)
 {'stmt_list'
-
-    foo: () ~> void;
-
-    foo();
 
     #define inst_foo: ()
     {'unit_defn_list'
 
+      namespace my
+      {
         linkonce_odr
-        foo: () ~> void
+        foo: (i: int) ~> void
         {
-            printf("foo\n");
+            printf("foo: %d\n", i);
         }
+      }
 
     'unit_defn_list'}
 
-    v_register_inst(inst_foo);
+    v_execute_inst(inst_foo);
+
+
+    my.foo(j + 7);
+
 
 'stmt_list'}
 
 
-bar: () ~> void
+bar: (k: int) ~> void
 {
-    some();
+    some(k);
+    some(k+1);
 }
 
 //---------------------------------------------------------------------
 {
-    bar();
+    bar(5);
 
-    some();
+    some(3);
 
 }
 
@@ -74,6 +78,21 @@ baz: () ~> void
 {
     baz();
 }
+
+
+//---------------------------------------------------------------------
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(2); }
+{
+    a: &int := 42;
+
+    v = { r: int = a; r };
+
+    printf("v: %d\n", v);
+
+}
+
+
 
 
 
