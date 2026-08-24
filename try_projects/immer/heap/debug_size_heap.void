@@ -3,8 +3,7 @@
 //---------------------------------------------------------------------
 {
     v_import("../config.void");
-    v_export_import("../detail/util.void");         //- ?
-
+    v_export_import("../detail/util.void");
     v_export_import("identity_heap.void");
 }
 
@@ -18,17 +17,25 @@ namespace .immer {
 #if (IMMER_ENABLE_DEBUG_SIZE_HEAP)
 
   //---------------------------------------------------------------------
-  #define debug_size_heap: [](HeapNS: v_static_namespace_t) ~> v_static_namespace_t
-    =  v_generic_ns(debug_size_heap_ns, Q(v_namespace_get_name(HeapNS)));
+  #define debug_size_heap: [](HeapNS: v_static_namespace_t) ~> v_static_namespace_t  =
+  {
+    ds = v_generic_ns(debug_size_heap_ns, Q(v_namespace_get_name(HeapNS)));
+
+    #if (!v_defined(ds, allocate))
+
+        v_execute_outer(_instantiate_debug_size_heap, ds, HeapNS);
+
+    #endif
+
+    ds
+  };
 
   //---------------------------------------------------------------------
-  #define instantiate_debug_size_heap: [](HeapNS: v_static_namespace_t)
+  #define _instantiate_debug_size_heap: [](DS: v_static_namespace_t, HeapNS: v_static_namespace_t)
   {'unit_defn_list'
 
-    namespace debug_size_heap(HeapNS)
+    namespace (DS)              //- WTF ?
     {
-      #if (v_guard_ns())
-
         extra_size = 16;            //- Kinda  alignof(max_align_t)
 
         alwaysinline
@@ -50,8 +57,6 @@ namespace .immer {
 
             HeapNS.deallocate(extra_size + size, p);
         }
-
-      #endif
     }
 
   'unit_defn_list'}
@@ -59,8 +64,6 @@ namespace .immer {
 #else   //- IMMER_ENABLE_DEBUG_SIZE_HEAP
 
   debug_size_heap = identity_heap;
-
-  instantiate_debug_size_heap = instantiate_identity_heap;
 
 #endif  //- IMMER_ENABLE_DEBUG_SIZE_HEAP
 

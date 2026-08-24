@@ -15,45 +15,54 @@ namespace .immer {
 
 
 //---------------------------------------------------------------------
-#define heap_policy: [](HeapNS: v_static_namespace_t) ~> v_static_namespace_t
-  =  v_generic_ns(heap_policy_ns, Q(v_namespace_get_name(HeapNS)));
+#define heap_policy: [](HeapNS: v_static_namespace_t) ~> v_static_namespace_t  =
+{
+    hp = v_generic_ns(heap_policy_ns, Q(v_namespace_get_name(HeapNS)));
 
+    #if (!v_defined(hp, heap))
+
+        v_execute_outer(_instantiate_heap_policy, hp, HeapNS);
+
+    #endif
+
+    hp
+};
 
 //---------------------------------------------------------------------
-#define instantiate_heap_policy: [](HeapNS: v_static_namespace_t)
+#define _instantiate_heap_policy: [](HP: v_static_namespace_t, HeapNS: v_static_namespace_t)
 {'unit_defn_list'
 
-    namespace heap_policy(HeapNS)
+    namespace (HP)
     {
-      #if (v_guard_ns())
-
         heap = HeapNS;
 
-        #define optimized: [](Size: size_t) ~> v_static_namespace_t
-          =  v_generic_ns(optimized_ns, N(Size));
+        #define optimized: [](Size: size_t) ~> v_static_namespace_t  =
+        {
+            op = v_generic_ns(optimized_ns, N(Size));
 
-        #define instantiate_optimized: [](Size: size_t)
+            #if (!v_defined(op, optimal_size))
+
+                v_execute_outer(_instantiate_optimized, op, heap, Size);        //- Sic!
+
+            #endif
+
+            op
+        };
+
+        #define _instantiate_optimized: [](OP, HeapNS, Size)                    //- Sic!
         {'unit_defn_list'
 
-            namespace optimized(Size)
+            namespace (OP)
             {
-              #if (v_guard_ns())
+                optimal_size = Size;        //- ?..
 
-//              heap = HeapNS;          //- Sic!
-
-              #endif
+                heap = HeapNS;              //- ?..
             }
 
         'unit_defn_list'}
-
-      #endif
     }
 
 'unit_defn_list'}
-
-
-
-
 
 
 //---------------------------------------------------------------------

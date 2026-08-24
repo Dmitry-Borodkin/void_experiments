@@ -13,14 +13,15 @@
 { voidc_enable_stack_trace(); }
 
 
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(9); }
 //---------------------------------------------------------------------
-#do (immer.instantiate_default_memory_policy())
+
 
 policy = immer.default_memory_policy;
 
-#do (policy.heap.instantiate_optimized(777))
-
-heap = policy.heap.optimized(777).heap;
+//heap = policy.heap.optimized(777).heap;
+heap = policy.heap.heap;
 
 
 {

@@ -663,7 +663,7 @@ namespace rbts {
 
               alwaysinline
               each_pred_i: (pos: regular_pos, i: count_t, n: count_t, args: ArgsT) ~> bool
-                =  each_pred_i_regular(pos, i, v, args);
+                =  each_pred_i_regular(pos, i, n, args);
 
             #endif
           }
@@ -1379,7 +1379,7 @@ namespace rbts {
              )
 
         linkonce_odr
-        each_left_regular: (p: Pos, start: count_t, args: ArgsT) ~> void
+        each_left_regular: (p: Pos, last: count_t, args: ArgsT) ~> void
         {
             v_assert(last < p.count);
 
@@ -2642,7 +2642,7 @@ namespace rbts {
           v_assert(node);
           v_assert(shift >= BL);
           v_assert(size > 0);
-          v_assert(size <= (branches(BL, size_t) << pos.shift_));
+          v_assert(size <= (branches(BL, size_t) << shift));
           {node, shift, size}
       };
 

@@ -32,7 +32,7 @@
 
     'unit_defn_list'}
 
-    v_execute_inst(inst_foo);
+    v_execute_outer(inst_foo);
 
 
     my.foo(j + 7);

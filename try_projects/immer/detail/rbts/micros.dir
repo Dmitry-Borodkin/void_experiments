@@ -6,6 +6,7 @@ Visitor                                                        │visitor.void
   2                                                            │visitor2.void
                                                                │
 Node                                                           │node.void
+  2                                                            │node2.void
                                                                │
 Position                                                       │position.void
   2                                                            │position2.void

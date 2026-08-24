@@ -3,7 +3,7 @@
 //---------------------------------------------------------------------
 {
     v_import("../config.void");
-    v_export_import("../detail/util.void");         //- ?
+    v_export_import("../detail/util.void");
 }
 
 
@@ -14,28 +14,30 @@ namespace .immer {
 
 
 //---------------------------------------------------------------------
-#define identity_heap: [](HeapNS: v_static_namespace_t) ~> v_static_namespace_t
-  =  v_generic_ns(identity_heap_ns, Q(v_namespace_get_name(HeapNS)));
+#define identity_heap: [](HeapNS: v_static_namespace_t) ~> v_static_namespace_t  =
+{
+    ih = v_generic_ns(identity_heap_ns, Q(v_namespace_get_name(HeapNS)));
 
+    #if (!v_defined(ih, allocate))
+
+        v_execute_outer(_instantiate_identity_heap, ih, HeapNS);
+
+    #endif
+
+    ih
+};
 
 //---------------------------------------------------------------------
-#define instantiate_identity_heap: [](HeapNS: v_static_namespace_t)
+#define _instantiate_identity_heap: [](IH: v_static_namespace_t, HeapNS: v_static_namespace_t)
 {'unit_defn_list'
 
-    namespace identity_heap(HeapNS)
+    alwaysinline
+    IH.allocate: (size: size_t) ~> *void  =  HeapNS.allocate(size);
+
+    alwaysinline
+    IH.deallocate: (size: size_t, data: *void) ~> void
     {
-      #if (v_guard_ns())
-
-        alwaysinline
-        allocate: (size: size_t) ~> *void  =  HeapNS.allocate(size);
-
-        alwaysinline
-        deallocate: (size: size_t, data: *void) ~> void
-        {
-            HeapNS.deallocate(size, data);
-        }
-
-      #endif
+        HeapNS.deallocate(size, data);
     }
 
 'unit_defn_list'}

@@ -8,31 +8,41 @@
     v_export_import("detail/util.void");
 }
 
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(999); }
 
 //---------------------------------------------------------------------
 //- <immer/memory_policy.hpp>
 //---------------------------------------------------------------------
 namespace .immer {
 
+
 //---------------------------------------------------------------------
 #define memory_policy: [](HeapPolicy:     v_static_namespace_t,
                           RefcountPolicy: v_static_type_t
-                         ) ~> v_static_namespace_t
-  =  v_generic_ns(memory_policy_ns,
-                  Q(v_namespace_get_name(HeapPolicy)),
-                  T(RefcountPolicy)
-                 );
+                         ) ~> v_static_namespace_t  =
+{
+    mp = v_generic_ns(memory_policy_ns,
+                      Q(v_namespace_get_name(HeapPolicy)),
+                      T(RefcountPolicy));
+
+    #if (!v_defined(mp, heap))
+
+        v_execute_outer(_instantiate_memory_policy, mp, HeapPolicy, RefcountPolicy);
+
+    #endif
+
+    mp
+};
 
 //---------------------------------------------------------------------
-#define instantiate_memory_policy: [](HeapPolicy:     v_static_namespace_t,
-                                      RefcountPolicy: v_static_type_t
-                                     )
+#define _instantiate_memory_policy: [](MemoryPolicy:   v_static_namespace_t,
+                                       HeapPolicy:     v_static_namespace_t,
+                                       RefcountPolicy: v_static_type_t)
 {'unit_defn_list'
 
-    namespace memory_policy(HeapPolicy, RefcountPolicy)
+    namespace (MemoryPolicy)
     {
-      #if (v_guard_ns())
-
         heap     = HeapPolicy;
         refcount = RefcountPolicy;
 
@@ -40,33 +50,17 @@ namespace .immer {
 
         //- ...
 
-      #endif
     }
 
 'unit_defn_list'}
 
 
 //---------------------------------------------------------------------
-#define instantiate_default_memory_policy: []()
-{'unit_defn_list'
+default_heap_policy     = heap_policy(debug_size_heap(malloc_heap));
+default_refcount_policy = unsafe_refcount_policy;
 
-  #if (v_guard_ns(guard_default_memory_policy))
-
-    #do (instantiate_debug_size_heap(malloc_heap),
-         instantiate_heap_policy(debug_size_heap(malloc_heap)))
-
-    default_heap_policy     = heap_policy(debug_size_heap(malloc_heap));
-    default_refcount_policy = unsafe_refcount_policy;
-
-    #do (instantiate_memory_policy(default_heap_policy, default_refcount_policy))
-
-    default_memory_policy = memory_policy(default_heap_policy,
-                                          default_refcount_policy);
-
-  #endif
-
-'unit_defn_list'}
-
+default_memory_policy = memory_policy(default_heap_policy,
+                                      default_refcount_policy);
 
 
 //---------------------------------------------------------------------

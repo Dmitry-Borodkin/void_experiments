@@ -6,7 +6,7 @@
 
     v_import("../memory_policy.void");
 
-    v_import("../detail/rbts/node.void");
+    v_import("../detail/rbts/node2.void");
 }
 
 
@@ -31,7 +31,7 @@ namespace my
 
     BL = derive_bits_leaf(my_type, policy, 5);
 
-    #do (instantiate_node(my_type, policy, 5, BL))
+//  #do (instantiate_node(my_type, policy, 5, BL))
 
 
 //---------------------------------------------------------------------
@@ -90,6 +90,10 @@ namespace my
 
 }
 
+
+node2_t = my.node(long, my.policy, 5, my.derive_bits_leaf(long, my.policy, 5));
+
+node3_t = my.node(my_type, my.policy, 5, my.BL);
 
 
 

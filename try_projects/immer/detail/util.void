@@ -7,7 +7,7 @@
     v_export_import("type_traits.void");
     v_export_import("cstring.void");
 
-//  v_export_import("cstdio.void");
+    v_export_import("cstdio.void");
 }
 
 
@@ -333,10 +333,10 @@ register_inst_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t
 
 //---------------------------------------------------------------------
 private
-execute_inst_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+execute_outer_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
-//printf("execute_inst_intrinsic: start\n");
-//defer printf("execute_inst_intrinsic: stop\n");
+//printf("execute_outer_intrinsic: start\n");
+//defer printf("execute_outer_intrinsic: stop\n");
 
     args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
 
@@ -356,52 +356,49 @@ execute_inst_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> v
 
     v_assert(fun && ptr);
 
-
-    //--------------------------
-    v_hide_variables();
-    //--------------------------
-
-    saved_obtain_module_ctx: &*void := undef;
-    saved_obtain_module_fun = v_get_obtain_module_hook(&saved_obtain_module_ctx);
-
-    saved_module = v_get_module();
-
-    v_set_obtain_module_hook(my_obtain_module, saved_module);
-
-    v_set_module(0);        //- Sic!
-
-    stmt_list = voidc_definitions_context_get_stmt_list();
-
-    saved_stmt_list = v_load(&stmt_list);
-
-    stmt_list := 0;
-
-
     expr: &v_ast_expr_t      := {};
-    args: &v_ast_expr_list_t := {};
+    list: &v_ast_expr_list_t := {};
+
+    v_make_list_nil(&list);
+
+    {   n = v_list_get_size(args);
+
+        for (i: &int := 1; i < n; ++i)      //- Arguments
+        {
+            v_reset_result();
+
+            v_ast_accept_visitor(v_list_get_item(args, i), vis);
+
+            t = v_get_result_type();
+            v = v_get_result_value();
+
+            v_ast_make_expr_compiled(&expr, t, v);
+
+            v_list_append(&list, &list, &expr);
+        }
+    }
 
     v_ast_make_expr_identifier(&expr, "dummy");
 
-    v_make_list_nil(&args);
+    v_ast_make_expr_call(&expr, &expr, &list);
 
-    v_ast_make_expr_call(&expr, &expr, &args);
+    //----------------------
+    v_hide_variables();
+    //----------------------
 
+    saved_module = v_get_module();
 
-    //--------------------------
+    v_set_module(0);        //- Sic!
+
+    //----------------------
     fun(ptr, vis, &expr);
-    //--------------------------
-
-
-    stmt_list := saved_stmt_list;
+    //----------------------
 
     v_set_module(saved_module);
 
-    v_set_obtain_module_hook(saved_obtain_module_fun, saved_obtain_module_ctx);
-
-
-    //--------------------------
+    //----------------------
     v_show_variables();
-    //--------------------------
+    //----------------------
 }
 
 
@@ -429,7 +426,7 @@ v_internal_immer_detail_util_effort: (*void) ~> void
 //
 //    v_add_intrinsic("v_register_inst", register_inst_intrinsic, ctx);
 
-    v_add_intrinsic("v_execute_inst", execute_inst_intrinsic, 0);
+    v_add_intrinsic("v_execute_outer", execute_outer_intrinsic, 0);
 }
 
 //---------------------------------------------------------------------
@@ -457,32 +454,24 @@ namespace detail {
 
 
 //---------------------------------------------------------------------
-#define util2: [](T1: v_static_type_t, T2: v_static_type_t) ~> v_static_namespace_t
-  =  v_generic_ns(util2_ns, T[T1,T2]);
-
-#define instantiate_equal: [](Iter1: v_static_type_t, Iter2: v_static_type_t)
+//- ...
+//---------------------------------------------------------------------
+#define _instantiate_equal: [](NS: v_static_namespace_t, Iter1: v_static_type_t, Iter2: v_static_type_t)
 {'unit_defn_list'
 
-    namespace util2(Iter1, Iter2)
+    inlinehint
+    NS.equal_impl: (i1: Iter1, i2: Iter2, n: size_t) ~> bool
     {
-      #if (v_guard_ns(guard_equal))
+        e1 = i1 + n;
+        i1: &Iter1 := i1;
+        i2: &Iter2 := i2;
 
-        inlinehint
-        equal: (i1: Iter1, i2: Iter2, n: size_t) ~> bool
+        for (; i1 < e1; ++i1, ++i2)
         {
-            e1 = i1 + n;
-            i1: &Iter1 := i1;
-            i2: &Iter2 := i2;
-
-            for (; i1 < e1; ++i1, ++i2)
-            {
-                if (!(*i1 == *i2))  return  false;
-            }
-
-            return  true;
+            if (!(*i1 == *i2))  return  false;
         }
 
-      #endif
+        return  true;
     }
 
 'unit_defn_list'}
@@ -497,25 +486,18 @@ namespace util
 //---------------------------------------------------------------------
 #define equal: [](i1, i2, n: size_t = 1) ~> bool  =
 {
-    IT1 = typeof(i1);
-    IT2 = typeof(i2);
+    Iter1 = typeof(i1);
+    Iter2 = typeof(i2);
 
-    ns = util2(IT1, IT2);
+    ns = v_generic_ns(equal_args, T[Iter1, Iter2]);
 
-    #if (!v_defined(ns, equal))
+    #if (!v_defined(ns, equal_impl))
 
-        #define instantiate: [*, IT1, IT2]()
-        {'unit_defn_list'
-
-            #do (instantiate_equal(IT1, IT2))
-
-        'unit_defn_list'}
-
-        v_execute_inst(instantiate);
+        v_execute_outer(_instantiate_equal, ns, Iter1, Iter2);
 
     #endif
 
-    ns.equal(i1, i2, n)
+    ns.equal_impl(i1, i2, n)
 };
 
 
