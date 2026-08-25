@@ -8,8 +8,6 @@
     v_export_import("detail/util.void");
 }
 
-//{ voidc_verify_jit_module_optimized(true); }
-//{ v_debug_print_module(999); }
 
 //---------------------------------------------------------------------
 //- <immer/memory_policy.hpp>

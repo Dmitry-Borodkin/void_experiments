@@ -20,8 +20,8 @@
 
 policy = immer.default_memory_policy;
 
-//heap = policy.heap.optimized(777).heap;
-heap = policy.heap.heap;
+heap = policy.heap.optimized(777).heap;
+//heap = policy.heap.heap;
 
 
 {

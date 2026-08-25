@@ -14,8 +14,6 @@
 
   IMMER_ENABLE_DEBUG_SIZE_HEAP = !v_defined(NDEBUG);
 
-//IMMER_ENABLE_DEBUG_SIZE_HEAP = false;
-
 #endif
 
 
