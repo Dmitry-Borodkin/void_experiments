@@ -36,10 +36,9 @@ namespace rbts {
 };
 
 //---------------------------------------------------------------------
-//#define _instantiate_node: [](nt: v_static_type_t,
-//                              T: v_static_type_t, MemoryPolicy: v_static_namespace_t,
-//                              B: bits_t, BL: bits_t)
-#define _instantiate_node: [](nt, T, MemoryPolicy, B, BL)
+#define _instantiate_node: [](nt: v_static_type_t,
+                              T: v_static_type_t, MemoryPolicy: v_static_namespace_t,
+                              B: bits_t, BL: bits_t)
 {'unit_defn_list'
 
     namespace (nt)                      //- Sic !!!

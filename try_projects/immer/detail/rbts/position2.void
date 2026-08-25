@@ -25,16 +25,9 @@ namespace rbts {
 {
     ns = v_generic_ns(position_ns, T(NodeT));
 
-    #if (!v_defined(ns, do_inst))
+    #if (!v_defined(ns, node_t))
 
-        #define instantiate: [*, NodeT]()
-        {'unit_defn_list'
-
-            #do (instantiate_position(NodeT))
-
-        'unit_defn_list'}
-
-        v_execute_inst(instantiate);
+        v_execute_outer(_instantiate_position, ns, NodeT);
 
     #endif
 
@@ -42,88 +35,17 @@ namespace rbts {
 };
 
 //---------------------------------------------------------------------
-#define instantiate_position: [](NodeT: v_static_type_t)
+#define _instantiate_position: [](NS: v_static_namespace_t, NodeT: v_static_type_t)
 {'unit_defn_list'
 
-  namespace v_generic_ns(position_ns, T(NodeT))
-  {
-    #if (v_guard_ns())
-
-      node_t    = NodeT;
-      B         = NodeT.bits;
-      BL        = NodeT.bits_leaf;
-      value_t   = NodeT.value_t;
-      relaxed_t = NodeT.relaxed_t;
-
-      #define do_inst: [NodeT](InstMacro)
-      {'stmt'
-
-          {   #define instantiate: [*, NodeT, InstMacro]()
-              {'unit_defn_list'
-
-                  #do (InstMacro(NodeT))
-
-              'unit_defn_list'}
-
-              v_execute_inst(instantiate);
-          }
-
-      'stmt'}
-
-    #endif
-  }
-
-'unit_defn_list'}
-
-
-//---------------------------------------------------------------------
-#define position_args: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
-                          ArgsT: v_static_type_t) ~> v_static_namespace_t  =
-{
-    ns = Pos.v_generic_ns(position_args_ns, Q(v_namespace_get_name(Vis)), T(ArgsT));
-
-    #if (!v_defined(ns, do_inst))
-
-        #define instantiate: [*, NodeT]()
-        {'unit_defn_list'
-
-            #do (instantiate_position_args(Pos, Vis, ArgsT))
-
-        'unit_defn_list'}
-
-        v_execute_inst(instantiate);
-
-    #endif
-
-    ns
-};
-
-//---------------------------------------------------------------------
-#define instantiate_position_args: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
-                                      ArgsT: v_static_type_t) ~> v_static_namespace_t
-{'unit_defn_list'
-
-  namespace Pos.v_generic_ns(position_args_ns, Q(v_namespace_get_name(Vis)), T(ArgsT))
-  {
-    #if (v_guard_ns())
-
-      #define do_inst: [Pos, Vis, ArgsT](InstMacro)
-      {'stmt'
-
-          {   #define instantiate: [*, Pos, Vis, ArgsT, InstMacro]()
-              {'unit_defn_list'
-
-                  #do (InstMacro(Pos, Vis, ArgsT))
-
-              'unit_defn_list'}
-
-              v_execute_inst(instantiate);
-          }
-
-      'stmt'}
-
-    #endif
-  }
+    namespace (NS)
+    {
+        node_t    = NodeT;
+        B         = NodeT.bits;
+        BL        = NodeT.bits_leaf;
+        value_t   = NodeT.value_t;
+        relaxed_t = NodeT.relaxed_t;
+    }
 
 'unit_defn_list'}
 
@@ -131,46 +53,42 @@ namespace rbts {
 //---------------------------------------------------------------------
 //- empty_regular_pos
 //---------------------------------------------------------------------
-#define instantiate_empty_regular_pos: [](NodeT: v_static_type_t)
+#define _instantiate_empty_regular_pos: [](NodeT: v_static_type_t)
 {'unit_defn_list'
 
-  namespace position(NodeT)
-  {
-    #if (v_guard_ns(empty_regular_pos_ns))
+    namespace position(NodeT)
+    {
+        struct empty_regular_pos
+        {
+            node_: *NodeT;
+        };
 
-      struct empty_regular_pos
-      {
-          node_: *NodeT;
-      };
+        namespace empty_regular_pos
+        {
+            using namespace position(NodeT);
+        }
 
-      namespace empty_regular_pos
-      {
-          using namespace position(NodeT);
-      }
+        alwaysinline
+        (_.count): (empty_regular_pos) ~> count_t  =  0;
 
-      alwaysinline
-      (_.count): (empty_regular_pos) ~> count_t  =  0;
+        alwaysinline
+        (_.node): (pos: empty_regular_pos) ~> *NodeT  =  pos.node_;
 
-      alwaysinline
-      (_.node): (pos: empty_regular_pos) ~> *NodeT  =  pos.node_;
+        alwaysinline
+        (_.shift): (empty_regular_pos) ~> shift_t  =  0;
 
-      alwaysinline
-      (_.shift): (empty_regular_pos) ~> shift_t  =  0;
-
-      alwaysinline
-      (_.size): (empty_regular_pos) ~> size_t  =  0;
+        alwaysinline
+        (_.size): (empty_regular_pos) ~> size_t  =  0;
 
 
-      #define (_.each()): [](p: empty_regular_pos, v: v_static_namespace_t, args) ~> void  =  {};
+        #define (_.each()): [](p: empty_regular_pos, v: v_static_namespace_t, args) ~> void  =  {};
 
-      #define (_.each_pred()): [](p: empty_regular_pos, v: v_static_namespace_t, args) ~> bool  =  true;
+        #define (_.each_pred()): [](p: empty_regular_pos, v: v_static_namespace_t, args) ~> bool  =  true;
 
-      #define (_.visit()): [](p: empty_regular_pos, v: v_static_namespace_t, args)
-        =  v.visit_regular({p, args});
+        #define (_.visit()): [](p: empty_regular_pos, v: v_static_namespace_t, args)
+          =  v.visit_regular({p, args});
 
-    #endif
-
-  }     //- namespace position(NodeT)
+    }   //- namespace position(NodeT)
 
 'unit_defn_list'}
 
@@ -183,7 +101,7 @@ namespace rbts {
 
     #if (!v_defined(ns, empty_regular_pos))
 
-        ns.do_inst(instantiate_empty_regular_pos);
+        v_execute_outer(_instantiate_empty_regular_pos, NodeT);
 
     #endif
 
@@ -196,42 +114,38 @@ namespace rbts {
 //---------------------------------------------------------------------
 //- empty_leaf_pos
 //---------------------------------------------------------------------
-#define instantiate_empty_leaf_pos: [](NodeT: v_static_type_t)
+#define _instantiate_empty_leaf_pos: [](NodeT: v_static_type_t)
 {'unit_defn_list'
 
-  namespace position(NodeT)
-  {
-    #if (v_guard_ns(empty_leaf_pos_ns))
+    namespace position(NodeT)
+    {
+        struct empty_leaf_pos
+        {
+            node_: *NodeT;
+        };
 
-      struct empty_leaf_pos
-      {
-          node_: *NodeT;
-      };
+        namespace empty_leaf_pos
+        {
+            using namespace position(NodeT);
+        }
 
-      namespace empty_leaf_pos
-      {
-          using namespace position(NodeT);
-      }
+        alwaysinline
+        (_.count): (empty_leaf_pos) ~> count_t  =  0;
 
-      alwaysinline
-      (_.count): (empty_leaf_pos) ~> count_t  =  0;
+        alwaysinline
+        (_.node): (pos: empty_leaf_pos) ~> *NodeT  =  pos.node_;
 
-      alwaysinline
-      (_.node): (pos: empty_leaf_pos) ~> *NodeT  =  pos.node_;
+        alwaysinline
+        (_.shift): (empty_leaf_pos) ~> shift_t  =  0;
 
-      alwaysinline
-      (_.shift): (empty_leaf_pos) ~> shift_t  =  0;
-
-      alwaysinline
-      (_.size): (empty_leaf_pos) ~> size_t  =  0;
+        alwaysinline
+        (_.size): (empty_leaf_pos) ~> size_t  =  0;
 
 
-      #define (_.visit()): [](p: empty_leaf_pos, v: v_static_namespace_t, args)
-        =  v.visit_leaf({p, args});
+        #define (_.visit()): [](p: empty_leaf_pos, v: v_static_namespace_t, args)
+          =  v.visit_leaf({p, args});
 
-    #endif
-
-  }     //- namespace position(NodeT)
+    }   //- namespace position(NodeT)
 
 'unit_defn_list'}
 
@@ -244,7 +158,7 @@ namespace rbts {
 
     #if (!v_defined(ns, empty_leaf_pos))
 
-        ns.do_inst(instantiate_empty_leaf_pos);
+        v_execute_outer(_instantiate_empty_leaf_pos, NodeT);
 
     #endif
 
@@ -259,49 +173,45 @@ namespace rbts {
 //---------------------------------------------------------------------
 //- leaf_pos
 //---------------------------------------------------------------------
-#define instantiate_leaf_pos: [](NodeT: v_static_type_t)
+#define _instantiate_leaf_pos: [](NodeT: v_static_type_t)
 {'unit_defn_list'
 
-  namespace position(NodeT)
-  {
-    #if (v_guard_ns(leaf_pos_ns))
+    namespace position(NodeT)
+    {
+        struct leaf_pos
+        {
+            node_: *NodeT;
+            size_: size_t;
+        };
 
-      struct leaf_pos
-      {
-          node_: *NodeT;
-          size_: size_t;
-      };
+        namespace leaf_pos
+        {
+            using namespace position(NodeT);
+        }
 
-      namespace leaf_pos
-      {
-          using namespace position(NodeT);
-      }
+        alwaysinline
+        (_.index()): (leaf_pos, idx: size_t) ~> count_t  =  (idx & mask(BL) : count_t);
 
-      alwaysinline
-      (_.index()): (leaf_pos, idx: size_t) ~> count_t  =  (idx & mask(BL) : count_t);
+        alwaysinline
+        (_.subindex()): (leaf_pos, idx: size_t) ~> count_t  =  (idx: count_t);
 
-      alwaysinline
-      (_.subindex()): (leaf_pos, idx: size_t) ~> count_t  =  (idx: count_t);
+        alwaysinline
+        (_.count): (pos: leaf_pos) ~> count_t  =  pos.index(pos.size_ -1) + 1;
 
-      alwaysinline
-      (_.count): (pos: leaf_pos) ~> count_t  =  pos.index(pos.size_ -1) + 1;
+        alwaysinline
+        (_.node): (pos: leaf_pos) ~> *NodeT  =  pos.node_;
 
-      alwaysinline
-      (_.node): (pos: leaf_pos) ~> *NodeT  =  pos.node_;
+        alwaysinline
+        (_.shift): (leaf_pos) ~> shift_t  =  0;
 
-      alwaysinline
-      (_.shift): (leaf_pos) ~> shift_t  =  0;
-
-      alwaysinline
-      (_.size): (pos: leaf_pos) ~> size_t  =  pos.size_;
+        alwaysinline
+        (_.size): (pos: leaf_pos) ~> size_t  =  pos.size_;
 
 
-      #define (_.visit()): [](p: leaf_pos, v: v_static_namespace_t, args)
-        =  v.visit_leaf({p, args});
+        #define (_.visit()): [](p: leaf_pos, v: v_static_namespace_t, args)
+          =  v.visit_leaf({p, args});
 
-    #endif
-
-  }     //- namespace position(NodeT)
+    }   //- namespace position(NodeT)
 
 'unit_defn_list'}
 
@@ -314,7 +224,7 @@ namespace rbts {
 
     #if (!v_defined(ns, leaf_pos))
 
-        ns.do_inst(instantiate_leaf_pos);
+        v_execute_outer(_instantiate_leaf_pos, NodeT);
 
     #endif
 
@@ -330,49 +240,45 @@ namespace rbts {
 //---------------------------------------------------------------------
 //- leaf_sub_pos
 //---------------------------------------------------------------------
-#define instantiate_leaf_sub_pos: [](NodeT: v_static_type_t)
+#define _instantiate_leaf_sub_pos: [](NodeT: v_static_type_t)
 {'unit_defn_list'
 
-  namespace position(NodeT)
-  {
-    #if (v_guard_ns(leaf_sub_pos_ns))
+    namespace position(NodeT)
+    {
+        struct leaf_sub_pos
+        {
+            node_:  *NodeT;
+            count_: count_t;
+        };
 
-      struct leaf_sub_pos
-      {
-          node_:  *NodeT;
-          count_: count_t;
-      };
+        namespace leaf_sub_pos
+        {
+            using namespace position(NodeT);
+        }
 
-      namespace leaf_sub_pos
-      {
-          using namespace position(NodeT);
-      }
+        alwaysinline
+        (_.index()): (leaf_sub_pos, idx: size_t) ~> count_t  =  (idx & mask(BL) : count_t);
 
-      alwaysinline
-      (_.index()): (leaf_sub_pos, idx: size_t) ~> count_t  =  (idx & mask(BL) : count_t);
+        alwaysinline
+        (_.subindex()): (leaf_sub_pos, idx: size_t) ~> count_t  =  (idx: count_t);
 
-      alwaysinline
-      (_.subindex()): (leaf_sub_pos, idx: size_t) ~> count_t  =  (idx: count_t);
+        alwaysinline
+        (_.count): (pos: leaf_sub_pos) ~> count_t  =  pos.count_;
 
-      alwaysinline
-      (_.count): (pos: leaf_sub_pos) ~> count_t  =  pos.count_;
+        alwaysinline
+        (_.node): (pos: leaf_sub_pos) ~> *NodeT  =  pos.node_;
 
-      alwaysinline
-      (_.node): (pos: leaf_sub_pos) ~> *NodeT  =  pos.node_;
+        alwaysinline
+        (_.shift): (leaf_sub_pos) ~> shift_t  =  0;
 
-      alwaysinline
-      (_.shift): (leaf_sub_pos) ~> shift_t  =  0;
-
-      alwaysinline
-      (_.size): (pos: leaf_sub_pos) ~> size_t  =  pos.count_;
+        alwaysinline
+        (_.size): (pos: leaf_sub_pos) ~> size_t  =  pos.count_;
 
 
-      #define (_.visit()): [](p: leaf_sub_pos, v: v_static_namespace_t, args)
-        =  v.visit_leaf({p, args});
+        #define (_.visit()): [](p: leaf_sub_pos, v: v_static_namespace_t, args)
+          =  v.visit_leaf({p, args});
 
-    #endif
-
-  }     //- namespace position(NodeT)
+    }   //- namespace position(NodeT)
 
 'unit_defn_list'}
 
@@ -385,7 +291,7 @@ namespace rbts {
 
     #if (!v_defined(ns, leaf_sub_pos))
 
-        ns.do_inst(instantiate_leaf_sub_pos);
+        v_execute_outer(_instantiate_leaf_sub_pos, NodeT);
 
     #endif
 
@@ -401,42 +307,38 @@ namespace rbts {
 //---------------------------------------------------------------------
 //- leaf_descent_pos
 //---------------------------------------------------------------------
-#define instantiate_leaf_descent_pos: [](NodeT: v_static_type_t)
+#define _instantiate_leaf_descent_pos: [](NodeT: v_static_type_t)
 {'unit_defn_list'
 
-  namespace position(NodeT)
-  {
-    #if (v_guard_ns(leaf_descent_pos_ns))
+    namespace position(NodeT)
+    {
+        struct leaf_descent_pos
+        {
+            node_: *NodeT;
+        };
 
-      struct leaf_descent_pos
-      {
-          node_: *NodeT;
-      };
+        namespace leaf_descent_pos
+        {
+            using namespace position(NodeT);
+        }
 
-      namespace leaf_descent_pos
-      {
-          using namespace position(NodeT);
-      }
+        alwaysinline
+        (_.index()): (leaf_descent_pos, idx: size_t) ~> count_t  =  (idx & mask(BL) : count_t);
 
-      alwaysinline
-      (_.index()): (leaf_descent_pos, idx: size_t) ~> count_t  =  (idx & mask(BL) : count_t);
+        alwaysinline
+        (_.node): (pos: leaf_descent_pos) ~> *NodeT  =  pos.node_;
 
-      alwaysinline
-      (_.node): (pos: leaf_descent_pos) ~> *NodeT  =  pos.node_;
-
-      alwaysinline
-      (_.shift): (leaf_descent_pos) ~> shift_t  =  0;
+        alwaysinline
+        (_.shift): (leaf_descent_pos) ~> shift_t  =  0;
 
 
-      #define (_.descend()): [](p: leaf_descent_pos, v: v_static_namespace_t, args)
-        =  undef;       //- ?!?!?!?!?!?!?
+        #define (_.descend()): [](p: leaf_descent_pos, v: v_static_namespace_t, args)
+          =  undef;       //- ?!?!?!?!?!?!?
 
-      #define (_.visit()): [](p: leaf_descent_pos, v: v_static_namespace_t, args)
-        =  v.visit_leaf({p, args});
+        #define (_.visit()): [](p: leaf_descent_pos, v: v_static_namespace_t, args)
+          =  v.visit_leaf({p, args});
 
-    #endif
-
-  }     //- namespace position(NodeT)
+    }   //- namespace position(NodeT)
 
 'unit_defn_list'}
 
@@ -449,7 +351,7 @@ namespace rbts {
 
     #if (!v_defined(ns, leaf_descent_pos))
 
-        ns.do_inst(instantiate_leaf_descent_pos);
+        v_execute_outer(_instantiate_leaf_descent_pos, NodeT);
 
     #endif
 
@@ -464,48 +366,44 @@ namespace rbts {
 //---------------------------------------------------------------------
 //- full_leaf_pos
 //---------------------------------------------------------------------
-#define instantiate_full_leaf_pos: [](NodeT: v_static_type_t)
+#define _instantiate_full_leaf_pos: [](NodeT: v_static_type_t)
 {'unit_defn_list'
 
-  namespace position(NodeT)
-  {
-    #if (v_guard_ns(full_leaf_pos_ns))
+    namespace position(NodeT)
+    {
+        struct full_leaf_pos
+        {
+            node_: *NodeT;
+        };
 
-      struct full_leaf_pos
-      {
-          node_: *NodeT;
-      };
+        namespace full_leaf_pos
+        {
+            using namespace position(NodeT);
+        }
 
-      namespace full_leaf_pos
-      {
-          using namespace position(NodeT);
-      }
+        alwaysinline
+        (_.index()): (full_leaf_pos, idx: size_t) ~> count_t  =  (idx & mask(BL) : count_t);
 
-      alwaysinline
-      (_.index()): (full_leaf_pos, idx: size_t) ~> count_t  =  (idx & mask(BL) : count_t);
+        alwaysinline
+        (_.subindex()): (full_leaf_pos, idx: size_t) ~> count_t  =  (idx: count_t);
 
-      alwaysinline
-      (_.subindex()): (full_leaf_pos, idx: size_t) ~> count_t  =  (idx: count_t);
+        alwaysinline
+        (_.count): (full_leaf_pos) ~> count_t  =  branches(BL);
 
-      alwaysinline
-      (_.count): (full_leaf_pos) ~> count_t  =  branches(BL);
+        alwaysinline
+        (_.node): (pos: full_leaf_pos) ~> *NodeT  =  pos.node_;
 
-      alwaysinline
-      (_.node): (pos: full_leaf_pos) ~> *NodeT  =  pos.node_;
+        alwaysinline
+        (_.shift): (full_leaf_pos) ~> shift_t  =  0;
 
-      alwaysinline
-      (_.shift): (full_leaf_pos) ~> shift_t  =  0;
-
-      alwaysinline
-      (_.size): (full_leaf_pos) ~> size_t  =  branches(BL);
+        alwaysinline
+        (_.size): (full_leaf_pos) ~> size_t  =  branches(BL);
 
 
-      #define (_.visit()): [](p: full_leaf_pos, v: v_static_namespace_t, args)
-        =  v.visit_leaf({p, args});
+        #define (_.visit()): [](p: full_leaf_pos, v: v_static_namespace_t, args)
+          =  v.visit_leaf({p, args});
 
-    #endif
-
-  }     //- namespace position(NodeT)
+    }   //- namespace position(NodeT)
 
 'unit_defn_list'}
 
@@ -518,7 +416,7 @@ namespace rbts {
 
     #if (!v_defined(ns, full_leaf_pos))
 
-        ns.do_inst(instantiate_full_leaf_pos);
+        v_execute_outer(_instantiate_full_leaf_pos, NodeT);
 
     #endif
 
@@ -533,100 +431,96 @@ namespace rbts {
 //---------------------------------------------------------------------
 //- regular_pos
 //---------------------------------------------------------------------
-#define instantiate_regular_pos: [](NodeT: v_static_type_t)
+#define _instantiate_regular_pos: [](NodeT: v_static_type_t)
 {'unit_defn_list'
 
-  namespace position(NodeT)
-  {
-    #if (v_guard_ns(regular_pos_ns))
+    namespace position(NodeT)
+    {
+        struct regular_pos
+        {
+            node_:  *NodeT;
+            shift_: shift_t;
+            size_:  size_t;
+        };
 
-      struct regular_pos
-      {
-          node_:  *NodeT;
-          shift_: shift_t;
-          size_:  size_t;
-      };
+        namespace regular_pos
+        {
+            using namespace position(NodeT);
+        }
 
-      namespace regular_pos
-      {
-          using namespace position(NodeT);
-      }
+        alwaysinline
+        (_.index()): (pos: regular_pos, idx: size_t) ~> count_t  =  ((idx >> pos.shift_) & mask(B) : count_t);
 
-      alwaysinline
-      (_.index()): (pos: regular_pos, idx: size_t) ~> count_t  =  ((idx >> pos.shift_) & mask(B) : count_t);
+        alwaysinline
+        (_.subindex()): (pos: regular_pos, idx: size_t) ~> count_t  =  (idx >> pos.shift_ : count_t);
 
-      alwaysinline
-      (_.subindex()): (pos: regular_pos, idx: size_t) ~> count_t  =  (idx >> pos.shift_ : count_t);
+        alwaysinline
+        (_.count): (pos: regular_pos) ~> count_t  =  pos.index(pos.size_ - 1) + 1;
 
-      alwaysinline
-      (_.count): (pos: regular_pos) ~> count_t  =  pos.index(pos.size_ - 1) + 1;
+        alwaysinline
+        (_.node): (pos: regular_pos) ~> *NodeT  =  pos.node_;
 
-      alwaysinline
-      (_.node): (pos: regular_pos) ~> *NodeT  =  pos.node_;
+        alwaysinline
+        (_.shift): (pos: regular_pos) ~> shift_t  =  pos.shift_;
 
-      alwaysinline
-      (_.shift): (pos: regular_pos) ~> shift_t  =  pos.shift_;
+        alwaysinline
+        (_.size): (pos: regular_pos) ~> size_t  =  pos.size_;
 
-      alwaysinline
-      (_.size): (pos: regular_pos) ~> size_t  =  pos.size_;
-
-      alwaysinline
-      (_.this_size): (pos: regular_pos) ~> size_t
-        =  ((pos.size_ -1) & ~((-1: size_t) << (pos.shift_ + B))) + 1;
+        alwaysinline
+        (_.this_size): (pos: regular_pos) ~> size_t
+          =  ((pos.size_ -1) & ~((-1: size_t) << (pos.shift_ + B))) + 1;
 
 
-      #define (_.each()): [](p: regular_pos, v: v_static_namespace_t, args)
-        =  each_regular(p, v, args);
+        #define (_.each()): [](p: regular_pos, v: v_static_namespace_t, args)
+          =  each_regular(p, v, args);
 
-      #define (_.each_pred()): [](p: regular_pos, v: v_static_namespace_t, args) ~> bool
-        =  each_pred_regular(p, v, args);
+        #define (_.each_pred()): [](p: regular_pos, v: v_static_namespace_t, args) ~> bool
+          =  each_pred_regular(p, v, args);
 
-      #define (_.each_pred_zip()): [](p: regular_pos, v: v_static_namespace_t, other: *node_t, args) ~> bool
-        =  each_pred_zip_regular(p, v, other, args);
+        #define (_.each_pred_zip()): [](p: regular_pos, v: v_static_namespace_t, other: *node_t, args) ~> bool
+          =  each_pred_zip_regular(p, v, other, args);
 
-      #define (_.each_pred_i()): [](p: regular_pos, v: v_static_namespace_t, i: count_t, n: count_t, args) ~> bool
-        =  each_pred_i_regular(p, v, i, n, args);
+        #define (_.each_pred_i()): [](p: regular_pos, v: v_static_namespace_t, i: count_t, n: count_t, args) ~> bool
+          =  each_pred_i_regular(p, v, i, n, args);
 
-      #define (_.each_pred_right()): [](p: regular_pos, v: v_static_namespace_t, start: count_t, args) ~> bool
-        =  each_pred_right_regular(p, v, start, args);
+        #define (_.each_pred_right()): [](p: regular_pos, v: v_static_namespace_t, start: count_t, args) ~> bool
+          =  each_pred_right_regular(p, v, start, args);
 
-      #define (_.each_pred_left()): [](p: regular_pos, v: v_static_namespace_t, last: count_t, args) ~> bool
-        =  each_pred_left_regular(p, v, last, args);
+        #define (_.each_pred_left()): [](p: regular_pos, v: v_static_namespace_t, last: count_t, args) ~> bool
+          =  each_pred_left_regular(p, v, last, args);
 
-      #define (_.each_i()): [](p: regular_pos, v: v_static_namespace_t, i: count_t, n: count_t, args)
-        =  each_i_regular(p, v, i, n, args);
+        #define (_.each_i()): [](p: regular_pos, v: v_static_namespace_t, i: count_t, n: count_t, args)
+          =  each_i_regular(p, v, i, n, args);
 
-      #define (_.each_right()): [](p: regular_pos, v: v_static_namespace_t, start: count_t, args)
-        =  each_right_regular(p, v, start, args);
+        #define (_.each_right()): [](p: regular_pos, v: v_static_namespace_t, start: count_t, args)
+          =  each_right_regular(p, v, start, args);
 
-      #define (_.each_left()): [](p: regular_pos, v: v_static_namespace_t, last: count_t, args)
-        =  each_left_regular(p, v, last, args);
+        #define (_.each_left()): [](p: regular_pos, v: v_static_namespace_t, last: count_t, args)
+          =  each_left_regular(p, v, last, args);
 
-      #define (_.towards()): [](p: regular_pos, v: v_static_namespace_t, idx: size_t, args)
-        =  towards_oh_ch_regular(p, v, idx, p.index(idx), p.count, args);
+        #define (_.towards()): [](p: regular_pos, v: v_static_namespace_t, idx: size_t, args)
+          =  towards_oh_ch_regular(p, v, idx, p.index(idx), p.count, args);
 
-      #define (_.towards_oh()): [](p: regular_pos, v: v_static_namespace_t, idx: size_t, offset_hint: count_t, args)
-        =  towards_oh_ch_regular(p, v, idx, offset_hint, p.count, args);
+        #define (_.towards_oh()): [](p: regular_pos, v: v_static_namespace_t, idx: size_t, offset_hint: count_t, args)
+          =  towards_oh_ch_regular(p, v, idx, offset_hint, p.count, args);
 
-      #define (_.towards_oh_ch()): [](p: regular_pos, v: v_static_namespace_t,
-                                      idx: size_t,
-                                      offset_hint: count_t,
-                                      count_hint: count_t,
-                                      args)
-        =  towards_oh_ch_regular(p, v, idx, offset_hint, count_hint, args);
+        #define (_.towards_oh_ch()): [](p: regular_pos, v: v_static_namespace_t,
+                                        idx: size_t,
+                                        offset_hint: count_t,
+                                        count_hint: count_t,
+                                        args)
+          =  towards_oh_ch_regular(p, v, idx, offset_hint, count_hint, args);
 
-      #define (_.towards_sub_oh()): [](p: regular_pos, v: v_static_namespace_t, idx: size_t, offset_hint: count_t, args)
-        =  towards_sub_oh_regular(p, v, idx, offset_hint, args);
+        #define (_.towards_sub_oh()): [](p: regular_pos, v: v_static_namespace_t, idx: size_t, offset_hint: count_t, args)
+          =  towards_sub_oh_regular(p, v, idx, offset_hint, args);
 
-      #define (_.last_oh()): [](p: regular_pos, v: v_static_namespace_t, offset_hint: count_t, args)
-        =  last_oh_regular(p, v, offset_hint, args);
+        #define (_.last_oh()): [](p: regular_pos, v: v_static_namespace_t, offset_hint: count_t, args)
+          =  last_oh_regular(p, v, offset_hint, args);
 
-      #define (_.visit()): [](p: regular_pos, v: v_static_namespace_t, args)
-        =  v.visit_regular({p, args});
+        #define (_.visit()): [](p: regular_pos, v: v_static_namespace_t, args)
+          =  v.visit_regular({p, args});
 
-    #endif
-
-  }     //- namespace position(NodeT)
+    }   //- namespace position(NodeT)
 
 'unit_defn_list'}
 
@@ -639,7 +533,7 @@ namespace rbts {
 
     #if (!v_defined(ns, regular_pos))
 
-        ns.do_inst(instantiate_regular_pos);
+        v_execute_outer(_instantiate_regular_pos, NodeT);
 
     #endif
 
@@ -654,18 +548,27 @@ namespace rbts {
 
 
 //---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+#define position_args: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
+                          ArgsT: v_static_type_t) ~> v_static_namespace_t  =
+{
+    ns = Pos.v_generic_ns(position_args_ns, Q(v_namespace_get_name(Vis)), T(ArgsT));
+    ns
+};
+
+
+//---------------------------------------------------------------------
 //- each_regular
 //---------------------------------------------------------------------
-#define instantiate_each_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
-                                     ArgsT: v_static_type_t)
+#define _instantiate_each_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
+                                      ArgsT: v_static_type_t)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT)
     {
-      #if (v_guard_ns(each_regular_ns))
-
         linkonce_odr
-        each_regular: (p: Pos, args: ArgsT) ~> void
+        _each_regular: (p: Pos, args: ArgsT) ~> void
         {
             n: &*node_t := p.node->inner;
             last         = p.count - 1;
@@ -692,8 +595,6 @@ namespace rbts {
                 make_regular_pos(*n, ss, p.size).visit(Vis, args);
             }
         }
-
-      #endif
     }
 
 'unit_defn_list'}
@@ -706,29 +607,27 @@ namespace rbts {
 
     ns = position_args(Pos, Vis, ArgsT);
 
-    #if (!v_defined(ns, each_regular))
+    #if (!v_defined(ns, _each_regular))
 
-        ns.do_inst(instantiate_each_regular);
+        v_execute_outer(_instantiate_each_regular, Pos, Vis, ArgsT);
 
     #endif
 
-    ns.each_regular(p, args)
+    ns._each_regular(p, args)
 };
 
 
 //---------------------------------------------------------------------
 //- each_pred_regular
 //---------------------------------------------------------------------
-#define instantiate_each_pred_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
-                                          ArgsT: v_static_type_t)
+#define _instantiate_each_pred_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
+                                           ArgsT: v_static_type_t)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT)
     {
-      #if (v_guard_ns(each_pred_regular_ns))
-
         linkonce_odr
-        each_pred_regular: (p: Pos, args: ArgsT) ~> bool
+        _each_pred_regular: (p: Pos, args: ArgsT) ~> bool
         {
             n: &*node_t := p.node->inner;
             last         = p.count - 1;
@@ -755,8 +654,6 @@ namespace rbts {
                 return  make_regular_pos(*n, ss, p.size).visit(Vis, args);
             }
         }
-
-      #endif
     }
 
 'unit_defn_list'}
@@ -769,29 +666,27 @@ namespace rbts {
 
     ns = position_args(Pos, Vis, ArgsT);
 
-    #if (!v_defined(ns, each_pred_regular))
+    #if (!v_defined(ns, _each_pred_regular))
 
-        ns.do_inst(instantiate_each_pred_regular);
+        v_execute_outer(_instantiate_each_pred_regular, Pos, Vis, ArgsT);
 
     #endif
 
-    ns.each_pred_regular(p, args)
+    ns._each_pred_regular(p, args)
 };
 
 
 //---------------------------------------------------------------------
 //- each_pred_zip_regular
 //---------------------------------------------------------------------
-#define instantiate_each_pred_zip_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
-                                              ArgsT: v_static_type_t)
+#define _instantiate_each_pred_zip_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
+                                               ArgsT: v_static_type_t)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT)
     {
-      #if (v_guard_ns(each_pred_zip_regular_ns))
-
         linkonce_odr
-        each_pred_zip_regular: (p: Pos, other: *node_t, args: ArgsT) ~> bool
+        _each_pred_zip_regular: (p: Pos, other: *node_t, args: ArgsT) ~> bool
         {
             n:  &*node_t := p.node->inner;
             n2: &*node_t := other->inner;
@@ -819,8 +714,6 @@ namespace rbts {
                 return  make_regular_pos(*n, ss, p.size).visit(Vis, {*n2, args});
             }
         }
-
-      #endif
     }
 
 'unit_defn_list'}
@@ -833,29 +726,27 @@ namespace rbts {
 
     ns = position_args(Pos, Vis, ArgsT);
 
-    #if (!v_defined(ns, each_pred_zip_regular))
+    #if (!v_defined(ns, _each_pred_zip_regular))
 
-        ns.do_inst(instantiate_each_pred_zip_regular);
+        v_execute_outer(_instantiate_each_pred_zip_regular, Pos, Vis, ArgsT);
 
     #endif
 
-    ns.each_pred_zip_regular(p, other, args)
+    ns._each_pred_zip_regular(p, other, args)
 };
 
 
 //---------------------------------------------------------------------
 //- each_pred_i_regular
 //---------------------------------------------------------------------
-#define instantiate_each_pred_i_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
-                                            ArgsT: v_static_type_t)
+#define _instantiate_each_pred_i_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
+                                             ArgsT: v_static_type_t)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT)
     {
-      #if (v_guard_ns(each_pred_i_regular_ns))
-
         linkonce_odr
-        each_pred_i_regular: (p: Pos, f: count_t, l: count_t, args: ArgsT) ~> bool
+        _each_pred_i_regular: (p: Pos, f: count_t, l: count_t, args: ArgsT) ~> bool
         {
             if (p.shift == BL)
             {
@@ -918,8 +809,6 @@ namespace rbts {
 
             return  true;
         }
-
-      #endif
     }
 
 'unit_defn_list'}
@@ -932,29 +821,27 @@ namespace rbts {
 
     ns = position_args(Pos, Vis, ArgsT);
 
-    #if (!v_defined(ns, each_pred_i_regular))
+    #if (!v_defined(ns, _each_pred_i_regular))
 
-        ns.do_inst(instantiate_each_pred_i_regular);
+        v_execute_outer(_instantiate_each_pred_i_regular, Pos, Vis, ArgsT);
 
     #endif
 
-    ns.each_pred_i_regular(p, f, l, args)
+    ns._each_pred_i_regular(p, f, l, args)
 };
 
 
 //---------------------------------------------------------------------
 //- each_pred_left_regular
 //---------------------------------------------------------------------
-#define instantiate_each_pred_left_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
-                                               ArgsT: v_static_type_t)
+#define _instantiate_each_pred_left_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
+                                                ArgsT: v_static_type_t)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT)
     {
-      #if (v_guard_ns(each_pred_left_regular_ns))
-
         linkonce_odr
-        each_pred_left_regular: (p: Pos, last: count_t, args: ArgsT) ~> bool
+        _each_pred_left_regular: (p: Pos, last: count_t, args: ArgsT) ~> bool
         {
             v_assert(last < p.count);
 
@@ -983,8 +870,6 @@ namespace rbts {
 
             return  true;
         }
-
-      #endif
     }
 
 'unit_defn_list'}
@@ -997,29 +882,27 @@ namespace rbts {
 
     ns = position_args(Pos, Vis, ArgsT);
 
-    #if (!v_defined(ns, each_pred_left_regular))
+    #if (!v_defined(ns, _each_pred_left_regular))
 
-        ns.do_inst(instantiate_each_pred_left_regular);
+        v_execute_outer(_instantiate_each_pred_left_regular, Pos, Vis, ArgsT);
 
     #endif
 
-    ns.each_pred_left_regular(p, last, args)
+    ns._each_pred_left_regular(p, last, args)
 };
 
 
 //---------------------------------------------------------------------
 //- each_pred_right_regular
 //---------------------------------------------------------------------
-#define instantiate_each_pred_right_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
-                                                ArgsT: v_static_type_t)
+#define _instantiate_each_pred_right_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
+                                                 ArgsT: v_static_type_t)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT)
     {
-      #if (v_guard_ns(each_pred_right_regular_ns))
-
         linkonce_odr
-        each_pred_right_regular: (p: Pos, start: count_t, args: ArgsT) ~> bool
+        _each_pred_right_regular: (p: Pos, start: count_t, args: ArgsT) ~> bool
         {
             if (p.shift == BL)
             {
@@ -1058,8 +941,6 @@ namespace rbts {
 
             return  true;
         }
-
-      #endif
     }
 
 'unit_defn_list'}
@@ -1072,29 +953,27 @@ namespace rbts {
 
     ns = position_args(Pos, Vis, ArgsT);
 
-    #if (!v_defined(ns, each_pred_right_regular))
+    #if (!v_defined(ns, _each_pred_right_regular))
 
-        ns.do_inst(instantiate_each_pred_right_regular);
+        v_execute_outer(_instantiate_each_pred_right_regular, Pos, Vis, ArgsT);
 
     #endif
 
-    ns.each_pred_right_regular(p, start, args)
+    ns._each_pred_right_regular(p, start, args)
 };
 
 
 //---------------------------------------------------------------------
 //- each_i_regular
 //---------------------------------------------------------------------
-#define instantiate_each_i_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
-                                       ArgsT: v_static_type_t)
+#define _instantiate_each_i_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
+                                        ArgsT: v_static_type_t)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT)
     {
-      #if (v_guard_ns(each_i_regular_ns))
-
         linkonce_odr
-        each_i_regular: (p: Pos, f: count_t, l: count_t, args: ArgsT) ~> void
+        _each_i_regular: (p: Pos, f: count_t, l: count_t, args: ArgsT) ~> void
         {
             if (p.shift == BL)
             {
@@ -1155,8 +1034,6 @@ namespace rbts {
                 }
             }
         }
-
-      #endif
     }
 
 'unit_defn_list'}
@@ -1169,29 +1046,27 @@ namespace rbts {
 
     ns = position_args(Pos, Vis, ArgsT);
 
-    #if (!v_defined(ns, each_i_regular))
+    #if (!v_defined(ns, _each_i_regular))
 
-        ns.do_inst(instantiate_each_i_regular);
+        v_execute_outer(_instantiate_each_i_regular, Pos, Vis, ArgsT);
 
     #endif
 
-    ns.each_i_regular(p, f, l, args)
+    ns._each_i_regular(p, f, l, args)
 };
 
 
 //---------------------------------------------------------------------
 //- each_left_regular
 //---------------------------------------------------------------------
-#define instantiate_each_left_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
-                                          ArgsT: v_static_type_t)
+#define _instantiate_each_left_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
+                                           ArgsT: v_static_type_t)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT)
     {
-      #if (v_guard_ns(each_left_regular_ns))
-
         linkonce_odr
-        each_left_regular: (p: Pos, last: count_t, args: ArgsT) ~> void
+        _each_left_regular: (p: Pos, last: count_t, args: ArgsT) ~> void
         {
             v_assert(last < p.count);
 
@@ -1218,8 +1093,6 @@ namespace rbts {
                 }
             }
         }
-
-      #endif
     }
 
 'unit_defn_list'}
@@ -1232,29 +1105,27 @@ namespace rbts {
 
     ns = position_args(Pos, Vis, ArgsT);
 
-    #if (!v_defined(ns, each_left_regular))
+    #if (!v_defined(ns, _each_left_regular))
 
-        ns.do_inst(instantiate_each_left_regular);
+        v_execute_outer(_instantiate_each_left_regular, Pos, Vis, ArgsT);
 
     #endif
 
-    ns.each_left_regular(p, last, args)
+    ns._each_left_regular(p, last, args)
 };
 
 
 //---------------------------------------------------------------------
 //- each_right_regular
 //---------------------------------------------------------------------
-#define instantiate_each_right_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
-                                           ArgsT: v_static_type_t)
+#define _instantiate_each_right_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
+                                            ArgsT: v_static_type_t)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT)
     {
-      #if (v_guard_ns(each_right_regular_ns))
-
         linkonce_odr
-        each_right_regular: (p: Pos, start: count_t, args: ArgsT) ~> void
+        _each_right_regular: (p: Pos, start: count_t, args: ArgsT) ~> void
         {
             if (p.shift == BL)
             {
@@ -1291,8 +1162,6 @@ namespace rbts {
                 }
             }
         }
-
-      #endif
     }
 
 'unit_defn_list'}
@@ -1307,31 +1176,29 @@ namespace rbts {
 
     #if (!v_defined(ns, each_right_regular))
 
-        ns.do_inst(instantiate_each_right_regular);
+        v_execute_outer(_instantiate_each_right_regular, Pos, Vis, ArgsT);
 
     #endif
 
-    ns.each_right_regular(p, start, args)
+    ns._each_right_regular(p, start, args)
 };
 
 
 //---------------------------------------------------------------------
 //- towards_oh_ch_regular
 //---------------------------------------------------------------------
-#define instantiate_towards_oh_ch_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
-                                              ArgsT: v_static_type_t)
+#define _instantiate_towards_oh_ch_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
+                                               ArgsT: v_static_type_t)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT)
     {
-      #if (v_guard_ns(towards_oh_ch_regular_ns))
-
         linkonce_odr
-        towards_oh_ch_regular: (p: Pos,
-                                idx: size_t,
-                                offset_hint: count_t,
-                                count_hint: count_t,
-                                args: ArgsT) ~> Vis.result_t
+        _towards_oh_ch_regular: (p: Pos,
+                                 idx: size_t,
+                                 offset_hint: count_t,
+                                 count_hint: count_t,
+                                 args: ArgsT) ~> Vis.result_t
         {
             v_assert(offset_hint == p.index(idx));
             v_assert(count_hint == pcount);
@@ -1363,8 +1230,6 @@ namespace rbts {
                 }
             }
         }
-
-      #endif
     }
 
 'unit_defn_list'}
@@ -1381,32 +1246,30 @@ namespace rbts {
 
     ns = position_args(Pos, Vis, ArgsT);
 
-    #if (!v_defined(ns, towards_oh_ch_regular))
+    #if (!v_defined(ns, _towards_oh_ch_regular))
 
-        ns.do_inst(instantiate_towards_oh_ch_regular);
+        v_execute_outer(_instantiate_towards_oh_ch_regular, Pos, Vis, ArgsT);
 
     #endif
 
-    ns.towards_oh_ch_regular(p, idx, offset_hint, count_hint, args)
+    ns._towards_oh_ch_regular(p, idx, offset_hint, count_hint, args)
 };
 
 
 //---------------------------------------------------------------------
 //- towards_sub_oh_regular
 //---------------------------------------------------------------------
-#define instantiate_towards_sub_oh_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
-                                               ArgsT: v_static_type_t)
+#define _instantiate_towards_sub_oh_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
+                                                ArgsT: v_static_type_t)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT)
     {
-      #if (v_guard_ns(towards_sub_oh_regular_ns))
-
         linkonce_odr
-        towards_sub_oh_regular: (p: Pos,
-                                 idx: size_t,
-                                 offset_hint: count_t,
-                                 args: ArgsT) ~> Vis.result_t
+        _towards_sub_oh_regular: (p: Pos,
+                                  idx: size_t,
+                                  offset_hint: count_t,
+                                  args: ArgsT) ~> Vis.result_t
         {
             v_assert(offset_hint == p.index(idx));
 
@@ -1439,8 +1302,6 @@ namespace rbts {
                 }
             }
         }
-
-      #endif
     }
 
 'unit_defn_list'}
@@ -1456,29 +1317,27 @@ namespace rbts {
 
     ns = position_args(Pos, Vis, ArgsT);
 
-    #if (!v_defined(ns, towards_sub_oh_regular))
+    #if (!v_defined(ns, _towards_sub_oh_regular))
 
-        ns.do_inst(instantiate_towards_sub_oh_regular);
+        v_execute_outer(_instantiate_towards_sub_oh_regular, Pos, Vis, ArgsT);
 
     #endif
 
-    ns.towards_sub_oh_regular(p, idx, offset_hint, args)
+    ns._towards_sub_oh_regular(p, idx, offset_hint, args)
 };
 
 
 //---------------------------------------------------------------------
 //- last_oh_regular
 //---------------------------------------------------------------------
-#define instantiate_last_oh_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
-                                        ArgsT: v_static_type_t)
+#define _instantiate_last_oh_regular: [](Pos: v_static_type_t, Vis: v_static_namespace_t,
+                                         ArgsT: v_static_type_t)
 {'unit_defn_list'
 
     namespace position_args(Pos, Vis, ArgsT)
     {
-      #if (v_guard_ns(last_oh_regular_ns))
-
         linkonce_odr
-        last_oh_regular: (p: Pos, offset_hint: count_t, args: ArgsT) ~> Vis.result_t
+        _last_oh_regular: (p: Pos, offset_hint: count_t, args: ArgsT) ~> Vis.result_t
         {
             v_assert(offset_hint == p.count - 1);
 
@@ -1494,8 +1353,6 @@ namespace rbts {
                 return  make_regular_pos(child, p.shift - B, p.size).visit(Vis, args);
             }
         }
-
-      #endif
     }
 
 'unit_defn_list'}
@@ -1508,186 +1365,182 @@ namespace rbts {
 
     ns = position_args(Pos, Vis, ArgsT);
 
-    #if (!v_defined(ns, last_oh_regular))
+    #if (!v_defined(ns, _last_oh_regular))
 
-        ns.do_inst(instantiate_last_oh_regular);
+        v_execute_outer(_instantiate_last_oh_regular, Pos, Vis, ArgsT);
 
     #endif
 
-    ns.last_oh_regular(p, offset_hint, args)
+    ns._last_oh_regular(p, offset_hint, args)
 };
 
 
 //---------------------------------------------------------------------
 //- regular_sub_pos
 //---------------------------------------------------------------------
-#define instantiate_regular_sub_pos: [](NodeT: v_static_type_t)
+#define _instantiate_regular_sub_pos: [](NodeT: v_static_type_t)
 {'unit_defn_list'
 
-  namespace position(NodeT)
-  {
-    #if (v_guard_ns(regular_sub_pos_ns))
+    namespace position(NodeT)
+    {
+        struct regular_sub_pos
+        {
+            node_:  *NodeT;
+            shift_: shift_t;
+            size_:  size_t;
+        };
 
-      struct regular_sub_pos
-      {
-          node_:  *NodeT;
-          shift_: shift_t;
-          size_:  size_t;
-      };
+        namespace regular_sub_pos
+        {
+            using namespace position(NodeT);
+        }
 
-      namespace regular_sub_pos
-      {
-          using namespace position(NodeT);
-      }
+        alwaysinline
+        (_.index()): (pos: regular_sub_pos, idx: size_t) ~> count_t  =  ((idx >> pos.shift_) & mask(B) : count_t);
 
-      alwaysinline
-      (_.index()): (pos: regular_sub_pos, idx: size_t) ~> count_t  =  ((idx >> pos.shift_) & mask(B) : count_t);
+        alwaysinline
+        (_.subindex()): (pos: regular_sub_pos, idx: size_t) ~> count_t  =  (idx >> pos.shift_ : count_t);
 
-      alwaysinline
-      (_.subindex()): (pos: regular_sub_pos, idx: size_t) ~> count_t  =  (idx >> pos.shift_ : count_t);
+        alwaysinline
+        (_.count): (pos: regular_sub_pos) ~> count_t  =  pos.subindex(pos.size_ - 1) + 1;
 
-      alwaysinline
-      (_.count): (pos: regular_sub_pos) ~> count_t  =  pos.subindex(pos.size_ - 1) + 1;
+        alwaysinline
+        (_.node): (pos: regular_sub_pos) ~> *NodeT  =  pos.node_;
 
-      alwaysinline
-      (_.node): (pos: regular_sub_pos) ~> *NodeT  =  pos.node_;
+        alwaysinline
+        (_.shift): (pos: regular_sub_pos) ~> shift_t  =  pos.shift_;
 
-      alwaysinline
-      (_.shift): (pos: regular_sub_pos) ~> shift_t  =  pos.shift_;
+        alwaysinline
+        (_.size): (pos: regular_sub_pos) ~> size_t  =  pos.size_;
 
-      alwaysinline
-      (_.size): (pos: regular_sub_pos) ~> size_t  =  pos.size_;
+        alwaysinline
+        (_.this_size): (pos: regular_sub_pos) ~> size_t  =  pos.size_;
 
-      alwaysinline
-      (_.this_size): (pos: regular_sub_pos) ~> size_t  =  pos.size_;
+        alwaysinline
+        (_.size_before()): (pos: regular_sub_pos, offset: count_t) ~> size_t  =  (offset: size_t) << pos.shift_;
 
-      alwaysinline
-      (_.size_before()): (pos: regular_sub_pos, offset: count_t) ~> size_t  =  (offset: size_t) << pos.shift_;
+        alwaysinline
+        (_.size()): (pos: regular_sub_pos, offset: count_t) ~> size_t
+        {
+            if (offset == pos.subindex(pos.size_ - 1))  return  pos.size_ - pos.size_before(offset);
+            else                                        return  (1: size_t) << pos.shift_;
+        }
 
-      alwaysinline
-      (_.size()): (pos: regular_sub_pos, offset: count_t) ~> size_t
-      {
-          if (offset == pos.subindex(pos.size_ - 1))  return  pos.size_ - pos.size_before(offset);
-          else                                        return  (1: size_t) << pos.shift_;
-      }
+        alwaysinline
+        (_.size_sbh()): (pos: regular_sub_pos, offset: count_t, size_before_hint: size_t) ~> size_t
+        {
+            v_assert(size_before_hint == pos.size_before(offset));
 
-      alwaysinline
-      (_.size_sbh()): (pos: regular_sub_pos, offset: count_t, size_before_hint: size_t) ~> size_t
-      {
-          v_assert(size_before_hint == pos.size_before(offset));
+            if (offset == pos.subindex(pos.size_ - 1))  return  pos.size_ - size_before_hint;
+            else                                        return  (1: size_t) << pos.shift_;
+        }
 
-          if (offset == pos.subindex(pos.size_ - 1))  return  pos.size_ - size_before_hint;
-          else                                        return  (1: size_t) << pos.shift_;
-      }
+        inlinehint
+        (_.copy_sizes()): (pos: regular_sub_pos, offset: count_t, n: count_t, init: size_t, sizes: *size_t) ~> void
+        {
+            if (n == 0) return;
 
-      inlinehint
-      (_.copy_sizes()): (pos: regular_sub_pos, offset: count_t, n: count_t, init: size_t, sizes: *size_t) ~> void
-      {
-          if (n == 0) return;
+            last = offset + n - 1;
+            e    = sizes  + n - 1;
 
-          last = offset + n - 1;
-          e    = sizes  + n - 1;
+            sizes: &*size_t := sizes;
+            init:  &size_t  := init;
 
-          sizes: &*size_t := sizes;
-          init:  &size_t  := init;
+            for (; sizes != e; ++sizes)
+            {
+                init := *sizes := init + ((1: size_t) << pos.shift_);
+                v_assert(init);
+            }
 
-          for (; sizes != e; ++sizes)
-          {
-              init := *sizes := init + ((1: size_t) << pos.shift_);
-              v_assert(init);
-          }
-
-          *sizes := init + pos.size(last);
-          v_assert(*sizes);
-      }
+            *sizes := init + pos.size(last);
+            v_assert(*sizes);
+        }
 
 
-      #define (_.each()): [](p: regular_sub_pos, v: v_static_namespace_t, args)
-        =  each_regular(p, v, args);
+        #define (_.each()): [](p: regular_sub_pos, v: v_static_namespace_t, args)
+          =  each_regular(p, v, args);
 
-      #define (_.each_pred()): [](p: regular_sub_pos, v: v_static_namespace_t, args) ~> bool
-        =  each_pred_regular(p, v, args);
+        #define (_.each_pred()): [](p: regular_sub_pos, v: v_static_namespace_t, args) ~> bool
+          =  each_pred_regular(p, v, args);
 
-      #define (_.each_pred_zip()): [](p: regular_sub_pos, v: v_static_namespace_t, other: *node_t, args) ~> bool
-        =  each_pred_zip_regular(p, v, other, args);
+        #define (_.each_pred_zip()): [](p: regular_sub_pos, v: v_static_namespace_t, other: *node_t, args) ~> bool
+          =  each_pred_zip_regular(p, v, other, args);
 
-      #define (_.each_pred_i()): [](p: regular_sub_pos, v: v_static_namespace_t, i: count_t, n: count_t, args) ~> bool
-        =  each_pred_i_regular(p, v, i, n, args);
+        #define (_.each_pred_i()): [](p: regular_sub_pos, v: v_static_namespace_t, i: count_t, n: count_t, args) ~> bool
+          =  each_pred_i_regular(p, v, i, n, args);
 
-      #define (_.each_pred_right()): [](p: regular_sub_pos, v: v_static_namespace_t, start: count_t, args) ~> bool
-        =  each_pred_right_regular(p, v, start, args);
+        #define (_.each_pred_right()): [](p: regular_sub_pos, v: v_static_namespace_t, start: count_t, args) ~> bool
+          =  each_pred_right_regular(p, v, start, args);
 
-      #define (_.each_pred_left()): [](p: regular_sub_pos, v: v_static_namespace_t, last: count_t, args) ~> bool
-        =  each_pred_left_regular(p, v, last, args);
+        #define (_.each_pred_left()): [](p: regular_sub_pos, v: v_static_namespace_t, last: count_t, args) ~> bool
+          =  each_pred_left_regular(p, v, last, args);
 
-      #define (_.each_i()): [](p: regular_sub_pos, v: v_static_namespace_t, i: count_t, n: count_t, args)
-        =  each_i_regular(p, v, i, n, args);
+        #define (_.each_i()): [](p: regular_sub_pos, v: v_static_namespace_t, i: count_t, n: count_t, args)
+          =  each_i_regular(p, v, i, n, args);
 
-      #define (_.each_right()): [](p: regular_sub_pos, v: v_static_namespace_t, start: count_t, args)
-        =  each_right_regular(p, v, start, args);
+        #define (_.each_right()): [](p: regular_sub_pos, v: v_static_namespace_t, start: count_t, args)
+          =  each_right_regular(p, v, start, args);
 
-      #define (_.each_left()): [](p: regular_sub_pos, v: v_static_namespace_t, last: count_t, args)
-        =  each_left_regular(p, v, last, args);
+        #define (_.each_left()): [](p: regular_sub_pos, v: v_static_namespace_t, last: count_t, args)
+          =  each_left_regular(p, v, last, args);
 
-      #define (_.each_right_sub_()): [](p: regular_sub_pos, v: v_static_namespace_t, i: count_t, args)
-        =  each_right_sub_(p, v, i, args);
+        #define (_.each_right_sub_()): [](p: regular_sub_pos, v: v_static_namespace_t, i: count_t, args)
+          =  each_right_sub_(p, v, i, args);
 
-      #define (_.each_sub()): [](p: regular_sub_pos, v: v_static_namespace_t, args)
-        =  p.each_right_sub_(v, 0, args);
+        #define (_.each_sub()): [](p: regular_sub_pos, v: v_static_namespace_t, args)
+          =  p.each_right_sub_(v, 0, args);
 
-      #define (_.each_right_sub()): [](p: regular_sub_pos, v: v_static_namespace_t, args)  =
-      {
-          if (p.count > 1)  p.each_right_sub_(v, 1, args);
+        #define (_.each_right_sub()): [](p: regular_sub_pos, v: v_static_namespace_t, args)  =
+        {
+            if (p.count > 1)  p.each_right_sub_(v, 1, args);
 
-          undef         //- ?!?!?
-      };
+            undef         //- ?!?!?
+        };
 
-      #define (_.each_left_sub()): [](p: regular_sub_pos, v: v_static_namespace_t, args)
-        =  p.each_left(v, p.count - 1, args);
+        #define (_.each_left_sub()): [](p: regular_sub_pos, v: v_static_namespace_t, args)
+          =  p.each_left(v, p.count - 1, args);
 
-      #define (_.towards()): [](p: regular_sub_pos, v: v_static_namespace_t, idx: size_t, args)
-        =  towards_oh_ch_regular(p, v, idx, p.index(idx), p.count, args);
+        #define (_.towards()): [](p: regular_sub_pos, v: v_static_namespace_t, idx: size_t, args)
+          =  towards_oh_ch_regular(p, v, idx, p.index(idx), p.count, args);
 
-      #define (_.towards_oh()): [](p: regular_sub_pos, v: v_static_namespace_t, idx: size_t, offset_hint: count_t, args)
-        =  towards_oh_ch_regular(p, v, idx, offset_hint, p.count, args);
+        #define (_.towards_oh()): [](p: regular_sub_pos, v: v_static_namespace_t, idx: size_t, offset_hint: count_t, args)
+          =  towards_oh_ch_regular(p, v, idx, offset_hint, p.count, args);
 
-      #define (_.towards_oh_ch()): [](p: regular_sub_pos, v: v_static_namespace_t,
-                                      idx: size_t,
-                                      offset_hint: count_t,
-                                      count_hint: count_t,
-                                      args)
-        =  towards_oh_ch_regular(p, v, idx, offset_hint, count_hint, args);
+        #define (_.towards_oh_ch()): [](p: regular_sub_pos, v: v_static_namespace_t,
+                                        idx: size_t,
+                                        offset_hint: count_t,
+                                        count_hint: count_t,
+                                        args)
+          =  towards_oh_ch_regular(p, v, idx, offset_hint, count_hint, args);
 
-      #define (_.towards_sub_oh()): [](p: regular_sub_pos, v: v_static_namespace_t, idx: size_t, offset_hint: count_t, args)
-        =  towards_sub_oh_regular(p, v, idx, offset_hint, args);
+        #define (_.towards_sub_oh()): [](p: regular_sub_pos, v: v_static_namespace_t, idx: size_t, offset_hint: count_t, args)
+          =  towards_sub_oh_regular(p, v, idx, offset_hint, args);
 
-      #define (_.last_oh()): [](p: regular_sub_pos, v: v_static_namespace_t, offset_hint: count_t, args)
-        =  last_oh_regular(p, v, offset_hint, args);
+        #define (_.last_oh()): [](p: regular_sub_pos, v: v_static_namespace_t, offset_hint: count_t, args)
+          =  last_oh_regular(p, v, offset_hint, args);
 
-      #define (_.last_sub()): [](p: regular_sub_pos, v: v_static_namespace_t, args)
-        =  last_sub(p, v, args);
+        #define (_.last_sub()): [](p: regular_sub_pos, v: v_static_namespace_t, args)
+          =  last_sub(p, v, args);
 
-      #define (_.first_sub()): [](p: regular_sub_pos, v: v_static_namespace_t, args)
-        =  first_sub(p, v, args);
+        #define (_.first_sub()): [](p: regular_sub_pos, v: v_static_namespace_t, args)
+          =  first_sub(p, v, args);
 
-      #define (_.first_sub_leaf()): [](p: regular_sub_pos, v: v_static_namespace_t, args)
-        =  first_sub_leaf(p, v, args);
+        #define (_.first_sub_leaf()): [](p: regular_sub_pos, v: v_static_namespace_t, args)
+          =  first_sub_leaf(p, v, args);
 
-      #define (_.first_sub_inner()): (p: regular_sub_pos, v: v_static_namespace_t, args)
-        =  first_sub_inner(p, v, args);
+        #define (_.first_sub_inner()): (p: regular_sub_pos, v: v_static_namespace_t, args)
+          =  first_sub_inner(p, v, args);
 
-      #define (_.nth_sub()): [](p: regular_sub_pos, v: v_static_namespace_t, idx: count_t, args)
-        =  nth_sub(p, v, idx, args);
+        #define (_.nth_sub()): [](p: regular_sub_pos, v: v_static_namespace_t, idx: count_t, args)
+          =  nth_sub(p, v, idx, args);
 
-      #define (_.nth_sub_leaf()): [](p: regular_sub_pos, v: v_static_namespace_t, idx: count_t, args)
-        =  nth_sub_leaf(p, v, idx, args);
+        #define (_.nth_sub_leaf()): [](p: regular_sub_pos, v: v_static_namespace_t, idx: count_t, args)
+          =  nth_sub_leaf(p, v, idx, args);
 
-      #define (_.visit()): [](p: regular_sub_pos, v: v_static_namespace_t, args)
-        =  v.visit_regular({p, args});
+        #define (_.visit()): [](p: regular_sub_pos, v: v_static_namespace_t, args)
+          =  v.visit_regular({p, args});
 
-    #endif
-
-  }     //- namespace position(NodeT)
+    }     //- namespace position(NodeT)
 
 'unit_defn_list'}
 
@@ -1700,7 +1553,7 @@ namespace rbts {
 
     #if (!v_defined(ns, regular_sub_pos))
 
-        ns.do_inst(instantiate_regular_sub_pos);
+        v_execute_outer(_instantiate_regular_sub_pos, NodeT);
 
     #endif
 
@@ -1718,47 +1571,41 @@ namespace rbts {
 //---------------------------------------------------------------------
 //- each_right_sub_
 //---------------------------------------------------------------------
-#define instantiate_each_right_sub_: [](Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+#define _instantiate_each_right_sub_: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
 {'unit_defn_list'
 
-  namespace position_args(Pos, Vis, ArgsT)
-  {
-    #if (v_guard_ns(each_right_sub__ns))
+    namespace position_args(regular_sub_pos, Vis, ArgsT)
+    {
+        inlinehint
+        _each_right_sub_: (pos: regular_sub_pos, i: count_t, args: ArgsT) ~> void
+        {
+            last         = pos.count - 1;
+            lsize        = pos.size_ - (last << pos.shift_);
+            n: &*node_t := pos.node->inner + i;
+            e            = pos.node->inner + last;
 
-      #assert (Pos == regular_sub_pos)
+            if (pos.shift == BL)
+            {
+                for (; n != e; ++n)
+                {
+                    make_full_leaf_pos(*n).visit(Vis, args);
+                }
 
-      inlinehint
-      each_right_sub_: (pos: Pos, i: count_t, args: ArgsT) ~> void
-      {
-          last         = pos.count - 1;
-          lsize        = pos.size_ - (last << pos.shift_);
-          n: &*node_t := pos.node->inner + i;
-          e            = pos.node->inner + last;
+                make_leaf_sub_pos(*n, lsize).visit(Vis, args);
+            }
+            else
+            {
+                ss = pos.shift_ - B;
 
-          if (pos.shift == BL)
-          {
-              for (; n != e; ++n)
-              {
-                  make_full_leaf_pos(*n).visit(Vis, args);
-              }
+                for (; n != e; ++n)
+                {
+                    make_full_pos(*n, ss).visit(Vis, args);
+                }
 
-              make_leaf_sub_pos(*n, lsize).visit(Vis, args);
-          }
-          else
-          {
-              ss = pos.shift_ - B;
-
-              for (; n != e; ++n)
-              {
-                  make_full_pos(*n, ss).visit(Vis, args);
-              }
-
-              make_regular_sub_pos(*n, ss, lsize).visit(Vis, args);
-          }
-      }
-
-    #endif
-  }
+                make_regular_sub_pos(*n, ss, lsize).visit(Vis, args);
+            }
+        }
+    }
 
 'unit_defn_list'}
 
@@ -1768,50 +1615,46 @@ namespace rbts {
     Pos   = typeof(p);
     ArgsT = typeof(args);
 
+    #assert (Pos == regular_sub_pos)
+
     ns = position_args(Pos, Vis, ArgsT);
 
-    #if (!v_defined(ns, each_right_sub_))
+    #if (!v_defined(ns, _each_right_sub_))
 
-        ns.do_inst(instantiate_each_right_sub_);
+        v_execute_outer(_instantiate_each_right_sub_, Vis, ArgsT);
 
     #endif
 
-    ns.each_right_sub_(p, i, args)
+    ns._each_right_sub_(p, i, args)
 };
 
 
 //---------------------------------------------------------------------
 //- last_sub
 //---------------------------------------------------------------------
-#define instantiate_last_sub: [](Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+#define _instantiate_last_sub: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
 {'unit_defn_list'
 
-  namespace position_args(Pos, Vis, ArgsT)
-  {
-    #if (v_guard_ns(last_sub_ns))
+    namespace position_args(regular_sub_pos, Vis, ArgsT)
+    {
+        inlinehint
+        _last_sub: (pos: regular_sub_pos, args: ArgsT) ~> Vis.result_t
+        {
+            offset  = pos.count - 1;
+            child   = pos.node_->inner[offset];
+            is_leaf = pos.shift_ == BL;
+            lsize   = pos.size_ - ((offset: size_t) << pos.shift_);
 
-      #assert (Pos == regular_sub_pos)
-
-      inlinehint
-      last_sub: (pos: Pos, args: ArgsT) ~> Vis.result_t
-      {
-          offset  = pos.count - 1;
-          child   = pos.node_->inner[offset];
-          is_leaf = pos.shift_ == BL;
-          lsize   = pos.size_ - ((offset: size_t) << pos.shift_);
-
-          if (is_leaf)
-          {
-              return  make_leaf_sub_pos(child, lsize).visit(Vis, args);
-          }
-          else
-          {
-              return  make_regular_sub_pos(child, pos.shift_ - B, lsize).visit(Vis, args);
-          }
-      }
-
-    #endif
-  }
+            if (is_leaf)
+            {
+                return  make_leaf_sub_pos(child, lsize).visit(Vis, args);
+            }
+            else
+            {
+                return  make_regular_sub_pos(child, pos.shift_ - B, lsize).visit(Vis, args);
+            }
+        }
+    }
 
 'unit_defn_list'}
 
@@ -1821,63 +1664,59 @@ namespace rbts {
     Pos   = typeof(p);
     ArgsT = typeof(args);
 
+    #assert (Pos == regular_sub_pos)
+
     ns = position_args(Pos, Vis, ArgsT);
 
-    #if (!v_defined(ns, last_sub))
+    #if (!v_defined(ns, _last_sub))
 
-        ns.do_inst(instantiate_last_sub);
+        v_execute_outer(_instantiate_last_sub, Vis, ArgsT);
 
     #endif
 
-    ns.last_sub(p, args)
+    ns._last_sub(p, args)
 };
 
 
 //---------------------------------------------------------------------
 //- first_sub
 //---------------------------------------------------------------------
-#define instantiate_first_sub: [](Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+#define _instantiate_first_sub: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
 {'unit_defn_list'
 
-  namespace position_args(Pos, Vis, ArgsT)
-  {
-    #if (v_guard_ns(first_sub_ns))
+    namespace position_args(regular_sub_pos, Vis, ArgsT)
+    {
+        inlinehint
+        _first_sub: (pos: regular_sub_pos, args: ArgsT) ~> Vis.result_t
+        {
+            is_leaf = pos.shift_ == BL;
+            child   = pos.node_->inner[0];
+            is_full = pos.size_ >= ((1: size_t) << pos.shift_);
 
-      #assert (Pos == regular_sub_pos)
-
-      inlinehint
-      first_sub: (pos: Pos, args: ArgsT) ~> Vis.result_t
-      {
-          is_leaf = pos.shift_ == BL;
-          child   = pos.node_->inner[0];
-          is_full = pos.size_ >= ((1: size_t) << pos.shift_);
-
-          if (is_full)
-          {
-              if (is_leaf)
-              {
-                  return  make_full_leaf_pos(child).visit(Vis, args);
-              }
-              else
-              {
-                  return  make_full_pos(child, pos.shift_ - B).visit(Vis, args);
-              }
-          }
-          else
-          {
-              if (is_leaf)
-              {
-                  return  make_leaf_sub_pos(child, pos.size_).visit(Vis, args);
-              }
-              else
-              {
-                  return  make_regular_sub_pos(child, pos.shift_ - B, pos.size_).visit(Vis, args);
-              }
-          }
-      }
-
-    #endif
-  }
+            if (is_full)
+            {
+                if (is_leaf)
+                {
+                    return  make_full_leaf_pos(child).visit(Vis, args);
+                }
+                else
+                {
+                    return  make_full_pos(child, pos.shift_ - B).visit(Vis, args);
+                }
+            }
+            else
+            {
+                if (is_leaf)
+                {
+                    return  make_leaf_sub_pos(child, pos.size_).visit(Vis, args);
+                }
+                else
+                {
+                    return  make_regular_sub_pos(child, pos.shift_ - B, pos.size_).visit(Vis, args);
+                }
+            }
+        }
+    }
 
 'unit_defn_list'}
 
@@ -1887,49 +1726,45 @@ namespace rbts {
     Pos   = typeof(p);
     ArgsT = typeof(args);
 
+    #assert (Pos == regular_sub_pos)
+
     ns = position_args(Pos, Vis, ArgsT);
 
-    #if (!v_defined(ns, first_sub))
+    #if (!v_defined(ns, _first_sub))
 
-        ns.do_inst(instantiate_first_sub);
+        v_execute_outer(_instantiate_first_sub, Vis, ArgsT);
 
     #endif
 
-    ns.first_sub(p, args)
+    ns._first_sub(p, args)
 };
 
 
 //---------------------------------------------------------------------
 //- first_sub_leaf
 //---------------------------------------------------------------------
-#define instantiate_first_sub_leaf: [](Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+#define _instantiate_first_sub_leaf: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
 {'unit_defn_list'
 
-  namespace position_args(Pos, Vis, ArgsT)
-  {
-    #if (v_guard_ns(first_sub_leaf_ns))
+    namespace position_args(regular_sub_pos, Vis, ArgsT)
+    {
+        inlinehint
+        _first_sub_leaf: (pos: regular_sub_pos, args: ArgsT) ~> Vis.result_t
+        {
+            v_assert(pos.shift_ == BL);
+            child   = pos.node_->inner[0];
+            is_full = pos.size_ >= branches(BL);
 
-      #assert (Pos == regular_sub_pos)
-
-      inlinehint
-      first_sub_leaf: (pos: Pos, args: ArgsT) ~> Vis.result_t
-      {
-          v_assert(pos.shift_ == BL);
-          child   = pos.node_->inner[0];
-          is_full = pos.size_ >= branches(BL);
-
-          if (is_full)
-          {
-              return  make_full_leaf_pos(child).visit(Vis, args);
-          }
-          else
-          {
-              return  make_leaf_sub_pos(child, pos.size_).visit(Vis, args);
-          }
-      }
-
-    #endif
-  }
+            if (is_full)
+            {
+                return  make_full_leaf_pos(child).visit(Vis, args);
+            }
+            else
+            {
+                return  make_leaf_sub_pos(child, pos.size_).visit(Vis, args);
+            }
+        }
+    }
 
 'unit_defn_list'}
 
@@ -1939,49 +1774,45 @@ namespace rbts {
     Pos   = typeof(p);
     ArgsT = typeof(args);
 
+    #assert (Pos == regular_sub_pos)
+
     ns = position_args(Pos, Vis, ArgsT);
 
-    #if (!v_defined(ns, first_sub_leaf))
+    #if (!v_defined(ns, _first_sub_leaf))
 
-        ns.do_inst(instantiate_first_sub_leaf);
+        v_execute_outer(_instantiate_first_sub_leaf, Vis, ArgsT);
 
     #endif
 
-    ns.first_sub_leaf(p, args)
+    ns._first_sub_leaf(p, args)
 };
 
 
 //---------------------------------------------------------------------
 //- first_sub_inner
 //---------------------------------------------------------------------
-#define instantiate_first_sub_inner: [](Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+#define _instantiate_first_sub_inner: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
 {'unit_defn_list'
 
-  namespace position_args(Pos, Vis, ArgsT)
-  {
-    #if (v_guard_ns(first_sub_inner_ns))
+    namespace position_args(regular_sub_pos, Vis, ArgsT)
+    {
+        inlinehint
+        _first_sub_inner: (pos: regular_sub_pos, args: ArgsT) ~> Vis.result_t
+        {
+            v_assert(pos.shift_ == BL);
+            child   = pos.node_->inner[0];
+            is_full = pos.size_ >= branches(BL);
 
-      #assert (Pos == regular_sub_pos)
-
-      inlinehint
-      first_sub_inner: (pos: Pos, args: ArgsT) ~> Vis.result_t
-      {
-          v_assert(pos.shift_ == BL);
-          child   = pos.node_->inner[0];
-          is_full = pos.size_ >= branches(BL);
-
-          if (is_full)
-          {
-              return  make_full_pos(child, pos.shift_ - B).visit(Vis, args);
-          }
-          else
-          {
-              return  make_regular_sub_pos(child, pos.shift_ - B, pos.size_).visit(Vis, args);
-          }
-      }
-
-    #endif
-  }
+            if (is_full)
+            {
+                return  make_full_pos(child, pos.shift_ - B).visit(Vis, args);
+            }
+            else
+            {
+                return  make_regular_sub_pos(child, pos.shift_ - B, pos.size_).visit(Vis, args);
+            }
+        }
+    }
 
 'unit_defn_list'}
 
@@ -1991,65 +1822,61 @@ namespace rbts {
     Pos   = typeof(p);
     ArgsT = typeof(args);
 
+    #assert (Pos == regular_sub_pos)
+
     ns = position_args(Pos, Vis, ArgsT);
 
-    #if (!v_defined(ns, first_sub_inner))
+    #if (!v_defined(ns, _first_sub_inner))
 
-        ns.do_inst(instantiate_first_sub_inner);
+        v_execute_outer(_instantiate_first_sub_inner, Vis, ArgsT);
 
     #endif
 
-    ns.first_sub_inner(p, args)
+    ns._first_sub_inner(p, args)
 };
 
 
 //---------------------------------------------------------------------
 //- nth_sub
 //---------------------------------------------------------------------
-#define instantiate_nth_sub: [](Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+#define _instantiate_nth_sub: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
 {'unit_defn_list'
 
-  namespace position_args(Pos, Vis, ArgsT)
-  {
-    #if (v_guard_ns(nth_sub_ns))
+    namespace position_args(regular_sub_pos, Vis, ArgsT)
+    {
+        inlinehint
+        _nth_sub: (pos: regular_sub_pos, idx: count_t, args: ArgsT) ~> Vis.result_t
+        {
+            v_assert(idx < pos.count_);
+            is_leaf = pos.shift_ == BL;
+            child   = pos.node_->inner[idx];
+            lsize   = pos.size(idx);
+            is_full = idx + 1 < pos.count;
 
-      #assert (Pos == regular_sub_pos)
-
-      inlinehint
-      nth_sub: (pos: Pos, idx: count_t, args: ArgsT) ~> Vis.result_t
-      {
-          v_assert(idx < pos.count_);
-          is_leaf = pos.shift_ == BL;
-          child   = pos.node_->inner[idx];
-          lsize   = pos.size(idx);
-          is_full = idx + 1 < pos.count;
-
-          if (is_full)
-          {
-              if (is_leaf)
-              {
-                  return  make_full_leaf_pos(child).visit(Vis, args);
-              }
-              else
-              {
-                  return  make_full_pos(child, pos.shift_ - B).visit(Vis, args);
-              }
-          }
-          else
-          {
-              if (is_leaf)
-              {
-                  return  make_leaf_sub_pos(child, lsize).visit(Vis, args);
-              }
-              else
-              {
-                  return  make_regular_sub_pos(child, pos.shift_ - B, lsize).visit(Vis, args);
-              }
-          }
-      }
-
-    #endif
-  }
+            if (is_full)
+            {
+                if (is_leaf)
+                {
+                    return  make_full_leaf_pos(child).visit(Vis, args);
+                }
+                else
+                {
+                    return  make_full_pos(child, pos.shift_ - B).visit(Vis, args);
+                }
+            }
+            else
+            {
+                if (is_leaf)
+                {
+                    return  make_leaf_sub_pos(child, lsize).visit(Vis, args);
+                }
+                else
+                {
+                    return  make_regular_sub_pos(child, pos.shift_ - B, lsize).visit(Vis, args);
+                }
+            }
+        }
+    }
 
 'unit_defn_list'}
 
@@ -2059,50 +1886,46 @@ namespace rbts {
     Pos   = typeof(p);
     ArgsT = typeof(args);
 
+    #assert (Pos == regular_sub_pos)
+
     ns = position_args(Pos, Vis, ArgsT);
 
-    #if (!v_defined(ns, nth_sub))
+    #if (!v_defined(ns, _nth_sub))
 
-        ns.do_inst(instantiate_nth_sub);
+        v_execute_outer(_instantiate_nth_sub, Vis, ArgsT);
 
     #endif
 
-    ns.nth_sub(p, idx, args)
+    ns._nth_sub(p, idx, args)
 };
 
 
 //---------------------------------------------------------------------
 //- nth_sub_leaf
 //---------------------------------------------------------------------
-#define instantiate_nth_sub_leaf: [](Pos: v_static_type_t, Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+#define _instantiate_nth_sub_leaf: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
 {'unit_defn_list'
 
-  namespace position_args(Pos, Vis, ArgsT)
-  {
-    #if (v_guard_ns(nth_sub_leaf_ns))
+    namespace position_args(regular_sub_pos, Vis, ArgsT)
+    {
+        inlinehint
+        _nth_sub_leaf: (pos: regular_sub_pos, idx: count_t, args: ArgsT) ~> Vis.result_t
+        {
+            v_assert(pos.shift_ == BL);
+            child   = pos.node_->inner[idx];
+            lsize   = pos.size(idx);
+            is_full = idx + 1 < pos.count;
 
-      #assert (Pos == regular_sub_pos)
-
-      inlinehint
-      nth_sub_leaf: (pos: Pos, idx: count_t, args: ArgsT) ~> Vis.result_t
-      {
-          v_assert(pos.shift_ == BL);
-          child   = pos.node_->inner[idx];
-          lsize   = pos.size(idx);
-          is_full = idx + 1 < pos.count;
-
-          if (is_full)
-          {
-              return  make_full_leaf_pos(child).visit(Vis, args);
-          }
-          else
-          {
-              return  make_leaf_sub_pos(child, lsize).visit(Vis, args);
-          }
-      }
-
-    #endif
-  }
+            if (is_full)
+            {
+                return  make_full_leaf_pos(child).visit(Vis, args);
+            }
+            else
+            {
+                return  make_leaf_sub_pos(child, lsize).visit(Vis, args);
+            }
+        }
+    }
 
 'unit_defn_list'}
 
@@ -2112,124 +1935,82 @@ namespace rbts {
     Pos   = typeof(p);
     ArgsT = typeof(args);
 
+    #assert (Pos == regular_sub_pos)
+
     ns = position_args(Pos, Vis, ArgsT);
 
-    #if (!v_defined(ns, nth_sub_leaf))
+    #if (!v_defined(ns, _nth_sub_leaf))
 
-        ns.do_inst(instantiate_nth_sub_leaf);
+        v_execute_outer(_instantiate_nth_sub_leaf, Vis, ArgsT);
 
     #endif
 
-    ns.nth_sub_leaf(p, idx, args)
+    ns._nth_sub_leaf(p, idx, args)
 };
 
 
+//---------------------------------------------------------------------
+//- ...
 //---------------------------------------------------------------------
 #define position_shift: [](NodeT: v_static_type_t, Shift: shift_t) ~> v_static_namespace_t  =
 {
     ns = v_generic_ns(position_shift_ns, T(NodeT), N(Shift));
-
-    #if (!v_defined(ns, do_inst))
-
-        #define instantiate: [*, NodeT, Shift]()
-        {'unit_defn_list'
-
-            #do (instantiate_position_shift(NodeT, Shift))
-
-        'unit_defn_list'}
-
-        v_execute_inst(instantiate);
-
-    #endif
-
     ns
 };
-
-//---------------------------------------------------------------------
-#define instantiate_position_shift: [](NodeT: v_static_type_t, Shift: shift_t)
-{'unit_defn_list'
-
-  namespace v_generic_ns(position_shift_ns, T(NodeT), N(Shift))
-  {
-    #if (v_guard_ns())
-
-      #define do_inst: [NodeT, Shift](InstMacro)
-      {'stmt'
-
-          {   #define instantiate: [*, NodeT, Shift, InstMacro]()
-              {'unit_defn_list'
-
-                  #do (InstMacro(NodeT, Shift))
-
-              'unit_defn_list'}
-
-              v_execute_inst(instantiate);
-          }
-
-      'stmt'}
-
-    #endif
-  }
-
-'unit_defn_list'}
 
 
 //---------------------------------------------------------------------
 //- regular_descent_pos
 //---------------------------------------------------------------------
-#define instantiate_regular_descent_pos: [](NodeT: v_static_type_t, Shift: shift_t)
+#define _instantiate_regular_descent_pos: [](NodeT: v_static_type_t, Shift: shift_t)
 {'unit_defn_list'
 
-  namespace position_shift(NodeT, Shift)
-  {
-    #if (v_guard_ns(regular_descent_pos_ns))
+    namespace position_shift(NodeT, Shift)
+    {
+        #assert (Shift > 0  &&  "not leaf...")
 
-      #assert (Shift > 0  &&  "not leaf...")
+        using namespace position(NodeT);
 
-      using namespace position(NodeT);
+        struct regular_descent_pos
+        {
+            node_: *NodeT;
+        };
 
-      struct regular_descent_pos
-      {
-          node_: *NodeT;
-      };
+        namespace regular_descent_pos
+        {
+            using namespace position(NodeT);
+        }
 
-      namespace regular_descent_pos
-      {
-          using namespace position(NodeT);
-      }
+        alwaysinline
+        (_.node): (pos: regular_descent_pos) ~> *NodeT  =  pos.node_;
 
-      alwaysinline
-      (_.node): (pos: regular_descent_pos) ~> *NodeT  =  pos.node_;
+        alwaysinline
+        (_.shift): (regular_descent_pos) ~> shift_t  =  Shift;
 
-      alwaysinline
-      (_.shift): (regular_descent_pos) ~> shift_t  =  Shift;
-
-      alwaysinline
-      (_.index()): (regular_descent_pos, idx: size_t) ~> count_t  =  ((idx >> Shift) & mask(BL) : count_t);
+        alwaysinline
+        (_.index()): (regular_descent_pos, idx: size_t) ~> count_t  =  ((idx >> Shift) & mask(BL) : count_t);
 
 
-      #define (_.descend()): [*, Shift](pos: regular_descent_pos, v: v_static_namespace_t, idx: size_t)  =
-      {
-          offset = pos.index(idx);
-          child  = pos.node_->inner[offset];
+        #define (_.descend()): [*, Shift](pos: regular_descent_pos, v: v_static_namespace_t, idx: size_t)  =
+        {
+            offset = pos.index(idx);
+            child  = pos.node_->inner[offset];
 
-          #if (Shift == BL)
+            #if (Shift == BL)
 
-              make_leaf_descent_pos(child).visit(v, idx)
+                make_leaf_descent_pos(child).visit(v, idx)
 
-          #else
+            #else
 
-              make_regular_descent_pos(Shift - B, child).visit(v, idx)
+                make_regular_descent_pos(Shift - B, child).visit(v, idx)
 
-          #endif
-      };
+            #endif
+        };
 
-      #define (_.visit()): [](p: regular_descent_pos, v: v_static_namespace_t, args)
-        =  v.visit_regular({p, args});
+        #define (_.visit()): [](p: regular_descent_pos, v: v_static_namespace_t, args)
+          =  v.visit_regular({p, args});
 
-    #endif
-
-  }     //- namespace position_shift(NodeT, Shift)
+    }     //- namespace position_shift(NodeT, Shift)
 
 'unit_defn_list'}
 
@@ -2240,9 +2021,9 @@ namespace rbts {
 
     ns = position_shift(NodeT, Shift);
 
-    #if (!v_defined(ns, regular_decsent_pos))
+    #if (!v_defined(ns, regular_descent_pos))
 
-        ns.do_inst(instantiate_regular_descent_pos);
+        v_execute_outer(_instantiate_regular_descent_pos, NodeT, Shift);
 
     #endif
 
@@ -2253,100 +2034,55 @@ namespace rbts {
 
 
 //---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
 #define regular_descent_args: [](NodeT: v_static_type_t,
                                  Vis: v_static_namespace_t) ~> v_static_namespace_t  =
 {
     ns = v_generic_ns(regular_descent_args_ns, Q(v_namespace_get_name(Vis)), T(NodeT));
-
-    #if (!v_defined(ns, do_inst))
-
-        #define instantiate: [*, NodeT]()
-        {'unit_defn_list'
-
-            #do (instantiate_regular_descent_args(Pos, Vis, ArgsT, RetT))
-
-        'unit_defn_list'}
-
-        v_execute_inst(instantiate);
-
-    #endif
-
     ns
 };
 
 //---------------------------------------------------------------------
-#define instantiate_regular_descent_args: [](NodeT: v_static_type_t, Vis: v_static_namespace_t)
-{'unit_defn_list'
-
-  namespace v_generic_ns(regular_descent_args_ns, Q(v_namespace_get_name(Vis)), T(NodeT))
-  {
-    #if (v_guard_ns())
-
-      #define do_inst: [NodeT, Vis](InstMacro)
-      {'stmt'
-
-          {   #define instantiate: [*, NodeT, Vis, InstMacro]()
-              {'unit_defn_list'
-
-                  #do (InstMacro(NodeT, Vis))
-
-              'unit_defn_list'}
-
-              v_execute_inst(instantiate);
-          }
-
-      'stmt'}
-
-    #endif
-  }
-
-'unit_defn_list'}
-
-//---------------------------------------------------------------------
 //- visit_regular_descent
 //---------------------------------------------------------------------
-#define instantiate_visit_regular_descent: [](NodeT: v_static_type_t, Vis: v_static_namespace_t)
+#define _instantiate_visit_regular_descent: [](NodeT: v_static_type_t, Vis: v_static_namespace_t)
 {'unit_defn_list'
 
-  namespace regular_descent_args(NodeT, Vis)
-  {
-    #if (v_quard_ns())
+    namespace regular_descent_args(NodeT, Vis)
+    {
+        private B  = NodeT.bits;
+        private BL = NodeT.bits_leaf;
 
-      private B  = NodeT.bits;
-      private BL = NodeT.bits_leaf;
+        linkonce_odr
+        _visit_regular_descent: (node: *NodeT, shift: shift_t, idx: size_t) ~> Vis.result_t
+        {
+            v_assert(node);
+            v_assert(shift >= BL);
 
-      linkonce_odr
-      visit_regular_descent: (node: *NodeT, shift: shift_t, idx: size_t) ~> Vis.result_t
-      {
-          v_assert(node);
-          v_assert(shift >= BL);
-
-          switch(shift)
-          {
-          case BL+B*0:  return  make_regular_descent_pos(BL+B*0, node).visit(Vis, idx);
-          case BL+B*1:  return  make_regular_descent_pos(BL+B*1, node).visit(Vis, idx);
-          case BL+B*2:  return  make_regular_descent_pos(BL+B*2, node).visit(Vis, idx);
-          case BL+B*3:  return  make_regular_descent_pos(BL+B*3, node).visit(Vis, idx);
-          case BL+B*4:  return  make_regular_descent_pos(BL+B*4, node).visit(Vis, idx);
-          case BL+B*5:  return  make_regular_descent_pos(BL+B*5, node).visit(Vis, idx);
-
-          default:      //- IMMER_DESCENT_DEEP...
+            switch(shift)
             {
-              node: &*NodeT := node;
+            case BL+B*0:  return  make_regular_descent_pos(BL+B*0, node).visit(Vis, idx);
+            case BL+B*1:  return  make_regular_descent_pos(BL+B*1, node).visit(Vis, idx);
+            case BL+B*2:  return  make_regular_descent_pos(BL+B*2, node).visit(Vis, idx);
+            case BL+B*3:  return  make_regular_descent_pos(BL+B*3, node).visit(Vis, idx);
+            case BL+B*4:  return  make_regular_descent_pos(BL+B*4, node).visit(Vis, idx);
+            case BL+B*5:  return  make_regular_descent_pos(BL+B*5, node).visit(Vis, idx);
 
-              for (level: &shift_t := sift; level != endshift(B, BL); level -= B)
+            default:      //- IMMER_DESCENT_DEEP...
               {
-                  node := node->inner[(idx >> level) & mask(B)];
+                node: &*NodeT := node;
+
+                for (level: &shift_t := sift; level != endshift(B, BL); level -= B)
+                {
+                    node := node->inner[(idx >> level) & mask(B)];
+                }
+
+                return  make_leaf_descent_pos(node).visit(Vis, idx);
               }
-
-              return  make_leaf_descent_pos(node).visit(Vis, idx);
             }
-          }
-      }
-
-    #endif
-
-  }     //- namespace regular_descent_args(NodeT, Vis)
+        }
+    }
 
 'unit_defn_list'}
 
@@ -2357,13 +2093,13 @@ namespace rbts {
 
     ns = regular_descent_args(NodeT, Vis);
 
-    #if (!v_defined(ns, visit_regular_descent))
+    #if (!v_defined(ns, _visit_regular_descent))
 
-        ns.do_inst(instantiate_visit_regular_descent);
+        v_execute_outer(_instantiate_visit_regular_descent, NodeT, Vis);
 
     #endif
 
-    ns.visit_regular_descent(node, shift, idx)
+    ns._visit_regular_descent(node, shift, idx)
 };
 
 
