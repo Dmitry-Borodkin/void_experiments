@@ -42,21 +42,23 @@ namespace .immer {
 
             #if (!v_defined(op, optimal_size))
 
-                v_execute_outer(_instantiate_optimized, op, heap, Size);        //- Sic!
+                v_execute_outer(_instantiate_optimized, op, Size);
 
             #endif
 
             op
         };
 
-        #define _instantiate_optimized: [](OP, HeapNS, Size)                    //- Sic!
+        private _HeapNS = HeapNS;           //- Sic!
+
+        #define _instantiate_optimized: [*, _HeapNS](OP: v_static_namespace_t, Size: size_t)
         {'unit_defn_list'
 
             namespace (OP)
             {
-                optimal_size = Size;        //- ?..
+                optimal_size = Size;
 
-                heap = HeapNS;              //- ?..
+                heap = _HeapNS;             //- ...
             }
 
         'unit_defn_list'}
