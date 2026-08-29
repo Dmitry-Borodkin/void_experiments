@@ -35,6 +35,8 @@
     v_add_symbol("unit_namespace_open_q", q_ref, q("unit_namespace_open"));
     v_add_symbol("unit_defn_close_q",     q_ref, q("unit_defn_close"));
 
+    v_add_symbol("template_defn_q", q_ref, q("template_defn"));
+
     v_add_symbol("q_current_namespace_list", q_ref, q("v.current_namespace_list"));
 
     v_add_symbol("q_internal_namespace_guard", q_ref, q("v.internal.namespace_guard"));
@@ -260,6 +262,227 @@ execute_outer_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> 
     v_show_variables();
     //----------------------
 }
+
+
+//=====================================================================
+struct template_body_item_t
+{
+    count: int;
+    prev:  *template_body_item_t;
+};
+
+private
+template_body_state_t = struct
+{
+    count: int;
+
+    stack: *template_body_item_t;
+
+    open_fun: *v_peg_grammar_action_fun_t;
+    open_aux: *void;
+
+    close_fun: *v_peg_grammar_action_fun_t;
+    close_aux: *void;
+};
+
+//---------------------------------------------------------------------
+private
+mk_template_hdr_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
+{
+    expr: &v_ast_expr_t[2] := {};
+
+    {   sstr = v_std_any_get_pointer(v_std_string_t, any+0);
+
+        v_ast_make_expr_identifier(expr+0, v_std_string_get(sstr));
+    }
+
+    name = expr+0;
+    caps = v_std_any_get_pointer(v_ast_expr_list_t, any+1);
+    pars = v_std_any_get_pointer(v_ast_expr_t,      any+2);
+    type = expr+1;      //- Empty!
+
+    list: &v_ast_generic_list_t := {};
+
+    v_make_list(&list, template_defn_q, name);
+
+    if (caps)
+    {
+        v_list_append(&list, &list, caps);
+    }
+    else
+    {
+        itmp: &v_ast_expr_list_t := {};
+
+        v_make_list_nil(&itmp);
+
+        v_list_append(&list, &list, &itmp);
+    }
+
+    v_list_append(&list, &list, pars);
+    v_list_append(&list, &list, type);
+
+    v_std_any_set_pointer(ret, &list);
+}
+
+//---------------------------------------------------------------------
+private
+template_body_start_grammar_action: (ret: *v_std_any_t, aux: *void, *v_std_any_t, size_t) ~> void
+{
+    tbst = *(aux: *template_body_state_t);
+
+    item = v_malloc(template_body_item_t);
+
+    item->count := tbst.count;
+    item->prev  := tbst.stack;
+
+    tbst.count := 0;
+    tbst.stack := item;
+
+    v_std_any_set_value(ret, 0);        //- !
+}
+
+//---------------------------------------------------------------------
+private
+template_body_clean_grammar_action: (ret: *v_std_any_t, aux: *void, *v_std_any_t, size_t) ~> void
+{
+    tbst = *(aux: *template_body_state_t);
+
+    item = v_load(&tbst.stack);
+
+    tbst.count := item->count;
+    tbst.stack := item->prev;
+
+    v_free(item);
+
+    //- And fail!
+}
+
+//---------------------------------------------------------------------
+private
+mk_template_body_grammar_action: (ret: *v_std_any_t, aux: *void, any: *v_std_any_t, size_t) ~> void
+{
+    tbst = *(aux: *template_body_state_t);
+
+    v_assert(tbst.count == 0);
+    v_assert(tbst.stack != 0);
+
+    item = v_load(&tbst.stack);
+
+    tbst.count := item->count;
+    tbst.stack := item->prev;
+
+    v_free(item);
+
+    v_copy(ret, any+0);         //- Sic!
+}
+
+//---------------------------------------------------------------------
+private
+my_unit_namespace_open_grammar_action: (ret: *v_std_any_t, aux: *void, any: *v_std_any_t, sz: size_t) ~> void
+{
+    tbst = *(aux: *template_body_state_t);
+
+    if (tbst.count >= 0)  ++tbst.count;
+
+    tbst.open_fun(ret, tbst.open_aux, any, sz);
+}
+
+//---------------------------------------------------------------------
+private
+my_unit_defn_close_grammar_action: (ret: *v_std_any_t, aux: *void, any: *v_std_any_t, sz: size_t) ~> void
+{
+    tbst = *(aux: *template_body_state_t);
+
+    if (tbst.count == 0)  return;       //- And fail!
+
+    if (tbst.count > 0)  --tbst.count;
+
+    tbst.close_fun(ret, tbst.close_aux, any, sz);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------
+private
+enable_templates: () ~> void
+{
+//  enable_templates_compiler();
+
+    gr0 = v_peg_get_grammar();
+
+    v_return_if_not(gr0);
+    v_return_if(v_peg_grammar_get_parser(gr0, "template_stmt", 0));
+
+    //--------------------------------------------------------------
+    tbst = v_malloc(template_body_state_t);
+
+    tbst->count := -1;
+    tbst->stack :=  0;
+
+    tbst->open_fun  := v_peg_grammar_get_action(gr0, "mk_unit_namespace_open", &tbst->open_aux);
+    tbst->close_fun := v_peg_grammar_get_action(gr0, "mk_unit_defn_close",     &tbst->close_aux);
+
+    //--------------------------------------------------------------
+    grammar gr0
+    {
+    actions:
+        mk_template_hdr     = mk_template_hdr_grammar_action;
+        template_body_start = template_body_start_grammar_action, tbst;
+        template_body_clean = template_body_clean_grammar_action, tbst;
+        mk_template_body    = mk_template_body_grammar_action,    tbst;
+
+        mk_unit_namespace_open = my_unit_namespace_open_grammar_action, tbst;
+        mk_unit_defn_close     = my_unit_defn_close_grammar_action,     tbst;
+
+    parsers:
+
+        template_hdr = id:identifier _':'_ c:macro_caps? _ b:bracketed  { mk_template_hdr(id, c, b) }
+
+        template_body = { template_body_start() }  l:unit_defn_list  { mk_template_body(l) }
+                      / { template_body_clean() };
+
+        template_stmt = "#template" !ident_cont _ h:template_hdr
+                        _'{'_ b:template_body _'}'                  { mk_macro_stmt(h, b) };        //- Sic!
+
+        macro_stmt =+ template_stmt;
+    }
+
+    free: (*void) ~> void;
+
+    v_add_local_cleaner(free, tbst);        //- Sic!
+}
+
+
 
 
 //---------------------------------------------------------------------
