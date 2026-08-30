@@ -35,11 +35,25 @@
     v_add_symbol("unit_namespace_open_q", q_ref, q("unit_namespace_open"));
     v_add_symbol("unit_defn_close_q",     q_ref, q("unit_defn_close"));
 
+    v_add_symbol("macro_params_q",  q_ref, q("macro_params"));
     v_add_symbol("template_defn_q", q_ref, q("template_defn"));
+
+    v_add_symbol("q_initialize", q_ref, q("v_initialize"));
+    v_add_symbol("q_terminate",  q_ref, q("v_terminate"));
+
+    v_add_symbol("q_malloc",        q_ref, q("v_malloc"));
+    v_add_symbol("q_free",          q_ref, q("v_free"));
+    v_add_symbol("q_getelementptr", q_ref, q("v_getelementptr"));
+
+    v_add_symbol("q_base", q_ref, q("v_ast_base_ptr"));
+
+    v_add_symbol("voidc_compile_quark_q", q_ref, q("voidc.compile_quark"));
 
     v_add_symbol("q_current_namespace_list", q_ref, q("v.current_namespace_list"));
 
     v_add_symbol("q_internal_namespace_guard", q_ref, q("v.internal.namespace_guard"));
+
+    v_add_symbol("q_object_intrinsic_t", q_ref, q("v_object_intrinsic_t"));
 }
 
 //=====================================================================
@@ -286,13 +300,18 @@ template_body_state_t = struct
 };
 
 //---------------------------------------------------------------------
+qf_export  = voidc_definitions_internal_qf_export;      //- 1 << 0
+qf_private = voidc_definitions_internal_qf_private;     //- 1 << 1
+
+
+//---------------------------------------------------------------------
 private
 mk_template_hdr_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_t) ~> void
 {
     expr: &v_ast_expr_t[2] := {};
 
-    {   sstr = v_std_any_get_pointer(v_std_string_t, any+0);
-
+    if (sstr = v_std_any_get_pointer(v_std_string_t, any+0))
+    {
         v_ast_make_expr_identifier(expr+0, v_std_string_get(sstr));
     }
 
@@ -311,14 +330,16 @@ mk_template_hdr_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, si
     }
     else
     {
-        itmp: &v_ast_expr_list_t := {};
+        ltmp: &v_ast_expr_list_t := {};
 
-        v_make_list_nil(&itmp);
+        v_make_list_nil(&ltmp);
 
-        v_list_append(&list, &list, &itmp);
+        v_list_append(&list, &list, &ltmp);
     }
 
-    v_list_append(&list, &list, pars);
+    if (pars)  v_list_append(&list, &list, pars);
+    else       v_list_append(&list, &list, expr+1);     //- Empty!
+
     v_list_append(&list, &list, type);
 
     v_std_any_set_pointer(ret, &list);
@@ -401,6 +422,35 @@ my_unit_defn_close_grammar_action: (ret: *v_std_any_t, aux: *void, any: *v_std_a
 }
 
 
+//---------------------------------------------------------------------
+export
+struct v_template_definition_t
+{
+    macro: v_macro_definition_t;
+
+    guard: v_quark_t;
+};
+
+export
+(v_initialize(_)): (*v_template_definition_t) ~> void  =  derive;
+
+export
+(v_terminate(_)):  (*v_template_definition_t) ~> void  =  derive;
+
+export
+(v_copy(_)): (*v_template_definition_t, *const v_template_definition_t) ~> void  =  derive;
+
+private
+template_definition_cleaner: (void_ctx: *void) ~> void
+{
+    delete  (void_ctx: *v_template_definition_t);
+}
+
+
+//---------------------------------------------------------------------
+private
+template_instantiation_intrinsic: (aux: *void, vis: *voidc_visitor_t, self:*v_ast_base_t) ~> void
+{
 
 
 
@@ -417,26 +467,288 @@ my_unit_defn_close_grammar_action: (ret: *v_std_any_t, aux: *void, any: *v_std_a
 
 
 
+}
+
+
+//---------------------------------------------------------------------
+export
+voidc_internal_define_template_helper: (q: v_quark_t, ast: *v_ast_base_t) ~> void
+{
+//printf("voidc_internal_define_template_helper: start %s\n", v_quark_to_string(q));
+//defer printf("voidc_internal_define_template_helper: stop\n");
+
+    body =  ast+0;
+    pars = (ast+1 : *v_ast_generic_list_t);
+    caps = (ast+2 : *v_ast_expr_list_t);
+
+    ctx = new v_template_definition_t;
+
+    {   type: &v_ast_expr_t := {};      //- Empty!
+
+        ast: &(*v_ast_base_t)[4] := {caps, pars, &type, body};
+
+        voidc_internal_collect_macro_definition(&ctx->macro, ast);
+    }
+
+    ctx->guard := q;
+
+    sstr: &v_std_string_t := {};
+
+    v_std_string_set(&sstr, "v.template.");
+
+    v_std_string_append(&sstr, v_quark_to_string(q));
+
+    qintr = v_quark_from_string(v_std_string_get(&sstr));
+
+    object_intrinsic_t = v_find_type_q(q_object_intrinsic_t);
+
+    v_export_constant_q(q, object_intrinsic_t, (qintr: LLVMValueRef));
+
+    v_export_intrinsic_q(qintr, template_instantiation_intrinsic, ctx);
+}
+
+//---------------------------------------------------------------------
+private
+gen_template_definition: (ret: *v_ast_stmt_t,
+                          ctx: &const v_template_definition_t,
+                          caps: *v_ast_expr_list_t
+                         ) ~> void
+{
+//printf("gen_template_definition: start %s\n", v_quark_to_string(q));
+//defer printf("gen_template_definition: stop\n");
+
+    gen: &voidc_ast_generator_t := {};
+
+    gen.visit(&ctx.macro.body);
+    v_assert(gen.cur_var == 0 <= gen.max_var);          //- 0 - body
+
+    gen.visit(&ctx.macro.pars);
+    v_assert(gen.cur_var == 1 <= gen.max_var);          //- 1 - pars
+
+    gen.visit(caps);
+    v_assert(gen.cur_var == 2 <= gen.max_var);          //- 2 - caps
+
+    slst: &v_ast_stmt_list_t[2] := {};
+
+    v_make_list_nil(slst+0);
+
+    expr: &v_ast_expr_t[2] := {};
+
+    v_ast_make_expr_identifier(expr+0, "v_ast_base_t");
+
+    n = gen.max_var + 1;
+
+    v_ast_make_expr_integer(expr+1, n);
+
+    stmt: &v_ast_stmt_t := {};
+
+    qv0 = gen.cast_var(0, q_base);
+
+    v_ast_make_stmt_call(&stmt, qv0, q_malloc, expr, 2);
+    v_list_append(slst+0, slst+0, &stmt);
+
+    v_ast_make_expr_identifier_q(expr+0, qv0);
+
+    v_ast_make_stmt_call(&stmt, 0, q_initialize, expr, 2);
+    v_list_append(slst+0, slst+0, &stmt);
+
+    v_ast_make_stmt_call(&stmt, 0, q_terminate, expr, 2);
+    v_make_list(slst+1, &stmt);
+
+    v_ast_make_stmt_call(&stmt, 0, q_free, expr, 1);
+    v_list_append(slst+1, slst+1, &stmt);
+
+    v_ast_make_stmt_block(&stmt, slst+1, false);
+    v_ast_make_stmt_defer(&stmt, &stmt);
+    v_list_append(slst+0, slst+0, &stmt);
+
+    for (i: &int := 1; i < n; ++i)
+    {
+        v_ast_make_expr_integer(expr+1, i);
+
+        v_ast_make_stmt_call(&stmt, gen.cast_var(i, q_base), q_getelementptr, expr, 2);
+        v_list_append(slst+0, slst+0, &stmt);
+    }
+
+    for (N = v_list_get_size(&gen.gen_list), i: &int := 0; i < N; ++i)
+    {
+        item = v_list_get_item(&gen.gen_list, i);
+
+        v_list_append(slst+0, slst+0, item);
+    }
+
+    v_ast_make_expr_integer(expr+0, ctx.guard);
+
+    elst: &v_ast_expr_list_t := {};
+
+    v_make_list(&elst, expr+0);
+
+    v_ast_make_expr_identifier_q(expr+0, voidc_compile_quark_q);
+
+    v_ast_make_expr_call(expr+0, expr+0, &elst);
+
+    v_make_list(&elst, expr+0);
+
+    v_ast_make_expr_identifier_q(expr+0, gen.cast_var(0, q_base));
+
+    v_list_append(&elst, &elst, expr+0);
+
+    v_ast_make_expr_identifier(expr+0, "voidc_internal_define_template_helper");
+
+    v_ast_make_expr_call(expr+0, expr+0, &elst);
+
+    v_ast_make_stmt(&stmt, "", expr+0);
+    v_list_append(slst+0, slst+0, &stmt);
+
+    v_ast_make_stmt_block(ret, slst+0, false);
+}
+
+
+//---------------------------------------------------------------------
+private
+compile_template_define: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+//printf("compile_template_define start\n");
+//defer printf("compile_template_define stop\n");
+
+    list = (self: *v_ast_generic_list_t);
+
+    qfl  = (v_list_get_item(list, 0) : *v_ast_expr_t);
+    name = (v_list_get_item(list, 1) : *v_ast_expr_t);
+    caps = (v_list_get_item(list, 2) : *v_ast_expr_list_t);
+    pars = (v_list_get_item(list, 3) : *v_ast_expr_t);          //- ...
+    type = (v_list_get_item(list, 4) : *v_ast_expr_t);
+    body = (v_list_get_item(list, 5) : *v_ast_base_t);
+    kind = (v_list_get_item(list, 6) : *v_ast_expr_t);
+
+    ptmp: &v_ast_generic_list_t := {};
+
+    if (v_empty(pars))
+    {
+        v_make_list_nil(&ptmp, macro_params_q);
+    }
+    else
+    {
+        pars = v_ast_expr_call_get_arg_list(pars);
+        pars = (v_list_get_item(pars, 1) : *v_ast_generic_list_t);
+
+        v_copy(&ptmp, pars);
+    }
+
+    pars = &ptmp;
+
+    if (v_list_get_size(pars) == 0)     //- "Direct" instantiation?
+    {
+        ctx: &v_template_definition_t := {};
+
+        {   ast: &(*v_ast_base_t)[4] := {caps, pars, type, body};
+
+            voidc_internal_collect_macro_definition(&ctx.macro, ast);
+        }
+
+        if (v_empty(name))  ctx.guard := 0;
+        else                ctx.guard := v_ast_expr_identifier_get_name_q(name);
+
+        expr: &v_ast_expr_t      := {};
+        list: &v_ast_expr_list_t := {};
+
+        v_make_list_nil(&list);
+
+        v_ast_make_expr_identifier(&expr, "dummy");
+
+        v_ast_make_expr_call(&expr, &expr, &list);
+
+        template_instantiation_intrinsic(&ctx, vis, &expr);         //- Sic !!!
+
+        return;
+    }
+
+    //- "Indirect" instantiation...
+
+    v_assert(!v_empty(name));
+
+    qfl  = v_ast_expr_integer_get_number(qfl);
+    kind = v_ast_expr_integer_get_number(kind);
+
+    //-------------------------------------------------------------
+    hidden_flag = v_get_hidden_flag();
+    export_flag = v_get_export_flag();
+
+    private = qfl & qf_private;
+    export  = (export_flag  ||  qfl & qf_export)  &&  !private  &&  !hidden_flag;
+
+    //-------------------------------------------------------------
+    ctx = new v_template_definition_t;
+
+    if (export) v_add_cleaner(template_definition_cleaner, ctx);
+    else        v_add_local_cleaner(template_definition_cleaner, ctx);
+
+    {   ast: &(*v_ast_base_t)[4] := {caps, pars, type, body};
+
+        voidc_internal_collect_macro_definition(&ctx->macro, ast);
+    }
+
+    quark = v_ast_expr_identifier_get_name_q(name);
+
+    ctx->guard := quark;
+
+    sstr: &v_std_string_t := {};
+
+    v_std_string_set(&sstr, "v.template.");
+
+    v_std_string_append(&sstr, v_quark_to_string(quark));
+
+    qintr = v_quark_from_string(v_std_string_get(&sstr));
+
+    object_intrinsic_t = v_find_type_q(q_object_intrinsic_t);
+
+    if (export)
+    {
+        v_export_constant_q(quark, object_intrinsic_t, (qintr: LLVMValueRef));
+
+        v_export_intrinsic_q(qintr, template_instantiation_intrinsic, ctx);
+    }
+    else
+    {
+        if (kind) v_add_variable_q(quark, object_intrinsic_t, (qintr: LLVMValueRef));
+        else      v_add_constant_q(quark, object_intrinsic_t, (qintr: LLVMValueRef));
+
+        v_add_intrinsic_q(qintr, template_instantiation_intrinsic, ctx);
+    }
+
+    if (kind) return;       //- Sic !!!
+
+    if (!export)  return;
+
+    //-------------------------------------------------------------
+    stmt_list = voidc_definitions_context_get_stmt_list();
+    if (!stmt_list)  return;
+
+    stmt: &v_ast_stmt_t := {};
+
+    gen_template_definition(&stmt, *ctx, caps);
+
+    v_list_append(stmt_list, stmt_list, &stmt);
+}
+
+
+//---------------------------------------------------------------------
+private
+enable_templates_compiler: () ~> void
+{
 
 
 
 
 
 
-
-
-
-
-
-
-
-
+}
 
 //---------------------------------------------------------------------
 private
 enable_templates: () ~> void
 {
-//  enable_templates_compiler();
+    enable_templates_compiler();
 
     gr0 = v_peg_get_grammar();
 
@@ -466,7 +778,8 @@ enable_templates: () ~> void
 
     parsers:
 
-        template_hdr = id:identifier _':'_ c:macro_caps? _ b:bracketed  { mk_template_hdr(id, c, b) }
+        template_hdr =                     c:macro_caps  _ '(' _ ')'    { mk_template_hdr( 0, c, 0) }
+                     / id:identifier _':'_ c:macro_caps? _ b:bracketed  { mk_template_hdr(id, c, b) };
 
         template_body = { template_body_start() }  l:unit_defn_list  { mk_template_body(l) }
                       / { template_body_clean() };
