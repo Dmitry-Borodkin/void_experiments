@@ -30,13 +30,17 @@
 
     v_add_symbol("true_q", q_ref, q("true"));
 
-    v_add_symbol("unit_val_defn_q", q_ref, q("unit_val_defn"));
+    v_add_symbol("unit_val_defn_q",  q_ref, q("unit_val_defn"));
+    v_add_symbol("unit_defn_list_q", q_ref, q("unit_defn_list"));
 
     v_add_symbol("unit_namespace_open_q", q_ref, q("unit_namespace_open"));
     v_add_symbol("unit_defn_close_q",     q_ref, q("unit_defn_close"));
 
     v_add_symbol("macro_params_q",  q_ref, q("macro_params"));
     v_add_symbol("template_defn_q", q_ref, q("template_defn"));
+    v_add_symbol("template_body_q", q_ref, q("template_body"));
+
+    v_add_symbol("enabled_q", q_ref, q("voidc.internal.templates_enabled"));
 
     v_add_symbol("q_initialize", q_ref, q("v_initialize"));
     v_add_symbol("q_terminate",  q_ref, q("v_terminate"));
@@ -54,6 +58,8 @@
     v_add_symbol("q_internal_namespace_guard", q_ref, q("v.internal.namespace_guard"));
 
     v_add_symbol("q_object_intrinsic_t", q_ref, q("v_object_intrinsic_t"));
+
+    v_add_symbol("star_q", q_ref, q("*"));
 }
 
 //=====================================================================
@@ -451,22 +457,152 @@ template_definition_cleaner: (void_ctx: *void) ~> void
 private
 template_instantiation_intrinsic: (aux: *void, vis: *voidc_visitor_t, self:*v_ast_base_t) ~> void
 {
+//printf("template_instantiation_intrinsic: start\n");
+//defer printf("template_instantiation_intrinsic: stop\n");
+
+    ctx = (aux: *v_template_definition_t);
+
+    fun = voidc_get_macro_definition(0, 0);
+    v_assert(fun);
+
+    //----------------------
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    expr: &v_ast_expr_t      := {};
+    list: &v_ast_expr_list_t := {};
+
+    v_make_list_nil(&list);
+
+    {   n = v_list_get_size(args);
+
+        for (i: &int := 0; i < n; ++i)      //- Arguments
+        {
+            v_reset_result();
+
+            v_ast_accept_visitor(v_list_get_item(args, i), vis);
+
+            t = v_get_result_type();
+            v = v_get_result_value();
+
+            v_ast_make_expr_compiled(&expr, t, v);
+
+            v_list_append(&list, &list, &expr);
+        }
+    }
+
+    v_ast_make_expr_identifier(&expr, "dummy");
+
+    v_ast_make_expr_call(&expr, &expr, &list);
+
+    //----------------------
+    v_hide_variables();
+    //----------------------
+
+    saved_obtain_module_ctx: &*void := undef;
+    saved_obtain_module_fun: &*((*void) ~> LLVMModuleRef) := undef;
+
+    saved_module = v_get_module();
+
+    if (saved_module)
+    {
+        saved_obtain_module_fun := v_get_obtain_module_hook(&saved_obtain_module_ctx);
+
+        v_set_obtain_module_hook(my_obtain_module, saved_module);
+    }
+
+    v_set_module(0);        //- Sic!
+
+    //----------------------
+    fun(&ctx->macro, vis, &expr);
+    //----------------------
+
+    v_set_module(saved_module);
+
+    if (saved_module)
+    {
+        v_set_obtain_module_hook(saved_obtain_module_fun, saved_obtain_module_ctx);
+    }
+
+    //----------------------
+    v_show_variables();
+    //----------------------
+}
 
 
+//---------------------------------------------------------------------
+private
+compile_template_body: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+//printf("compile_template_body: start\n");
+//defer printf("compile_template_body: stop\n");
 
+    list = (self: *v_ast_generic_list_t);
 
+    body  = (v_list_get_item(list, 0) : *v_ast_base_t);
+    guard = (v_list_get_item(list, 1) : *v_ast_expr_t);
+    nmsp  = (v_list_get_item(list, 2) : *v_ast_expr_t);
 
+    glst: &v_ast_generic_list_t := {};
 
+    {   expr: &v_ast_expr_t := {};
 
+        v_ast_make_expr_integer(&expr, 0);
 
+        v_make_list(&glst, unit_namespace_open_q, &expr);
 
+        v_ast_make_expr_op_unary(&expr, v_op_parentheses, nmsp);
 
+        v_list_append(&glst, &glst, &expr);
 
+        //- Open namespace
 
+        v_reset_result();
 
+        v_ast_accept_visitor(&glst, vis);
+    }
 
+    lst = v_std_any_get_pointer(v_util_list_t, v_get_property_q(q_current_namespace_list));
 
+    s = v_list_get_size(lst);
+    v_assert(s);
 
+    r = v_list_get_item(lst, s-1);
+
+    cur_ns = (v_std_any_get_value(intptr_t, r) : *v_namespace_t);
+
+    sstr: &v_std_string_t := {};
+
+    v_std_string_set(&sstr, "v.template.guard");
+
+    if (!v_empty(guard))
+    {
+        v_std_string_append(&sstr, "-");
+
+        v_std_string_append(&sstr, v_ast_expr_identifier_get_name(guard));
+    }
+
+    quark = v_quark_from_string(v_std_string_get(&sstr));
+
+    if (!v_map_find(&cur_ns->map, (quark: intptr_t)))
+    {
+        //- Define guard constant...
+
+        v_add_constant_q(quark, v_void_type(), 0);
+
+        //- Compile template body
+
+        v_reset_result();
+
+        v_ast_accept_visitor(body, vis);
+    }
+
+    //- Close namespace
+
+    v_make_list_nil(&glst, unit_defn_close_q);
+
+    v_reset_result();
+
+    v_ast_accept_visitor(&glst, vis);
 }
 
 
@@ -637,6 +773,44 @@ compile_template_define: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> 
 
     pars = &ptmp;
 
+    //-------------------------------------------------------------
+    btmp: &v_ast_generic_list_t := {};
+
+    v_make_list(&btmp, template_body_q, body);          //- #0  body
+
+    v_list_append(&btmp, &btmp, name);                  //- #1  guard
+
+    if (v_list_get_size(pars) == 0)     //- "Direct" instantiation?
+    {
+        n = v_list_get_size(caps);
+
+        for (i: &int := 0; i < n; ++i)
+        {
+            expr = v_list_get_item(caps, i);
+
+            id = v_ast_expr_identifier_get_name_q(expr);
+
+            if (id == star_q)  continue;
+
+            v_list_append(&btmp, &btmp, expr);          //- #2  namespace
+
+            break;
+        }
+
+        v_assert(v_list_get_size(&btmp) == 3);
+    }
+    else                                //- "Indirect" instantiation...
+    {
+        par0 = (v_list_get_item(pars, 0) : *v_ast_expr_list_t);
+
+        expr = v_list_get_item(par0, 0);
+
+        v_list_append(&btmp, &btmp, expr);              //- #2  namespace
+    }
+
+    body = &btmp;
+
+    //-------------------------------------------------------------
     if (v_list_get_size(pars) == 0)     //- "Direct" instantiation?
     {
         ctx: &v_template_definition_t := {};
@@ -736,12 +910,23 @@ compile_template_define: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> 
 private
 enable_templates_compiler: () ~> void
 {
+    v_return_if(v_find_constant_q(enabled_q, 0, 0));
 
+    v_add_constant_q(enabled_q, v_void_type(), 0);
 
+    vis = v_get_compiler();
 
+    voidc_visitor_set_method(vis, vis, template_body_q, compile_template_body,   0);
+    voidc_visitor_set_method(vis, vis, template_defn_q, compile_template_define, 0);
 
+    gen = v_get_ast_generator_visitor();
 
+    gen_aux: &*void := undef;
 
+    gen_generic = voidc_visitor_get_method(gen, unit_defn_list_q, &gen_aux);
+
+    voidc_visitor_set_method(gen, gen, template_defn_q, gen_generic, gen_aux);
+    voidc_visitor_set_method(gen, gen, template_body_q, gen_generic, gen_aux);      //- ?
 }
 
 //---------------------------------------------------------------------
@@ -811,6 +996,8 @@ v_internal_immer_detail_util_effort: (*void) ~> void
     v_add_intrinsic("v_guard_ns",           guard_ns_intrinsic,           0);
 
     v_add_intrinsic("v_execute_outer", execute_outer_intrinsic, 0);
+
+    enable_templates();
 }
 
 //---------------------------------------------------------------------
@@ -840,49 +1027,46 @@ namespace detail {
 //---------------------------------------------------------------------
 //- ...
 //---------------------------------------------------------------------
-#define _instantiate_equal: [](NS: v_static_namespace_t, Iter1: v_static_type_t, Iter2: v_static_type_t)
-{'unit_defn_list'
-
-    inlinehint
-    NS.equal_impl: (i1: Iter1, i2: Iter2, n: size_t) ~> bool
-    {
-        e1 = i1 + n;
-        i1: &Iter1 := i1;
-        i2: &Iter2 := i2;
-
-        for (; i1 < e1; ++i1, ++i2)
-        {
-            if (!(*i1 == *i2))  return  false;
-        }
-
-        return  true;
-    }
-
-'unit_defn_list'}
-
-
-//---------------------------------------------------------------------
-//- ...
-//---------------------------------------------------------------------
 namespace util
 {
 
 //---------------------------------------------------------------------
+#define unref_typeof: (x) ~> v_static_type_t  =
+{
+    T = typeof(x);  #if (T.is_reference)  T = T.element_type;  #endif
+
+    T
+};
+
+//---------------------------------------------------------------------
 #define equal: [](i1, i2, n: size_t = 1) ~> bool  =
 {
-    Iter1 = typeof(i1);
-    Iter2 = typeof(i2);
+    Iter1 = unref_typeof(i1);
+    Iter2 = unref_typeof(i2);
 
     ns = v_generic_ns(equal_args, T[Iter1, Iter2]);
 
-    #if (!v_defined(ns, equal_impl))
+    #template [ns, Iter1, Iter2]()
+    {
+        inlinehint
+        _equal: (i1: Iter1, i2: Iter2, n: size_t) ~> bool
+        {
+            e1 = i1 + n;
+            i1: &Iter1 := i1;
+            i2: &Iter2 := i2;
 
-        v_execute_outer(_instantiate_equal, ns, Iter1, Iter2);
+            for (; i1 < e1; ++i1, ++i2)
+            {
+                if (!(*i1 == *i2))  return  false;
+            }
 
-    #endif
+            return  true;
+        }
+    }
 
-    ns.equal_impl(i1, i2, n)
+    ns._equal(i1, i2, n)
 };
+
 
 
 //---------------------------------------------------------------------

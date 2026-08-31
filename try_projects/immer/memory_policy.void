@@ -24,22 +24,7 @@ namespace .immer {
                       Q(v_namespace_get_name(HeapPolicy)),
                       T(RefcountPolicy));
 
-    #if (!v_defined(mp, heap))
-
-        v_execute_outer(_instantiate_memory_policy, mp, HeapPolicy, RefcountPolicy);
-
-    #endif
-
-    mp
-};
-
-//---------------------------------------------------------------------
-#define _instantiate_memory_policy: [](MemoryPolicy:   v_static_namespace_t,
-                                       HeapPolicy:     v_static_namespace_t,
-                                       RefcountPolicy: v_static_type_t)
-{'unit_defn_list'
-
-    namespace (MemoryPolicy)
+    #template [mp, HeapPolicy, RefcountPolicy]()
     {
         heap     = HeapPolicy;
         refcount = RefcountPolicy;
@@ -50,7 +35,8 @@ namespace .immer {
 
     }
 
-'unit_defn_list'}
+    mp
+};
 
 
 //---------------------------------------------------------------------

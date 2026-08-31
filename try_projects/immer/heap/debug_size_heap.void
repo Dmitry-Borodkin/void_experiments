@@ -21,20 +21,7 @@ namespace .immer {
   {
     ds = v_generic_ns(debug_size_heap_ns, Q(v_namespace_get_name(HeapNS)));
 
-    #if (!v_defined(ds, allocate))
-
-        v_execute_outer(_instantiate_debug_size_heap, ds, HeapNS);
-
-    #endif
-
-    ds
-  };
-
-  //---------------------------------------------------------------------
-  #define _instantiate_debug_size_heap: [](DS: v_static_namespace_t, HeapNS: v_static_namespace_t)
-  {'unit_defn_list'
-
-    namespace (DS)              //- WTF ?
+    #template [ds, HeapNS]()
     {
         extra_size = 16;            //- Kinda  alignof(max_align_t)
 
@@ -59,7 +46,8 @@ namespace .immer {
         }
     }
 
-  'unit_defn_list'}
+    ds
+  };
 
 #else   //- IMMER_ENABLE_DEBUG_SIZE_HEAP
 

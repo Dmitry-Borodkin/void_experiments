@@ -19,20 +19,7 @@ namespace .immer {
 {
     hp = v_generic_ns(heap_policy_ns, Q(v_namespace_get_name(HeapNS)));
 
-    #if (!v_defined(hp, heap))
-
-        v_execute_outer(_instantiate_heap_policy, hp, HeapNS);
-
-    #endif
-
-    hp
-};
-
-//---------------------------------------------------------------------
-#define _instantiate_heap_policy: [](HP: v_static_namespace_t, HeapNS: v_static_namespace_t)
-{'unit_defn_list'
-
-    namespace (HP)
+    #template [hp, HeapNS]()
     {
         heap = HeapNS;
 
@@ -40,31 +27,21 @@ namespace .immer {
         {
             op = v_generic_ns(optimized_ns, N(Size));
 
-            #if (!v_defined(op, optimal_size))
+            _HeapNS = heap;
 
-                v_execute_outer(_instantiate_optimized, op, Size);
-
-            #endif
-
-            op
-        };
-
-        private _HeapNS = HeapNS;           //- Sic!
-
-        #define _instantiate_optimized: [*, _HeapNS](OP: v_static_namespace_t, Size: size_t)
-        {'unit_defn_list'
-
-            namespace (OP)
+            #template [op, _HeapNS, Size]()
             {
                 optimal_size = Size;
 
-                heap = _HeapNS;             //- ...
+                heap = _HeapNS;
             }
 
-        'unit_defn_list'}
+            op
+        };
     }
 
-'unit_defn_list'}
+    hp
+};
 
 
 //---------------------------------------------------------------------

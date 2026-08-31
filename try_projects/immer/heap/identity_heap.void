@@ -18,20 +18,7 @@ namespace .immer {
 {
     ih = v_generic_ns(identity_heap_ns, Q(v_namespace_get_name(HeapNS)));
 
-    #if (!v_defined(ih, allocate))
-
-        v_execute_outer(_instantiate_identity_heap, ih, HeapNS);
-
-    #endif
-
-    ih
-};
-
-//---------------------------------------------------------------------
-#define _instantiate_identity_heap: [](IH: v_static_namespace_t, HeapNS: v_static_namespace_t)
-{'unit_defn_list'
-
-    namespace (IH)      //- WTF ?!?
+    #template [ih, HeapNS]()
     {
         alwaysinline
         allocate: (size: size_t) ~> *void  =  HeapNS.allocate(size);
@@ -43,7 +30,8 @@ namespace .immer {
         }
     }
 
-'unit_defn_list'}
+    ih
+};
 
 
 //---------------------------------------------------------------------
