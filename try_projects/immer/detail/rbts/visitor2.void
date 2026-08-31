@@ -20,33 +20,26 @@ namespace rbts {
 
 
 //---------------------------------------------------------------------
-#define visitor_base: [](DerivedNS: v_static_namespace_t) ~> v_static_namespace_t
-  =  v_generic_ns(visitor_base_ns, Q(v_namespace_get_name(DerivedNS)));
+visitor_t = v_static_namespace_t;
 
+#define visitor_base: [](Derived: visitor_t) ~> visitor_t  =
+{
+    ns = v_generic_ns(visitor_base_tag, Q(v_namespace_get_name(Derived)));
 
-//---------------------------------------------------------------------
-#define instantiate_visitor_base: (DerivedNS: v_static_namespace_t)
-{'unit_defn_list'
-
-  #if (v_guard_ns(visitor_base(DerivedNS)))
-
-    using namespace visitor_base(DerivedNS);
-
-    namespace visitor_base(DerivedNS)
+    #template [ns, Derived]()
     {
-        base_ns    = visitor_base(DerivedNS);
-        derived_ns = DerivedNS;
+        _base    = ns;
+        _derived = Derived;
 
-        #define visit_node:    [](args)  =  v_assert(false && "Kinda, unreachable...");
-        #define visit_relaxed: [](args)  =  derived_ns.visit_inner(args);
-        #define visit_regular: [](args)  =  derived_ns.visit_inner(args);
-        #define visit_inner:   [](args)  =  derived_ns.visit_node(args);
-        #define visit_leaf:    [](args)  =  derived_ns.visit_node(args);
+        #define visit_relaxed: [](pos, args) ~> _derived.result_t  =  _derived.visit_inner(pos, args);
+        #define visit_regular: [](pos, args) ~> _derived.result_t  =  _derived.visit_inner(pos, args);
+        #define visit_inner:   [](pos, args) ~> _derived.result_t  =  _derived.visit_node(pos, args);
+        #define visit_leaf:    [](pos, args) ~> _derived.result_t  =  _derived.visit_node(pos, args);
+        #define visit_node:    [](pos, args) ~> _derived.result_t  =  v_assert(false && "Kinda, unreachable...");
     }
 
-  #endif
-
-'unit_defn_list'}
+    ns
+};
 
 
 //---------------------------------------------------------------------
