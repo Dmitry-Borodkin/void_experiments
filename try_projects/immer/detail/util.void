@@ -619,6 +619,8 @@ voidc_internal_define_template_helper: (q: v_quark_t, ast: *v_ast_base_t) ~> voi
 
     ctx = new v_template_definition_t;
 
+    v_add_cleaner(template_definition_cleaner, ctx);
+
     {   type: &v_ast_expr_t := {};      //- Empty!
 
         ast: &(*v_ast_base_t)[4] := {caps, pars, &type, body};
@@ -803,7 +805,9 @@ compile_template_define: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> 
     {
         par0 = (v_list_get_item(pars, 0) : *v_ast_expr_list_t);
 
-        expr = v_list_get_item(par0, 0);
+        expr: &*v_ast_expr_t := v_list_get_item(par0, 0);
+
+        if (v_empty(expr))  expr := v_list_get_item(par0, 1);       //- Sic!
 
         v_list_append(&btmp, &btmp, expr);              //- #2  namespace
     }

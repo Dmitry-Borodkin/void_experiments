@@ -31,11 +31,11 @@ visitor_t = v_static_namespace_t;
         _base    = ns;
         _derived = Derived;
 
-        #define visit_relaxed: [](pos, args) ~> _derived.result_t  =  _derived.visit_inner(pos, args);
-        #define visit_regular: [](pos, args) ~> _derived.result_t  =  _derived.visit_inner(pos, args);
-        #define visit_inner:   [](pos, args) ~> _derived.result_t  =  _derived.visit_node(pos, args);
-        #define visit_leaf:    [](pos, args) ~> _derived.result_t  =  _derived.visit_node(pos, args);
-        #define visit_node:    [](pos, args) ~> _derived.result_t  =  v_assert(false && "Kinda, unreachable...");
+        #define visit_relaxed: [](pos, args)  =  _derived.visit_inner(pos, args);
+        #define visit_regular: [](pos, args)  =  _derived.visit_inner(pos, args);
+        #define visit_inner:   [](pos, args)  =  _derived.visit_node(pos, args);
+        #define visit_leaf:    [](pos, args)  =  _derived.visit_node(pos, args);
+        #define visit_node:    [](pos, args)  =  v_assert(false && "Kinda, unreachable...");
     }
 
     ns
