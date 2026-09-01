@@ -3921,7 +3921,7 @@ namespace rbts {
 
         'unit_defn_list'}
 
-        #define instantiate_each_pred: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
+        #define instantiate_each_i: [](Vis: v_static_namespace_t, ArgsT: v_static_type_t)
         {'unit_defn_list'
 
           namespace position_args(relaxed_pos, Vis, ArgsT)
@@ -4152,7 +4152,7 @@ namespace rbts {
               #do (instantiate_towards_oh_sbh(Vis, ArgsT, RetT))
 
               alwaysinline
-              towards_oh: (pos: regular_pos, idx: size_t, offset_hint: count_t, args: ArgsT) ~> RetT
+              towards_oh: (pos: relaxed_pos, idx: size_t, offset_hint: count_t, args: ArgsT) ~> RetT
               {
                   v_assert(offset_hint == pos.index(idx));
                   left_size: &size_t := undef;
@@ -4178,7 +4178,7 @@ namespace rbts {
               #do (instantiate_towards_sub_oh_sbh(Vis, ArgsT, RetT))
 
               alwaysinline
-              towards_oh_sbh: (pos: regular_pos,
+              towards_oh_sbh: (pos: relaxed_pos,
                                idx: size_t,
                                offset_hint: count_t,
                                left_size_hint: size_t,
@@ -4203,7 +4203,7 @@ namespace rbts {
               #do (instantiate_towards_sub_oh_sbh(Vis, ArgsT, RetT))
 
               alwaysinline
-              towards_sub_oh: (pos: regular_pos, idx: size_t, offset_hint: count_t, args: ArgsT) ~> RetT
+              towards_sub_oh: (pos: relaxed_pos, idx: size_t, offset_hint: count_t, args: ArgsT) ~> RetT
               {
                   v_assert(offset_hint == pos.index(idx));
                   left_size: &size_t := undef;
@@ -4234,7 +4234,7 @@ namespace rbts {
                    )
 
               inlinehint
-              towards_sub_oh_sbh: (pos: regular_pos,
+              towards_sub_oh_sbh: (pos: relaxed_pos,
                                    idx: size_t,
                                    offset_hint: count_t,
                                    left_size_hint: size_t,
@@ -4283,7 +4283,7 @@ namespace rbts {
                    )
 
               inlinehint
-              last_oh_csh: (pos: regular_pos,
+              last_oh_csh: (pos: relaxed_pos,
                             offset_hint: count_t,
                             child_size_hint: size_t,
                             args: ArgsT) ~> RetT
@@ -4325,7 +4325,7 @@ namespace rbts {
                    )
 
               inlinehint
-              last_sub: (pos: regular_pos, args: ArgsT) ~> RetT
+              last_sub: (pos: relaxed_pos, args: ArgsT) ~> RetT
               {
                   offset     = pos.relaxed_->d.count - 1;
                   child      = pos.node_->inner[offset];
@@ -4364,7 +4364,7 @@ namespace rbts {
                    )
 
               inlinehint
-              first_sub: (pos: regular_pos, args: ArgsT) ~> RetT
+              first_sub: (pos: relaxed_pos, args: ArgsT) ~> RetT
               {
                   child      = pos.node_->inner[0];
                   child_size = pos.relaxed_->d.sizes[0];
@@ -4401,7 +4401,7 @@ namespace rbts {
               #do (instantiate_leaf_sub_pos(NT), position(NT).leaf_sub_pos.instantiate_visit(Vis, ArgsT, RetT))
 
               inlinehint
-              first_sub_leaf: (pos: regular_pos, args: ArgsT) ~> RetT
+              first_sub_leaf: (pos: relaxed_pos, args: ArgsT) ~> RetT
               {
                   v_assert(pos.shift_ == BL);
                   child      = pos.node_->inner[0];
@@ -4429,7 +4429,7 @@ namespace rbts {
               #do (instantiate_visit_maybe_relaxed_sub(NT, Vis, ArgsT, RetT))
 
               inlinehint
-              first_sub_inner: (pos: regular_pos, args: ArgsT) ~> RetT
+              first_sub_inner: (pos: relaxed_pos, args: ArgsT) ~> RetT
               {
                   v_assert(pos.shift_ > BL);
                   child      = pos.node_->inner[0];
@@ -4459,7 +4459,7 @@ namespace rbts {
                    )
 
               inlinehint
-              nth_sub: (pos: regular_pos, offset: count_t, args: ArgsT) ~> RetT
+              nth_sub: (pos: relaxed_pos, offset: count_t, args: ArgsT) ~> RetT
               {
                   child      = pos.node_->inner[offset];
                   child_size = pos.size(offset);
