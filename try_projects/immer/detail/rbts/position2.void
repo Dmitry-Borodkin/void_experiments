@@ -38,6 +38,16 @@ namespace rbts {
     ns
 };
 
+//---------------------------------------------------------------------
+#define prepare_position: [](node)
+{'stmt_list'
+
+    NodeT = typeof(node).element_type;
+
+    NS = position(NodeT);
+
+'stmt_list'}
+
 
 //---------------------------------------------------------------------
 //- empty_regular_pos
@@ -49,10 +59,7 @@ namespace rbts {
         node_: *NodeT;
     };
 
-    namespace empty_regular_pos
-    {
-        using namespace NS;
-    }
+    namespace empty_regular_pos { using namespace NS; }
 
     alwaysinline
     (_.count): (empty_regular_pos) ~> count_t  =  0;
@@ -66,7 +73,6 @@ namespace rbts {
     alwaysinline
     (_.size): (empty_regular_pos) ~> size_t  =  0;
 
-
     #define (_.each()): [](p: empty_regular_pos, v: visitor_t, args) ~> void  =  {};
 
     #define (_.each_pred()): [](p: empty_regular_pos, v: visitor_t, args) ~> bool  =  true;
@@ -79,13 +85,11 @@ namespace rbts {
 //---------------------------------------------------------------------
 #define make_empty_regular_pos: [](node)  =
 {
-    NodeT = typeof(node).element_type;
+    prepare_position(node);
 
-    ns = position(NodeT);
+    _instantiate_empty_regular_pos(NS, NodeT);
 
-    _instantiate_empty_regular_pos(ns, NodeT);
-
-    ret: ns.empty_regular_pos = {node};
+    ret: NS.empty_regular_pos = {node};
 
     ret
 };
@@ -101,10 +105,7 @@ namespace rbts {
         node_: *NodeT;
     };
 
-    namespace empty_leaf_pos
-    {
-        using namespace NS;
-    }
+    namespace empty_leaf_pos { using namespace NS; }
 
     alwaysinline
     (_.count): (empty_leaf_pos) ~> count_t  =  0;
@@ -118,7 +119,6 @@ namespace rbts {
     alwaysinline
     (_.size): (empty_leaf_pos) ~> size_t  =  0;
 
-
     #define (_.visit()): [](p: empty_leaf_pos, v: visitor_t, args)
       =  v.visit_leaf(p, args);
 
@@ -127,15 +127,13 @@ namespace rbts {
 //---------------------------------------------------------------------
 #define make_empty_leaf_pos: [](node)  =
 {
-    NodeT = typeof(node).element_type;
+    prepare_position(node);
 
-    ns = position(NodeT);
-
-    _instantiate_empty_leaf_pos(ns, NodeT);
+    _instantiate_empty_leaf_pos(NS, NodeT);
 
     v_assert(node);
 
-    ret: ns.empty_leaf_pos = {node};
+    ret: NS.empty_leaf_pos = {node};
 
     ret
 };
@@ -152,10 +150,7 @@ namespace rbts {
         size_: size_t;
     };
 
-    namespace leaf_pos
-    {
-        using namespace NS;
-    }
+    namespace leaf_pos { using namespace NS; }
 
     alwaysinline
     (_.index()): (leaf_pos, idx: size_t) ~> count_t  =  (idx & mask(BL) : count_t);
@@ -175,7 +170,6 @@ namespace rbts {
     alwaysinline
     (_.size): (pos: leaf_pos) ~> size_t  =  pos.size_;
 
-
     #define (_.visit()): [](p: leaf_pos, v: visitor_t, args)
       =  v.visit_leaf(p, args);
 
@@ -184,16 +178,14 @@ namespace rbts {
 //---------------------------------------------------------------------
 #define make_leaf_pos: [](node, size: size_t)  =
 {
-    NodeT = typeof(node).element_type;
+    prepare_position(node);
 
-    ns = position(NodeT);
-
-    _instantiate_leaf_pos(ns, NodeT);
+    _instantiate_leaf_pos(NS, NodeT);
 
     v_assert(node);
     v_assert(size > 0);
 
-    ret: ns.leaf_pos = {node, size};
+    ret: NS.leaf_pos = {node, size};
 
     ret
 };
@@ -210,10 +202,7 @@ namespace rbts {
         count_: count_t;
     };
 
-    namespace leaf_sub_pos
-    {
-        using namespace NS;
-    }
+    namespace leaf_sub_pos { using namespace NS; }
 
     alwaysinline
     (_.index()): (leaf_sub_pos, idx: size_t) ~> count_t  =  (idx & mask(BL) : count_t);
@@ -233,7 +222,6 @@ namespace rbts {
     alwaysinline
     (_.size): (pos: leaf_sub_pos) ~> size_t  =  pos.count_;
 
-
     #define (_.visit()): [](p: leaf_sub_pos, v: visitor_t, args)
       =  v.visit_leaf(p, args);
 
@@ -242,16 +230,14 @@ namespace rbts {
 //---------------------------------------------------------------------
 #define make_leaf_sub_pos: [](node, count: count_t)  =
 {
-    NodeT = typeof(node).element_type;
+    prepare_position(node);
 
-    ns = position(NodeT);
-
-    _instantiate_leaf_sub_pos(ns, NodeT);
+    _instantiate_leaf_sub_pos(NS, NodeT);
 
     v_assert(node);
-    v_assert(count <= branches(ns.BL));
+    v_assert(count <= branches(NS.BL));
 
-    ret: ns.leaf_sub_pos = {node, count};
+    ret: NS.leaf_sub_pos = {node, count};
 
     ret
 };
@@ -267,10 +253,7 @@ namespace rbts {
         node_: *NodeT;
     };
 
-    namespace leaf_descent_pos
-    {
-        using namespace NS;
-    }
+    namespace leaf_descent_pos { using namespace NS; }
 
     alwaysinline
     (_.index()): (leaf_descent_pos, idx: size_t) ~> count_t  =  (idx & mask(BL) : count_t);
@@ -280,7 +263,6 @@ namespace rbts {
 
     alwaysinline
     (_.shift): (leaf_descent_pos) ~> shift_t  =  0;
-
 
     #define (_.descend()): [](p: leaf_descent_pos, v: visitor_t, args)
       =  undef;       //- ?!?!?!?!?!?!?
@@ -293,15 +275,13 @@ namespace rbts {
 //---------------------------------------------------------------------
 #define make_leaf_descent_pos: [](node)  =
 {
-    NodeT = typeof(node).element_type;
+    prepare_position(node);
 
-    ns = position(NodeT);
-
-    _instantiate_leaf_descent_pos(ns, NodeT);
+    _instantiate_leaf_descent_pos(NS, NodeT);
 
     v_assert(node);
 
-    ret: ns.leaf_descent_pos = {node};
+    ret: NS.leaf_descent_pos = {node};
 
     ret
 };
@@ -317,10 +297,7 @@ namespace rbts {
         node_: *NodeT;
     };
 
-    namespace full_leaf_pos
-    {
-        using namespace NS;
-    }
+    namespace full_leaf_pos { using namespace NS; }
 
     alwaysinline
     (_.index()): (full_leaf_pos, idx: size_t) ~> count_t  =  (idx & mask(BL) : count_t);
@@ -340,7 +317,6 @@ namespace rbts {
     alwaysinline
     (_.size): (full_leaf_pos) ~> size_t  =  branches(BL);
 
-
     #define (_.visit()): [](p: full_leaf_pos, v: visitor_t, args)
       =  v.visit_leaf(p, args);
 
@@ -349,15 +325,13 @@ namespace rbts {
 //---------------------------------------------------------------------
 #define make_full_leaf_pos: [](node)  =
 {
-    NodeT = typeof(node).element_type;
+    prepare_position(node);
 
-    ns = position(NodeT);
-
-    _instantiate_full_leaf_pos(ns, NodeT);
+    _instantiate_full_leaf_pos(NS, NodeT);
 
     v_assert(node);
 
-    ret: ns.full_leaf_pos = {node};
+    ret: NS.full_leaf_pos = {node};
 
     ret
 };
@@ -375,10 +349,7 @@ namespace rbts {
         size_:  size_t;
     };
 
-    namespace regular_pos
-    {
-        using namespace NS;
-    }
+    namespace regular_pos { using namespace NS; }
 
     alwaysinline
     (_.index()): (pos: regular_pos, idx: size_t) ~> count_t  =  ((idx >> pos.shift_) & mask(B) : count_t);
@@ -401,7 +372,6 @@ namespace rbts {
     alwaysinline
     (_.this_size): (pos: regular_pos) ~> size_t
       =  ((pos.size_ -1) & ~((-1: size_t) << (pos.shift_ + B))) + 1;
-
 
     #define (_.each()): [](p: regular_pos, v: visitor_t, args)
       =  each_regular(p, v, args);
@@ -457,17 +427,15 @@ namespace rbts {
 //---------------------------------------------------------------------
 #define make_regular_pos: [](node, shift: shift_t, size: size_t)  =
 {
-    NodeT = typeof(node).element_type;
+    prepare_position(node);
 
-    ns = position(NodeT);
-
-    _instantiate_regular_pos(ns, NodeT);
+    _instantiate_regular_pos(NS, NodeT);
 
     v_assert(node);
-    v_assert(shift >= ns.BL);
+    v_assert(shift >= NS.BL);
     v_assert(size > 0);
 
-    ret: ns.regular_pos = {node, shift, size};
+    ret: NS.regular_pos = {node, shift, size};
 
     ret
 };
@@ -480,8 +448,20 @@ namespace rbts {
                           ArgsT: v_static_type_t) ~> v_static_namespace_t  =
 {
     ns = Pos.v_generic_ns(position_args_ns, Q(v_namespace_get_name(Vis)), T(ArgsT));
+
     ns
 };
+
+//---------------------------------------------------------------------
+#define prepare_position_args: [](pos, Vis, args)
+{'stmt_list'
+
+    Pos   = typeof(pos);
+    ArgsT = typeof(args);
+
+    NS = position_args(Pos, Vis, ArgsT);
+
+'stmt_list'}
 
 
 //---------------------------------------------------------------------
@@ -523,14 +503,11 @@ namespace rbts {
 //---------------------------------------------------------------------
 #define each_regular: [](p, Vis: visitor_t, args)  =
 {
-    Pos   = typeof(p);
-    ArgsT = typeof(args);
+    prepare_position_args(p, Vis, args);
 
-    ns = position_args(Pos, Vis, ArgsT);
+    _instantiate_each_regular(NS, Pos, Vis, ArgsT);
 
-    _instantiate_each_regular(ns, Pos, Vis, ArgsT);
-
-    ns._each_regular(p, args)
+    NS._each_regular(p, args)
 };
 
 
@@ -573,14 +550,11 @@ namespace rbts {
 //---------------------------------------------------------------------
 #define each_pred_regular: [](p, Vis: visitor_t, args) ~> bool  =
 {
-    Pos   = typeof(p);
-    ArgsT = typeof(args);
+    prepare_position_args(p, Vis, args);
 
-    ns = position_args(Pos, Vis, ArgsT);
+    _instantiate_each_pred_regular(NS, Pos, Vis, ArgsT);
 
-    _instantiate_each_pred_regular(ns, Pos, Vis, ArgsT);
-
-    ns._each_pred_regular(p, args)
+    NS._each_pred_regular(p, args)
 };
 
 
@@ -624,14 +598,11 @@ namespace rbts {
 //---------------------------------------------------------------------
 #define each_pred_zip_regular: [](p, Vis: visitor_t, other, args) ~> bool  =
 {
-    Pos   = typeof(p);
-    ArgsT = typeof(args);
+    prepare_position_args(p, Vis, args);
 
-    ns = position_args(Pos, Vis, ArgsT);
+    _instantiate_each_pred_zip_regular(NS, Pos, Vis, ArgsT);
 
-    _instantiate_each_pred_zip_regular(ns, Pos, Vis, ArgsT);
-
-    ns._each_pred_zip_regular(p, other, args)
+    NS._each_pred_zip_regular(p, other, args)
 };
 
 
@@ -710,14 +681,11 @@ namespace rbts {
 //---------------------------------------------------------------------
 #define each_pred_i_regular: [](p, Vis: visitor_t, f: count_t, l: count_t, args) ~> bool  =
 {
-    Pos   = typeof(p);
-    ArgsT = typeof(args);
+    prepare_position_args(p, Vis, args);
 
-    ns = position_args(Pos, Vis, ArgsT);
+    _instantiate_each_pred_i_regular(NS, Pos, Vis, ArgsT);
 
-    _instantiate_each_pred_i_regular(ns, Pos, Vis, ArgsT);
-
-    ns._each_pred_i_regular(p, f, l, args)
+    NS._each_pred_i_regular(p, f, l, args)
 };
 
 
@@ -762,14 +730,11 @@ namespace rbts {
 //---------------------------------------------------------------------
 #define each_pred_left_regular: [](p, Vis: visitor_t, last: count_t, args) ~> bool  =
 {
-    Pos   = typeof(p);
-    ArgsT = typeof(args);
+    prepare_position_args(p, Vis, args);
 
-    ns = position_args(Pos, Vis, ArgsT);
+    _instantiate_each_pred_left_regular(NS, Pos, Vis, ArgsT);
 
-    _instantiate_each_pred_left_regular(ns, Pos, Vis, ArgsT);
-
-    ns._each_pred_left_regular(p, last, args)
+    NS._each_pred_left_regular(p, last, args)
 };
 
 
@@ -824,14 +789,11 @@ namespace rbts {
 //---------------------------------------------------------------------
 #define each_pred_right_regular: [](p, Vis: visitor_t, start: count_t, args) ~> bool  =
 {
-    Pos   = typeof(p);
-    ArgsT = typeof(args);
+    prepare_position_args(p, Vis, args);
 
-    ns = position_args(Pos, Vis, ArgsT);
+    _instantiate_each_pred_right_regular(NS, Pos, Vis, ArgsT);
 
-    _instantiate_each_pred_right_regular(ns, Pos, Vis, ArgsT);
-
-    ns._each_pred_right_regular(p, start, args)
+    NS._each_pred_right_regular(p, start, args)
 };
 
 
@@ -908,14 +870,11 @@ namespace rbts {
 //---------------------------------------------------------------------
 #define each_i_regular: [](p, Vis: visitor_t, f: count_t, l: count_t, args)  =
 {
-    Pos   = typeof(p);
-    ArgsT = typeof(args);
+    prepare_position_args(p, Vis, args);
 
-    ns = position_args(Pos, Vis, ArgsT);
+    _instantiate_each_i_regular(NS, Pos, Vis, ArgsT);
 
-    _instantiate_each_i_regular(ns, Pos, Vis, ArgsT);
-
-    ns._each_i_regular(p, f, l, args)
+    NS._each_i_regular(p, f, l, args)
 };
 
 
@@ -958,14 +917,11 @@ namespace rbts {
 //---------------------------------------------------------------------
 #define each_left_regular: [](p, Vis: visitor_t, last: count_t, args)  =
 {
-    Pos   = typeof(p);
-    ArgsT = typeof(args);
+    prepare_position_args(p, Vis, args);
 
-    ns = position_args(Pos, Vis, ArgsT);
+    _instantiate_each_left_regular(NS, Pos, Vis, ArgsT);
 
-    _instantiate_each_left_regular(ns, Pos, Vis, ArgsT);
-
-    ns._each_left_regular(p, last, args)
+    NS._each_left_regular(p, last, args)
 };
 
 
@@ -1018,14 +974,11 @@ namespace rbts {
 //---------------------------------------------------------------------
 #define each_right_regular: [](p, Vis: visitor_t, start: count_t, args)  =
 {
-    Pos   = typeof(p);
-    ArgsT = typeof(args);
+    prepare_position_args(p, Vis, args);
 
-    ns = position_args(Pos, Vis, ArgsT);
+    _instantiate_each_right_regular(NS, Pos, Vis, ArgsT);
 
-    _instantiate_each_right_regular(ns, Pos, Vis, ArgsT);
-
-    ns._each_right_regular(p, start, args)
+    NS._each_right_regular(p, start, args)
 };
 
 
@@ -1081,14 +1034,11 @@ namespace rbts {
                                   count_hint: count_t,
                                   args)  =
 {
-    Pos   = typeof(p);
-    ArgsT = typeof(args);
+    prepare_position_args(p, Vis, args);
 
-    ns = position_args(Pos, Vis, ArgsT);
+    _instantiate_towards_oh_ch_regular(NS, Pos, Vis, ArgsT);
 
-    _instantiate_towards_oh_ch_regular(ns, Pos, Vis, ArgsT);
-
-    ns._towards_oh_ch_regular(p, idx, offset_hint, count_hint, args)
+    NS._towards_oh_ch_regular(p, idx, offset_hint, count_hint, args)
 };
 
 
@@ -1143,14 +1093,11 @@ namespace rbts {
                                    offset_hint: count_t,
                                    args)  =
 {
-    Pos   = typeof(p);
-    ArgsT = typeof(args);
+    prepare_position_args(p, Vis, args);
 
-    ns = position_args(Pos, Vis, ArgsT);
+    _instantiate_towards_sub_oh_regular(NS, Pos, Vis, ArgsT);
 
-    _instantiate_towards_sub_oh_regular(ns , Pos, Vis, ArgsT);
-
-    ns._towards_sub_oh_regular(p, idx, offset_hint, args)
+    NS._towards_sub_oh_regular(p, idx, offset_hint, args)
 };
 
 
@@ -1182,14 +1129,11 @@ namespace rbts {
 //---------------------------------------------------------------------
 #define last_oh_regular: [](p, Vis: visitor_t, offset_hint: count_t, args)  =
 {
-    Pos   = typeof(p);
-    ArgsT = typeof(args);
+    prepare_position_args(p, Vis, args);
 
-    ns = position_args(Pos, Vis, ArgsT);
+    _instantiate_last_oh_regular(NS, Pos, Vis, ArgsT);
 
-    _instantiate_last_oh_regular(ns, Pos, Vis, ArgsT);
-
-    ns._last_oh_regular(p, offset_hint, args)
+    NS._last_oh_regular(p, offset_hint, args)
 };
 
 
@@ -1223,11 +1167,7 @@ struct null_sub_pos {};
         count_: count_t;
     };
 
-    namespace singleton_regular_sub_pos
-    {
-        using namespace NS;
-    }
-
+    namespace singleton_regular_sub_pos { using namespace NS; }
 
     alwaysinline
     (_.count): (singleton_regular_sub_pos) ~> count_t  =  1;
@@ -1256,7 +1196,6 @@ struct null_sub_pos {};
     alwaysinline
     (_.size()): (pos: singleton_regular_sub_pos, count_t) ~> size_t  =  pos.count_;
 
-
     #define (_.each_left_sub()): [](p: singleton_regular_sub_pos, v: visitor_t, args)  =  undef;
 
     #define (_.each()): [](p: singleton_regular_sub_pos, v: visitor_t, args)  =  undef;
@@ -1272,16 +1211,14 @@ struct null_sub_pos {};
 //---------------------------------------------------------------------
 #define make_singleton_regular_sub_pos: [](leaf, count: count_t)  =
 {
-    NodeT = typeof(leaf).element_type;
+    prepare_position(leaf, args);
 
-    ns = position(NodeT);
-
-    _instantiate_singleton_regular_sub_pos(ns, NodeT);
+    _instantiate_singleton_regular_sub_pos(NS, NodeT);
 
     v_assert(leaf);
     v_assert(count > 0);
 
-    ret: ns.singleton_regular_sub_pos = {leaf, count};
+    ret: NS.singleton_regular_sub_pos = {leaf, count};
 
     ret
 };
@@ -1299,10 +1236,7 @@ struct null_sub_pos {};
         size_:  size_t;
     };
 
-    namespace regular_sub_pos
-    {
-        using namespace NS;
-    }
+    namespace regular_sub_pos { using namespace NS; }
 
     alwaysinline
     (_.index()): (pos: regular_sub_pos, idx: size_t) ~> count_t  =  ((idx >> pos.shift_) & mask(B) : count_t);
@@ -1365,7 +1299,6 @@ struct null_sub_pos {};
         v_assert(*sizes);
     }
 
-
     #define (_.each()): [](p: regular_sub_pos, v: visitor_t, args)
       =  each_regular(p, v, args);
 
@@ -1395,12 +1328,9 @@ struct null_sub_pos {};
 
     #define (_.each_right_sub_()): [](p: regular_sub_pos, v: visitor_t, i: count_t, args)  =
     {
-        Pos   = regular_sub_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template each_right_sub_: [ns, Pos, v, ArgsT]()
+        #template each_right_sub_: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _each_right_sub_: (pos: Pos, i: count_t, args: ArgsT) ~> void
@@ -1433,7 +1363,7 @@ struct null_sub_pos {};
             }
         }
 
-        ns._each_right_sub_(p, i, args)
+        NS._each_right_sub_(p, i, args)
     };
 
     #define (_.each_sub()): [](p: regular_sub_pos, v: visitor_t, args)
@@ -1470,12 +1400,9 @@ struct null_sub_pos {};
 
     #define (_.last_sub()): [](p: regular_sub_pos, v: visitor_t, args)  =
     {
-        Pos   = regular_sub_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template last_sub: [ns, Pos, v, ArgsT]()
+        #template last_sub: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _last_sub: (pos: Pos, args: ArgsT) ~> v.result_t
@@ -1496,17 +1423,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._last_sub(p, args)
+        NS._last_sub(p, args)
     };
 
     #define (_.first_sub()): [](p: regular_sub_pos, v: visitor_t, args)  =
     {
-        Pos   = regular_sub_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template first_sub: [ns, Pos, v, ArgsT]()
+        #template first_sub: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _first_sub: (pos: Pos, args: ArgsT) ~> v.result_t
@@ -1540,17 +1464,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._first_sub(p, args)
+        NS._first_sub(p, args)
     };
 
     #define (_.first_sub_leaf()): [](p: regular_sub_pos, v: visitor_t, args)  =
     {
-        Pos   = regular_sub_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template first_sub_leaf: [ns, Pos, v, ArgsT]()
+        #template first_sub_leaf: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _first_sub_leaf: (pos: Pos, args: ArgsT) ~> v.result_t
@@ -1570,17 +1491,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._first_sub_leaf(p, args)
+        NS._first_sub_leaf(p, args)
     };
 
     #define (_.first_sub_inner()): (p: regular_sub_pos, v: visitor_t, args)  =
     {
-        Pos   = regular_sub_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template first_sub_inner: [ns, Pos, v, ArgsT]()
+        #template first_sub_inner: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _first_sub_inner: (pos: Pos, args: ArgsT) ~> v.result_t
@@ -1600,17 +1518,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._first_sub_inner(p, args)
+        NS._first_sub_inner(p, args)
     };
 
     #define (_.nth_sub()): [](p: regular_sub_pos, v: visitor_t, idx: count_t, args)  =
     {
-        Pos   = regular_sub_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template nth_sub: [ns, Pos, v, ArgsT]()
+        #template nth_sub: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _nth_sub: (pos: Pos, idx: count_t, args: ArgsT) ~> v.result_t
@@ -1646,17 +1561,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._nth_sub(p, idx, args)
+        NS._nth_sub(p, idx, args)
     };
 
     #define (_.nth_sub_leaf()): [](p: regular_sub_pos, v: visitor_t, idx: count_t, args)  =
     {
-        Pos   = regular_sub_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template nth_sub_leaf: [ns, Pos, v, ArgsT]()
+        #template nth_sub_leaf: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _nth_sub_leaf: (pos: Pos, idx: count_t, args: ArgsT) ~> v.result_t
@@ -1677,7 +1589,7 @@ struct null_sub_pos {};
             }
         }
 
-        ns._nth_sub_leaf(p, idx, args)
+        NS._nth_sub_leaf(p, idx, args)
     };
 
     #define (_.visit()): [](p: regular_sub_pos, v: visitor_t, args)
@@ -1688,18 +1600,16 @@ struct null_sub_pos {};
 //---------------------------------------------------------------------
 #define make_regular_sub_pos: [](node, shift: shift_t, size: size_t)  =
 {
-    NodeT = typeof(node).element_type;
+    prepare_position(node, args);
 
-    ns = position(NodeT);
-
-    _instantiate_regular_sub_pos(ns, NodeT);
+    _instantiate_regular_sub_pos(NS, NodeT);
 
     v_assert(node);
-    v_assert(shift >= ns.BL);
+    v_assert(shift >= NS.BL);
     v_assert(size > 0);
-    v_assert(size <= (branches(ns.BL, size_t) << shift));
+    v_assert(size <= (branches(NS.BL, size_t) << shift));
 
-    ret: ns.regular_sub_pos = {node, shift, size};
+    ret: NS.regular_sub_pos = {node, shift, size};
 
     ret
 };
@@ -1720,6 +1630,16 @@ struct null_sub_pos {};
     ns
 };
 
+//---------------------------------------------------------------------
+#define prepare_position_shift: [](node, shift: shift_t)
+{'stmt_list'
+
+    NodeT = typeof(node).element_type;
+
+    NS = position_shift(NodeT, shift);
+
+'stmt_list'}
+
 
 //---------------------------------------------------------------------
 //- regular_descent_pos
@@ -1733,10 +1653,7 @@ struct null_sub_pos {};
         node_: *NodeT;
     };
 
-    namespace regular_descent_pos
-    {
-        using namespace NS;
-    }
+    namespace regular_descent_pos { using namespace NS; }
 
     alwaysinline
     (_.node): (pos: regular_descent_pos) ~> *NodeT  =  pos.node_;
@@ -1746,7 +1663,6 @@ struct null_sub_pos {};
 
     alwaysinline
     (_.index()): (regular_descent_pos, idx: size_t) ~> count_t  =  ((idx >> Shift) & mask(BL) : count_t);
-
 
     private _Shift = Shift;         //- Sic!
 
@@ -1774,13 +1690,11 @@ struct null_sub_pos {};
 //---------------------------------------------------------------------
 #define make_regular_descent_pos: [](Shift: shift_t, node)  =
 {
-    NodeT = typeof(node).element_type;
+    prepare_position_shift(node, Shift);
 
-    ns = position_shift(NodeT, Shift);
+    _instantiate_regular_descent_pos(NS, NodeT, Shift);
 
-    _instantiate_regular_descent_pos(ns, NodeT, Shift);
-
-    ret: ns.regular_descent_pos = {node};
+    ret: NS.regular_descent_pos = {node};
 
     ret
 };
@@ -1793,6 +1707,12 @@ struct null_sub_pos {};
                                  Vis: visitor_t) ~> v_static_namespace_t  =
 {
     ns = v_generic_ns(regular_descent_args_ns, Q(v_namespace_get_name(Vis)), T(NodeT));
+
+    #template [ns, NodeT]()
+    {
+        using namespace position(NodeT);
+    }
+
     ns
 };
 
@@ -1801,9 +1721,6 @@ struct null_sub_pos {};
 //---------------------------------------------------------------------
 #template _instantiate_visit_regular_descent: [](NS, NodeT: v_static_type_t, Vis: visitor_t)
 {
-    private B  = NodeT.bits;
-    private BL = NodeT.bits_leaf;
-
     linkonce_odr
     _visit_regular_descent: (node: *NodeT, shift: shift_t, idx: size_t) ~> Vis.result_t
     {
@@ -1858,10 +1775,7 @@ struct null_sub_pos {};
         shift_: shift_t;
     };
 
-    namespace full_pos
-    {
-        using namespace NS;
-    }
+    namespace full_pos { using namespace NS; }
 
     alwaysinline
     (_.count): (full_pos) ~> count_t  =  branches(B);
@@ -1905,15 +1819,11 @@ struct null_sub_pos {};
         }
     }
 
-
     #define (_.each()): [](p: full_pos, v: visitor_t, args)  =
     {
-        Pos   = full_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template each: [ns, Pos, v, ArgsT]()
+        #template each: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _each: (pos: Pos, args: ArgsT) ~> void
@@ -1940,17 +1850,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._each(p, args)
+        NS._each(p, args)
     };
 
     #define (_.each_pred()): [](p: full_pos, v: visitor_t, args) ~> bool  =
     {
-        Pos   = full_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template each_pred: [ns, Pos, v, ArgsT]()
+        #template each_pred: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _each_pred: (pos: Pos, args: ArgsT) ~> bool
@@ -1979,17 +1886,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._each_pred(p, args)
+        NS._each_pred(p, args)
     };
 
     #define (_.each_pred_zip()): [](p: full_pos, v: visitor_t, other: *node_t, args) ~> bool  =
     {
-        Pos   = full_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template each_pred_zip: [ns, Pos, v, ArgsT]()
+        #template each_pred_zip: [NS, Pos, v, ArgsT]()
         {
             private NT = Pos.node_t;
 
@@ -2021,17 +1925,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._each_pred_zip(p, other, args)
+        NS._each_pred_zip(p, other, args)
     };
 
     #define (_.each_pred_i()): [](p: full_pos, v: visitor_t, i: count_t, n: count_t, args) ~> bool  =
     {
-        Pos   = full_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template each_pred_i: [ns, Pos, v, ArgsT]()
+        #template each_pred_i: [NS, Pos, v, ArgsT]()
         {
             private NT = Pos.node_t;
 
@@ -2062,17 +1963,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._each_pred_i(p, i, n, args)
+        NS._each_pred_i(p, i, n, args)
     };
 
     #define (_.each_i()): [](p: full_pos, v: visitor_t, i: count_t, n: count_t, args)  =
     {
-        Pos   = full_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template each_i: [ns, Pos, v, ArgsT]()
+        #template each_i: [NS, Pos, v, ArgsT]()
         {
             private NT = Pos.node_t;
 
@@ -2101,7 +1999,7 @@ struct null_sub_pos {};
             }
         }
 
-        ns._each_i(p, i, n, args)
+        NS._each_i(p, i, n, args)
     };
 
     #define (_.each_pred_right()): [](p: full_pos, v: visitor_t, start: count_t, args) ~> bool
@@ -2137,12 +2035,9 @@ struct null_sub_pos {};
 
     #define (_.towards_oh()): [](p: full_pos, v: visitor_t, idx: size_t, offset_hint: count_t, args)  =
     {
-        Pos   = full_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template towards_oh: [ns, Pos, v, ArgsT]()
+        #template towards_oh: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _towards_oh: (pos: Pos, idx: size_t, offset_hint: count_t, args: ArgsT) ~> v.result_t
@@ -2163,17 +2058,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._towards_oh(p, idx, offset_hint, args)
+        NS._towards_oh(p, idx, offset_hint, args)
     };
 
     #define (_.towards_sub_oh()): [](p: full_pos, v: visitor_t, idx: size_t, offset_hint: count_t, args)  =
     {
-        Pos   = full_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template towards_sub_oh: [ns, Pos, v, ArgsT]()
+        #template towards_sub_oh: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _towards_sub_oh: (pos: Pos, idx: size_t, offset_hint: count_t, args: ArgsT) ~> v.result_t
@@ -2195,17 +2087,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._towards_sub_oh(p, idx, offset_hint, args)
+        NS._towards_sub_oh(p, idx, offset_hint, args)
     };
 
     #define (_.first_sub()): [](p: full_pos, v: visitor_t, args)  =
     {
-        Pos   = full_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template first_sub: [ns, Pos, v, ArgsT]()
+        #template first_sub: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _first_sub: (pos: Ppos, args: ArgsT) ~> v.result_t
@@ -2226,17 +2115,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._first_sub(p, args)
+        NS._first_sub(p, args)
     };
 
     #define (_.first_sub_leaf()): [](p: full_pos, v: visitor_t, args)  =
     {
-        Pos   = full_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template first_sub_leaf: [ns, Pos, v, ArgsT]()
+        #template first_sub_leaf: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _first_sub_leaf: (pos: Pos, args: ArgsT) ~> v.result_t
@@ -2248,17 +2134,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._first_sub_leaf(p, args)
+        NS._first_sub_leaf(p, args)
     };
 
     #define (_.first_sub_inner()): (p: full_pos, v: visitor_t, args)  =
     {
-        Pos   = full_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template first_sub_inner: [ns, Pos, v, ArgsT]()
+        #template first_sub_inner: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _first_sub_inner: (pos: Pos, args: ArgsT) ~> v.result_t
@@ -2270,17 +2153,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._first_sub_inner(p, args)
+        NS._first_sub_inner(p, args)
     };
 
     #define (_.nth_sub()): [](p: full_pos, v: visitor_t, idx: count_t, args)  =
     {
-        Pos   = full_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template nth_sub: [ns, Pos, v, ArgsT]()
+        #template nth_sub: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _nth_sub: (pos: Pos, idx: count_t, args: ArgsT) ~> v.result_t
@@ -2301,17 +2181,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._nth_sub(p, idx, args)
+        NS._nth_sub(p, idx, args)
     };
 
     #define (_.nth_sub_leaf()): [](p: full_pos, v: visitor_t, idx: count_t, args)  =
     {
-        Pos   = full_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template nth_sub_leaf: [ns, Pos, v, ArgsT]()
+        #template nth_sub_leaf: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _nth_sub_leaf: (pos: Pos, idx: count_t, args: ArgsT) ~> v.result_t
@@ -2324,7 +2201,7 @@ struct null_sub_pos {};
             }
         }
 
-        ns._nth_sub_leaf(p, idx, args)
+        NS._nth_sub_leaf(p, idx, args)
     };
 
     #define (_.visit()): [](p: full_pos, v: visitor_t, args)
@@ -2335,16 +2212,14 @@ struct null_sub_pos {};
 //---------------------------------------------------------------------
 #define make_full_pos: [](node, shift: shift_t)  =
 {
-    NodeT = typeof(node).element_type;
+    prepare_position(node);
 
-    ns = position(NodeT);
-
-    _instantiate_full_pos(ns, NodeT);
+    _instantiate_full_pos(NS, NodeT);
 
     v_assert(node);
-    v_assert(shift >= ns.BL);
+    v_assert(shift >= NS.BL);
 
-    ret: ns.full_pos = {node, shift};
+    ret: NS.full_pos = {node, shift};
 
     ret
 };
@@ -2362,10 +2237,7 @@ struct null_sub_pos {};
         relaxed_: *relaxed_t;
     };
 
-    namespace relaxed_pos
-    {
-        using namespace NS;
-    }
+    namespace relaxed_pos { using namespace NS; }
 
     alwaysinline
     (_.count): (pos: relaxed_pos) ~> count_t  =  pos.relaxed_->d.count;
@@ -2430,18 +2302,14 @@ struct null_sub_pos {};
         }
     }
 
-
     #define (_.each()): [](p: relaxed_pos, v: visitor_t, args)
       =  p.each_left(v, p.relaxed_->d.count, args);
 
     #define (_.each_pred()): [](p: relaxed_pos, v: visitor_t, args) ~> bool  =
     {
-        Pos   = relaxed_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template each_pred: [ns, Pos, v, ArgsT]()
+        #template each_pred: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _each_pred: (pos: Pos, args: ArgsT) ~> bool
@@ -2472,17 +2340,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._each_pred(p, args)
+        NS._each_pred(p, args)
     };
 
     #define (_.each_pred_i()): (p: relaxed_pos, v: visitor_t, i: count_t, n: count_t, args) ~> bool  =
     {
-        Pos   = relaxed_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template each_pred_i: [ns, Pos, v, ArgsT]()
+        #template each_pred_i: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _each_pred_i: (pos: Pos, i: count_t, n: count_t, args: ArgsT) ~> bool
@@ -2514,17 +2379,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._each_pred_i(p, i, n, args)
+        NS._each_pred_i(p, i, n, args)
     };
 
     #define (_.each_pred_left()): (p: relaxed_pos, v: visitor_t, n: count_t, args) ~> bool  =
     {
-        Pos   = relaxed_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template each_pred_left: [ns, Pos, v, ArgsT]()
+        #template each_pred_left: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _each_pred_left: (pos: Pos, n: count_t, args: ArgsT) ~> bool
@@ -2554,17 +2416,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._each_pred_left(p, n, args)
+        NS._each_pred_left(p, n, args)
     };
 
     #define (_.each_pred_right()): (p: relaxed_pos, v: visitor_t, start: count_t, args) ~> bool  =
     {
-        Pos   = relaxed_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template each_pred_right: [ns, Pos, v, ArgsT]()
+        #template each_pred_right: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _each_pred_right: (pos: Pos, start: count_t, args: ArgsT) ~> bool
@@ -2596,17 +2455,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._each_pred_right(p, start, args)
+        NS._each_pred_right(p, start, args)
     };
 
     #define (_.each_i()): (p: relaxed_pos, v: visitor_t, i: count_t, n: count_t, args)  =
     {
-        Pos   = relaxed_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template each_i: [ns, Pos, v, ArgsT]()
+        #template each_i: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _each_i: (pos: Pos, i: count_t, n: count_t, args: ArgsT) ~> void
@@ -2636,7 +2492,7 @@ struct null_sub_pos {};
             }
         }
 
-        ns._each_i(p, i, n, args)
+        NS._each_i(p, i, n, args)
     };
 
     #define (_.each_sub()): [](p: relaxed_pos, v: visitor_t, args)
@@ -2647,12 +2503,9 @@ struct null_sub_pos {};
 
     #define (_.each_left()): (p: relaxed_pos, v: visitor_t, n: count_t, args)  =
     {
-        Pos   = relaxed_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template each_left: [ns, Pos, v, ArgsT]()
+        #template each_left: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _each_left: (pos: Pos, n: count_t, args: ArgsT) ~> void
@@ -2682,7 +2535,7 @@ struct null_sub_pos {};
             }
         }
 
-        ns._each_left(p, n, args)
+        NS._each_left(p, n, args)
     };
 
     #define (_.each_right_sub()): [](p: relaxed_pos, v: visitor_t, args)
@@ -2690,12 +2543,9 @@ struct null_sub_pos {};
 
     #define (_.each_right()): (p: relaxed_pos, v: visitor_t, start: count_t, args)  =
     {
-        Pos   = relaxed_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template each_right: [ns, Pos, v, ArgsT]()
+        #template each_right: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _each_right: (pos: Pos, start: count_t, args: ArgsT) ~> void
@@ -2727,7 +2577,7 @@ struct null_sub_pos {};
             }
         }
 
-        ns._each_right(p, start, args)
+        NS._each_right(p, start, args)
     };
 
     #define (_.towards()): [](p: relaxed_pos, v: visitor_t, idx: size_t, args)
@@ -2735,12 +2585,9 @@ struct null_sub_pos {};
 
     #define (_.towards_oh()): [](p: relaxed_pos, v: visitor_t, idx: size_t, offset_hint: count_t, args)  =
     {
-        Pos   = relaxed_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template towards_oh: [ns, Pos, v, ArgsT]()
+        #template towards_oh: [NS, Pos, v, ArgsT]()
         {
             alwaysinline
             _towards_oh: (pos: Pos, idx: size_t, offset_hint: count_t, args: ArgsT) ~> v.result_t
@@ -2754,7 +2601,7 @@ struct null_sub_pos {};
             }
         }
 
-        ns._towards_oh(p, idx, offset_hint, args)
+        NS._towards_oh(p, idx, offset_hint, args)
     };
 
     #define (_.towards_oh_sbh()): [](p: relaxed_pos, v: visitor_t,
@@ -2763,12 +2610,9 @@ struct null_sub_pos {};
                                      left_size_hint: size_t,
                                      args)  =
     {
-        Pos   = relaxed_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template towards_oh_sbh: [ns, Pos, v, ArgsT]()
+        #template towards_oh_sbh: [NS, Pos, v, ArgsT]()
         {
             alwaysinline
             _towards_oh_sbh: (pos: Pos,
@@ -2781,17 +2625,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._towards_oh_sbh(p, idx, offset_hint, left_size_hint, args)
+        NS._towards_oh_sbh(p, idx, offset_hint, left_size_hint, args)
     };
 
     #define (_.towards_sub_oh()): [](p: relaxed_pos, v: visitor_t, idx: size_t, offset_hint: count_t, args)  =
     {
-        Pos   = relaxed_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template towards_sub_oh: [ns, Pos, v, ArgsT]()
+        #template towards_sub_oh: [NS, Pos, v, ArgsT]()
         {
             alwaysinline
             _towards_sub_oh: (pos: Pos, idx: size_t, offset_hint: count_t, args: ArgsT) ~> v.result_t
@@ -2805,7 +2646,7 @@ struct null_sub_pos {};
             }
         }
 
-        ns._towards_sub_oh(p, idx, offset_hint, args)
+        NS._towards_sub_oh(p, idx, offset_hint, args)
     };
 
     #define (_.towards_sub_oh_sbh()): [](p: relaxed_pos, v: visitor_t,
@@ -2814,12 +2655,9 @@ struct null_sub_pos {};
                                          left_size_hint: size_t,
                                          args)  =
     {
-        Pos   = relaxed_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template towards_sub_oh_sbh: [ns, Pos, v, ArgsT]()
+        #template towards_sub_oh_sbh: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _towards_sub_oh_sbh: (pos: Pos,
@@ -2850,7 +2688,7 @@ struct null_sub_pos {};
             }
         }
 
-        ns._towards_sub_oh_sbh(p, idx, offset_hint, left_size_hint, args)
+        NS._towards_sub_oh_sbh(p, idx, offset_hint, left_size_hint, args)
     };
 
     #define (_.last_oh_csh()): [](p: relaxed_pos, v: visitor_t,
@@ -2859,12 +2697,9 @@ struct null_sub_pos {};
                                   child_size_hint: size_t,
                                   args)  =
     {
-        Pos   = relaxed_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template last_oh_csh: [ns, Pos, v, ArgsT]()
+        #template last_oh_csh: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _last_oh_csh: (pos: Pos,
@@ -2888,17 +2723,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._last_oh_csh(p, idx, offset_hint, child_size_hint, args)
+        NS._last_oh_csh(p, idx, offset_hint, child_size_hint, args)
     };
 
     #define (_.last_sub()): [](p: relaxed_pos, v: visitor_t, args)  =
     {
-        Pos   = relaxed_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template last_sub: [ns, Pos, v, ArgsT]()
+        #template last_sub: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _last_sub: (pos: Pos, args: ArgsT) ~> v.result_t
@@ -2919,17 +2751,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._last_sub(p, args)
+        NS._last_sub(p, args)
     };
 
     #define (_.first_sub()): [](p: relaxed_pos, v: visitor_t, args)  =
     {
-        Pos   = relaxed_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template first_sub: [ns, Pos, v, ArgsT]()
+        #template first_sub: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _first_sub: (pos: Pos, args: ArgsT) ~> v.result_t
@@ -2950,17 +2779,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._first_sub(p, args)
+        NS._first_sub(p, args)
     };
 
     #define (_.first_sub_leaf()): [](p: relaxed_pos, v: visitor_t, args)  =
     {
-        Pos   = relaxed_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template first_sub_leaf: [ns, Pos, v, ArgsT]()
+        #template first_sub_leaf: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _first_sub_leaf: (pos: Pos, args: ArgsT) ~> v.result_t
@@ -2973,17 +2799,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._first_sub_leaf(p, args)
+        NS._first_sub_leaf(p, args)
     };
 
     #define (_.first_sub_inner()): [](p: relaxed_pos, v: visitor_t, args)  =
     {
-        Pos   = relaxed_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template first_sub_inner: [ns, Pos, v, ArgsT]()
+        #template first_sub_inner: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _first_sub_inner: (pos: Pos, args: ArgsT) ~> v.result_t
@@ -2996,17 +2819,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._first_sub_inner(p, args)
+        NS._first_sub_inner(p, args)
     };
 
     #define (_.nth_sub()): [](p: relaxed_pos, v: visitor_t, offset: count_t, args)  =
     {
-        Pos   = relaxed_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template nth_sub: [ns, Pos, v, ArgsT]()
+        #template nth_sub: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _nth_sub: (pos: Pos, offset: count_t, args: ArgsT) ~> v.result_t
@@ -3026,17 +2846,14 @@ struct null_sub_pos {};
             }
         }
 
-        ns._nth_sub(p, offset, args)
+        NS._nth_sub(p, offset, args)
     };
 
     #define (_.nth_sub_leaf()): [](p: relaxed_pos, v: visitor_t, offset: count_t, args)  =
     {
-        Pos   = relaxed_pos;
-        ArgsT = typeof(args);
+        prepare_position_args(p, v, args);
 
-        ns = position_args(Pos, v, ArgsT);
-
-        #template nth_sub_leaf: [ns, Pos, v, ArgsT]()
+        #template nth_sub_leaf: [NS, Pos, v, ArgsT]()
         {
             inlinehint
             _nth_sub_leaf: (pos: Pos, offset: count_t, args: ArgsT) ~> v.result_t
@@ -3049,7 +2866,7 @@ struct null_sub_pos {};
             }
         }
 
-        ns._nth_sub_leaf(p, offset, args)
+        NS._nth_sub_leaf(p, offset, args)
     };
 
     #define (_.visit()): [](p: relaxed_pos, v: visitor_t, args)
@@ -3060,17 +2877,15 @@ struct null_sub_pos {};
 //---------------------------------------------------------------------
 #define make_relaxed_pos: [](node, shift: shift_t, relaxed)  =
 {
-    NodeT = typeof(node).element_type;
+    prepare_position(node);
 
-    ns = position(NodeT);
-
-    _instantiate_relaxed_pos(ns, NodeT);
+    _instantiate_relaxed_pos(NS, NodeT);
 
     v_assert(node);
     v_assert(relaxed);
-    v_assert(shift >= BL);
+    v_assert(shift >= NS.BL);
 
-    ret: ns.relaxed_pos = {node, shift, relaxed};
+    ret: NS.relaxed_pos = {node, shift, relaxed};
 
     ret
 };
@@ -3081,7 +2896,7 @@ struct null_sub_pos {};
   =  position(Pos.node_t).relaxed_pos == Pos;
 
 //---------------------------------------------------------------------
-#define relaxed_sub_args: [](NT: v_static_type_t, VS: v_static_namespace_t,
+#define relaxed_sub_args: [](NT: v_static_type_t, VS: visitor_t,
                              AT: v_static_type_t) ~> v_static_namespace_t
   =  v_generic_ns(relaxed_sub_args_ns, Q(v_namespace_get_name(VS)), T[NT,AT]);
 
@@ -3135,10 +2950,7 @@ struct null_sub_pos {};
         relaxed_: *NodeT.relaxed_t;
     };
 
-    namespace relaxed_descent_pos
-    {
-        using namespace NS;
-    }
+    namespace relaxed_descent_pos { using namespace NS; }
 
     alwaysinline
     (_.count): (pos: relaxed_descent_pos) ~> count_t  =  pos.relaxed_->d.count;
@@ -3211,13 +3023,11 @@ struct null_sub_pos {};
 //---------------------------------------------------------------------
 #define make_relaxed_descent_pos: [](Shift: shift_t, node, relaxed)  =
 {
-    NodeT = typeof(node).element_type;
+    prepare_position_shift(node, shift);
 
-    ns = position_shift(NodeT, Shift);
+    _instantiate_relaxed_descent_pos(NS, NodeT, Shift);
 
-    _instantiate_relaxed_descent_pos(ns, NodeT, Shift);
-
-    ret: ns.relaxed_descent_pos = {node, relaxed};
+    ret: NS.relaxed_descent_pos = {node, relaxed};
 
     ret
 };
@@ -3230,6 +3040,12 @@ struct null_sub_pos {};
                                  Vis: visitor_t) ~> v_static_namespace_t  =
 {
     ns = v_generic_ns(relaxed_descent_args_ns, Q(v_namespace_get_name(Vis)), T(NodeT));
+
+    #template [ns, NodeT]()
+    {
+        using namespace position(NodeT);
+    }
+
     ns
 };
 
@@ -3238,9 +3054,6 @@ struct null_sub_pos {};
 //---------------------------------------------------------------------
 #template _instantiate_visit_maybe_relaxed_descent: [](NS, NodeT: v_static_type_t, Vis: visitor_t)
 {
-    private B  = NodeT.bits;
-    private BL = NodeT.bits_leaf;
-
     linkonce_odr
     _visit_maybe_relaxed_descent: (node: *NodeT, shift: shift_t, idx: size_t) ~> Vis.result_t
     {
@@ -3262,8 +3075,6 @@ struct null_sub_pos {};
 
             default:      //- IMMER_DESCENT_DEEP...
               {
-                using namespace position(NodeT);
-
                 node: &*NodeT := node;
 
                 for (level: &shift_t := sift; level != endshift(B, BL); level -= B)
