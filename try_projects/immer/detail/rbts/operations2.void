@@ -1,0 +1,685 @@
+{ voidc_import("libvoidc.void"); }
+{ voidc_make_header("operations"); }
+//---------------------------------------------------------------------
+{
+    v_export_import("position2.void");
+    v_export_import("visitor2.void");
+    v_export_import("../util.void");
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+//- <immer/detail/rbts/operations.hpp>
+//---------------------------------------------------------------------
+namespace .immer {
+namespace detail {
+namespace rbts {
+
+
+//---------------------------------------------------------------------
+//- array_for_visitor
+//---------------------------------------------------------------------
+#define array_for_visitor: [](T: v_static_type_t) ~> visitor_t  =
+{
+    vis = v_generic_ns(array_for_visitor_tag, T(T));
+
+    #template [vis, T]()
+    {
+        using namespace visitor_base(vis);
+
+        result_t = *T;
+
+        #define visit_inner: [](pos, idx: size_t) ~> result_t  =  pos.descend(vis, idx);
+        #define visit_leaf:  [](pos, idx: size_t) ~> result_t  =  pos.node->leaf;
+    }
+
+    vis
+};
+
+
+//---------------------------------------------------------------------
+//- region_for_visitor
+//---------------------------------------------------------------------
+#define region_for_visitor: [](T: v_static_type_t) ~> visitor_t  =
+{
+    vis = v_generic_ns(region_for_visitor_tag, T(T));
+
+    #template [vis, T]()
+    {
+        using namespace visitor_base(vis);
+
+        result_t = struct { *T; size_t; size_t; };
+
+        #define visit_inner: [](pos, idx: size_t) ~> result_t  =  pos.towards(vis, idx);
+        #define visit_leaf:  [](pos, idx: size_t) ~> result_t  =  {pos.node->leaf, pos.index(idx), pos.count};
+    }
+
+    vis
+};
+
+
+//---------------------------------------------------------------------
+//- get_visitor
+//---------------------------------------------------------------------
+#define get_visitor: [](T: v_static_type_t) ~> visitor_t  =
+{
+    vis = v_generic_ns(get_visitor_tag, T(T));
+
+    #template [vis, T]()
+    {
+        using namespace visitor_base(vis);
+
+        result_t = &const T;
+
+        #define visit_inner: [](pos, idx: size_t) ~> result_t  =  pos.descend(vis, idx);
+        #define visit_leaf:  [](pos, idx: size_t) ~> result_t  =  pos.node->leaf[pos.index(idx)];
+    }
+
+    vis
+};
+
+
+//---------------------------------------------------------------------
+//- for_each_chunk_visitor
+//---------------------------------------------------------------------
+namespace for_each_chunk_visitor
+{
+    _vis = for_each_chunk_visitor;
+
+    using namespace visitor_base(_vis);
+
+    result_t = void;
+
+    #define visit_inner: [](pos, fn) ~> void  =  pos.each(_vis, fn);
+    #define visit_leaf:  [](pos, fn) ~> void  =  { data = pos.node->leaf;  fn(data, data + pos.count) };
+}
+
+
+//---------------------------------------------------------------------
+//- for_each_chunk_p_visitor
+//---------------------------------------------------------------------
+namespace for_each_chunk_p_visitor
+{
+    _vis = for_each_chunk_p_visitor;
+
+    using namespace visitor_base(_vis);
+
+    result_t = bool;
+
+    #define visit_inner: [](pos, fn) ~> bool  =  pos.each_pred(_vis, fn);
+    #define visit_leaf:  [](pos, fn) ~> bool  =  { data = pos.node->leaf;  fn(data, data + pos.count) };
+}
+
+
+//---------------------------------------------------------------------
+//- for_each_chunk_left_visitor
+//---------------------------------------------------------------------
+namespace for_each_chunk_left_visitor
+{
+    _vis = for_each_chunk_left_visitor;
+
+    using namespace visitor_base(_vis);
+
+    result_t = void;
+
+    #define visit_inner: [](pos, args) ~> void  =
+    {
+        last = args[0];
+        fn   = args[1];
+
+        l = pos.index(last);
+        pos.each_left(for_each_chunk_visitor, l, fn);
+        pos.towards_oh(_vis, last, l, fn)
+    };
+
+    #define visit_leaf: [](pos, args) ~> void  =
+    {
+        last = args[0];
+        fn   = args[1];
+
+        data = pos.node->leaf;
+        l    = pos.index(last);
+        fn(data, data + l + 1)
+    };
+}
+
+
+//---------------------------------------------------------------------
+//- for_each_chunk_right_visitor
+//---------------------------------------------------------------------
+namespace for_each_chunk_right_visitor
+{
+    _vis = for_each_chunk_right_visitor;
+
+    using namespace visitor_base(_vis);
+
+    result_t = void;
+
+    #define visit_inner: [](pos, args) ~> void  =
+    {
+        first = args[0];
+        fn    = args[1];
+
+        f = pos.index(first);
+        pos.towards_oh(_vis, first, f, fn);
+        pos.each_right(for_each_chunk_visitor, f + 1, fn)
+    };
+
+    #define visit_leaf: [](pos, args) ~> void  =
+    {
+        first = args[0];
+        fn    = args[1];
+
+        data = pos.node->leaf;
+        f    = pos.index(first);
+        fn(data + f, data + pos.count)
+    };
+}
+
+
+//---------------------------------------------------------------------
+//- for_each_chunk_i_visitor
+//---------------------------------------------------------------------
+namespace for_each_chunk_i_visitor
+{
+    _vis = for_each_chunk_i_visitor;
+
+    using namespace visitor_base(_vis);
+
+    result_t = void;
+
+    #define visit_relaxed: [](pos, args) ~> void  =
+    {
+        first = args[0];
+        last  = args[1];
+        fn    = args[2];
+
+        f = pos.index(first);
+        l = pos.index(last - 1);
+
+        if (f == l)
+        {
+            sbh = pos.size_before(f);
+
+            pos.towards_oh_sbh(_vis, first, f, sbh, last - sbh, fn);
+        }
+        else
+        {
+            v_assert(f < l);
+
+            pos.towards_oh(for_each_chunk_right_visitor, first, f, fn);
+            pos.each_i(for_each_chunk_visitor, f + 1, l, fn);
+            pos.towards_oh(for_each_chunk_left_visitor, last - 1, l, fn);
+        }
+
+        undef       //- Sic!
+    };
+
+    #define visit_regular: [](pos, args) ~> void  =
+    {
+        first = args[0];
+        last  = args[1];
+        fn    = args[2];
+
+        if (first < last)
+        {
+            f = pos.index(first);
+            l = pos.index(last - 1);
+
+            if (f == l)
+            {
+                pos.towards_oh(_vis, first, f, last, fn);
+            }
+            else
+            {
+                v_assert(f < l);
+
+                pos.towards_oh(for_each_chunk_right_visitor, first, f, fn);
+                pos.each_i(for_each_chunk_visitor, f + 1, l, fn);
+                pos.towards_oh(for_each_chunk_left_visitor, last - 1, l, fn);
+            }
+        }
+
+        undef       //- Sic!
+    };
+
+    #define visit_leaf: [](pos, args) ~> void  =
+    {
+        first = args[0];
+        last  = args[1];
+        fn    = args[2];
+
+        data = pos.node->leaf;
+
+        if (first < last)
+        {
+            f = pos.index(first);
+            l = pos.index(last - 1);
+            fn(data + f, data + l + 1);
+        }
+
+        undef       //- Sic!
+    };
+}
+
+
+//---------------------------------------------------------------------
+//- for_each_chunk_p_left_visitor
+//---------------------------------------------------------------------
+namespace for_each_chunk_p_left_visitor
+{
+    _vis = for_each_chunk_p_left_visitor;
+
+    using namespace visitor_base(_vis);
+
+    result_t = bool;
+
+    #define visit_inner: [](pos, args) ~> bool  =
+    {
+        last = args[0];
+        fn   = args[1];
+
+        l = pos.index(last);
+        pos.each_pred_left(for_each_chunk_p_visitor, l, fn)  &&
+        pos.towards_oh(_vis, last, l, fn)
+    };
+
+    #define visit_leaf: [](pos, args) ~> bool  =
+    {
+        last = args[0];
+        fn   = args[1];
+
+        data = pos.node->leaf;
+        l    = pos.index(last);
+        fn(data, data + l + 1)
+    };
+}
+
+
+//---------------------------------------------------------------------
+//- for_each_chunk_p_right_visitor
+//---------------------------------------------------------------------
+namespace for_each_chunk_p_right_visitor
+{
+    _vis = for_each_chunk_p_right_visitor;
+
+    using namespace visitor_base(_vis);
+
+    result_t = bool;
+
+    #define visit_inner: [](pos, args) ~> bool  =
+    {
+        first = args[0];
+        fn    = args[1];
+
+        f = pos.index(first);
+        pos.towards_oh(_vis, first, f, fn)  &&
+        pos.each_pred_right(for_each_chunk_p_visitor, f + 1, fn)
+    };
+
+    #define visit_leaf: [](pos, args) ~> bool  =
+    {
+        first = args[0];
+        fn    = args[1];
+
+        data = pos.node->leaf;
+        f    = pos.index(first);
+        fn(data + f, data + pos.count)
+    };
+}
+
+
+//---------------------------------------------------------------------
+//- for_each_chunk_p_i_visitor
+//---------------------------------------------------------------------
+namespace for_each_chunk_p_i_visitor
+{
+    _vis = v_generic_ns(for_each_chunk_p_i_visitor_tag);
+
+    using namespace visitor_base(_vis);
+
+    result_t = bool;
+
+    #define visit_relaxed: [](pos, args) ~> bool  =
+    {
+        first = args[0];
+        last  = args[1];
+        fn    = args[2];
+
+        ret: &bool := true;
+
+        if (first < last)
+        {
+            f = pos.index(first);
+            l = pos.index(last - 1);
+
+            if (f == l)
+            {
+                sbh = pos.size_before(f);
+
+                ret := pos.towards_oh_sbh(_vis, first, f, sbh, last - sbh, fn);
+            }
+            else
+            {
+                v_assert(f < l);
+
+                ret := pos.towards_oh(for_each_chunk_p_right_visitor, first, f, fn)  &&
+                       pos.each_pred_i(for_each_chunk_p_visitor, f + 1, l, fn)  &&
+                       pos.towards_oh(for_each_chunk_p_left_visitor, last - 1, l, fn);
+            }
+        }
+
+        ret
+    };
+
+    #define visit_regular: [](pos, args) ~> bool  =
+    {
+        first = args[0];
+        last  = args[1];
+        fn    = args[2];
+
+        ret: &bool := true;
+
+        if (first < last)
+        {
+            f = pos.index(first);
+            l = pos.index(last - 1);
+
+            if (f == l)
+            {
+                ret := pos.towards_oh(_vis, first, f, last, fn);
+            }
+            else
+            {
+                v_assert(f < l);
+
+                ret := pos.towards_oh(for_each_chunk_p_right_visitor, first, f, fn)  &&
+                       pos.each_i(for_each_chunk_p_visitor, f + 1, l, fn)  &&
+                       pos.towards_oh(for_each_chunk_p_left_visitor, last - 1, l, fn);
+            }
+        }
+
+        ret
+    };
+
+    #define visit_leaf: [](pos, args) ~> bool  =
+    {
+        first = args[0];
+        last  = args[1];
+        fn    = args[2];
+
+        ret: &bool := true;
+
+        if (first < last)
+        {
+            f = pos.index(first);
+            l = pos.index(last - 1);
+            ret := fn(data + f, data + l + 1);
+        }
+
+        ret
+    };
+}
+
+
+//---------------------------------------------------------------------
+//- equals_visitor
+//---------------------------------------------------------------------
+namespace equals_visitor
+{
+    using namespace visitor_base(equals_visitor);
+
+    result_t = bool;
+
+    namespace this_aux
+    {
+        using namespace visitor_base(this_aux);
+
+        result_t = bool;
+
+        #define visit_inner: [](posr, args) ~> bool  =
+        {
+            i     = args[0];
+            posl  = args[1];
+            first = args[2];
+            idx   = args[3];
+
+            posl.nth_sub(i, equals_visitor, {posr, first, idx})
+        };
+
+        #define visit_leaf: [](posr, args) ~> bool  =
+        {
+            i     = args[0];
+            posl  = args[1];
+            first = args[2];
+            idx   = args[3];
+
+            posl.nth_sub_leaf(i, equals_visitor, {posr, first, idx})
+        };
+    }
+
+    namespace rrb
+    {
+        using namespace visitor_base(rrb);
+
+        result_t = bool;
+
+        #define visit_node: [](posr, args) ~> bool  =
+        {
+            first  = args[0];
+            rootl  = args[1];
+            shiftl = args[2];
+            sizel  = args[3];
+
+            v_assert(shiftl <= posr.shift);
+
+            ret: &bool := undef;
+
+            if (shiftl == posr.shift)
+            {
+                ret := visit_maybe_relaxed_sub(rootl, shiftl, sizel, equals_visitor, {posr, first, (undef: size_t)});
+            }
+            else
+            {
+                ret := posr.first_sub_inner(rrb, {first, rootl, shiftl, sizel});
+            }
+
+            ret
+        };
+    }
+
+    #define equal_chunk_p: [](T: v_static_type_t, Iter: v_static_type_t = *T) ~> v_static_type_t  =
+    {
+        type = v_generic(equal_chunk_p, T(T, Iter));
+
+        #template [type, T, Iter]()
+        {
+            #do (v_set_implementation_type(type, Iter))
+
+            inlinehint
+            (_()): (p: *type, f: *T, e: *T) ~> bool
+            {
+                iter = *(p: *Iter);
+
+                if (f == &*iter)
+                {
+                    iter += e - f;
+                    return  true;
+                }
+
+                for (f: &*T := f; f < e; ++f, ++iter)
+                {
+                    if (!(*f == *iter))  return  false;
+                }
+
+                return  true;
+            }
+        }
+
+        type
+    };
+
+    #define visit_relaxed: [](posl, args) ~> bool  =
+    {
+        PosL  = typeof(posl);
+        ArgsT = typeof(args);
+
+        ns = PosL.v_generic_ns(equals_visit_relaxed, T(ArgsT));
+
+        #template [ns, PosL, ArgsT]()
+        {
+            inlinehint
+            _visit_relaxed: (posl: PosL, args: ArgsT) ~> bool
+            {
+                posr  = args[0];
+                first = args[1];
+                idx   = args[2];
+
+                nl = posl.node;
+                nr = posr.node;
+                if (nl == nr)  return  true;
+
+                cl = posl.count;
+                cr = posr.count;
+                v_assert(cr > 0);
+                sbr: &size_t  := 0;
+                i:   &count_t := 0;
+                j:   &count_t := 0;
+
+                for (; i < cl; ++i)
+                {
+                    sbl = posl.size_before(i);
+                    for (; j + 1 < cr && (sbr := posr.size_before(j)) < sbl; ++j) ;
+
+                    if (sbl == sbr)
+                    {
+                        if (!posr.nth_sub(j, this_aux, {posl, first, idx + sbl}))  return  false;
+                    }
+                    else
+                    {
+                        T    = typeof(posr).value_t;
+                        Iter = typeof(first);
+
+                        ecp: &Iter := first + (idx + sbl);        //- ?!?!?
+                        ecp = (&ecp: *equal_chunk_p(T, Iter));
+
+                        if (!posl.nth_sub(i, for_each_chunk_p_visitor, ecp))  return  false;
+                    }
+                }
+
+                return  true;
+            }
+        }
+
+        ns._visit_relaxed(posl, args)
+    };
+
+    #define visit_regular: [](posl, args) ~> bool  =
+    {
+        ArgsT = typeof(args);
+
+        #if (ArgsT.is_struct)
+
+            #if (is_relaxed(ArgsT.element_types[0]))
+
+                visit_relaxed(posl, args)
+
+            #else
+
+                {   posr = args[0];
+
+                    ret: &bool := undef;
+
+                    if (posl.count >= posr.count)
+                    {
+                        ret := equals_visitor.visit_regular(posl, posr.node);
+                    }
+                    else
+                    {
+                        ret := equals_visitor.visit_regular(posr, posl.node);
+                    }
+
+                    ret
+                }
+
+            #endif
+
+        #else     //- Short...
+
+            {   pos   = posl;
+                other = args;
+
+                node = pos.node;
+
+                node == other  ||  pos.each_pred_zip(equals_visitor, other)
+            }
+
+        #endif
+    };
+
+    #define visit_leaf: [](posl, args) ~> bool  =
+    {
+        ArgsT = typeof(args);
+
+        #if (ArgsT.is_struct)
+
+            {   posr  = args[0];
+                first = args[1];
+                idx   = args[2];
+
+                if (posl.node == posr.node)  return  true;
+
+                cl = posl.count;
+                cr = posr.count;
+                mp: &count_t := undef;
+                if (cl < sr)  mp := cl;
+                else          mp := cr;
+
+                util.equal(posl.node->leaf, posr.node->leaf, mp)  &&
+                util.equal(posl.node->leaf + mp, first + (idx + mp), posl.count - mp)
+            }
+
+        #else     //- Short...
+
+            {   pos   = posl;
+                other = args;
+
+                node = pos.node;
+
+                node == other  ||  util.equal(node->leaf, other->leaf, pos.count)
+            }
+
+        #endif
+    };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------
+}   //- namespace rbts
+}   //- namespace detail
+}   //- namespace .immer
+

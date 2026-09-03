@@ -1521,7 +1521,7 @@ struct null_sub_pos {};
         NS._first_sub_inner(p, args)
     };
 
-    #define (_.nth_sub()): [](p: regular_sub_pos, v: visitor_t, idx: count_t, args)  =
+    #define (_.nth_sub()): [](p: regular_sub_pos, idx: count_t, v: visitor_t, args)  =
     {
         prepare_position_args(p, v, args);
 
@@ -1564,7 +1564,7 @@ struct null_sub_pos {};
         NS._nth_sub(p, idx, args)
     };
 
-    #define (_.nth_sub_leaf()): [](p: regular_sub_pos, v: visitor_t, idx: count_t, args)  =
+    #define (_.nth_sub_leaf()): [](p: regular_sub_pos, idx: count_t, v: visitor_t, args)  =
     {
         prepare_position_args(p, v, args);
 
@@ -2156,7 +2156,7 @@ struct null_sub_pos {};
         NS._first_sub_inner(p, args)
     };
 
-    #define (_.nth_sub()): [](p: full_pos, v: visitor_t, idx: count_t, args)  =
+    #define (_.nth_sub()): [](p: full_pos, idx: count_t, v: visitor_t, args)  =
     {
         prepare_position_args(p, v, args);
 
@@ -2184,7 +2184,7 @@ struct null_sub_pos {};
         NS._nth_sub(p, idx, args)
     };
 
-    #define (_.nth_sub_leaf()): [](p: full_pos, v: visitor_t, idx: count_t, args)  =
+    #define (_.nth_sub_leaf()): [](p: full_pos, idx: count_t, v: visitor_t, args)  =
     {
         prepare_position_args(p, v, args);
 
@@ -2822,7 +2822,7 @@ struct null_sub_pos {};
         NS._first_sub_inner(p, args)
     };
 
-    #define (_.nth_sub()): [](p: relaxed_pos, v: visitor_t, offset: count_t, args)  =
+    #define (_.nth_sub()): [](p: relaxed_pos, offset: count_t, v: visitor_t, args)  =
     {
         prepare_position_args(p, v, args);
 
@@ -2849,7 +2849,7 @@ struct null_sub_pos {};
         NS._nth_sub(p, offset, args)
     };
 
-    #define (_.nth_sub_leaf()): [](p: relaxed_pos, v: visitor_t, offset: count_t, args)  =
+    #define (_.nth_sub_leaf()): [](p: relaxed_pos, offset: count_t, v: visitor_t, args)  =
     {
         prepare_position_args(p, v, args);
 
