@@ -339,7 +339,7 @@ namespace for_each_chunk_p_right_visitor
 //---------------------------------------------------------------------
 namespace for_each_chunk_p_i_visitor
 {
-    _vis = v_generic_ns(for_each_chunk_p_i_visitor_tag);
+    _vis = for_each_chunk_p_i_visitor;
 
     using namespace visitor_base(_vis);
 
@@ -659,6 +659,131 @@ namespace equals_visitor
         #endif
     };
 }
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+#define visitor_args: (Vis: visitor_t, Pos: v_static_type_t, ArgsT: v_static_type_t) ~> v_static_namespace_t
+  =  Vis.v_generic_ns(visitor_args_ns, T[Pos, ArgsT]);
+
+#define prepare_visitor_args: [](Vis, pos, args)
+{'stmt_list'
+
+    Pos   = typeof(pos);
+    ArgsT = typeof(args);
+
+    NS = visitor_args(Vis, Pos, ArgsT);
+
+'stmt_list'}
+
+
+//---------------------------------------------------------------------
+//- update_visitor
+//---------------------------------------------------------------------
+#define update_visitor: [](NodeT: v_static_type_t) ~> visitor_t  =
+{
+    vis = v_generic_ns(update_visitor_tag, T(NodeT));
+
+    #template [vis, NodeT]()
+    {
+        using namespace visitor_base(vis);
+
+        result_t = *NodeT;
+
+        #define visit_relaxed: [*, vis](pos, args) ~> result_t  =
+        {
+            prepare_visitor_args(vis, pos, args);
+
+            #template visit_relaxed: [NS, Pos, ArgsT]()
+            {
+                inlinehint
+                _visit_relaxed: (pos: Pos, args: ArgsT) ~> result_t
+                {
+                    idx = args[0];
+                    fn  = args[1];
+
+                    offset = pos.index(idx);
+                    count  = pos.count;
+                    node   = node_t.make_inner_sr_n(count, pos.relaxed);
+
+                    child = pos.towards_oh(vis, idx, offset, fn);
+
+                    node_t.do_copy_inner_replace_sr(
+                        node, pos.node, count, offset, child);
+
+                    return  node;
+                }
+            }
+
+            NS._visit_relaxed(pos, args)
+        };
+
+        #define visit_regular: [*, vis](pos, args) ~> result_t  =
+        {
+            prepare_visitor_args(vis, pos, args);
+
+            #template visit_regular: [NS, Pos, ArgsT]()
+            {
+                inlinehint
+                _visit_regular: (pos: Pos, args: ArgsT) ~> result_t
+                {
+                    idx = args[0];
+                    fn  = args[1];
+
+                    offset = pos.index(idx);
+                    count  = pos.count;
+                    node   = node_t.make_inner_n(count);
+
+                    child = pos.towards_oh_ch(vis, idx, offset, count, fn);
+
+                    node_t.do_copy_inner_replace(
+                        node, pos.node, count, offset, child);
+
+                    return  node;
+                }
+            }
+
+            NS._visit_regular(pos, args)
+        };
+
+        #define visit_leaf: [*, vis](pos, args) ~> result_t  =
+        {
+            prepare_visitor_args(vis, pos, args);
+
+            #template visit_leaf: [NS, Pos, ArgsT]()
+            {
+                inlinehint
+                _visit_leaf: (pos: Pos, args: ArgsT) ~> result_t
+                {
+                    idx = args[0];
+                    fn  = args[1];
+
+                    offset = pos.index(idx);
+                    count  = pos.count;
+                    node   = node_t.make_leaf_n(count);
+
+                    dst = node->leaf;
+                    src = pos.node->leaf;
+
+                    util.conditional_initialize(dst, count);
+                    util.conditional_copy(dst, src, offset);
+
+                    dst[offset] := fn(src[offset]);           //- ...
+
+                    off1 = offset + 1;
+                    util.conditional_copy(dst + off1, src + off1, count - off1);
+
+                    return  node;
+                }
+            }
+
+            NS._visit_leaf(pos, args)
+        };
+    }
+
+    vis
+};
 
 
 

@@ -572,7 +572,9 @@ compile_template_body: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> vo
 
     sstr: &v_std_string_t := {};
 
-    v_std_string_set(&sstr, "v.template.guard");
+    v_std_string_set(&sstr, "v.template.guard-");
+
+    v_std_string_append(&sstr, v_quark_to_string(cur_ns->name));
 
     if (!v_empty(guard))
     {
@@ -634,7 +636,9 @@ voidc_internal_define_template_helper: (q: v_quark_t, ast: *v_ast_base_t) ~> voi
 
     v_std_string_set(&sstr, "v.template.");
 
-    v_std_string_append(&sstr, v_quark_to_string(q));
+    qintr = v_obtain_alias_q(q, true);
+
+    v_std_string_append(&sstr, v_quark_to_string(qintr));
 
     qintr = v_quark_from_string(v_std_string_get(&sstr));
 
@@ -874,7 +878,12 @@ compile_template_define: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> 
 
     v_std_string_set(&sstr, "v.template.");
 
-    v_std_string_append(&sstr, v_quark_to_string(quark));
+    qintr: &v_quark_t := undef;
+
+    if (kind)  qintr := quark;
+    else       qintr := v_obtain_alias_q(quark, export);
+
+    v_std_string_append(&sstr, v_quark_to_string(qintr));
 
     qintr = v_quark_from_string(v_std_string_get(&sstr));
 

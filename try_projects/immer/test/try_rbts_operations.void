@@ -42,7 +42,7 @@ namespace my
     get_vis = get_visitor(my_type);
 
 
-//  upd_vis = update_visitor(node_t);
+    upd_vis = update_visitor(node_t);
 
 
 }   //- namespace my
@@ -66,28 +66,27 @@ some: (node: *my.node_t, n: unsigned) ~> &const my_type  =
     pos.visit(my.get_vis, n)
 };
 
-//Fn = *((my_type) ~> my_type);
-//
-//some2: (node: *my.node_t, n: unsigned, f: Fn) ~> *my.node_t
-//{
-//    pos = my.make_leaf_pos(node, N);
-//
-//    ns = my.position_args(my.leaf_pos, my.upd_vis, struct {size_t; Fn;}, *my.node_t);
-//    return  ns.visit(pos, {n, f});
-//}
-//
-//
-//#if (my_type.is_integer)
-//
-//  foo: (v: my_type) ~> my_type  =  (v + 11 : my_type);
-//
-//#endif
-//
-//#if (my_type == v_string_t)
-//
-//  foo: (v: my_type) ~> my_type  =  v + "bbb";
-//
-//#endif
+Fn = *((my_type) ~> my_type);
+
+some2: (node: *my.node_t, n: unsigned, f: Fn) ~> *my.node_t  =
+{
+    pos = my.make_leaf_pos(node, N);
+
+    pos.visit(my.upd_vis, {n, f})
+};
+
+
+#if (my_type.is_integer)
+
+  foo: (v: my_type) ~> my_type  =  (v + 11 : my_type);
+
+#endif
+
+#if (my_type == v_string_t)
+
+  foo: (v: my_type) ~> my_type  =  v + "bbb";
+
+#endif
 
 
 //---------------------------------------------------------------------
@@ -123,26 +122,26 @@ some: (node: *my.node_t, n: unsigned) ~> &const my_type  =
 
     #endif
 
-//    node2 = some2(node, i, foo);
-//
-//    #if (my_type.is_integer)
-//
-//      printf("v2: %d\n", node2->leaf[i]);
-//
-//    #endif
-//
-//    #if (my_type == v_string_t)
-//
-//      printf("v2: %s\n", node2->leaf[i].data);
-//
-//    #endif
+    node2 = some2(node, i, foo);
+
+    #if (my_type.is_integer)
+
+      printf("v2: %d\n", node2->leaf[i]);
+
+    #endif
+
+    #if (my_type == v_string_t)
+
+      printf("v2: %s\n", node2->leaf[i].data);
+
+    #endif
 
 
     node->dec;
     my.node_t.delete_leaf(node, N);
 
-//    node2->dec;
-//    my.node_t.delete_leaf(node2, N);
+    node2->dec;
+    my.node_t.delete_leaf(node2, N);
 }
 
 
