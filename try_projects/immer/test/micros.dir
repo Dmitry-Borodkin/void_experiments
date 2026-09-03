@@ -1,4 +1,4 @@
-                    ****  Immer/test  ****                     │
+                    ****  Immer/test  ****                     │*
                                                                │
                                                                │
 try_util                                                       │try_util.void -T
@@ -15,8 +15,6 @@ try_rbts_operations                                            │try_rbts_opera
                                                                │
                                                                │
 ---------------------------------------------------------------│
-strange...                                                     │strange.void
-                                                               │
                                                                │
                                                                │
                                                                │

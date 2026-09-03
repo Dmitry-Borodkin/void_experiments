@@ -351,30 +351,31 @@ namespace for_each_chunk_p_i_visitor
         last  = args[1];
         fn    = args[2];
 
-        ret: &bool := true;
-
-        if (first < last)
+        (block
         {
-            f = pos.index(first);
-            l = pos.index(last - 1);
-
-            if (f == l)
+            if (first < last)
             {
-                sbh = pos.size_before(f);
+                f = pos.index(first);
+                l = pos.index(last - 1);
 
-                ret := pos.towards_oh_sbh(_vis, first, f, sbh, last - sbh, fn);
+                if (f == l)
+                {
+                    sbh = pos.size_before(f);
+
+                    break  pos.towards_oh_sbh(_vis, first, f, sbh, last - sbh, fn);
+                }
+                else
+                {
+                    v_assert(f < l);
+
+                    break  pos.towards_oh(for_each_chunk_p_right_visitor, first, f, fn)  &&
+                           pos.each_pred_i(for_each_chunk_p_visitor, f + 1, l, fn)  &&
+                           pos.towards_oh(for_each_chunk_p_left_visitor, last - 1, l, fn);
+                }
             }
-            else
-            {
-                v_assert(f < l);
 
-                ret := pos.towards_oh(for_each_chunk_p_right_visitor, first, f, fn)  &&
-                       pos.each_pred_i(for_each_chunk_p_visitor, f + 1, l, fn)  &&
-                       pos.towards_oh(for_each_chunk_p_left_visitor, last - 1, l, fn);
-            }
-        }
-
-        ret
+            break  true;
+        })
     };
 
     #define visit_regular: [](pos, args) ~> bool  =
@@ -383,28 +384,29 @@ namespace for_each_chunk_p_i_visitor
         last  = args[1];
         fn    = args[2];
 
-        ret: &bool := true;
-
-        if (first < last)
+        (block
         {
-            f = pos.index(first);
-            l = pos.index(last - 1);
-
-            if (f == l)
+            if (first < last)
             {
-                ret := pos.towards_oh(_vis, first, f, last, fn);
-            }
-            else
-            {
-                v_assert(f < l);
+                f = pos.index(first);
+                l = pos.index(last - 1);
 
-                ret := pos.towards_oh(for_each_chunk_p_right_visitor, first, f, fn)  &&
-                       pos.each_i(for_each_chunk_p_visitor, f + 1, l, fn)  &&
-                       pos.towards_oh(for_each_chunk_p_left_visitor, last - 1, l, fn);
-            }
-        }
+                if (f == l)
+                {
+                    break  pos.towards_oh(_vis, first, f, last, fn);
+                }
+                else
+                {
+                    v_assert(f < l);
 
-        ret
+                    break  pos.towards_oh(for_each_chunk_p_right_visitor, first, f, fn)  &&
+                           pos.each_i(for_each_chunk_p_visitor, f + 1, l, fn)  &&
+                           pos.towards_oh(for_each_chunk_p_left_visitor, last - 1, l, fn);
+                }
+            }
+
+            break  true;
+        })
     };
 
     #define visit_leaf: [](pos, args) ~> bool  =
@@ -413,16 +415,17 @@ namespace for_each_chunk_p_i_visitor
         last  = args[1];
         fn    = args[2];
 
-        ret: &bool := true;
-
-        if (first < last)
+        (block
         {
-            f = pos.index(first);
-            l = pos.index(last - 1);
-            ret := fn(data + f, data + l + 1);
-        }
+            if (first < last)
+            {
+                f = pos.index(first);
+                l = pos.index(last - 1);
+                break  fn(data + f, data + l + 1);
+            }
 
-        ret
+            break  true;
+        })
     };
 }
 
@@ -478,18 +481,19 @@ namespace equals_visitor
 
             v_assert(shiftl <= posr.shift);
 
-            ret: &bool := undef;
-
-            if (shiftl == posr.shift)
+            (block
             {
-                ret := visit_maybe_relaxed_sub(rootl, shiftl, sizel, equals_visitor, {posr, first, (undef: size_t)});
-            }
-            else
-            {
-                ret := posr.first_sub_inner(rrb, {first, rootl, shiftl, sizel});
-            }
+                if (shiftl == posr.shift)
+                {
+                    break  visit_maybe_relaxed_sub(rootl, shiftl, sizel, equals_visitor, {posr, first, (undef: size_t)});
+                }
+                else
+                {
+                    break  posr.first_sub_inner(rrb, {first, rootl, shiftl, sizel});
+                }
 
-            ret
+                break  true;
+            })
         };
     }
 
@@ -591,21 +595,19 @@ namespace equals_visitor
 
             #else
 
-                {   posr = args[0];
-
-                    ret: &bool := undef;
+                (block
+                {
+                    posr = args[0];
 
                     if (posl.count >= posr.count)
                     {
-                        ret := equals_visitor.visit_regular(posl, posr.node);
+                        break  equals_visitor.visit_regular(posl, posr.node);
                     }
                     else
                     {
-                        ret := equals_visitor.visit_regular(posr, posl.node);
+                        break  equals_visitor.visit_regular(posr, posl.node);
                     }
-
-                    ret
-                }
+                })
 
             #endif
 
