@@ -146,7 +146,7 @@ some2: (node: *my.node_t, n: unsigned, f: Fn) ~> *my.node_t  =
 
 
 //---------------------------------------------------------------------
-{ v_debug_print_module(2); }
+//{ v_debug_print_module(2); }
 
 #define hzns: (i: int) ~> v_static_namespace_t  =  v_generic_ns(hz_ns, N(i));
 
