@@ -638,10 +638,7 @@ namespace equals_visitor
 
                 cl = posl.count;
                 cr = posr.count;
-                mp: &count_t := undef;
-                if (cl < sr)  mp := cl;
-                else          mp := cr;
-
+                mp = util.min(cl, cr);
                 util.equal(posl.node->leaf, posr.node->leaf, mp)  &&
                 util.equal(posl.node->leaf + mp, first + (idx + mp), posl.count - mp)
             }
@@ -1967,16 +1964,13 @@ namespace dec_left_visitor
                     node   = pos.node;
                     idx    = pos.index(first);
                     count  = pos.count;
-                    mutate = mutating  &&
-                             node->can_mutate  &&
-                             count <= 2*idx;            //- Must not intersect...
+                    mutate = mutating  &&  node->can_mutate;    //- ?!?!?!?!?
                     if (mutate)
                     {
                         data     = node->leaf;
                         newcount = count - idx;
 
-                        util.conditional_move(data, data + idx, newcount);
-                        util.conditional_terminate(data + newcount, idx);
+                        util.move_in_place(data, idx, newcount);
 
                         return  {0, node};
                     }
@@ -2074,6 +2068,743 @@ namespace dec_left_visitor
 
     vis
 };
+
+
+//---------------------------------------------------------------------
+//- concat_center_pos
+//---------------------------------------------------------------------
+#template _instantiate_concat_center_pos: [](NS, NodeT: v_static_type_t)
+{
+    struct concat_center_pos;
+
+    namespace concat_center_pos
+    {
+        using namespace NS;
+
+        max_children = 3;
+    }
+
+    private max_children = concat_center_pos.max_children;
+
+    struct concat_center_pos
+    {
+        shift_: shift_t;
+        count_: count_t;
+        nodes_: node_t[max_children];
+        sizes_: size_t[max_children];
+    };
+
+    alwaysinline
+    (_.shift): (p: concat_center_pos) ~> shift_t  =  p.shift_;
+
+    #define (_.each_sub()): [](p: concat_center_pos, v: visitor_t, args)  =
+    {
+        prepare_position_args(p, v, args);
+
+        #template each_sub: [NS, Pos, v, ArgsT]()
+        {
+            inlinehint
+            _each_sub: (pos: Pos, args: ArgsT) ~> void
+            {
+                if (pos.shift_ == BL)
+                {
+                    s: &size_t := 0;
+
+                    for (i: &count_t := 0; i < pos.count_; ++i)
+                    {
+                        make_leaf_sub_pos(pos.nodes_[i], pos.sizes_[i] - s).visit(v, args);
+                        s := pos.sizes_[i];
+                    }
+                }
+                else
+                {
+                    for (i: &count_t := 0; i < pos.count_; ++i)
+                    {
+                        make_relaxed_pos(pos.nodes_[i], pos.shift_ - B, pos.nodes_[i]->relaxed)
+                            .visit(v, args);
+                    }
+                }
+            }
+        }
+
+        NS._each_sub(p, args)
+    };
+
+    inlinehint
+    (_.realize): (p: &concat_center_pos) ~> NS.relaxed_pos
+    {
+        if (p.count_ > 1)
+        {
+            result = node_t.make_inner_r_n(p.count_);
+            r      = result->relaxed;
+            r->d.count := p.count_;
+
+            util.conditional_copy(result->inner, p.nodes_, p.count);
+            util.conditional_copy(r->d.sizes,    p.sizes_, p.count);
+            return  {result, shift_, r};
+        }
+        else
+        {
+            v_assert(p.shift_ >= B + BL);
+            return  {p.nodes_[0], p.shift_ - B, p.nodes_[0]->relaxed};
+        }
+    }
+
+    inlinehint
+    (_.realize_e): (p: &concat_center_pos) ~> NS.relaxed_pos
+    {
+        if (p.count_ > 1)
+        {
+            result = node_t.make_inner_r_n_e();
+            r      = result->relaxed;
+            r->d.count := p.count_;
+
+            util.conditional_copy(result->inner, p.nodes_, p.count);
+            util.conditional_copy(r->d.sizes,    p.sizes_, p.count);
+            return  {result, p.shift_, r};
+        }
+        else
+        {
+            v_assert(p.shift_ >= B + BL);
+            return  {p.nodes_[0], p.shift_ - B, p.nodes_[0]->relaxed};
+        }
+    }
+
+}   //- #template
+
+//---------------------------------------------------------------------
+#define make_concat_center_pos_1: (s: shift_t, n0, s0: size_t)  =
+{
+    prepare_position(n0);
+
+    _instantiate_concat_center_pos(NS, NodeT);
+
+    ret: NS.concat_center_pos = {s, 1, {n0}, {s0}};
+
+    ret
+};
+
+#define make_concat_center_pos_2: (s: shift_t, n0, s0: size_t, n1, s1: size_t)  =
+{
+    prepare_position(n0);
+
+    _instantiate_concat_center_pos(NS, NodeT);
+
+    ret: NS.concat_center_pos = {s, 2, {n0, n1}, {s0, s0 + s1}};
+
+    ret
+};
+
+#define make_concat_center_pos_3: (s: shift_t, n0, s0: size_t, n1, s1: size_t, n2, s2: size_t)  =
+{
+    prepare_position(n0);
+
+    _instantiate_concat_center_pos(NS, NodeT);
+
+    ret: NS.concat_center_pos = {s, 3, {n0, n1, n2}, {s0, s0 + s1, s0 + s1 + s2}};
+
+    ret
+};
+
+
+//---------------------------------------------------------------------
+//- concat_merger
+//---------------------------------------------------------------------
+#template _instantiate_concat_merger: [](NS, NodeT: v_static_type_t)
+{
+    private result_t = NS.concat_center_pos;
+
+    struct concat_merger
+    {
+        curr_:   *count_t;
+        n_:      count_t;
+        result_: result_t;
+
+        to_:        *node_t;
+        to_offset_: count_t;
+        to_size_:   size_t;
+    };
+
+    namespace concat_merger { using namespace NS; }
+
+    inlinehint
+    (_.add_child()): (self: &concat_merger, p: *node_t, size: size_t) ~> void
+    {
+        v_assert(size);
+        ++self.curr_;
+        parent:  &*node_t    := self.result_.nodes_[self.result_.count_ - 1];
+        relaxed: &*relaxed_t := parent->relaxed;
+        if (relaxed->d.count == branches(B))
+        {
+            v_assert(self.result_.count_ < result_t.max_children);
+            self.n_ -= branches(B);
+            parent  := node_t.make_inner_r_n(util.min(self.n_, branches(B)));
+            relaxed := parent->relaxed;
+            self.result_.nodes_[self.result_.count_] := parent;
+            self.result_.sizes_[self.result_.count_] := self.result_.sizes_[self.result_.count_ - 1];
+            v_assert(self.result_.sizes_[self.result_.count_]);
+            ++self.result_.count_;
+        }
+        idx = self.relaxed->d.count++;
+        self.result_.sizes_[self.result_.count_ - 1] += size;
+        v_assert(self.result_.sizes_[self.result_.count_ - 1]);
+
+        if (idx)  relaxed->d.sizes[idx] := size + relaxed->d.sizes[idx - 1];
+        else      relaxed->d.sizes[idx] := size;
+
+        v_assert(relaxed->d.sizes[idx]);
+        parent->inner[idx] := p;
+    }
+
+    #define (_.merge_leaf()): [*, NS](self: &concat_merger, p) ~> void  =
+    {
+        Pos = typeof(p);
+
+        #template merge_leaf: [*, NS, Pos]()
+        {
+            inlinehint
+            _merge_leaf: (self: &concat_merger, p: Pos) ~> void
+            {
+                from       = p.node;
+                from_size  = p.size;
+                from_count = p.count;
+                v_assert(from_size);
+                if (!self.to_  &&  *self.curr_ == from_count)
+                {
+                    self.add_child(from, from_size);
+                    from->inc;
+                }
+                else
+                {
+                    from_offset: &count_t := 0;
+                    from_data = from->leaf;
+                    loop
+                    {
+                        if (!self.to_)
+                        {
+                            self.to_        := node_t.make_leaf_n(*self.curr_);
+                            self.to_offset_ := 0;
+                        }
+                        data = self.to_->leaf;
+                        to_copy = util.min(from_count - from_offset, *self.curr_ - self.to_offset_);
+
+                        util.uninitialized_copy(data + self.to_offset_, from_data + from_offset, to_copy);
+
+                        self.to_offset_ += to_copy;
+                        from_offset     += to_copy;
+                        if (*self.curr_ == self.to_offset_)
+                        {
+                            self.add_child(self.to_, self.to_offset_);
+                            self.to_ := 0;
+                        }
+
+                        if (from_offset == from_count)  break;
+                    }
+                }
+            }
+        }
+
+        NS._merge_leaf(self, p)
+    };
+
+    #define (_.merge_inner()): [*, NS](self: &concat_merger, p) ~> void  =
+    {
+        Pos = typeof(p);
+
+        #template merge_inner: [*, NS, Pos]()
+        {
+            inlinehint
+            _merge_inner: (self: &concat_merger, p: Pos) ~> void
+            {
+                from       = p.node;
+                from_size  = p.size;
+                from_count = p.count;
+                v_assert(from_size);
+                if (!self.to_  &&  *self.curr_ == from_count)
+                {
+                    self.add_child(from, from_size);
+                    from->inc;
+                }
+                else
+                {
+                    from_offset: &count_t := 0;
+                    from_data = from->inner;
+                    loop
+                    {
+                        if (!self.to_)
+                        {
+                            self.to_        := node_t.make_inner_r_n(*self.curr_);
+                            self.to_offset_ := 0;
+                            self.to_size_   := 0;
+                        }
+                        data = self.to_->inner;
+                        to_copy = util.min(from_count - from_offset, *self.curr_ - self.to_offset_);
+
+                        util.uninitialized_copy(data + self.to_offset_, from_data + from_offset, to_copy);
+
+                        node_t.inc_nodes(from_data + from_offset, to_copy);
+                        sizes = self.to_->relaxed->d.sizes;
+                        p.copy_sizes(from_offset, to_copy, self.to_size_, sizes + self.to_offset_);
+                        self.to_offset_ += to_copy;
+                        from_offset     += to_copy;
+                        self.to_size_ := sizes[self.to_offset_ - 1];
+                        v_assert(self.to_size_);
+                        if (*self.curr_ == self.to_offset_)
+                        {
+                            self.to_->relaxed->d.count := self.to_offset_;
+                            self.add_child(self.to_, self.to_size_);
+                            self.to_ := 0;
+                        }
+
+                        if (from_offset == from_count)  break;
+                    }
+                }
+            }
+        }
+
+        NS._merge_inner(self, p)
+    };
+
+    alwaysinline
+    (_.finish): (self: &concat_merger) ~> result_t  =
+    {
+        v_assert(!self.to_);
+
+        self.result_
+    };
+
+//    inlinehint
+//    (_.abort): (self: &concat_merger) ~> void
+//    {
+//        shift = self.result_.shift_ - B;
+//        if (self.to_)
+//        {
+//            if (shift == BL)
+//            {
+//                node_t.delete_leaf(self.to_, self.to_offset_);
+//            }
+//            else
+//            {
+//                self.to_->relaxed->d.count := self.to_offset_;
+//                dec_relaxed(self.to_, shift - B);
+//            }
+//        }
+//        self.result_.each_sub(dec_visitor, {});
+//    }
+
+}   //- #template
+
+//---------------------------------------------------------------------
+#define make_concat_merger: (NT: v_static_type_t, shift: shift_t, counts: *count_t, n: count_t)  =
+{
+    prepare_position((undef: *NT));             //- ?!?!?!?!?
+
+    _instantiate_concat_merger(NS, NodeT);
+
+    m = util.min(n, branches(B));
+
+    ret: NS.concat_merger = {counts, n, make_concat_center_pos_1(shift + B, node_t.make_inner_r_n(m), 0), 0,0,0};
+
+    ret
+};
+
+
+//---------------------------------------------------------------------
+//- concat_merger_visitor
+//---------------------------------------------------------------------
+namespace concat_merger_visitor
+{
+    vis = concat_merger_visitor;
+
+    using namespace visitor_base(vis);
+
+    result_t = void;
+
+    #define visit_inner: [](p, merger) ~> void  =  merger.merge_inner(p);
+    #define visit_leaf:  [](p, merger) ~> void  =  merger.merge_leaf(p);
+}
+
+
+//---------------------------------------------------------------------
+//- concat_rebalance_plan_fill_visitor
+//---------------------------------------------------------------------
+namespace concat_rebalance_plan_fill_visitor
+{
+    vis = concat_rebalance_plan_fill_visitor;
+
+    using namespace visitor_base(vis);
+
+    result_t = void;
+
+    #define visit_node: [](p, plan) ~> void  =
+    {
+        count = p.count;
+        v_assert(plan.n < typeof(plan).element_type.max_children);
+        plan.counts[plan.n++] := count;
+        plan.total += count;
+
+        undef       //- Sic!
+    };
+}
+
+
+//---------------------------------------------------------------------
+//- concat_rebalance_plan
+//---------------------------------------------------------------------
+#define concat_rebalance_plan: [](B: bits_t, BL: bits_t) ~> v_static_type_t  =
+{
+    crp_t = v_generic(concat_rebalance_plan_tag, N[B,BL]);
+
+    #template [*, crp_t, B, BL]()
+    {
+        max_children = 2 * branches(B) + 1;
+
+        private
+        impl_t = struct
+        {
+            counts: count_t[max_children];
+            n:      count_t;
+            total:  count_t;
+        };
+
+        #do (v_set_implementation_type(crp_t, impl_t))
+
+        alwaysinline
+        ({_}): () ~> crp_t
+        {
+            ret = v_get_return_value();
+
+            *(&ret : *impl_t) := {{}, 0, 0};
+        }
+
+        #define (_.fill()): (self: &crp_t, lpos, cpos, rpos) ~> void  =
+        {
+            impl = *(&self : *impl_t);
+
+            v_assert(impl.n == 0);
+            v_assert(impl.total == 0);
+
+            vis = concat_rebalance_plan_fill_visitor;
+            lpos.each_left_sub(vis, self);
+            cpos.each_sub(vis, self);
+            rpos.each_right_sub(vis, self);
+
+            undef       //- Sic!
+        };
+
+        inlinehint
+        (_.shuffle()): (self: &crp_t, shift: shift_t) ~> void
+        {
+            self = *(&self : *impl_t);
+
+            rrb_extras    = 2;
+            rrb_invariant = 1;
+
+            bits: &bits_t := undef;
+
+            if (shift == BL)  bits := BL;
+            else              bits := B;
+
+            branches = (1: count_t) << bits;
+            optimal  = ((self.total - 1) >> bits) + 1;
+
+            i: &count_t := 0;
+            while (self.n >= optimal + rrb_extras)
+            {
+                // skip ok nodes
+                while (self.counts[i] > branches - rrb_invariant)
+                    i++;
+                v_assert(i < self.n);
+                // short node, redistribute
+                remaining: &count_t := self.counts[i];
+                loop
+                {
+                    next  = self.counts[i + 1];
+                    count = util.min(remaining + next, branches);
+                    self.counts[i] := count;
+                    v_assert(self.counts[i]);
+                    remaining += next - count;
+                    ++i;
+
+                    if (remaining <= 0)  break;
+                }
+                // remove node
+                util.conditional_move(self.counts + i, self.counts + i + 1, self.n - i - 1);
+                --self.n;
+                --i;
+            }
+        }
+
+        #define (_.merge()): (self: &crp_t, lpos, cpos, rpos)  =
+        {
+            self = *(&self : *impl_t);
+
+            node_t = typeof(cpos).node_t;
+            merger = make_concat_merger(node_t, cpos.shift, self.counts, self.n);
+            vis    = concat_merger_visitor;
+            lpos.each_left_sub(vis, merger);
+            cpos.each_sub(vis, merger);
+            rpos.each_right_sub(vis, merger);
+            cpos.each_sub(dec_visitor, {});
+
+            merger.finish
+        };
+    }
+
+    crp_t
+};
+
+
+//---------------------------------------------------------------------
+//- concat_rebalance
+//---------------------------------------------------------------------
+#define concat_rebalance: [](lpos, cpos, rpos)  =
+{
+    node_t = typeof(cpos).node_t;
+
+    plan: &concat_rebalance_plan(node_t.bits, node_t.bits_leaf) := {};
+
+    plan.fill(lpos, cpos, rpos);
+    plan.shuffle(cpos.shift);
+
+    plan.merge(lpos, cpos, rpos)
+};
+
+
+//---------------------------------------------------------------------
+//- concat_leafs
+//---------------------------------------------------------------------
+#define concat_leafs: [](lpos, tpos, rpos)  =
+{
+    node_t = typeof(tpos).node_t;
+
+    #assert (node_t.bits >= 2)
+
+    v_assert(lpos.shift == tpos.shift);
+    v_assert(lpos.shift == rpos.shift);
+    v_assert(lpos.shift == 0);
+
+    BL = node_t.bits_leaf;
+
+    ret_t = position(node_t).concat_center_pos;
+
+    ret: &ret_t := undef;
+
+    if (tpos.count > 0)
+    {
+        ret := make_concat_center_3(BL, lpos.node->inc, lpos.count,
+                                        tpos.node->inc, tpos.count,
+                                        rpos.node->inc, rpos.count);
+    }
+    else
+    {
+        ret := make_concat_center_3(BL, lpos.node->inc, lpos.count,
+                                        rpos.node->inc, rpos.count);
+    }
+
+    (ret: ret_t)
+};
+
+
+//---------------------------------------------------------------------
+//- concat_inners
+//---------------------------------------------------------------------
+#define concat_inners: [](lpos, tpos, rpos)  =
+{
+    node_t = typeof(tpos).node_t;
+
+    lshift = lpos.shift;
+    rshift = rpos.shift;
+
+    ret_t = position(node_t).concat_center_pos;
+
+    ret: &ret_t := undef;
+
+    if (lshift > rshift)
+    {
+        cpos = lpos.last_sub(concat_left_visitor(node_t), {tpos, rpos});
+        ret := concat_rebalance(lpos, cpos, make_null_sub_pos());
+    }
+    else if (lshift < rshift)
+    {
+        cpos = rpos.first_sub(concat_right_visitor(node_t), {lpos, tpos});
+        ret := concat_rebalance(make_null_sub_pos(), cpos, rpos);
+    }
+    else
+    {
+        v_assert(lshift == rshift);
+        v_assert(node_t.bits_leaf == 0  ||  lshift > 0);
+        cpos = lpos.last_sub(concat_both_visitor(node_t), {tpos, rpos});
+        ret := concat_rebalance(lpos, cpos, rpos);
+    }
+
+    (ret: ret_t)
+};
+
+
+//---------------------------------------------------------------------
+//- concat_left_visitor
+//---------------------------------------------------------------------
+#define concat_left_visitor: [](NodeT: v_static_type_t) ~> visitor_t  =
+{
+    vis = v_generic_ns(concat_left_visitor_tag, T(NodeT));
+
+    #template [vis, NodeT]()
+    {
+        using namespace visitor_base(vis);
+
+        result_t = position(NodeT).concat_center_pos;
+
+        #define visit_inner: [](lpos, args) ~> result_t  =
+        {
+            tpos = args[0];
+            rpos = args[1];
+
+            concat_inners(lpos, tpos, rpos)
+        };
+
+        #define visit_leaf: [](lpos, args) ~> result_t  =
+        {
+            v_assert(false  &&  "Kinda, unreachable...");
+
+            undef
+        };
+    }
+
+    vis
+};
+
+
+//---------------------------------------------------------------------
+//- concat_right_visitor
+//---------------------------------------------------------------------
+#define concat_right_visitor: [](NodeT: v_static_type_t) ~> visitor_t  =
+{
+    vis = v_generic_ns(concat_right_visitor_tag, T(NodeT));
+
+    #template [vis, NodeT]()
+    {
+        using namespace visitor_base(vis);
+
+        result_t = position(NodeT).concat_center_pos;
+
+        #define visit_inner: [](rpos, args) ~> result_t  =
+        {
+            lpos = args[0];
+            tpos = args[1];
+
+            concat_inners(lpos, tpos, rpos)
+        };
+
+        #define visit_leaf: [](rpos, args) ~> result_t  =
+        {
+            lpos = args[0];
+            tpos = args[1];
+
+            concat_leafs(lpos, tpos, rpos)
+        };
+    }
+
+    vis
+};
+
+
+//---------------------------------------------------------------------
+//- concat_both_visitor
+//---------------------------------------------------------------------
+#define concat_both_visitor: [](NodeT: v_static_type_t) ~> visitor_t  =
+{
+    vis = v_generic_ns(concat_both_visitor_tag, T(NodeT));
+
+    #template [vis, NodeT]()
+    {
+        using namespace visitor_base(vis);
+
+        result_t = position(NodeT).concat_center_pos;
+
+        #define visit_inner: [*, NodeT](lpos, args) ~> result_t  =
+        {
+            tpos = args[0];
+            rpos = args[1];
+
+            rpos.first_sub(concat_right_visitor(NodeT), {lpos, tpos})
+        };
+
+        #define visit_leaf: [](lpos, args) ~> result_t  =
+        {
+            tpos = args[0];
+            rpos = args[1];
+
+            rpos.first_sub_leaf(concat_right_visitor(NodeT), {lpos, tpos})
+        };
+    }
+
+    vis
+};
+
+
+//---------------------------------------------------------------------
+//- concat_trees_right_visitor
+//---------------------------------------------------------------------
+#define concat_trees_right_visitor: [](NodeT: v_static_type_t) ~> visitor_t  =
+{
+    vis = v_generic_ns(concat_trees_right_visitor_tag, T(NodeT));
+
+    #template [vis, NodeT]()
+    {
+        using namespace visitor_base(vis);
+
+        result_t = position(NodeT).concat_center_pos;
+
+        #define visit_node: [](rpos, args) ~> result_t  =
+        {
+            lpos = args[0];
+            tpos = args[1];
+
+            concat_inners(lpos, tpos, rpos)
+        };
+    }
+
+    vis
+};
+
+
+//---------------------------------------------------------------------
+//- concat_trees_left_visitor
+//---------------------------------------------------------------------
+#define concat_trees_left_visitor: [](NodeT: v_static_type_t) ~> visitor_t  =
+{
+    vis = v_generic_ns(concat_trees_left_visitor_tag, T(NodeT));
+
+    #template [vis, NodeT]()
+    {
+        using namespace visitor_base(vis);
+
+        result_t = position(NodeT).concat_center_pos;
+
+        #define visit_node: [](lpos, args) ~> result_t  =
+        {
+            tpos   = args[0];
+            lroot  = args[1];
+            lshift = args[2];
+            lsize  = args[3];
+
+            visit_maybe_relaxed_sub(lroot, lshift, lsize,
+                                    concat_trees_right_visitor(NodeT), {lpos, tpos})
+        };
+    }
+
+    vis
+};
+
+
+
+
+
+
+
+
+
 
 
 

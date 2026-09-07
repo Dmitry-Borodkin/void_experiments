@@ -1147,6 +1147,85 @@ namespace util
 
 
 //---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+#define move_in_place: [](p, s: size_t, n: size_t) ~> void  =
+{
+    T = typeof(p).element_type;
+
+    ns = v_generic_ns(move_in_place_args, T(T));
+
+    #template [ns, T]()
+    {
+        inlinehint
+        _move_in_place: (p: *T, s: size_t, n: size_t) ~> void
+        {
+            p: &*T     := p;
+            n: &size_t := n;
+
+            loop
+            {
+                m: &size_t := undef;
+
+                if (n < s)  m := n;
+                else        m := s;
+
+                conditional_move(p, p+s, m);
+
+                p += m;
+                n -= m;
+
+                if (n == 0)
+                {
+                    conditional_terminate(p, s);
+
+                    break;
+                }
+            }
+        }
+    }
+
+    ns._move_in_place(p, s, n)
+};
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+#define min: (x, y, T: v_static_type_t = typeof(x))  =
+{
+    #if (T.is_reference)  t = T.element_type;
+    #else                 t = T;
+    #endif
+
+    r: &t := undef;
+
+    if (x < y)  r := x;
+    else        r := y;
+
+    (r: t)
+};
+
+#define max: (x, y, T: v_static_type_t = typeof(x))  =
+{
+    #if (T.is_reference)  t = T.element_type;
+    #else                 t = T;
+    #endif
+
+    r: &t := undef;
+
+    if (x < y)  r := y;
+    else        r := x;
+
+    (r: t)
+};
+
+
+
+
+
+
+//---------------------------------------------------------------------
 }   //- namespace util
 
 
