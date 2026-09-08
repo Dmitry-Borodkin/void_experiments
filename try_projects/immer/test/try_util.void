@@ -106,11 +106,22 @@ baz: () ~> void
 
 }
 
+//---------------------------------------------------------------------
+test_t = v_generic(test_type);
 
+#do (v_set_implementation_type(test_t, int))
 
+#do (v_make_trivial_coercion(v_coe_projective,  test_t,  int),
+     v_make_trivial_coercion(v_coe_projective, *test_t, *int),
+     v_make_trivial_coercion(v_coe_projective, &test_t, &int),
+     )
 
+{   v: &test_t := (77: test_t);
 
+    u: &int = v;    u += 11;
 
+    printf("v: %d\n", v);
+}
 
 
 

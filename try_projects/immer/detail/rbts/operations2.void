@@ -2459,7 +2459,6 @@ namespace concat_rebalance_plan_fill_visitor
     {
         max_children = 2 * branches(B) + 1;
 
-        private
         impl_t = struct
         {
             counts: count_t[max_children];
@@ -2580,9 +2579,7 @@ namespace concat_rebalance_plan_fill_visitor
 
     #assert (node_t.bits >= 2)
 
-    v_assert(lpos.shift == tpos.shift);
-    v_assert(lpos.shift == rpos.shift);
-    v_assert(lpos.shift == 0);
+    v_assert(lpos.shift == tpos.shift == rpos.shift == 0);
 
     BL = node_t.bits_leaf;
 
@@ -2598,7 +2595,7 @@ namespace concat_rebalance_plan_fill_visitor
     }
     else
     {
-        ret := make_concat_center_3(BL, lpos.node->inc, lpos.count,
+        ret := make_concat_center_2(BL, lpos.node->inc, lpos.count,
                                         rpos.node->inc, rpos.count);
     }
 
@@ -3138,25 +3135,352 @@ namespace concat_rebalance_plan_fill_visitor
 };
 
 
+//---------------------------------------------------------------------
+//- concat_merger_mut_visitor
+//---------------------------------------------------------------------
+namespace concat_merger_mut_visitor
+{
+    vis = concat_merger_mut_visitor;
+
+    using namespace visitor_base(vis);
+
+    result_t = void;
+
+    #define visit_inner: [](p, merger) ~> void  =  merger.merge_inner(p);
+    #define visit_leaf:  [](p, merger) ~> void  =  merger.merge_leaf(p);
+}
 
 
+//---------------------------------------------------------------------
+//- concat_rebalance_plan_mut
+//---------------------------------------------------------------------
+#define concat_rebalance_plan_mut: [](B: bits_t, BL: bits_t) ~> v_static_type_t  =
+{
+    crpm_t = v_generic(concat_rebalance_plan_mut_tag, N[B,BL]);
+
+    #template [*, crpm_t, B, BL]()
+    {
+        using namespace concat_rebalance_plan(B, BL);
+
+        #do (v_set_implementation_type(crpm_t, impl_t),
+             v_make_trivial_coercion(v_coe_projective,  crpm_t,  concat_rebalance_plan(B, BL)),
+             v_make_trivial_coercion(v_coe_projective, *crpm_t, *concat_rebalance_plan(B, BL)),
+             v_make_trivial_coercion(v_coe_projective, &crpm_t, &concat_rebalance_plan(B, BL)),
+             )
+
+        alwaysinline
+        ({_}): () ~> crpm_t
+        {
+            ret = v_get_return_value();
+
+            *(&ret : *impl_t) := {{}, 0, 0};
+        }
+
+        #define (_.merge()): (self: &crpm_t, lpos, cpos, rpos)  =
+        {
+            self = *(&self : *impl_t);
+
+            node_t = typeof(cpos).node_t;
+            vis    = concat_merger_mut_visitor;
+
+            lnode = (lpos.node : *node_t);
+            rnode = (rpos.node : *node_t);
+            lmut2 = lnode  &&  lnode->can_relax  &&  lnode->can_mutate;
+            rmut2 = rnode  &&  rnode->can_relax  &&  rnode->can_mutate;
+
+            candidate: &*node_t := undef;
+
+            if (lmut2)  candidate := lnode;
+            else        candidate := 0;
+
+            merger = make_concat_merger_mut(cpos.shift, self.counts, self.n, candidate);
+
+            lpos.each_left_sub(vis, merger);
+            cpos.each_sub(vis, merger);
+
+            if (rmut2)  merger.set_candidate(rnode);
+
+            rpos.each_right_sub(vis, merger);
+
+            merger.finish
+        };
+
+    }   //- #template
+
+    crpm_t
+};
 
 
+//---------------------------------------------------------------------
+//- concat_rebalance_mut
+//---------------------------------------------------------------------
+#define concat_rebalance_mut: [](lpos, cpos, rpos)  =
+{
+    node_t = typeof(cpos).node_t;
+
+    plan: &concat_rebalance_plan_mut(node_t.bits, node_t.bits_leaf) := {};
+
+    plan.fill(lpos, cpos, rpos);
+    plan.shuffle(cpos.shift);
+
+    plan.merge(lpos, cpos, rpos)
+};
 
 
+//---------------------------------------------------------------------
+//- concat_leafs_mut
+//---------------------------------------------------------------------
+#define concat_leafs_mut: [](lpos, tpos, rpos)  =
+{
+    node_t = typeof(tpos).node_t;
+
+    #assert (node_t.bits >= 2)
+
+    v_assert(lpos.shift == tpos.shift == rpos.shift == 0);
+
+    BL = node_t.bits_leaf;
+
+    ret_t = position(node_t).concat_center_mut_pos;
+
+    ret: &ret_t := undef;
+
+    if (tpos.count > 0)
+    {
+        ret := make_concat_center_mut_3(BL, lpos.node->inc, lpos.count,
+                                            tpos.node->inc, tpos.count,
+                                            rpos.node->inc, rpos.count);
+    }
+    else
+    {
+        ret := make_concat_center_mut_2(BL, lpos.node->inc, lpos.count,
+                                            rpos.node->inc, rpos.count);
+    }
+
+    (ret: ret_t)
+};
 
 
+//---------------------------------------------------------------------
+//- concat_inners_mut
+//---------------------------------------------------------------------
+#define concat_inners_mut: [](lpos, tpos, rpos)  =
+{
+    node_t = typeof(tpos).node_t;
+
+    lshift = lpos.shift;
+    rshift = rpos.shift;
+    // lpos.node() can be null it is a singleton_regular_sub_pos<...>,
+    // this is, when the tree is just a tail...
+
+    ret_t = position(node_t).concat_center_mut_pos;
+
+    ret: &ret_t := undef;
+
+    if (lshift > rshift)
+    {
+        cpos = lpos.last_sub(concat_left_mut_visitor(node_t), {tpos, rpos});
+        ret := concat_rebalance_mut(lpos, cpos, make_null_sub_pos());
+    }
+    else if (lshift < rshift)
+    {
+        cpos = rpos.first_sub(concat_right_mut_visitor(node_t), {lpos, tpos});
+        ret := concat_rebalance_mut(make_null_sub_pos(), cpos, rpos);
+    }
+    else
+    {
+        v_assert(lshift == rshift);
+        v_assert(node_t.bits_leaf == 0  ||  lshift > 0);
+        cpos = lpos.last_sub(concat_both_mut_visitor(node_t), {tpos, rpos});
+        ret := concat_rebalance_mut(lpos, cpos, rpos);
+    }
+
+    (ret: ret_t)
+};
 
 
+//---------------------------------------------------------------------
+//- concat_left_mut_visitor
+//---------------------------------------------------------------------
+#define concat_left_mut_visitor: [](NodeT: v_static_type_t) ~> visitor_t  =
+{
+    vis = v_generic_ns(concat_left_mut_visitor_tag, T(NodeT));
+
+    #template [vis, NodeT]()
+    {
+        using namespace visitor_base(vis);
+
+        result_t = position(NodeT).concat_center_mut_pos;
+
+        #define visit_inner: [](lpos, args) ~> result_t  =
+        {
+            tpos = args[0];
+            rpos = args[1];
+
+            concat_inners_mut(lpos, tpos, rpos)
+        };
+
+        #define visit_leaf: [](lpos, args) ~> result_t  =
+        {
+            v_assert(false  &&  "Kinda, unreachable...");
+
+            undef
+        };
+    }
+
+    vis
+};
 
 
+//---------------------------------------------------------------------
+//- concat_right_mut_visitor
+//---------------------------------------------------------------------
+#define concat_right_mut_visitor: [](NodeT: v_static_type_t) ~> visitor_t  =
+{
+    vis = v_generic_ns(concat_right_mut_visitor_tag, T(NodeT));
+
+    #template [vis, NodeT]()
+    {
+        using namespace visitor_base(vis);
+
+        result_t = position(NodeT).concat_center_mut_pos;
+
+        #define visit_inner: [](rpos, args) ~> result_t  =
+        {
+            lpos = args[0];
+            tpos = args[1];
+
+            concat_inners_mut(lpos, tpos, rpos)
+        };
+
+        #define visit_leaf: [](rpos, args) ~> result_t  =
+        {
+            lpos = args[0];
+            tpos = args[1];
+
+            concat_leafs_mut(lpos, tpos, rpos)
+        };
+    }
+
+    vis
+};
 
 
+//---------------------------------------------------------------------
+//- concat_both_mut_visitor
+//---------------------------------------------------------------------
+#define concat_both_mut_visitor: [](NodeT: v_static_type_t) ~> visitor_t  =
+{
+    vis = v_generic_ns(concat_both_mut_visitor_tag, T(NodeT));
+
+    #template [vis, NodeT]()
+    {
+        using namespace visitor_base(vis);
+
+        result_t = position(NodeT).concat_center_mut_pos;
+
+        #define visit_inner: [*, NodeT](lpos, args) ~> result_t  =
+        {
+            tpos = args[0];
+            rpos = args[1];
+
+            rpos.first_sub(concat_right_mut_visitor(NodeT), {lpos, tpos})
+        };
+
+        #define visit_leaf: [](lpos, args) ~> result_t  =
+        {
+            tpos = args[0];
+            rpos = args[1];
+
+            rpos.first_sub_leaf(concat_right_mut_visitor(NodeT), {lpos, tpos})
+        };
+    }
+
+    vis
+};
 
 
+//---------------------------------------------------------------------
+//- concat_trees_right_mut_visitor
+//---------------------------------------------------------------------
+#define concat_trees_right_mut_visitor: [](NodeT: v_static_type_t) ~> visitor_t  =
+{
+    vis = v_generic_ns(concat_trees_right_mut_visitor_tag, T(NodeT));
+
+    #template [vis, NodeT]()
+    {
+        using namespace visitor_base(vis);
+
+        result_t = position(NodeT).concat_center_mut_pos;
+
+        #define visit_node: [](rpos, args) ~> result_t  =
+        {
+            lpos = args[0];
+            tpos = args[1];
+
+            concat_inners_mut(lpos, tpos, rpos)
+        };
+    }
+
+    vis
+};
 
 
+//---------------------------------------------------------------------
+//- concat_trees_left_mut_visitor
+//---------------------------------------------------------------------
+#define concat_trees_left_mut_visitor: [](NodeT: v_static_type_t) ~> visitor_t  =
+{
+    vis = v_generic_ns(concat_trees_left_mut_visitor_tag, T(NodeT));
 
+    #template [vis, NodeT]()
+    {
+        using namespace visitor_base(vis);
+
+        result_t = position(NodeT).concat_center_mut_pos;
+
+        #define visit_node: [](lpos, args) ~> result_t  =
+        {
+            tpos   = args[0];
+            lroot  = args[1];
+            lshift = args[2];
+            lsize  = args[3];
+
+            visit_maybe_relaxed_sub(lroot, lshift, lsize,
+                                    concat_trees_right_mut_visitor(NodeT), {lpos, tpos})
+        };
+    }
+
+    vis
+};
+
+
+//---------------------------------------------------------------------
+//- concat_trees_mut
+//---------------------------------------------------------------------
+#define concat_trees_mut: [](lroot, lshift: shift_t, lsize: size_t,
+                             ltail, ltcount: count_t,
+                             rroot, rshift: shift_t, rsize: size_t)  =
+{
+    NodeT = typeof(lroot).element_type;
+
+    visit_maybe_relaxed_sub(lroot, lshift, lsize, concat_trees_left_mut_visitor(NodeT),
+                            { make_leaf_pos(ltail, ltcount), rroot, rshift, rsize }).realize_e
+};
+
+//---------------------------------------------------------------------
+//- concat_trees_mut_short
+//---------------------------------------------------------------------
+#define concat_trees_mut_short: [](ltail, ltcount: count_t,
+                                   rroot, rshift: shift_t, rsize: size_t)  =
+{
+    NodeT = typeof(ltail).element_type;
+
+    elp: position(NodeT).empty_leaf_pos = {0};          //- WTF ?
+
+    make_singleton_regular_sub_pos(ltail, ltcount)
+        .visit(concat_trees_left_mut_visitor(NodeT), {elp, rroot, rshift, rsize})
+        .realize_e
+};
 
 
 //---------------------------------------------------------------------
