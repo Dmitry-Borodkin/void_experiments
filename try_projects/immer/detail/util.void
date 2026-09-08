@@ -1044,6 +1044,36 @@ namespace util
 {
 
 //---------------------------------------------------------------------
+#define min: (x, y, T: v_static_type_t = typeof(x))  =
+{
+    #if (T.is_reference)  t = T.element_type;
+    #else                 t = T;
+    #endif
+
+    r: &t := undef;
+
+    if (x < y)  r := x;
+    else        r := y;
+
+    (r: t)
+};
+
+#define max: (x, y, T: v_static_type_t = typeof(x))  =
+{
+    #if (T.is_reference)  t = T.element_type;
+    #else                 t = T;
+    #endif
+
+    r: &t := undef;
+
+    if (x < y)  r := y;
+    else        r := x;
+
+    (r: t)
+};
+
+
+//---------------------------------------------------------------------
 #define unref_typeof: (x) ~> v_static_type_t  =
 {
     T = typeof(x);  #if (T.is_reference)  T = T.element_type;  #endif
@@ -1109,8 +1139,16 @@ namespace util
 
     {   T = typeof(d).element_type;
 
-        #if (T.is_special(v_copy))  v_copy(d, s, n);
-        #else                       memmove(d, s, n*sizeof(T));
+        #if (T.is_special(v_copy))
+
+            v_assert(d+n <= s  ||  s+n <= d);
+
+            v_copy(d, s, n);
+
+        #else
+
+            memmove(d, s, n*sizeof(T));
+
         #endif
     }
 
@@ -1121,8 +1159,16 @@ namespace util
 
     {   T = typeof(d).element_type;
 
-        #if (T.is_special(v_move))  v_move(d, s, n);
-        #else                       memmove(d, s, n*sizeof(T));
+        #if (T.is_special(v_move))
+
+            v_assert(d+n <= s  ||  s+n <= d);
+
+            v_move(d, s, n);
+
+        #else
+
+            memmove(d, s, n*sizeof(T));
+
         #endif
     }
 
@@ -1149,7 +1195,7 @@ namespace util
 //---------------------------------------------------------------------
 //- ...
 //---------------------------------------------------------------------
-#define move_in_place: [](p, s: size_t, n: size_t) ~> void  =
+#define move_in_place: [](p, s: intptr_t, n: size_t) ~> void  =
 {
     T = typeof(p).element_type;
 
@@ -1158,66 +1204,63 @@ namespace util
     #template [ns, T]()
     {
         inlinehint
-        _move_in_place: (p: *T, s: size_t, n: size_t) ~> void
+        _move_in_place: (p: *T, s: intptr_t, n: size_t) ~> void
         {
-            p: &*T     := p;
+            if (s == 0)  return;    //- Nothing to do...
+
             n: &size_t := n;
 
-            loop
+            if (s > 0)              //- Move from right to left (forward)
             {
-                m: &size_t := undef;
+                s = (s: size_t);
 
-                if (n < s)  m := n;
-                else        m := s;
+                p: &*T := p;
 
-                conditional_move(p, p+s, m);
-
-                p += m;
-                n -= m;
-
-                if (n == 0)
+                loop
                 {
-                    conditional_terminate(p, s);
+                    m = min(s, n);
 
-                    break;
+                    conditional_move(p, p+s, m);
+
+                    if (m == n)
+                    {
+                        conditional_terminate(p+s, m);
+
+                        break;
+                    }
+
+                    p += m;
+                    n -= m;
+                }
+            }
+            else                    //- Move from left to right (backward)
+            {
+                s = (-s : size_t);
+
+                p: &*T := p + n;
+
+                loop
+                {
+                    m = min(s, n);
+
+                    p -= m;
+
+                    conditional_move(p, p-s, m);
+
+                    if (m == n)
+                    {
+                        conditional_terminate(p-s, m);
+
+                        break;
+                    }
+
+                    n -= m;
                 }
             }
         }
     }
 
     ns._move_in_place(p, s, n)
-};
-
-
-//---------------------------------------------------------------------
-//- ...
-//---------------------------------------------------------------------
-#define min: (x, y, T: v_static_type_t = typeof(x))  =
-{
-    #if (T.is_reference)  t = T.element_type;
-    #else                 t = T;
-    #endif
-
-    r: &t := undef;
-
-    if (x < y)  r := x;
-    else        r := y;
-
-    (r: t)
-};
-
-#define max: (x, y, T: v_static_type_t = typeof(x))  =
-{
-    #if (T.is_reference)  t = T.element_type;
-    #else                 t = T;
-    #endif
-
-    r: &t := undef;
-
-    if (x < y)  r := y;
-    else        r := x;
-
-    (r: t)
 };
 
 
