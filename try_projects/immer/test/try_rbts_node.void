@@ -6,7 +6,7 @@
 
     v_import("../memory_policy.void");
 
-    v_import("../detail/rbts/node2.void");
+    v_import("../detail/rbts/node.void");
 }
 
 

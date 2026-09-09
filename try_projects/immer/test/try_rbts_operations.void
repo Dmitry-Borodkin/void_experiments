@@ -8,9 +8,9 @@
 
     v_import("../memory_policy.void");
 
-    v_import("../detail/rbts/node2.void");
-    v_import("../detail/rbts/position2.void");
-    v_import("../detail/rbts/operations2.void");
+    v_import("../detail/rbts/node.void");
+    v_import("../detail/rbts/position.void");
+    v_import("../detail/rbts/operations.void");
 }
 
 

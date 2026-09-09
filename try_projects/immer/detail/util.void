@@ -1268,7 +1268,8 @@ namespace util
         inlinehint
         _move_in_place: (p: *T, s: intptr_t, n: size_t) ~> void
         {
-            if (s == 0)  return;    //- Nothing to do...
+            if (n == 0)  return;    //- Nothing to do...
+            if (s == 0)  return;    //- ...
 
             n: &size_t := n;
 

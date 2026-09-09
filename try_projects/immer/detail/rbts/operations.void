@@ -2,8 +2,8 @@
 { voidc_make_header("operations"); }
 //---------------------------------------------------------------------
 {
-    v_export_import("position2.void");
-    v_export_import("visitor2.void");
+    v_export_import("position.void");
+    v_export_import("visitor.void");
     v_export_import("../util.void");
 }
 

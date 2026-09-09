@@ -3,7 +3,7 @@
 //---------------------------------------------------------------------
 {
     v_export_import("bits.void");
-    v_export_import("visitor2.void");
+    v_export_import("visitor.void");
     v_export_import("../util.void");
 }
 
