@@ -42,7 +42,7 @@ namespace rbts {
 #define prepare_position: [](node)
 {'stmt_list'
 
-    NodeT = typeof(node).element_type;
+    NodeT = util.unref_typeof(node).element_type;
 
     NS = position(NodeT);
 
@@ -73,7 +73,7 @@ namespace rbts {
     alwaysinline
     (_.size): (empty_regular_pos) ~> size_t  =  0;
 
-    #define (_.each()): [](p: empty_regular_pos, v: visitor_t, args) ~> void  =  {};
+    #define (_.each()): [](p: empty_regular_pos, v: visitor_t, args) ~> struct {}  =  {};
 
     #define (_.each_pred()): [](p: empty_regular_pos, v: visitor_t, args) ~> bool  =  true;
 
@@ -265,7 +265,7 @@ namespace rbts {
     (_.shift): (leaf_descent_pos) ~> shift_t  =  0;
 
     #define (_.descend()): [](p: leaf_descent_pos, v: visitor_t, args)
-      =  undef;       //- ?!?!?!?!?!?!?
+      =  {};       //- ?!?!?!?!?!?!?
 
     #define (_.visit()): [](p: leaf_descent_pos, v: visitor_t, args)
       =  v.visit_leaf(p, args);
@@ -319,6 +319,7 @@ namespace rbts {
 
     #define (_.visit()): [](p: full_leaf_pos, v: visitor_t, args)
       =  v.visit_leaf(p, args);
+
 
 }   //- #template
 
@@ -471,11 +472,11 @@ namespace rbts {
                                         ArgsT: v_static_type_t)
 {
     linkonce_odr
-    _each_regular: (p: Pos, args: ArgsT) ~> void
+    _each_regular: (p: Pos, args: ArgsT) ~> struct {}
     {
-        n: &*node_t := p.node->inner;
-        last         = p.count - 1;
-        e            = n + last;
+        n: &**node_t := p.node->inner;
+        last          = p.count - 1;
+        e             = n + last;
 
         if (p.shift == BL)
         {
@@ -520,9 +521,9 @@ namespace rbts {
     linkonce_odr
     _each_pred_regular: (p: Pos, args: ArgsT) ~> bool
     {
-        n: &*node_t := p.node->inner;
-        last         = p.count - 1;
-        e            = n + last;
+        n: &**node_t := p.node->inner;
+        last          = p.count - 1;
+        e             = n + last;
 
         if (p.shift == BL)
         {
@@ -567,10 +568,10 @@ namespace rbts {
     linkonce_odr
     _each_pred_zip_regular: (p: Pos, other: *node_t, args: ArgsT) ~> bool
     {
-        n:  &*node_t := p.node->inner;
-        n2: &*node_t := other->inner;
-        last          = p.count - 1;
-        e             = n + last;
+        n:  &**node_t := p.node->inner;
+        n2: &**node_t := other->inner;
+        last           = p.count - 1;
+        e              = n + last;
 
         if (p.shift == BL)
         {
@@ -621,8 +622,8 @@ namespace rbts {
             {
                 if (l < p.count)
                 {
-                    n: &*node_t := p.node->inner + f;
-                    e:  *node_t  = p.node->inner + l;
+                    n: &**node_t := p.node->inner + f;
+                    e:  **node_t  = p.node->inner + l;
 
                     for (; n != e; ++n)
                     {
@@ -631,8 +632,8 @@ namespace rbts {
                 }
                 else
                 {
-                    n: &*node_t := p.node->inner + f;
-                    e:  *node_t  = p.node->inner + l - 1;
+                    n: &**node_t := p.node->inner + f;
+                    e:  **node_t  = p.node->inner + l - 1;
 
                     for (; n != e; ++n)
                     {
@@ -651,8 +652,8 @@ namespace rbts {
 
                 if (l < p.count)
                 {
-                    n: &*node_t := p.node->inner + f;
-                    e:  *node_t  = p.node->inner + l;
+                    n: &**node_t := p.node->inner + f;
+                    e:  **node_t  = p.node->inner + l;
 
                     for (; n != e; ++n)
                     {
@@ -661,8 +662,8 @@ namespace rbts {
                 }
                 else
                 {
-                    n: &*node_t := p.node->inner + f;
-                    e:  *node_t  = p.node->inner + l - 1;
+                    n: &**node_t := p.node->inner + f;
+                    e:  **node_t  = p.node->inner + l - 1;
 
                     for (; n != e; ++n)
                     {
@@ -702,8 +703,8 @@ namespace rbts {
 
         if (p.shift == BL)
         {
-            n: &*node_t := p.node->inner;
-            e:  *node_t  = n + last;
+            n: &**node_t := p.node->inner;
+            e:  **node_t  = n + last;
 
             for (; n != e; ++n)
             {
@@ -712,8 +713,8 @@ namespace rbts {
         }
         else
         {
-            n: &*NT := p.node->inner;
-            e:  *NT  = n + last;
+            n: &**node_t := p.node->inner;
+            e:  **node_t  = n + last;
 
             ss = p.shift - B;
 
@@ -749,9 +750,9 @@ namespace rbts {
     {
         if (p.shift == BL)
         {
-            n: &*node_t := p.node->inner + start;
-            last         = p.count - 1;
-            e:  *node_t  = n.node->inner + last;
+            n: &**node_t := p.node->inner + start;
+            last          = p.count - 1;
+            e:  **node_t  = n.node->inner + last;
 
             if (n <= e)
             {
@@ -765,9 +766,9 @@ namespace rbts {
         }
         else
         {
-            n: &*node_t := p.node->inner + start;
-            last         = p.count - 1;
-            e:  *node_t  = n.node->inner + last;
+            n: &**node_t := p.node->inner + start;
+            last          = p.count - 1;
+            e:  **node_t  = n.node->inner + last;
 
             ss = p.shift - B;
 
@@ -804,7 +805,7 @@ namespace rbts {
                                           ArgsT: v_static_type_t)
 {
     linkonce_odr
-    _each_i_regular: (p: Pos, f: count_t, l: count_t, args: ArgsT) ~> void
+    _each_i_regular: (p: Pos, f: count_t, l: count_t, args: ArgsT) ~> struct {}
     {
         if (p.shift == BL)
         {
@@ -812,8 +813,8 @@ namespace rbts {
             {
                 if (l < p.count)
                 {
-                    n: &*node_t := p.node->inner + f;
-                    e:  *node_t  = p.node->inner + l;
+                    n: &**node_t := p.node->inner + f;
+                    e:  **node_t  = p.node->inner + l;
 
                     for (; n != e; ++n)
                     {
@@ -822,8 +823,8 @@ namespace rbts {
                 }
                 else
                 {
-                    n: &*node_t := p.node->inner + f;
-                    e:  *node_t  = p.node->inner + l - 1;
+                    n: &**node_t := p.node->inner + f;
+                    e:  **node_t  = p.node->inner + l - 1;
 
                     for (; n != e; ++n)
                     {
@@ -842,8 +843,8 @@ namespace rbts {
 
                 if (l < p.count)
                 {
-                    n: &*node_t := p.node->inner + f;
-                    e:  *node_t  = p.node->inner + l;
+                    n: &**node_t := p.node->inner + f;
+                    e:  **node_t  = p.node->inner + l;
 
                     for (; n != e; ++n)
                     {
@@ -852,8 +853,8 @@ namespace rbts {
                 }
                 else
                 {
-                    n: &*node_t := p.node->inner + f;
-                    e:  *node_t  = p.node->inner + l - 1;
+                    n: &**node_t := p.node->inner + f;
+                    e:  **node_t  = p.node->inner + l - 1;
 
                     for (; n != e; ++n)
                     {
@@ -885,14 +886,14 @@ namespace rbts {
                                              ArgsT: v_static_type_t)
 {
     linkonce_odr
-    _each_left_regular: (p: Pos, last: count_t, args: ArgsT) ~> void
+    _each_left_regular: (p: Pos, last: count_t, args: ArgsT) ~> struct {}
     {
         v_assert(last < p.count);
 
         if (p.shift == BL)
         {
-            n: &*node_t := p.node->inner;
-            e:  *node_t  = n + last;
+            n: &**node_t := p.node->inner;
+            e:  **node_t  = n + last;
 
             for (; n != e; ++n)
             {
@@ -901,8 +902,8 @@ namespace rbts {
         }
         else
         {
-            n: &*node_t := p.node->inner;
-            e:  *node_t  = n + last;
+            n: &**node_t := p.node->inner;
+            e:  **node_t  = n + last;
 
             ss = p.shift - B;
 
@@ -932,13 +933,13 @@ namespace rbts {
                                               ArgsT: v_static_type_t)
 {
     linkonce_odr
-    _each_right_regular: (p: Pos, start: count_t, args: ArgsT) ~> void
+    _each_right_regular: (p: Pos, start: count_t, args: ArgsT) ~> struct {}
     {
         if (p.shift == BL)
         {
-            n: &*node_t := p.node->inner + start;
-            last         = p.count - 1;
-            e:  *node_t  = n.node->inner + last;
+            n: &**node_t := p.node->inner + start;
+            last          = p.count - 1;
+            e:  **node_t  = n.node->inner + last;
 
             if (n <= e)
             {
@@ -952,9 +953,9 @@ namespace rbts {
         }
         else
         {
-            n: &*node_t := p.node->inner + start;
-            last         = p.count - 1;
-            e:  *node_t  = n.node->inner + last;
+            n: &**node_t := p.node->inner + start;
+            last          = p.count - 1;
+            e:  **node_t  = n.node->inner + last;
 
             ss = p.shift - B;
 
@@ -1144,13 +1145,13 @@ struct null_sub_pos {};
 
 #define (_.node): (p: null_sub_pos)  =  0;
 
-#define (_.each_sub()): [](p: null_sub_pos, v: visitor_t, args)  =  undef;
+#define (_.each_sub()): [](p: null_sub_pos, v: visitor_t, args)  =  {};
 
-#define (_.each_right_sub()): [](p: null_sub_pos, v: visitor_t, args)  =  undef;
+#define (_.each_right_sub()): [](p: null_sub_pos, v: visitor_t, args)  =  {};
 
-#define (_.each_left_sub()): [](p: null_sub_pos, v: visitor_t, args)  =  undef;
+#define (_.each_left_sub()): [](p: null_sub_pos, v: visitor_t, args)  =  {};
 
-#define (_.visit()): [](p: null_sub_pos, v: visitor_t, args)  =  undef;
+#define (_.visit()): [](p: null_sub_pos, v: visitor_t, args)  =  {};
 
 //---------------------------------------------------------------------
 #define make_null_sub_pos: []() ~> null_sub_pos  =  {};
@@ -1196,9 +1197,9 @@ struct null_sub_pos {};
     alwaysinline
     (_.size()): (pos: singleton_regular_sub_pos, count_t) ~> size_t  =  pos.count_;
 
-    #define (_.each_left_sub()): [](p: singleton_regular_sub_pos, v: visitor_t, args)  =  undef;
+    #define (_.each_left_sub()): [](p: singleton_regular_sub_pos, v: visitor_t, args)  =  {};
 
-    #define (_.each()): [](p: singleton_regular_sub_pos, v: visitor_t, args)  =  undef;
+    #define (_.each()): [](p: singleton_regular_sub_pos, v: visitor_t, args)  =  {};
 
     #define (_.last_sub()): [](p: singleton_regular_sub_pos, v: visitor_t, args)
       =  make_leaf_sub_pos(p.leaf_, p.count_).visit(v, args);
@@ -1333,12 +1334,12 @@ struct null_sub_pos {};
         #template each_right_sub_: [NS, Pos, v, ArgsT]()
         {
             inlinehint
-            _each_right_sub_: (pos: Pos, i: count_t, args: ArgsT) ~> void
+            _each_right_sub_: (pos: Pos, i: count_t, args: ArgsT) ~> struct {}
             {
-                last         = pos.count - 1;
-                lsize        = pos.size_ - (last << pos.shift_);
-                n: &*node_t := pos.node->inner + i;
-                e            = pos.node->inner + last;
+                last          = pos.count - 1;
+                lsize         = pos.size_ - (last << pos.shift_);
+                n: &**node_t := pos.node->inner + i;
+                e             = pos.node->inner + last;
 
                 if (pos.shift == BL)
                 {
@@ -1373,7 +1374,7 @@ struct null_sub_pos {};
     {
         if (p.count > 1)  p.each_right_sub_(v, 1, args);
 
-        undef         //- ?!?!?
+        ({})        //- ?!?!?
     };
 
     #define (_.each_left_sub()): [](p: regular_sub_pos, v: visitor_t, args)
@@ -1600,7 +1601,7 @@ struct null_sub_pos {};
 //---------------------------------------------------------------------
 #define make_regular_sub_pos: [](node, shift: shift_t, size: size_t)  =
 {
-    prepare_position(node, args);
+    prepare_position(node);
 
     _instantiate_regular_sub_pos(NS, NodeT);
 
@@ -1634,7 +1635,7 @@ struct null_sub_pos {};
 #define prepare_position_shift: [](node, shift: shift_t)
 {'stmt_list'
 
-    NodeT = typeof(node).element_type;
+    NodeT = util.unref_typeof(node).element_type;
 
     NS = position_shift(NodeT, shift);
 
@@ -1708,7 +1709,7 @@ struct null_sub_pos {};
 {
     ns = v_generic_ns(regular_descent_args_ns, Q(v_namespace_get_name(Vis)), T(NodeT));
 
-    #template [ns, NodeT]()
+    #template [*, ns, NodeT]()
     {
         using namespace position(NodeT);
     }
@@ -1740,7 +1741,7 @@ struct null_sub_pos {};
           {
             node: &*NodeT := node;
 
-            for (level: &shift_t := sift; level != endshift(B, BL); level -= B)
+            for (level: &shift_t := shift; level != endshift(B, BL); level -= B)
             {
                 node := node->inner[(idx >> level) & mask(B)];
             }
@@ -1754,7 +1755,7 @@ struct null_sub_pos {};
 //---------------------------------------------------------------------
 #define visit_regular_descent: (node, shift: shift_t, Vis: visitor_t, idx: size_t)  =
 {
-    NodeT = typeof(node).element_type;
+    NodeT = util.unref_typeof(node).element_type;
 
     ns = regular_descent_args(NodeT, Vis);
 
@@ -1826,10 +1827,10 @@ struct null_sub_pos {};
         #template each: [NS, Pos, v, ArgsT]()
         {
             inlinehint
-            _each: (pos: Pos, args: ArgsT) ~> void
+            _each: (pos: Pos, args: ArgsT) ~> struct {}
             {
-                p: &*NT := pos.node_->inner;
-                e        = p + branches(B);
+                p: &**node_t := pos.node_->inner;
+                e             = p + branches(B);
 
                 if (pos.shift_ == BL)
                 {
@@ -1862,8 +1863,8 @@ struct null_sub_pos {};
             inlinehint
             _each_pred: (pos: Pos, args: ArgsT) ~> bool
             {
-                p: &*NT := pos.node_->inner;
-                e        = p + branches(B);
+                p: &**node_t := pos.node_->inner;
+                e             = p + branches(B);
 
                 if (pos.shift_ == BL)
                 {
@@ -1895,14 +1896,12 @@ struct null_sub_pos {};
 
         #template each_pred_zip: [NS, Pos, v, ArgsT]()
         {
-            private NT = Pos.node_t;
-
             inlinehint
             _each_pred_zip: (pos: Pos, other: *NT, args: ArgsT) ~> bool
             {
-                p:  &*NT := pos.node_->inner;
-                p2: &*NT := other->inner;
-                e         = p + branches(B);
+                p:  &**node_t := pos.node_->inner;
+                p2: &**node_t := other->inner;
+                e              = p + branches(B);
 
                 if (pos.shift_ == BL)
                 {
@@ -1934,13 +1933,11 @@ struct null_sub_pos {};
 
         #template each_pred_i: [NS, Pos, v, ArgsT]()
         {
-            private NT = Pos.node_t;
-
             inlinehint
             _each_pred_i: (pos: Pos, i: count_t, n: count_t, args: ArgsT) ~> bool
             {
-                p: &*NT := pos.node_->inner + i;
-                e        = pos.node_->inner + n;
+                p: &**node_t := pos.node_->inner + i;
+                e             = pos.node_->inner + n;
 
                 if (pos.shift_ == BL)
                 {
@@ -1972,13 +1969,11 @@ struct null_sub_pos {};
 
         #template each_i: [NS, Pos, v, ArgsT]()
         {
-            private NT = Pos.node_t;
-
             inlinehint
-            _each_i_full: (pos: Pos, i: count_t, n: count_t, args: ArgsT) ~> void
+            _each_i_full: (pos: Pos, i: count_t, n: count_t, args: ArgsT) ~> struct {}
             {
-                p: &*NT := pos.node_->inner + i;
-                e        = pos.node_->inner + n;
+                p: &**node_t := pos.node_->inner + i;
+                e             = pos.node_->inner + n;
 
                 if (pos.shift_ == BL)
                 {
@@ -2465,7 +2460,7 @@ struct null_sub_pos {};
         #template each_i: [NS, Pos, v, ArgsT]()
         {
             inlinehint
-            _each_i: (pos: Pos, i: count_t, n: count_t, args: ArgsT) ~> void
+            _each_i: (pos: Pos, i: count_t, n: count_t, args: ArgsT) ~> struct {}
             {
                 p = pos.node_->inner;
                 s: &size_t := undef;
@@ -2508,7 +2503,7 @@ struct null_sub_pos {};
         #template each_left: [NS, Pos, v, ArgsT]()
         {
             inlinehint
-            _each_left: (pos: Pos, n: count_t, args: ArgsT) ~> void
+            _each_left: (pos: Pos, n: count_t, args: ArgsT) ~> struct {}
             {
                 p = pos.node_->inner;
                 s: &size_t := 0;
@@ -2548,7 +2543,7 @@ struct null_sub_pos {};
         #template each_right: [NS, Pos, v, ArgsT]()
         {
             inlinehint
-            _each_right: (pos: Pos, start: count_t, args: ArgsT) ~> void
+            _each_right: (pos: Pos, start: count_t, args: ArgsT) ~> struct {}
             {
                 v_assert(start > 0);
                 v_assert(start <= pos.relaxed_->d.count);
@@ -3077,7 +3072,7 @@ struct null_sub_pos {};
               {
                 node: &*NodeT := node;
 
-                for (level: &shift_t := sift; level != endshift(B, BL); level -= B)
+                for (level: &shift_t := shift; level != endshift(B, BL); level -= B)
                 {
                     r = node->relaxed;
 

@@ -4,6 +4,8 @@
 {
     v_export_import("bits.void");
     v_export_import("../util.void");
+
+    v_import("cstdio.void");
 }
 
 
@@ -443,7 +445,7 @@ namespace rbts {
     }
 
     inlinehint
-    (_.inc): (self: &node_t) ~> &node_t  =  { self.refs.inc; self };
+    (_.inc): (self: &node_t) ~> *node_t  =  { self.refs.inc; &self };
 
     inlinehint
     (_.dec): (self: &node_t) ~> bool  =  self.refs.dec;

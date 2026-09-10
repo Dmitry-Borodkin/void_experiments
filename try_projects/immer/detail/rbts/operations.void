@@ -70,13 +70,13 @@ namespace rbts {
 {
     vis = v_generic_ns(get_visitor_tag, T(T));
 
-    #template [vis, T]()
+    #template [*, vis, T]()
     {
         using namespace visitor_base(vis);
 
         result_t = &const T;
 
-        #define visit_inner: [](pos, idx: size_t) ~> result_t  =  pos.descend(vis, idx);
+        #define visit_inner: [*, vis](pos, idx: size_t) ~> result_t  =  pos.descend(vis, idx);
         #define visit_leaf:  [](pos, idx: size_t) ~> result_t  =  pos.node->leaf[pos.index(idx)];
     }
 
@@ -93,10 +93,10 @@ namespace for_each_chunk_visitor
 
     using namespace visitor_base(vis);
 
-    result_t = void;
+    result_t = struct {};
 
-    #define visit_inner: [](pos, fn) ~> void  =  pos.each(vis, fn);
-    #define visit_leaf:  [](pos, fn) ~> void  =  { data = pos.node->leaf;  fn(data, data + pos.count) };
+    #define visit_inner: [](pos, fn) ~> result_t  =  pos.each(vis, fn);
+    #define visit_leaf:  [](pos, fn) ~> result_t  =  { data = pos.node->leaf;  fn(data, data + pos.count) };
 }
 
 
@@ -125,9 +125,9 @@ namespace for_each_chunk_left_visitor
 
     using namespace visitor_base(vis);
 
-    result_t = void;
+    result_t = struct {};
 
-    #define visit_inner: [](pos, args) ~> void  =
+    #define visit_inner: [](pos, args) ~> result_t  =
     {
         last = args[0];
         fn   = args[1];
@@ -137,7 +137,7 @@ namespace for_each_chunk_left_visitor
         pos.towards_oh(vis, last, l, fn)
     };
 
-    #define visit_leaf: [](pos, args) ~> void  =
+    #define visit_leaf: [](pos, args) ~> result_t  =
     {
         last = args[0];
         fn   = args[1];
@@ -158,9 +158,9 @@ namespace for_each_chunk_right_visitor
 
     using namespace visitor_base(vis);
 
-    result_t = void;
+    result_t = struct {};
 
-    #define visit_inner: [](pos, args) ~> void  =
+    #define visit_inner: [](pos, args) ~> result_t  =
     {
         first = args[0];
         fn    = args[1];
@@ -170,7 +170,7 @@ namespace for_each_chunk_right_visitor
         pos.each_right(for_each_chunk_visitor, f + 1, fn)
     };
 
-    #define visit_leaf: [](pos, args) ~> void  =
+    #define visit_leaf: [](pos, args) ~> result_t  =
     {
         first = args[0];
         fn    = args[1];
@@ -191,9 +191,9 @@ namespace for_each_chunk_i_visitor
 
     using namespace visitor_base(vis);
 
-    result_t = void;
+    result_t = struct {};
 
-    #define visit_relaxed: [](pos, args) ~> void  =
+    #define visit_relaxed: [](pos, args) ~> result_t  =
     {
         first = args[0];
         last  = args[1];
@@ -217,10 +217,10 @@ namespace for_each_chunk_i_visitor
             pos.towards_oh(for_each_chunk_left_visitor, last - 1, l, fn);
         }
 
-        undef       //- Sic!
+        ({})      //- Sic!
     };
 
-    #define visit_regular: [](pos, args) ~> void  =
+    #define visit_regular: [](pos, args) ~> result_t  =
     {
         first = args[0];
         last  = args[1];
@@ -245,10 +245,10 @@ namespace for_each_chunk_i_visitor
             }
         }
 
-        undef       //- Sic!
+        ({})      //- Sic!
     };
 
-    #define visit_leaf: [](pos, args) ~> void  =
+    #define visit_leaf: [](pos, args) ~> result_t  =
     {
         first = args[0];
         last  = args[1];
@@ -263,7 +263,7 @@ namespace for_each_chunk_i_visitor
             fn(data + f, data + l + 1);
         }
 
-        undef       //- Sic!
+        ({})       //- Sic!
     };
 }
 
@@ -792,9 +792,9 @@ namespace dec_visitor
 
     using namespace visitor_base(vis);
 
-    result_t = void;
+    result_t = struct {};
 
-    #define visit_relaxed: [](pos, args) ~> void  =
+    #define visit_relaxed: [](pos, args) ~> result_t  =
     {
         node_t = typeof(pos).node_t;
         node = pos.node;
@@ -804,10 +804,10 @@ namespace dec_visitor
             node_t.delete_inner_r(node, pos.count);
         }
 
-        undef       //- Sic!
+        ({})       //- Sic!
     };
 
-    #define visit_regular: [](pos, args) ~> void  =
+    #define visit_regular: [](pos, args) ~> result_t  =
     {
         node_t = typeof(pos).node_t;
         node = pos.node;
@@ -817,10 +817,10 @@ namespace dec_visitor
             node_t.delete_inner(node, pos.count);
         }
 
-        undef       //- Sic!
+        ({})       //- Sic!
     };
 
-    #define visit_leaf: [](pos, args) ~> void  =
+    #define visit_leaf: [](pos, args) ~> result_t  =
     {
         node_t = typeof(pos).node_t;
         node = pos.node;
@@ -829,24 +829,24 @@ namespace dec_visitor
             node_t.delete_leaf(node, pos.count);
         }
 
-        undef       //- Sic!
+        ({})       //- Sic!
     };
 }
 
 //---------------------------------------------------------------------
-#define dec_leaf: [](node, n: count_t) ~> void
+#define dec_leaf: [](node, n: count_t) ~> struct {}
   =  make_leaf_sub_pos(node, n).visit(dec_visitor, {});
 
-#define dec_inner: [](node, shift: shift_t, size: size_t) ~> void
+#define dec_inner: [](node, shift: shift_t, size: size_t) ~> struct {}
   =  visit_maybe_relaxed_sub(node, shift, size, dec_visitor, {});
 
-#define dec_relaxed: [](node, shift: shift_t) ~> void
+#define dec_relaxed: [](node, shift: shift_t) ~> struct {}
   =  make_relaxed_pos(node, shift, node->relaxed).visit(dec_visitor, {});
 
-#define dec_regular: [](node, shift: shift_t, size: size_t) ~> void
+#define dec_regular: [](node, shift: shift_t, size: size_t) ~> struct {}
   =  make_regular_pos(node, shift, size).visit(dec_visitor, {});
 
-#define dec_empty_regular: [](node) ~> void
+#define dec_empty_regular: [](node) ~> struct {}
   =  make_empty_regular_pos(node).visit(dec_visitor, {});
 
 
@@ -977,10 +977,9 @@ namespace dec_visitor
 
         #define visit_relaxed: [*, vis](pos, args) ~> result_t  =
         {
-            Pos   = typeof(pos);
-            ArgsT = typeof(args);
+            prepare_visitor_args(vis, pos, args);
 
-            #template visit_relaxed: [*, vis, Pos, ArgsT]()
+            #template visit_relaxed: [*, NS, Pos, ArgsT]()
             {
                 inlinehint
                 _visit_relaxed: (pos: Pos, args: ArgsT) ~> result_t
@@ -1055,15 +1054,14 @@ namespace dec_visitor
                 }
             }
 
-            vis._visit_relaxed(pos, args)
+            NS._visit_relaxed(pos, args)
         };
 
         #define visit_regular: [*, vis](pos, args) ~> result_t  =
         {
-            Pos   = typeof(pos);
-            ArgsT = typeof(args);
+            prepare_visitor_args(vis, pos, args);
 
-            #template visit_regular: [*, vis, Pos, ArgsT]()
+            #template visit_regular: [*, NS, Pos, ArgsT]()
             {
                 inlinehint
                 _visit_regular: (pos: Pos, args: ArgsT) ~> result_t
@@ -1108,10 +1106,15 @@ namespace dec_visitor
                 }
             }
 
-            vis._visit_regular(pos, args)
+            NS._visit_regular(pos, args)
         };
 
-        #define visit_leaf: [](pos, args) ~> result_t  =  v_assert(false && "Kinda, unreachable");
+        #define visit_leaf: [](pos, args) ~> result_t  =
+        {
+            v_assert(false && "Kinda, unreachable");
+
+            undef
+        };
     }
 
     vis
@@ -1134,10 +1137,9 @@ namespace dec_visitor
 
         #define visit_relaxed: [*, vis](pos, args) ~> result_t  =
         {
-            Pos   = typeof(pos);
-            ArgsT = typeof(args);
+            prepare_visitor_args(vis, pos, args);
 
-            #template visit_relaxed: [*, vis, Pos, ArgsT]()
+            #template visit_relaxed: [*, NS, Pos, ArgsT]()
             {
                 inlinehint
                 _visit_relaxed: (pos: Pos, args: ArgsT) ~> result_t
@@ -1185,20 +1187,21 @@ namespace dec_visitor
                 }
             }
 
-            vis._visit_relaxed(pos, args)
+            NS._visit_relaxed(pos, args)
         };
 
         #define visit_regular: [*, vis](pos, args) ~> result_t  =
         {
-            Pos   = typeof(pos);
-            ArgsT = typeof(args);
+            prepare_visitor_args(vis, pos, args);
 
-            #template visit_regular: [*, vis, Pos, ArgsT]()
+            #template visit_regular: [*, NS, vis, Pos, ArgsT]()
             {
                 inlinehint
                 _visit_regular: (pos: Pos, args: ArgsT) ~> result_t
                 {
-                    tail = args[0];
+                    #if (ArgsT.is_struct)   tail = args[0];
+                    #else                   tail = args;
+                    #endif
 
                     v_assert((pos.size & mask(BL)) == 0);
 
@@ -1214,14 +1217,19 @@ namespace dec_visitor
                     {
                         new_parent->inner[new_idx] := node_t.make_path(pos.shift - B, tail);
                     }
-                    return  node_t.do_copy_inner(new_parent, node, new_idx);
+                    return  node_t.do_copy_inner(new_parent, pos.node, new_idx);
                 }
             }
 
-            vis._visit_regular(pos, args)
+            NS._visit_regular(pos, args)
         };
 
-        #define visit_leaf: [](pos, args) ~> result_t  =  v_assert(false && "Kinda, unreachable");
+        #define visit_leaf: [](pos, args) ~> result_t  =  0;
+//        {
+//            v_assert(false && "Kinda, unreachable");
+//
+//            0
+//        };
     }
 
     vis
@@ -1235,9 +1243,9 @@ namespace dec_right_visitor
 {
     using namespace visitor_base(dec_right_visitor);
 
-    result_t = void;
+    result_t = struct {};
 
-    #define visit_relaxed: [](pos, idx: count_t) ~> void  =
+    #define visit_relaxed: [](pos, idx: count_t) ~> result_t  =
     {
         node_t = typeof(pos).node_t;
         node = pos.node;
@@ -1247,10 +1255,10 @@ namespace dec_right_visitor
             node_t.delete_inner_r(node, pos.count);
         }
 
-        undef           //- Sic!
+        ({})           //- Sic!
     };
 
-    #define visit_regular: [](pos, idx: count_t) ~> void  =
+    #define visit_regular: [](pos, idx: count_t) ~> result_t  =
     {
         node_t = typeof(pos).node_t;
         node = pos.node;
@@ -1260,10 +1268,10 @@ namespace dec_right_visitor
             node_t.delete_inner(node, pos.count);
         }
 
-        undef           //- Sic!
+        ({})           //- Sic!
     };
 
-    #define visit_leaf: [](pos, idx: count_t) ~> void  =  v_assert(false && "Kinda, unreachable");
+    #define visit_leaf: [](pos, idx: count_t) ~> result_t  =  v_assert(false && "Kinda, unreachable");
 }
 
 
@@ -1293,9 +1301,9 @@ namespace dec_right_visitor
 
         #define visit_relaxed: [*, vis](pos, last: size_t) ~> result_t  =
         {
-            Pos = typeof(pos);
+            prepare_visitor_args(vis, pos, last);
 
-            #template visit_relaxed: [*, vis, Pos]()
+            #template visit_relaxed: [*, NS, Pos]()
             {
                 inlinehint
                 _visit_relaxed: (pos: Pos, last: size_t) ~> result_t
@@ -1414,14 +1422,14 @@ namespace dec_right_visitor
                 }
             }
 
-            vis._visit_relaxed(pos, last)
+            NS._visit_relaxed(pos, last)
         };
 
         #define visit_regular: [*, vis](pos, last: size_t) ~> result_t  =
         {
-            Pos = typeof(pos);
+            prepare_visitor_args(vis, pos, last);
 
-            #template visit_regular: [*, vis, Pos]()
+            #template visit_regular: [*, NS, Pos]()
             {
                 inlinehint
                 _visit_regular: (pos: Pos, last: size_t) ~> result_t
@@ -1531,14 +1539,14 @@ namespace dec_right_visitor
                 }
             }
 
-            vis._visit_regular(pos, last)
+            NS._visit_regular(pos, last)
         };
 
         #define visit_leaf: [*, vis](pos, last: size_t) ~> result_t  =
         {
-            Pos = typeof(pos);
+            prepare_visitor_args(vis, pos, last);
 
-            #template visit_leaf: [*, vis, Pos]()
+            #template visit_leaf: [*, NS, Pos]()
             {
                 inlinehint
                 _visit_leaf: (pos: Pos, last: size_t) ~> result_t
@@ -1574,7 +1582,7 @@ namespace dec_right_visitor
                 }
             }
 
-            vis._visit_leaf(pos, last)
+            NS._visit_leaf(pos, last)
         };
     }
 
@@ -1604,9 +1612,9 @@ namespace dec_right_visitor
 
         #define visit_relaxed: [*, vis](pos, last: size_t) ~> result_t  =
         {
-            Pos = typeof(pos);
+            prepare_visitor_args(vis, pos, last);
 
-            #template visit_relaxed: [*, vis, Pos]()
+            #template visit_relaxed: [*, NS, Pos]()
             {
                 inlinehint
                 _visit_relaxed: (pos: Pos, last: size_t) ~> result_t
@@ -1652,14 +1660,14 @@ namespace dec_right_visitor
                 }
             }
 
-            vis._visit_relaxed(pos, last)
+            NS._visit_relaxed(pos, last)
         };
 
         #define visit_regular: [*, vis](pos, last: size_t) ~> result_t  =
         {
-            Pos = typeof(pos);
+            prepare_visitor_args(vis, pos, last);
 
-            #template visit_regular: [*, vis, Pos]()
+            #template visit_regular: [*, NS, Pos]()
             {
                 inlinehint
                 _visit_regular: (pos: Pos, last: size_t) ~> result_t
@@ -1700,14 +1708,14 @@ namespace dec_right_visitor
                 }
             }
 
-            vis._visit_regular(pos, last)
+            NS._visit_regular(pos, last)
         };
 
         #define visit_leaf: [*, vis](pos, last: size_t) ~> result_t  =
         {
-            Pos = typeof(pos);
+            prepare_visitor_args(vis, pos, last);
 
-            #template visit_leaf: [*, vis, Pos]()
+            #template visit_leaf: [*, NS, Pos]()
             {
                 inlinehint
                 _visit_leaf: (pos: Pos, last: size_t) ~> result_t
@@ -1730,7 +1738,7 @@ namespace dec_right_visitor
                 }
             }
 
-            vis._visit_leaf(pos, last)
+            NS._visit_leaf(pos, last)
         };
     }
 
@@ -1745,9 +1753,9 @@ namespace dec_left_visitor
 {
     using namespace visitor_base(dec_left_visitor);
 
-    result_t = void;
+    result_t = struct {};
 
-    #define visit_relaxed: [](pos, idx: count_t) ~> void  =
+    #define visit_relaxed: [](pos, idx: count_t) ~> result_t  =
     {
         node_t = typeof(pos).node_t;
         node = pos.node;
@@ -1757,10 +1765,10 @@ namespace dec_left_visitor
             node_t.delete_inner_r(node, pos.count);
         }
 
-        undef           //- Sic!
+        ({})           //- Sic!
     };
 
-    #define visit_regular: [](pos, idx: count_t) ~> void  =
+    #define visit_regular: [](pos, idx: count_t) ~> result_t  =
     {
         node_t = typeof(pos).node_t;
         node = pos.node;
@@ -1770,10 +1778,10 @@ namespace dec_left_visitor
             node_t.delete_inner(node, pos.count);
         }
 
-        undef           //- Sic!
+        ({})           //- Sic!
     };
 
-    #define visit_leaf: [](pos, idx: count_t) ~> void  =  v_assert(false && "Kinda, unreachable");
+    #define visit_leaf: [](pos, idx: count_t) ~> result_t  =  v_assert(false && "Kinda, unreachable");
 }
 
 
@@ -1803,9 +1811,9 @@ namespace dec_left_visitor
 
         #define visit_relaxed: [*, vis](pos, first: size_t) ~> result_t  =
         {
-            Pos = typeof(pos);
+            prepare_visitor_args(vis, pos, first);
 
-            #template visit_relaxed: [*, vis, Pos]()
+            #template visit_relaxed: [*, NS, Pos]()
             {
                 inlinehint
                 _visit_relaxed: (pos: Pos, first: size_t) ~> result_t
@@ -1864,14 +1872,14 @@ namespace dec_left_visitor
                 }
             }
 
-            vis._visit_relaxed(pos, first)
+            NS._visit_relaxed(pos, first)
         };
 
         #define visit_regular: [*, vis](pos, first: size_t) ~> result_t  =
         {
-            Pos = typeof(pos);
+            prepare_visitor_args(vis, pos, first);
 
-            #template visit_regular: [*, vis, Pos]()
+            #template visit_regular: [*, NS, Pos]()
             {
                 inlinehint
                 _visit_regular: (pos: Pos, first: size_t) ~> result_t
@@ -1949,14 +1957,14 @@ namespace dec_left_visitor
                 }
             }
 
-            vis._visit_regular(pos, first)
+            NS._visit_regular(pos, first)
         };
 
         #define visit_leaf: [*, vis](pos, first: size_t) ~> result_t  =
         {
-            Pos = typeof(pos);
+            prepare_visitor_args(vis, pos, first);
 
-            #template visit_leaf: [*, vis, Pos]()
+            #template visit_leaf: [*, NS, Pos]()
             {
                 inlinehint
                 _visit_leaf: (pos: Pos, first: size_t) ~> result_t
@@ -1983,7 +1991,7 @@ namespace dec_left_visitor
                 }
             }
 
-            vis._visit_leaf(pos, first)
+            NS._visit_leaf(pos, first)
         };
     }
 
@@ -2013,9 +2021,9 @@ namespace dec_left_visitor
 
         #define visit_inner: [*, vis](pos, first: size_t) ~> result_t  =
         {
-            Pos = typeof(pos);
+            prepare_visitor_args(vis, pos, first);
 
-            #template visit_inner: [*, vis, Pos]()
+            #template visit_inner: [*, NS, Pos]()
             {
                 inlinehint
                 _visit_inner: (pos: Pos, first: size_t) ~> result_t
@@ -2055,7 +2063,7 @@ namespace dec_left_visitor
                 }
             }
 
-            vis._visit_inner(pos, first)
+            NS._visit_inner(pos, first)
         };
 
         #define visit_leaf: [*, vis](pos, first: size_t) ~> result_t  =
@@ -2104,7 +2112,7 @@ namespace dec_left_visitor
         #template each_sub: [NS, Pos, v, ArgsT]()
         {
             inlinehint
-            _each_sub: (pos: Pos, args: ArgsT) ~> void
+            _each_sub: (pos: Pos, args: ArgsT) ~> struct {}
             {
                 if (pos.shift_ == BL)
                 {
@@ -2256,14 +2264,14 @@ namespace dec_left_visitor
         parent->inner[idx] := p;
     }
 
-    #define (_.merge_leaf()): [*, NS](self: &concat_merger, p) ~> void  =
+    #define (_.merge_leaf()): [*, NS](self: &concat_merger, p) ~> struct {}  =
     {
         Pos = typeof(p);
 
         #template merge_leaf: [*, NS, Pos]()
         {
             inlinehint
-            _merge_leaf: (self: &concat_merger, p: Pos) ~> void
+            _merge_leaf: (self: &concat_merger, p: Pos) ~> struct {}
             {
                 from       = p.node;
                 from_size  = p.size;
@@ -2307,14 +2315,14 @@ namespace dec_left_visitor
         NS._merge_leaf(self, p)
     };
 
-    #define (_.merge_inner()): [*, NS](self: &concat_merger, p) ~> void  =
+    #define (_.merge_inner()): [*, NS](self: &concat_merger, p) ~> struct {}  =
     {
         Pos = typeof(p);
 
         #template merge_inner: [*, NS, Pos]()
         {
             inlinehint
-            _merge_inner: (self: &concat_merger, p: Pos) ~> void
+            _merge_inner: (self: &concat_merger, p: Pos) ~> struct {}
             {
                 from       = p.node;
                 from_size  = p.size;
@@ -2418,10 +2426,10 @@ namespace concat_merger_visitor
 
     using namespace visitor_base(vis);
 
-    result_t = void;
+    result_t = struct {};
 
-    #define visit_inner: [](p, merger) ~> void  =  merger.merge_inner(p);
-    #define visit_leaf:  [](p, merger) ~> void  =  merger.merge_leaf(p);
+    #define visit_inner: [](p, merger) ~> result_t  =  merger.merge_inner(p);
+    #define visit_leaf:  [](p, merger) ~> result_t  =  merger.merge_leaf(p);
 }
 
 
@@ -2434,16 +2442,16 @@ namespace concat_rebalance_plan_fill_visitor
 
     using namespace visitor_base(vis);
 
-    result_t = void;
+    result_t = struct {};
 
-    #define visit_node: [](p, plan) ~> void  =
+    #define visit_node: [](p, plan) ~> result_t  =
     {
         count = p.count;
         v_assert(plan.n < typeof(plan).element_type.max_children);
         plan.counts[plan.n++] := count;
         plan.total += count;
 
-        undef       //- Sic!
+        ({})       //- Sic!
     };
 }
 
@@ -2488,7 +2496,7 @@ namespace concat_rebalance_plan_fill_visitor
             cpos.each_sub(vis, self);
             rpos.each_right_sub(vis, self);
 
-            undef       //- Sic!
+            ({})       //- Sic!
         };
 
         inlinehint
@@ -2938,14 +2946,14 @@ namespace concat_rebalance_plan_fill_visitor
         parent->inner[idx] := p;
     }
 
-    #define (_.merge_leaf()): [*, NS](self: &concat_merger_mut, p) ~> void  =
+    #define (_.merge_leaf()): [*, NS](self: &concat_merger_mut, p) ~> struct {}  =
     {
         Pos = typeof(p);
 
         #template merge_leaf: [*, NS, Pos]()
         {
             inlinehint
-            _merge_leaf: (self: &concat_merger_mut, p: Pos) ~> void
+            _merge_leaf: (self: &concat_merger_mut, p: Pos) ~> struct {}
             {
                 from       = p.node;
                 from_size  = p.size;
@@ -3023,14 +3031,14 @@ namespace concat_rebalance_plan_fill_visitor
         NS._merge_leaf(self, p)
     };
 
-    #define (_.merge_inner()): [*, NS](self: &concat_merger_mut, p) ~> void  =
+    #define (_.merge_inner()): [*, NS](self: &concat_merger_mut, p) ~> struct {}  =
     {
         Pos = typeof(p);
 
         #template merge_inner: [*, NS, Pos]()
         {
             inlinehint
-            _merge_inner: (self: &concat_merger_mut, p: Pos) ~> void
+            _merge_inner: (self: &concat_merger_mut, p: Pos) ~> struct {}
             {
                 from       = p.node;
                 from_size  = p.size;
@@ -3144,10 +3152,10 @@ namespace concat_merger_mut_visitor
 
     using namespace visitor_base(vis);
 
-    result_t = void;
+    result_t = struct {};
 
-    #define visit_inner: [](p, merger) ~> void  =  merger.merge_inner(p);
-    #define visit_leaf:  [](p, merger) ~> void  =  merger.merge_leaf(p);
+    #define visit_inner: [](p, merger) ~> result_t  =  merger.merge_inner(p);
+    #define visit_leaf:  [](p, merger) ~> result_t  =  merger.merge_leaf(p);
 }
 
 

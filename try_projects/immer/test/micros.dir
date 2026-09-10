@@ -12,6 +12,8 @@ try_rbts_position                                              │try_rbts_posit
 try_rbts_operations                                            │try_rbts_operations.void -T
                                                                │
                                                                │
+try_rbts_rbtree                                                │try_rbts_rbtree.void -T
+                                                               │
                                                                │
                                                                │
                                                                │

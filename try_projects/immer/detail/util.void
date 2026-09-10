@@ -288,6 +288,60 @@ execute_outer_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> 
 //- ...
 //---------------------------------------------------------------------
 private
+print_llvm_value_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    arg0 = v_list_get_item(args, 0);
+
+    v_push_result();
+
+    v_ast_accept_visitor(arg0, vis);
+
+    v = v_get_result_value();
+
+    str = LLVMPrintValueToString(v);
+
+    printf("%s\n", str);
+
+    LLVMDisposeMessage(str);
+
+    v_pop_result();
+}
+
+//---------------------------------------------------------------------
+private
+print_type_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    arg0 = v_list_get_item(args, 0);
+
+    v_push_result();
+
+    v_set_result_type(v_find_type("v_static_type_t"));
+
+    v_ast_accept_visitor(arg0, vis);
+
+    t = (v_get_result_value() : *v_type_t);
+
+    sstr: &v_std_string_t := {};
+
+    voidc_internal_std_string_append_type(&sstr, t);
+
+    printf("%s\n", v_std_string_get(&sstr));
+
+    v_pop_result();
+}
+
+
+
+
+
+//---------------------------------------------------------------------
+//- ...
+//---------------------------------------------------------------------
+private
 make_trivial_coercion_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
@@ -1072,6 +1126,9 @@ v_internal_immer_detail_util_effort: (*void) ~> void
 
     v_add_intrinsic("v_make_trivial_coercion", make_trivial_coercion_intrinsic, 0);
 
+    v_add_intrinsic("v_print_llvm_value", print_llvm_value_intrinsic, 0);
+    v_add_intrinsic("v_print_type",       print_type_intrinsic,       0);
+
     enable_templates();
 }
 
@@ -1138,9 +1195,9 @@ namespace util
 //---------------------------------------------------------------------
 #define unref_typeof: (x) ~> v_static_type_t  =
 {
-    T = typeof(x);  #if (T.is_reference)  T = T.element_type;  #endif
+    t = typeof(x);  #if (t.is_reference)  t = t.element_type;  #endif
 
-    T
+    t
 };
 
 //---------------------------------------------------------------------
@@ -1325,7 +1382,6 @@ namespace util
 
     ns._move_in_place(p, s, n)
 };
-
 
 
 
