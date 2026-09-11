@@ -1,0 +1,60 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+//---------------------------------------------------------------------
+{
+    v_import("cstdio.void");
+
+    v_import("../detail/util.void");
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(2); }
+
+
+
+#template _some: [](ns: v_static_namespace_t, str)
+{
+    some_v: &int := printf("some init %s\n", str);
+
+    defer  printf("some term %s\n", str);
+}
+
+
+
+
+
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(2); }
+{
+    struct some_t {};
+
+    _some(some_t, "one");
+
+    printf("l: %d\n", some_t.some_v);
+
+}
+
+
+
+
+{   printf("here\n");
+}
+
+
+namespace some_ns {}
+
+#do (_some(some_ns, "two"))
+
+
+
+{   printf("here a\n");
+}
+
+

@@ -1608,7 +1608,7 @@ struct null_sub_pos {};
     v_assert(node);
     v_assert(shift >= NS.BL);
     v_assert(size > 0);
-    v_assert(size <= (branches(NS.BL, size_t) << shift));
+    v_assert(size <= (branches(NS.B, size_t) << shift));
 
     ret: NS.regular_sub_pos = {node, shift, size};
 

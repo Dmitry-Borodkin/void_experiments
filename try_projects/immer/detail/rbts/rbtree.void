@@ -57,33 +57,14 @@ namespace rbts {
 
     max_size = (1: size_t) << ((size_t.width - BL)/B * B + BL);
 
-    _empty_root: &*node_t := 0;
-    _empty_tail: &*node_t := 0;
+    _empty_root: &*node_t := node_t.make_inner_n(0);
+    _empty_tail: &*node_t := node_t.make_leaf_n(0);
 
-//    _empty_root: &*node_t := node_t.make_inner_n(0);
-//    _empty_tail: &*node_t := node_t.make_leaf_n(0);
-
-//    defer
-//    {
-//        _empty_root->dec;
-//        _empty_tail->dec;
-//    }
-
-    inlinehint
-    empty_root: () ~> *node_t  =
+    defer
     {
-        if (!_empty_root)  _empty_root := node_t.make_inner_n(0);
-
-        _empty_root->inc
-    };
-
-    inlinehint
-    empty_tail: () ~> *node_t  =
-    {
-        if (!_empty_tail)  _empty_tail := node_t.make_leaf_n(0);
-
-        _empty_tail->inc
-    };
+        ok = _empty_root->dec;  v_assert(ok);  node_t.delete_inner(_empty_root, 0);
+        ok = _empty_tail->dec;  v_assert(ok);  node_t.delete_leaf(_empty_tail, 0);
+    }
 
     inlinehint
     (v_initialize(_)): (p: *rbtree_t) ~> void
@@ -92,7 +73,7 @@ namespace rbts {
 
         impl = *(p: *impl_t);
 
-        impl := { 0, BL, empty_root(), empty_tail() };
+        impl := { 0, BL, _empty_root->inc, _empty_tail->inc };
     }
 
     inlinehint

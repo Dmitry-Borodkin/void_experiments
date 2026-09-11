@@ -335,6 +335,21 @@ print_type_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> voi
 }
 
 
+//---------------------------------------------------------------------
+private
+check_builder_intrinsic: (*void, vis: *voidc_visitor_t, *v_ast_base_t) ~> void
+{
+    if (LLVMGetInsertBlock(v_target_get_builder()))
+    {
+        printf("check builder: dirty\n");
+    }
+    else
+    {
+        printf("check builder: clean\n");
+    }
+}
+
+
 
 
 
@@ -579,6 +594,8 @@ template_instantiation_intrinsic: (aux: *void, vis: *voidc_visitor_t, self:*v_as
     fun = voidc_get_macro_definition(0, 0);
     v_assert(fun);
 
+    is_inner = v_get_variables_size() != 0;
+
     //----------------------
     args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
 
@@ -609,7 +626,7 @@ template_instantiation_intrinsic: (aux: *void, vis: *voidc_visitor_t, self:*v_as
     v_ast_make_expr_call(&expr, &expr, &list);
 
     //----------------------
-    v_hide_variables();
+    if (is_inner)  v_hide_variables();
     //----------------------
 
     saved_obtain_module_ctx: &*void := undef;
@@ -638,7 +655,7 @@ template_instantiation_intrinsic: (aux: *void, vis: *voidc_visitor_t, self:*v_as
     }
 
     //----------------------
-    v_show_variables();
+    if (is_inner)  v_show_variables();
     //----------------------
 }
 
@@ -1128,6 +1145,7 @@ v_internal_immer_detail_util_effort: (*void) ~> void
 
     v_add_intrinsic("v_print_llvm_value", print_llvm_value_intrinsic, 0);
     v_add_intrinsic("v_print_type",       print_type_intrinsic,       0);
+    v_add_intrinsic("v_check_builder",    check_builder_intrinsic,    0);
 
     enable_templates();
 }
