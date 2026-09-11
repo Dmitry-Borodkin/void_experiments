@@ -201,6 +201,40 @@ namespace rbts {
     }
 
     inlinehint
+    (v_copy(_)): (d: *rbtree_t, s: *const rbtree_t) ~> void
+    {
+        d->dec;
+
+        di = *(d: *impl_t);
+        si = *(s: *const impl_t);
+
+        di := si;
+
+        d->inc;
+    }
+
+    inlinehint
+    (v_move(_)): (d: *rbtree_t, s: *rbtree_t) ~> void
+    {
+        d->dec;
+
+        di = *(d: *impl_t);
+        si = *(s: *impl_t);
+
+        di := si;
+
+        s->dec;
+    }
+
+    inlinehint
+    (_:=_): (d: &rbtree_t, s: rbtree_t) ~> &rbtree_t  =
+    {
+        v_copy(&d, &s);
+
+        d
+    };
+
+    inlinehint
     (_.push_back()): (self: rbtree_t, value: T) ~> rbtree_t
     {
         impl = *(&self: *const impl_t);

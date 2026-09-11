@@ -1663,7 +1663,7 @@ struct null_sub_pos {};
     (_.shift): (regular_descent_pos) ~> shift_t  =  Shift;
 
     alwaysinline
-    (_.index()): (regular_descent_pos, idx: size_t) ~> count_t  =  ((idx >> Shift) & mask(BL) : count_t);
+    (_.index()): (regular_descent_pos, idx: size_t) ~> count_t  =  ((idx >> Shift) & mask(B) : count_t);
 
     private _Shift = Shift;         //- Sic!
 
@@ -1709,7 +1709,7 @@ struct null_sub_pos {};
 {
     ns = v_generic_ns(regular_descent_args_ns, Q(v_namespace_get_name(Vis)), T(NodeT));
 
-    #template [*, ns, NodeT]()
+    #template [ns, NodeT]()
     {
         using namespace position(NodeT);
     }

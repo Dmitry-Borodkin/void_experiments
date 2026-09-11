@@ -107,6 +107,51 @@ block
 tree_: &my.rbtree_t := {};
 
 
+{   tr: &my.rbtree_t := {};
+
+    for (i: &int := 0; i < 100000; ++i)
+    {
+        tr := tr.push_back(i);
+    }
+
+    for (i: &int := 0; i < 100000; i += 999)
+    {
+        v = tr.get(i);  printf("tr[%d]: %d\n", i, v);
+    }
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //{   printf("r: %d\n", my.rbtree_t._empty_root->refs.refcount);
 //    printf("t: %d\n", my.rbtree_t._empty_tail->refs.refcount);
 //}

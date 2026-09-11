@@ -28,13 +28,15 @@ namespace rbts {
 {
     vis = v_generic_ns(array_for_visitor_tag, T(T));
 
-    #template [vis, T]()
+    #template [*, vis, T]()
     {
         using namespace visitor_base(vis);
 
         result_t = *T;
 
-        #define visit_inner: [](pos, idx: size_t) ~> result_t  =  pos.descend(vis, idx);
+        _vis = vis;
+
+        #define visit_inner: [](pos, idx: size_t) ~> result_t  =  pos.descend(_vis, idx);
         #define visit_leaf:  [](pos, idx: size_t) ~> result_t  =  pos.node->leaf;
     }
 
@@ -55,7 +57,9 @@ namespace rbts {
 
         result_t = struct { *T; size_t; size_t; };
 
-        #define visit_inner: [](pos, idx: size_t) ~> result_t  =  pos.towards(vis, idx);
+        _vis = vis;
+
+        #define visit_inner: [](pos, idx: size_t) ~> result_t  =  pos.towards(_vis, idx);
         #define visit_leaf:  [](pos, idx: size_t) ~> result_t  =  {pos.node->leaf, pos.index(idx), pos.count};
     }
 
@@ -76,7 +80,9 @@ namespace rbts {
 
         result_t = &const T;
 
-        #define visit_inner: [*, vis](pos, idx: size_t) ~> result_t  =  pos.descend(vis, idx);
+        _vis = vis;
+
+        #define visit_inner: [](pos, idx: size_t) ~> result_t  =  pos.descend(_vis, idx);
         #define visit_leaf:  [](pos, idx: size_t) ~> result_t  =  pos.node->leaf[pos.index(idx)];
     }
 
