@@ -57,13 +57,23 @@ namespace rbts {
 
     max_size = (1: size_t) << ((size_t.width - BL)/B * B + BL);
 
-    _empty_root: &*node_t := node_t.make_inner_n(0);
-    _empty_tail: &*node_t := node_t.make_leaf_n(0);
+    _empty_root: &node_t := undef;
+    _empty_tail: &node_t := undef;
+
+    block
+    {
+        printf("init %s\n", v_type_name(rbtree_t));
+
+        node_t.make_inner_n_into(&_empty_root, node_t.sizeof_inner_n(0), 0);
+        node_t.make_leaf_n_into (&_empty_tail, node_t.sizeof_leaf_n(0),  0);
+    }
 
     defer
     {
-        ok = _empty_root->dec;  v_assert(ok);  node_t.delete_inner(_empty_root, 0);
-        ok = _empty_tail->dec;  v_assert(ok);  node_t.delete_leaf(_empty_tail, 0);
+        printf("term %s\n", v_type_name(rbtree_t));
+
+        ok = _empty_root.dec;  v_assert(ok);
+        ok = _empty_tail.dec;  v_assert(ok);
     }
 
     inlinehint
@@ -73,7 +83,7 @@ namespace rbts {
 
         impl = *(p: *impl_t);
 
-        impl := { 0, BL, _empty_root->inc, _empty_tail->inc };
+        impl := { 0, BL, _empty_root.inc, _empty_tail.inc };
     }
 
     inlinehint

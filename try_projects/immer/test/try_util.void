@@ -124,4 +124,20 @@ test_t = v_generic(test_type);
 }
 
 
+//---------------------------------------------------------------------
+{
+    #define (_.ident): (t: v_static_type_t)  =  v_type_name(t);
+
+    printf("t: %s\n", v_ast_expr_t.ident);
+
+
+}
+
+
+
+
+
+
+
+
 

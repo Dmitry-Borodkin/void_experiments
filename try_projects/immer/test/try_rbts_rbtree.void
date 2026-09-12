@@ -40,8 +40,6 @@ namespace my
 }   //- namespace my
 
 
-//{ voidc_verify_jit_module_optimized(true); }
-//{ v_debug_print_module(2); }
 //---------------------------------------------------------------------
 tree: &my.rbtree_t := {};
 
@@ -121,13 +119,19 @@ tree_: &my.rbtree_t := {};
 
 
 //---------------------------------------------------------------------
-#define rbtree: (T:  v_static_type_t,
-                 MP: v_static_namespace_t = .immer.default_memory_policy,
-                 B:  .immer.detail.rbts.bits_t = 5,
-                 BL: .immer.detail.rbts.bits_t = .immer.detail.rbts.derive_bits_leaf(T, MP, B)
-                 ) ~> v_static_type_t
-  =  .immer.detail.rbts.rbtree(T, MP, B, BL);
+namespace qwe
+{
+    using namespace .immer.detail;
 
+    #define rbtree: [](T:  v_static_type_t,
+                       MP: v_static_namespace_t = default_memory_policy,
+                       B:  rbts.bits_t          = 5,
+                       BL: rbts.bits_t          = rbts.derive_bits_leaf(T, MP, B)
+                       ) ~> v_static_type_t
+      =  rbts.rbtree(T, MP, B, BL);
+}
+
+using qwe.rbtree;
 
 
 tstr: &rbtree(v_string_t) := {};

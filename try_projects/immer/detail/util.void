@@ -334,6 +334,35 @@ print_type_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> voi
     v_pop_result();
 }
 
+//---------------------------------------------------------------------
+private
+type_name_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    arg0 = v_list_get_item(args, 0);
+
+    v_push_result();
+
+    v_set_result_type(v_find_type("v_static_type_t"));
+
+    v_ast_accept_visitor(arg0, vis);
+
+    t = (v_get_result_value() : *v_type_t);
+
+    sstr: &v_std_string_t := {};
+
+    voidc_internal_std_string_append_type(&sstr, t);
+
+    expr: &v_ast_expr_t := {};
+
+    v_ast_make_expr_string(&expr, v_std_string_get(&sstr));
+
+    v_pop_result();
+
+    v_ast_accept_visitor(&expr, vis);
+}
+
 
 //---------------------------------------------------------------------
 private
@@ -596,7 +625,7 @@ template_instantiation_intrinsic: (aux: *void, vis: *voidc_visitor_t, self:*v_as
 
     is_inner = v_get_variables_size() != 0;
 
-    //----------------------
+    //---------------------------------------------------------
     args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
 
     expr: &v_ast_expr_t      := {};
@@ -625,9 +654,9 @@ template_instantiation_intrinsic: (aux: *void, vis: *voidc_visitor_t, self:*v_as
 
     v_ast_make_expr_call(&expr, &expr, &list);
 
-    //----------------------
+    //--------------------------------
     if (is_inner)  v_hide_variables();
-    //----------------------
+    //--------------------------------
 
     saved_obtain_module_ctx: &*void := undef;
     saved_obtain_module_fun: &*((*void) ~> LLVMModuleRef) := undef;
@@ -643,9 +672,9 @@ template_instantiation_intrinsic: (aux: *void, vis: *voidc_visitor_t, self:*v_as
 
     v_set_module(0);        //- Sic!
 
-    //----------------------
+    //---------------------------
     fun(&ctx->macro, vis, &expr);
-    //----------------------
+    //---------------------------
 
     v_set_module(saved_module);
 
@@ -654,9 +683,9 @@ template_instantiation_intrinsic: (aux: *void, vis: *voidc_visitor_t, self:*v_as
         v_set_obtain_module_hook(saved_obtain_module_fun, saved_obtain_module_ctx);
     }
 
-    //----------------------
+    //--------------------------------
     if (is_inner)  v_show_variables();
-    //----------------------
+    //--------------------------------
 }
 
 
@@ -1145,6 +1174,7 @@ v_internal_immer_detail_util_effort: (*void) ~> void
 
     v_add_intrinsic("v_print_llvm_value", print_llvm_value_intrinsic, 0);
     v_add_intrinsic("v_print_type",       print_type_intrinsic,       0);
+    v_add_intrinsic("v_type_name",        type_name_intrinsic,        0);
     v_add_intrinsic("v_check_builder",    check_builder_intrinsic,    0);
 
     enable_templates();
