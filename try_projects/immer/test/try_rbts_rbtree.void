@@ -170,7 +170,7 @@ tstr: &rbtree(v_string_t) := {};
 {   t0: &rbtree(int) := {};
     t1: &rbtree(int) := {};
 
-    for (i: &int := 0; i < 1000; ++i)
+    for (i: &int := 0; i < 1000000; ++i)
     {
         t0 := t0.push_back(i);
         t1 := t1.push_back(i);
@@ -180,7 +180,10 @@ tstr: &rbtree(v_string_t) := {};
 
     printf("ok: %d\n", (ok: int));
 
-    printf("nok: %d\n", (t0.equals(t1.push_back(1000))));
+    t0 := t0.push_back(-1);
+    t1 := t1.push_back(-2);
+
+    printf("nok: %d\n", (t0.equals(t1)));
 
 }
 
