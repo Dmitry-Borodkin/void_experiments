@@ -7,7 +7,7 @@
     v_export_import("operations.void");
     v_export_import("position.void");
 
-    v_import("cstdio.void");
+    v_import("cstdio.void");        //- ?
 }
 
 
@@ -45,6 +45,8 @@ namespace rbts {
     node_t   = node(T, MemoryPolicy, B, BL);
     rbtree_t = RBT;
 
+    max_size = (1: size_t) << ((size_t.width - BL)/B * B + BL);
+
     struct impl_t
     {
         size:  size_t;
@@ -55,120 +57,41 @@ namespace rbts {
 
     #do (v_set_implementation_type(rbtree_t, impl_t))
 
-    max_size = (1: size_t) << ((size_t.width - BL)/B * B + BL);
-
-    _empty_root: &node_t := undef;
-    _empty_tail: &node_t := undef;
-
-    block
-    {
-        printf("init %s\n", v_type_name(rbtree_t));
-
-        node_t.make_inner_n_into(&_empty_root, node_t.sizeof_inner_n(0), 0);
-        node_t.make_leaf_n_into (&_empty_tail, node_t.sizeof_leaf_n(0),  0);
-    }
-
-    defer
-    {
-        printf("term %s\n", v_type_name(rbtree_t));
-
-        ok = _empty_root.dec;  v_assert(ok);
-        ok = _empty_tail.dec;  v_assert(ok);
-    }
-
     inlinehint
     (v_initialize(_)): (p: *rbtree_t) ~> void
     {
-//      printf("init: %p\n", p);
-
         impl = *(p: *impl_t);
 
-        impl := { 0, BL, _empty_root.inc, _empty_tail.inc };
+        empty_root = node_t.make_inner_n(0);                //- TODO !!!
+        empty_tail = node_t.make_leaf_n(0);                 //- TODO !!!
+
+        impl := { 0, BL, empty_root, empty_tail };
     }
 
     inlinehint
     (v_terminate(_)): (p: *rbtree_t) ~> void;
 
     inlinehint
-    (_.tail_size): (self: rbtree_t) ~> size_t
-    {
-        impl = *(&self: *const impl_t);
-
-        if (impl.size)  return  ((impl.size - 1) & mask(BL)) + 1;
-
-        return  0;
-    }
+    (v_copy(_)): (d: *rbtree_t, s: *const rbtree_t) ~> void;
 
     inlinehint
-    (_.tail_offset): (self: rbtree_t) ~> size_t
+    (v_move(_)): (d: *rbtree_t, s: *rbtree_t) ~> void;
+
+    inlinehint
+    (v_empty(_)): (p: *rbtree_t) ~> bool  =
     {
-        impl = *(&self: *const impl_t);
+        impl = *(p: *const impl_t);
 
-        if (impl.size)  return  (impl.size - 1) & ~mask(BL);
-
-        return  0;
-    }
-
-    #define (_.traverse()): [](self: rbtree_t, v: visitor_t, args)
-    {'stmt_list'
-
-        impl = *(&self: *const impl_t);
-
-        tail_off  = self.tail_offset;
-        tail_size = impl.size - tail_off;
-
-        if (tail_off)
-            make_regular_sub_pos(impl.root, impl.shift, tail_off).visit(v, args);
-        else
-            make_empty_regular_pos(impl.root).visit(v, args);
-
-        make_leaf_sub_pos(impl.tail, (tail_size: count_t)).visit(v, args);
-
-    'stmt_list'}
-
-    #define (_.descend()): [](self: rbtree_t, v: visitor_t, idx: size_t)  =
-    {
-        is_reference = v.result_t.is_reference;
-
-        #if (is_reference)  ret_t = *v.result_t.element_type;
-        #else               ret_t = v.result_t;
-        #endif
-
-        impl = *(&self: *const impl_t);
-
-        tail_off = self.tail_offset;
-
-        ret: &ret_t := undef;
-
-        #if (is_reference)
-
-            if (idx >= tail_off)  ret := &make_leaf_descent_pos(impl.tail).visit(v, idx);
-            else                  ret := &visit_regular_descent(impl.root, impl.shift, v, idx);
-
-            ret = *ret;
-
-        #else
-
-            if (idx >= tail_off)  ret := make_leaf_descent_pos(impl.tail).visit(v, idx);
-            else                  ret := visit_regular_descent(impl.root, impl.shift, v, idx);
-
-            (ret: ret_t);
-
-        #endif
-
-        ret
+        impl.size == 0
     };
 
     inlinehint
-    (_.dec): (self: &const rbtree_t) ~> void  { self.traverse(dec_visitor, {}); }
-
-    inlinehint
-    (v_terminate(_)): (p: *rbtree_t) ~> void
+    (_:=_): (d: &rbtree_t, s: rbtree_t) ~> &rbtree_t  =
     {
-//      printf("term: %p\n", p);
+        v_copy(&d, &s);
 
-        p->dec;
-    }
+        d
+    };
 
     inlinehint
     (_.inc): (self: &const rbtree_t) ~> void
@@ -179,16 +102,13 @@ namespace rbts {
         impl.tail->inc;
     }
 
-    private alwaysinline
-    make: (sz: size_t, sh: shift_t, r: *node_t, t: *node_t) ~> rbtree_t
+    inlinehint
+    (_.dec): (self: &const rbtree_t) ~> void;
+
+    inlinehint
+    (v_terminate(_)): (p: *rbtree_t) ~> void
     {
-        ret = v_get_return_value();
-
-        ret.dec;
-
-        impl = *(&ret: *const impl_t);
-
-        impl := {sz, sh, r, t};         //- Sic !!!
+        p->dec;
     }
 
     inlinehint
@@ -217,13 +137,194 @@ namespace rbts {
         s->dec;
     }
 
-    inlinehint
-    (_:=_): (d: &rbtree_t, s: rbtree_t) ~> &rbtree_t  =
+    private alwaysinline
+    make: (sz: size_t, sh: shift_t, r: *node_t, t: *node_t) ~> rbtree_t
     {
-        v_copy(&d, &s);
+        ret = v_get_return_value();
 
-        d
+        ret.dec;
+
+        impl = *(&ret: *impl_t);
+
+        impl := {sz, sh, r, t};         //- Sic !!!
+    }
+
+    inlinehint
+    (_.tail_size): (self: rbtree_t) ~> size_t  =
+    {
+        impl = *(&self: *const impl_t);
+
+        util.if_(impl.size,  ((impl.size - 1) & mask(BL)) + 1,  0)
     };
+
+    inlinehint
+    (_.tail_offset): (self: rbtree_t) ~> size_t  =
+    {
+        impl = *(&self: *const impl_t);
+
+        util.if_(impl.size,  (impl.size - 1) & ~mask(BL),  0)
+    };
+
+    #define (_.traverse()): [](self: rbtree_t, v: visitor_t, args)
+    {'stmt_list'
+
+        impl = *(&self: *const impl_t);
+
+        tail_off  = self.tail_offset;
+        tail_size = impl.size - tail_off;
+
+        if (tail_off)
+            make_regular_sub_pos(impl.root, impl.shift, tail_off).visit(v, args);
+        else
+            make_empty_regular_pos(impl.root).visit(v, args);
+
+        make_leaf_sub_pos(impl.tail, (tail_size: count_t)).visit(v, args);
+
+    'stmt_list'}
+
+    inlinehint
+    (_.dec): (self: &const rbtree_t) ~> void  { self.traverse(dec_visitor, {}); }
+
+    #define (_.traverse_i()): [](self: rbtree_t, v: visitor_t, first: size_t, last: size_t, args)
+    {'stmt_list'
+
+        impl = *(&self: *const impl_t);
+
+        tail_off  = self.tail_offset;
+        tail_size = impl.size - tail_off;
+
+        if (first < tail_off)
+        {
+            make_regular_sub_pos(impl.root, impl.shift, tail_off)
+                .visit(v, {first, util.min(last, tail_off), args});
+        }
+
+        if (last > tail_off)
+        {
+            make_leaf_sub_pos(impl.tail, (tail_size: count_t))
+                .visit(v,
+                       {util.if_(first > tail_off, first - tail_off, 0),
+                       last - tail_off,
+                       args});
+        }
+
+    'stmt_list'}
+
+    #define (_.traverse_p()): [](self: rbtree_t, v: visitor_t, args) ~> bool  =
+    {
+        impl = *(&self: *const impl_t);
+
+        tail_off  = self.tail_offset;
+        tail_size = impl.size - tail_off;
+
+        r: &bool := undef;
+
+        if (tail_off)
+            r := make_regular_sub_pos(impl.root, impl.shift, tail_off).visit(v, args);
+        else
+            r := make_empty_regular_pos(impl.root).visit(v, args);
+
+        r  &&  make_leaf_sub_pos(impl.tail, (tail_size: count_t)).visit(v, args)
+    };
+
+    #define (_.traverse_p_i()): [](self: rbtree_t, v: visitor_t, first: size_t, last: size_t, args) ~> bool  =
+    {
+        impl = *(&self: *const impl_t);
+
+        tail_off  = self.tail_offset;
+        tail_size = impl.size - tail_off;
+
+        r: &bool := true;
+
+        if (first < tail_off)
+        {
+            r := make_regular_sub_pos(impl.root, impl.shift, tail_off)
+                     .visit(v, {first, util.min(last, tail_off), args});
+        }
+
+        if (r  &&  last > tail_off)
+        {
+            r := make_leaf_sub_pos(impl.tail, (tail_size: count_t))
+                     .visit(v,
+                            {util.if_(first > tail_off, first - tail_off, 0),
+                            last - tail_off,
+                            args});
+        }
+
+        r
+    };
+
+    #define (_.descend()): [](self: rbtree_t, v: visitor_t, idx: size_t)  =
+    {
+        is_reference = v.result_t.is_reference;
+
+        #if (is_reference)  ret_t = *v.result_t.element_type;
+        #else               ret_t = v.result_t;
+        #endif
+
+        impl = *(&self: *const impl_t);
+
+        tail_off = self.tail_offset;
+
+        ret: &ret_t := undef;
+
+        #if (is_reference)
+
+            if (idx >= tail_off)  ret := &make_leaf_descent_pos(impl.tail).visit(v, idx);
+            else                  ret := &visit_regular_descent(impl.root, impl.shift, v, idx);
+
+            ret = *ret;
+
+        #else
+
+            if (idx >= tail_off)  ret := make_leaf_descent_pos(impl.tail).visit(v, idx);
+            else                  ret := visit_regular_descent(impl.root, impl.shift, v, idx);
+
+            ret = (ret: ret_t);
+
+        #endif
+
+        ret
+    };
+
+    #define (_.for_each_chunk()): [](selt: rbtree_t, fn)
+    {'stmt'
+        self.traverse(for_each_chunk_visitor, fn);
+    'stmt'}
+
+    #define (_.for_each_chunk_i()): [](selt: rbtree_t, first: size_t, last: size_t, fn)
+    {'stmt'
+        self.traverse_i(for_each_chunk_i_visitor, first, last, fn);
+    'stmt'}
+
+    #define (_.for_each_chunk_p()): [](selt: rbtree_t, fn) ~> bool
+      =  self.traverse_p(for_each_chunk_p_visitor, fn);
+
+    #define (_.for_each_chunk_p_i()): [](selt: rbtree_t, first: size_t, last: size_t, fn) ~> bool
+      =  self.traverse_p_i(for_each_chunk_p_i_visitor, first, last, fn);
+
+    inlinehint
+    (_.equals()): (self: rbtree_t, other: rbtree_t) ~> bool
+    {
+        si = *(&self:  *const impl_t);
+        oi = *(&other: *const impl_t);
+
+        if (si.size != oi.size)  return  false;
+
+        if (si.size == 0)  return  true;
+
+        return  (si.size <= branches(BL)  ||
+                 make_regular_sub_pos(si.root, si.shift, self.tail_offset)
+                     .visit(equals_visitor, oi.root))  &&
+                 make_leaf_sub_pos(si.tail, (self.tail_size: count_t))
+                     .visit(equals_visitor, oi.tail);
+    }
+
+
+
+
+
+
 
     inlinehint
     (_.push_back()): (self: rbtree_t, value: T) ~> rbtree_t

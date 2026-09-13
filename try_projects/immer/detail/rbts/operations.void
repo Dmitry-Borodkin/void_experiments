@@ -624,7 +624,7 @@ namespace equals_visitor
 
                 node = pos.node;
 
-                node == other  ||  pos.each_pred_zip(equals_visitor, other)
+                node == other  ||  pos.each_pred_zip(equals_visitor, other, {})
             }
 
         #endif

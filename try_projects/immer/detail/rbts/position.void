@@ -573,14 +573,18 @@ namespace rbts {
         last           = p.count - 1;
         e              = n + last;
 
+        #if (ArgsT == struct {})  #define mk_args: (V) = V;
+        #else                     #define mk_args: (V) = {V, args};
+        #endif
+
         if (p.shift == BL)
         {
             for (; n != e; ++n, ++n2)
             {
-                if (!make_full_leaf_pos(*n).visit(Vis, {*n2, args}))  return false;
+                if (!make_full_leaf_pos(*n).visit(Vis, mk_args(*n2)))  return false;
             }
 
-            return  make_leaf_pos(*n, p.size).visit(Vis, {*n2, args});
+            return  make_leaf_pos(*n, p.size).visit(Vis, mk_args(*n2));
         }
         else
         {
@@ -588,10 +592,10 @@ namespace rbts {
 
             for (; n != e; ++n, ++n2)
             {
-                if (!make_full_pos(*n, ss).visit(Vis, {*n2, args}))  return false;
+                if (!make_full_pos(*n, ss).visit(Vis, mk_args(*n2)))  return false;
             }
 
-            return  make_regular_pos(*n, ss, p.size).visit(Vis, {*n2, args});
+            return  make_regular_pos(*n, ss, p.size).visit(Vis, mk_args(*n2));
         }
     }
 }
@@ -1897,17 +1901,21 @@ struct null_sub_pos {};
         #template each_pred_zip: [NS, Pos, v, ArgsT]()
         {
             inlinehint
-            _each_pred_zip: (pos: Pos, other: *NT, args: ArgsT) ~> bool
+            _each_pred_zip: (pos: Pos, other: *node_t, args: ArgsT) ~> bool
             {
                 p:  &**node_t := pos.node_->inner;
                 p2: &**node_t := other->inner;
                 e              = p + branches(B);
 
+                #if (ArgsT == struct {})  #define mk_args: (V) = V;
+                #else                     #define mk_args: (V) = {V, args};
+                #endif
+
                 if (pos.shift_ == BL)
                 {
                     for (; p != e; ++p, ++p2)
                     {
-                        if (!make_full_leaf_pos(*p).visit(v, {*p2, args}))  return false;
+                        if (!make_full_leaf_pos(*p).visit(v, mk_args(*p2)))  return false;
                     }
                 }
                 else
@@ -1916,7 +1924,7 @@ struct null_sub_pos {};
 
                     for (; p != e; ++p, ++p2)
                     {
-                        if (!make_full_pos(*p, ss).visit(v, {*p2, args}))  return false;
+                        if (!make_full_pos(*p, ss).visit(v, mk_args(*p2)))  return false;
                     }
                 }
 
