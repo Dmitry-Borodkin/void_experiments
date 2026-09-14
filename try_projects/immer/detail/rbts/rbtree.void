@@ -403,6 +403,69 @@ namespace rbts {
     (_.get()): (self: rbtree_t, index: size_t) ~> &const T
       =  self.descend(get_visitor(T), index);
 
+    alwaysinline
+    (_.front): (self: rbtree_t) ~> &const T  =  self.get(0);
+
+    inlinehint
+    (_.back): (self: rbtree_t) ~> &const T  =  self.tail->leaf[(self.size - 1) & mask(BL)];
+
+    #define (_.update_mut()): [*, T](self: &rbtree_t, idx: size_t, fn)
+    {'stmt'
+        {   elem = self.get_mut(idx);
+            elem := fn({e: T = elem; e});           //- WTF !?!?!?!?!
+        }
+    'stmt'}
+
+    #define (_.update()): [](self: rbtree_t, idx: size_t, fn) ~> rbtree_t  =
+    {
+        new_root: &*node_t := undef;
+        new_tail: &*node_t := undef;
+
+        tail_off = self.tail_offset;
+        if (idx >= tail_off)
+        {
+            tail_size = self.size - tail_off;
+            new_tail :=
+                make_leaf_sub_pos(self.tail, (tail_size: count_t))
+                    .visit(update_visitor(node_t), {idx - tail_off, fn});
+            new_root := self.root->inc;
+        }
+        else
+        {
+            new_root := make_regular_sub_pos(self.root, self.shift, tail_off)
+                            .visit(update_visitor(node_t), {idx, fn});
+            new_tail := self.tail->inc;
+        }
+
+        make(self.size, self.shift, new_root, new_tail)
+    };
+
+    inlinehint
+    (_.assoc_mut()): (self: &rbtree_t, idx: size_t, value: T) ~> void
+    {
+        #define fun: (v) ~> T  =  value;            //- Sic!
+
+        self.update_mut(idx, fun);
+    }
+
+    inlinehint
+    (_.assoc()): (self: rbtree_t, idx: size_t, value: T) ~> rbtree_t  =
+    {
+        type = v_generic(assoc_function_tag, T(T));
+
+        #template [type, T]()
+        {
+            #do (v_set_implementation_type(type, T))
+
+            alwaysinline
+            (_()): (p: *type, v: T) ~> T  =  *(p: *T);
+        }
+
+        fn: &T := value;
+        fn = (&fn: *type);
+
+        self.update(idx, fn)
+    };
 
 
 

@@ -698,7 +698,7 @@ namespace equals_visitor
         {
             prepare_visitor_args(vis, pos, args);
 
-            #template visit_relaxed: [NS, Pos, ArgsT]()
+            #template visit_relaxed: [NS, Pos, ArgsT, vis]()
             {
                 inlinehint
                 _visit_relaxed: (pos: Pos, args: ArgsT) ~> result_t
@@ -726,7 +726,7 @@ namespace equals_visitor
         {
             prepare_visitor_args(vis, pos, args);
 
-            #template visit_regular: [NS, Pos, ArgsT]()
+            #template visit_regular: [NS, Pos, ArgsT, vis]()
             {
                 inlinehint
                 _visit_regular: (pos: Pos, args: ArgsT) ~> result_t

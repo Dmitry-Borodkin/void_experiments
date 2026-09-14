@@ -199,13 +199,25 @@ tstr: &rbtree(v_string_t) := {};
 
 }
 
+//---------------------------------------------------------------------
+{   ts: &rbtree(v_string_t) := {};
+
+    ts.push_back_mut("a");
+    ts.push_back_mut("b");
+    ts.push_back_mut("c");
+
+    for (i: &int := 0; i < 3; ++i)
+    {
+        ts := ts.assoc(i, ts.get(i) + "!");
+    }
+
+    for (i: &int := 0; i < 3; ++i)
+    {
+        printf("ts[%d]: %s\n", i, ts.get(i).data);
+    }
 
 
-
-
-
-
-
+}
 
 
 
