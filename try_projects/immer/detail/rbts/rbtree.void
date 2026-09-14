@@ -55,17 +55,18 @@ namespace rbts {
         tail:  *node_t;
     };
 
-    #do (v_set_implementation_type(rbtree_t, impl_t))
+    #do (v_set_implementation_type(rbtree_t, impl_t),
+         v_make_trivial_coercion(v_coe_projective,  rbtree_t, &const impl_t),
+         v_make_trivial_coercion(v_coe_projective, &rbtree_t, &impl_t),
+         v_make_trivial_coercion(v_coe_projective, *rbtree_t, *impl_t))
 
     inlinehint
     (v_initialize(_)): (p: *rbtree_t) ~> void
     {
-        impl = *(p: *impl_t);
-
         empty_root = node_t.make_inner_n(0);                //- TODO !!!
         empty_tail = node_t.make_leaf_n(0);                 //- TODO !!!
 
-        impl := { 0, BL, empty_root, empty_tail };
+        *(p: *impl_t) := { 0, BL, empty_root, empty_tail };
     }
 
     inlinehint
@@ -78,12 +79,7 @@ namespace rbts {
     (v_move(_)): (d: *rbtree_t, s: *rbtree_t) ~> void;
 
     inlinehint
-    (v_empty(_)): (p: *rbtree_t) ~> bool  =
-    {
-        impl = *(p: *const impl_t);
-
-        impl.size == 0
-    };
+    (v_empty(_)): (p: *rbtree_t) ~> bool  =  p->size == 0;
 
     inlinehint
     (_:=_): (d: &rbtree_t, s: rbtree_t) ~> &rbtree_t  =
@@ -96,10 +92,8 @@ namespace rbts {
     inlinehint
     (_.inc): (self: &const rbtree_t) ~> void
     {
-        impl = *(&self: *const impl_t);
-
-        impl.root->inc;
-        impl.tail->inc;
+        self.root->inc;
+        self.tail->inc;
     }
 
     inlinehint
@@ -116,10 +110,7 @@ namespace rbts {
     {
         d->dec;
 
-        di = *(d: *impl_t);
-        si = *(s: *const impl_t);
-
-        di := si;
+        *(d: *impl_t) := *(s: *const impl_t);
 
         d->inc;
     }
@@ -129,10 +120,7 @@ namespace rbts {
     {
         d->dec;
 
-        di = *(d: *impl_t);
-        si = *(s: *impl_t);
-
-        di := si;
+        *(d: *impl_t) := *(s: *impl_t);
 
         s->dec;
     }
@@ -144,41 +132,29 @@ namespace rbts {
 
         ret.dec;
 
-        impl = *(&ret: *impl_t);
-
-        impl := {sz, sh, r, t};         //- Sic !!!
+        *(&ret: *impl_t) := {sz, sh, r, t};         //- Sic !!!
     }
 
     inlinehint
-    (_.tail_size): (self: rbtree_t) ~> size_t  =
-    {
-        impl = *(&self: *const impl_t);
-
-        util.if_(impl.size,  ((impl.size - 1) & mask(BL)) + 1,  0)
-    };
+    (_.tail_size): (self: rbtree_t) ~> size_t
+      =  util.if_(self.size,  ((self.size - 1) & mask(BL)) + 1,  0);
 
     inlinehint
-    (_.tail_offset): (self: rbtree_t) ~> size_t  =
-    {
-        impl = *(&self: *const impl_t);
-
-        util.if_(impl.size,  (impl.size - 1) & ~mask(BL),  0)
-    };
+    (_.tail_offset): (self: rbtree_t) ~> size_t
+      =  util.if_(self.size,  (self.size - 1) & ~mask(BL),  0);
 
     #define (_.traverse()): [](self: rbtree_t, v: visitor_t, args)
     {'stmt_list'
 
-        impl = *(&self: *const impl_t);
-
         tail_off  = self.tail_offset;
-        tail_size = impl.size - tail_off;
+        tail_size = self.size - tail_off;
 
         if (tail_off)
-            make_regular_sub_pos(impl.root, impl.shift, tail_off).visit(v, args);
+            make_regular_sub_pos(self.root, self.shift, tail_off).visit(v, args);
         else
-            make_empty_regular_pos(impl.root).visit(v, args);
+            make_empty_regular_pos(self.root).visit(v, args);
 
-        make_leaf_sub_pos(impl.tail, (tail_size: count_t)).visit(v, args);
+        make_leaf_sub_pos(self.tail, (tail_size: count_t)).visit(v, args);
 
     'stmt_list'}
 
@@ -188,20 +164,18 @@ namespace rbts {
     #define (_.traverse_i()): [](self: rbtree_t, v: visitor_t, first: size_t, last: size_t, args)
     {'stmt_list'
 
-        impl = *(&self: *const impl_t);
-
         tail_off  = self.tail_offset;
-        tail_size = impl.size - tail_off;
+        tail_size = self.size - tail_off;
 
         if (first < tail_off)
         {
-            make_regular_sub_pos(impl.root, impl.shift, tail_off)
+            make_regular_sub_pos(self.root, self.shift, tail_off)
                 .visit(v, {first, util.min(last, tail_off), args});
         }
 
         if (last > tail_off)
         {
-            make_leaf_sub_pos(impl.tail, (tail_size: count_t))
+            make_leaf_sub_pos(self.tail, (self_size: count_t))
                 .visit(v,
                        {util.if_(first > tail_off, first - tail_off, 0),
                        last - tail_off,
@@ -212,39 +186,35 @@ namespace rbts {
 
     #define (_.traverse_p()): [](self: rbtree_t, v: visitor_t, args) ~> bool  =
     {
-        impl = *(&self: *const impl_t);
-
         tail_off  = self.tail_offset;
-        tail_size = impl.size - tail_off;
+        tail_size = self.size - tail_off;
 
         r: &bool := undef;
 
         if (tail_off)
-            r := make_regular_sub_pos(impl.root, impl.shift, tail_off).visit(v, args);
+            r := make_regular_sub_pos(self.root, self.shift, tail_off).visit(v, args);
         else
-            r := make_empty_regular_pos(impl.root).visit(v, args);
+            r := make_empty_regular_pos(self.root).visit(v, args);
 
-        r  &&  make_leaf_sub_pos(impl.tail, (tail_size: count_t)).visit(v, args)
+        r  &&  make_leaf_sub_pos(self.tail, (tail_size: count_t)).visit(v, args)
     };
 
     #define (_.traverse_p_i()): [](self: rbtree_t, v: visitor_t, first: size_t, last: size_t, args) ~> bool  =
     {
-        impl = *(&self: *const impl_t);
-
         tail_off  = self.tail_offset;
-        tail_size = impl.size - tail_off;
+        tail_size = self.size - tail_off;
 
         r: &bool := true;
 
         if (first < tail_off)
         {
-            r := make_regular_sub_pos(impl.root, impl.shift, tail_off)
+            r := make_regular_sub_pos(self.root, self.shift, tail_off)
                      .visit(v, {first, util.min(last, tail_off), args});
         }
 
         if (r  &&  last > tail_off)
         {
-            r := make_leaf_sub_pos(impl.tail, (tail_size: count_t))
+            r := make_leaf_sub_pos(self.tail, (tail_size: count_t))
                      .visit(v,
                             {util.if_(first > tail_off, first - tail_off, 0),
                             last - tail_off,
@@ -262,23 +232,21 @@ namespace rbts {
         #else               ret_t = v.result_t;
         #endif
 
-        impl = *(&self: *const impl_t);
-
         tail_off = self.tail_offset;
 
         ret: &ret_t := undef;
 
         #if (is_reference)
 
-            if (idx >= tail_off)  ret := &make_leaf_descent_pos(impl.tail).visit(v, idx);
-            else                  ret := &visit_regular_descent(impl.root, impl.shift, v, idx);
+            if (idx >= tail_off)  ret := &make_leaf_descent_pos(self.tail).visit(v, idx);
+            else                  ret := &visit_regular_descent(self.root, self.shift, v, idx);
 
             ret = *ret;
 
         #else
 
-            if (idx >= tail_off)  ret := make_leaf_descent_pos(impl.tail).visit(v, idx);
-            else                  ret := visit_regular_descent(impl.root, impl.shift, v, idx);
+            if (idx >= tail_off)  ret := make_leaf_descent_pos(self.tail).visit(v, idx);
+            else                  ret := visit_regular_descent(self.root, self.shift, v, idx);
 
             ret = (ret: ret_t);
 
@@ -306,65 +274,128 @@ namespace rbts {
     inlinehint
     (_.equals()): (self: rbtree_t, other: rbtree_t) ~> bool
     {
-        si = *(&self:  *const impl_t);
-        oi = *(&other: *const impl_t);
+        if (self.size != other.size)  return  false;
 
-        if (si.size != oi.size)  return  false;
+        if (self.size == 0)  return  true;
 
-        if (si.size == 0)  return  true;
-
-        return  (si.size <= branches(BL)  ||
-                 make_regular_sub_pos(si.root, si.shift, self.tail_offset)
-                     .visit(equals_visitor, oi.root))  &&
-                 make_leaf_sub_pos(si.tail, (self.tail_size: count_t))
-                     .visit(equals_visitor, oi.tail);
+        return  (self.size <= branches(BL)  ||
+                 make_regular_sub_pos(self.root, self.shift, self.tail_offset)
+                     .visit(equals_visitor, other.root))  &&
+                 make_leaf_sub_pos(self.tail, (self.tail_size: count_t))
+                     .visit(equals_visitor, other.tail);
     }
 
+    inlinehint
+    (_.ensure_mutable_tail()): (self: &rbtree_t, n: count_t) ~> void
+    {
+        if (self.tail->can_mutate)  return;
 
+        new_tail = node_t.copy_leaf_e(self.tail, n);
+        dec_leaf(self.tail, n);
+        self.tail := new_tail;
+    }
 
+    inlinehint
+    (_.push_back_mut()): (self: &rbtree_t, value: T) ~> void
+    {
+        tail_off = self.tail_offset;
+        ts       = self.size - tail_off;
+        if (ts < branches(BL))
+        {
+            self.ensure_mutable_tail((ts: count_t));
+            util.uninitialized_copy(&self.tail->leaf[ts], &value);
+        }
+        else
+        {
+            new_tail = node_t.make_leaf_e1(value);
+            if (tail_off == (branches(B) : size_t) << self.shift)
+            {
+                new_root = node_t.make_inner_e();
 
-
-
+                path = node_t.make_path_e(self.shift, self.tail);
+                new_root->inner[0] := self.root;
+                new_root->inner[1] := path;
+                self.root          := new_root;
+                self.tail          := new_tail;
+                self.shift += B;
+            }
+            else if (tail_off)
+            {
+                new_root =
+                    make_regular_sub_pos(self.root, self.shift, tail_off)
+                        .visit(push_tail_mut_visitor(node_t), self.tail);
+                self.root := new_root;
+                self.tail := new_tail;
+            }
+            else
+            {
+                new_root = node_t.make_path_e(self.shift, self.tail);
+                v_assert(tail_off == 0);
+                dec_empty_regular(self.root);
+                self.root := new_root;
+                self.tail := new_tail;
+            }
+        }
+        ++self.size;
+    }
 
     inlinehint
     (_.push_back()): (self: rbtree_t, value: T) ~> rbtree_t
     {
-        impl = *(&self: *const impl_t);
-
         tail_off = self.tail_offset;
-        ts       = impl.size - tail_off;
+        ts       = self.size - tail_off;
 
         if (ts < branches(BL))
         {
-            new_tail = node_t.copy_leaf_emplace(impl.tail, (ts: count_t), value);
-            return  make(impl.size + 1, impl.shift, impl.root->inc, new_tail);
+            new_tail = node_t.copy_leaf_emplace(self.tail, (ts: count_t), value);
+            return  make(self.size + 1, self.shift, self.root->inc, new_tail);
         }
         else
         {
             new_tail = node_t.make_leaf_n1(1, value);
 
-            if (tail_off == branches(B) << impl.shift)
+            if (tail_off == branches(B) << self.shift)
             {
                 new_root = node_t.make_inner_n(2);
 
-                path                = node_t.make_path(impl.shift, impl.tail);
-                new_root->inner[0] := impl.root;
+                path                = node_t.make_path(self.shift, self.tail);
+                new_root->inner[0] := self.root;
                 new_root->inner[1] := path;
-                impl.root->inc;
-                impl.tail->inc;
-                return  make(impl.size + 1, impl.shift + B, new_root, new_tail);
+                self.root->inc;
+                self.tail->inc;
+                return  make(self.size + 1, self.shift + B, new_root, new_tail);
             }
             else if (tail_off)
             {
-                new_root = make_regular_sub_pos(impl.root, impl.shift, tail_off)
-                               .visit(push_tail_visitor(node_t), impl.tail);
-                impl.tail->inc;
-                return  make(impl.size + 1, impl.shift, new_root, new_tail);
+                new_root = make_regular_sub_pos(self.root, self.shift, tail_off)
+                               .visit(push_tail_visitor(node_t), self.tail);
+                self.tail->inc;
+                return  make(self.size + 1, self.shift, new_root, new_tail);
             } else {
-                new_root = node_t.make_path(impl.shift, impl.tail);
-                impl.tail->inc;
-                return  make(impl.size + 1, impl.shift, new_root, new_tail);
+                new_root = node_t.make_path(self.shift, self.tail);
+                self.tail->inc;
+                return  make(self.size + 1, self.shift, new_root, new_tail);
             }
+        }
+    }
+
+    inlinehint
+    (_.array_for()): (self: rbtree_t, index: size_t) ~> *const T
+      =  self.descend(array_for_visitor(T), index);
+
+    inlinehint
+    (_.get_mut()): (self: &rbtree_t, idx: size_t) ~> &T
+    {
+        tail_off = self.tail_offset;
+        if (idx >= tail_off)
+        {
+            self.ensure_mutable_tail((self.size - tail_off : count_t));
+            return  self.tail->leaf[idx & mask(BL)];
+        }
+        else
+        {
+            return  make_regular_sub_pos(self.root, self.shift, tail_off)
+                        .visit(get_mut_visitor(node_t), {idx, &self.root});
         }
     }
 

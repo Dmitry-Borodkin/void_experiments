@@ -1072,7 +1072,9 @@ namespace dec_visitor
                 inlinehint
                 _visit_regular: (pos: Pos, args: ArgsT) ~> result_t
                 {
-                    tail = args[0];
+                    #if (ArgsT.is_struct)   tail = args[0];
+                    #else                   tail = args;
+                    #endif
 
                     v_assert((pos.size & mask(BL)) == 0);
                     node    = pos.node;
@@ -1115,12 +1117,12 @@ namespace dec_visitor
             NS._visit_regular(pos, args)
         };
 
-        #define visit_leaf: [](pos, args) ~> result_t  =
-        {
-            v_assert(false && "Kinda, unreachable");
-
-            undef
-        };
+        #define visit_leaf: [](pos, args) ~> result_t  =  0;
+//        {
+//            v_assert(false && "Kinda, unreachable");
+//
+//            undef
+//        };
     }
 
     vis

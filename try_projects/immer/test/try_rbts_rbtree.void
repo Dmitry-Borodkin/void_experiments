@@ -170,20 +170,32 @@ tstr: &rbtree(v_string_t) := {};
 {   t0: &rbtree(int) := {};
     t1: &rbtree(int) := {};
 
-    for (i: &int := 0; i < 1000000; ++i)
+    N = 1000000;
+
+    for (i: &int := 0; i < N; ++i)
     {
         t0 := t0.push_back(i);
         t1 := t1.push_back(i);
     }
 
-    ok = t0.equals(t1);
+    printf("ok: %d\n", (t0.equals(t1) : int));
 
-    printf("ok: %d\n", (ok: int));
+    for (i: &int := 0; i < N; ++i)
+    {
+        t1.get_mut(i) := t0.get(N-1-i);
+    }
 
-    t0 := t0.push_back(-1);
-    t1 := t1.push_back(-2);
+    printf("nok: %d\n", (t0.equals(t1) : int));
 
-    printf("nok: %d\n", (t0.equals(t1)));
+    t2: &rbtree(int) := {};
+
+    for (i: &int := 0; i < N; ++i)
+    {
+        t2.push_back_mut(t1.get(N-1-i));
+    }
+
+    printf("ok: %d\n", (t0.equals(t2) : int));
+
 
 }
 

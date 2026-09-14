@@ -1001,7 +1001,7 @@ namespace rbts {
                              args: ArgsT) ~> Vis.result_t
     {
         v_assert(offset_hint == p.index(idx));
-        v_assert(count_hint == pcount);
+        v_assert(count_hint == p.count);
 
         is_leaf = p.shift == BL;
         child   = p.node->inner[offset_hint];
