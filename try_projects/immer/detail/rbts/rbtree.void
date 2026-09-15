@@ -60,13 +60,13 @@ namespace rbts {
          v_make_trivial_coercion(v_coe_projective, &rbtree_t, &impl_t),
          v_make_trivial_coercion(v_coe_projective, *rbtree_t, *impl_t))
 
+    alwaysinline empty_root: () ~> *node_t  =  node_t.make_inner_n(0);      //- TODO !!!
+    alwaysinline empty_tail: () ~> *node_t  =  node_t.make_leaf_n(0);       //- TODO !!!
+
     inlinehint
     (v_initialize(_)): (p: *rbtree_t) ~> void
     {
-        empty_root = node_t.make_inner_n(0);                //- TODO !!!
-        empty_tail = node_t.make_leaf_n(0);                 //- TODO !!!
-
-        *(p: *impl_t) := { 0, BL, empty_root, empty_tail };
+        *(p: *impl_t) := { 0, BL, empty_root(), empty_tail() };
     }
 
     inlinehint
@@ -467,22 +467,104 @@ namespace rbts {
         self.update(idx, fn)
     };
 
+    inlinehint
+    (_.take()): (self: rbtree_t, new_size: size_t) ~> rbtree_t
+    {
+        tail_off = self.tail_offset;
+        if (new_size == 0)
+        {
+            return {};
+        }
+        else if (new_size >= self.size)
+        {
+            return self;
+        }
+        else if (new_size > tail_off)
+        {
+            new_tail = node_t.copy_leaf(self.tail, (new_size - tail_off : count_t));
+            return  make(new_size, self.shift, self.root->inc, new_tail);
+        }
+        else
+        {
+            l = new_size - 1;
+            v = slice_right_visitor(node_t);
+            r = make_regular_sub_pos(self.root, self.shift, tail_off).visit(v, l);
+            new_shift = r[0];
+            new_root  = r[1];
+            new_tail  = r[3];
+            if (new_root)
+            {
+                return make(new_size, new_shift, new_root, new_tail);
+            }
+            else
+            {
+                return make(new_size, BL, empty_root(), new_tail);
+            }
+        }
+    }
+
+    inlinehint
+    (_.take_mut()): (self: &rbtree_t, new_size: size_t) ~> void
+    {
+        tail_off = self.tail_offset;
+        if (new_size == 0)
+        {
+            // todo: more efficient?
+            self := {};
+        }
+        else if (new_size >= self.size)
+        {
+            return;
+        }
+        else if (new_size > tail_off)
+        {
+            ts    = self.size - tail_off;
+            newts = new_size - tail_off;
+            if (self.tail->can_mutate)
+            {
+                util.conditional_terminate(self.tail->leaf + newts, ts - newts);
+            }
+            else
+            {
+                new_tail = node_t.copy_leaf_e(self.tail, (newts: count_t));
+                dec_leaf(self.tail, (ts: count_t));
+                self.tail := new_tail;
+            }
+            self.size := new_size;
+            return;
+        }
+        else
+        {
+            l = new_size - 1;
+            v = slice_right_mut_visitor(node_t);
+            r = make_regular_sub_pos(self.root, self.shift, tail_off).visit(v, l);
+            new_shift = r[0];
+            new_root  = r[1];
+            new_tail  = r[3];
+            if (new_root)
+            {
+                self.root  := new_root;
+                self.shift := new_shift;
+            }
+            else
+            {
+                self.root  := empty_root();
+                self.shift := BL;
+            }
+            dec_leaf(self.tail, (self.size - tail_off : count_t));
+            self.size := new_size;
+            self.tail := new_tail;
+            return;
+        }
+    }
 
 
 
-
-
-
+    //- ...
 
 
 
 }   //- #template
-
-
-
-
-
-
 
 
 //---------------------------------------------------------------------

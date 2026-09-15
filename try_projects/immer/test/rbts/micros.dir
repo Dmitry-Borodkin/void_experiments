@@ -1,29 +1,23 @@
-                    ****  Immer/test  ****                     │*
+                  ****  Immer/test/rbts  ****                  │*
                                                                │
                                                                │
-try_util                                                       │try_util.void -T
+rbtree 0    basics                                             │rbtree_0.void -T
                                                                │
-try_heap                                                       │try_heap.void -T
+rbtree 1    quarks                                             │rbtree_1.void -T
                                                                │
-try_rbts_node                                                  │try_rbts_node.void -T
+rbtree 2    equals                                             │rbtree_2.void -T
                                                                │
-try_rbts_position                                              │try_rbts_position.void -T
+rbtree 3    assoc                                              │rbtree_3.void -T
                                                                │
-try_rbts_operations                                            │try_rbts_operations.void -T
+rbtree 4    take                                               │rbtree_4.void -T
                                                                │
                                                                │
-rbts/                                                          │rbts/micros.dir
                                                                │
                                                                │
                                                                │
                                                                │
                                                                │
 ---------------------------------------------------------------│
-misc...                                                        │misc.void -T
-                                                               │
-                                                               │
-                                                               │
-                                                               │
                                                                │
                                                                │
                                                                │

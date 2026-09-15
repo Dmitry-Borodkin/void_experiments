@@ -1,0 +1,123 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+//---------------------------------------------------------------------
+{
+    v_import("cstdio.void");
+
+    v_import("string.void");
+
+    v_import("../../memory_policy.void");
+
+    v_import("../../detail/rbts/rbtree.void");
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+
+//---------------------------------------------------------------------
+//my_type = struct { char[3]; };
+//my_type = v_string_t;
+//my_type = int;
+my_type = long;
+//my_type = char;
+
+
+namespace my
+{
+    using namespace immer.detail.rbts;
+
+    policy = default_memory_policy;
+
+    BL = derive_bits_leaf(my_type, policy, 5);
+
+#note ("before")
+    rbtree_t = rbtree(my_type, policy, 5, BL);
+#note ("after")
+
+
+}   //- namespace my
+
+
+//---------------------------------------------------------------------
+tree: &my.rbtree_t := {};
+
+
+
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(2); }
+//---------------------------------------------------------------------
+{
+    printf("BL: %d\n", my.BL);
+
+    printf("max_size: %zu\n", my.rbtree_t.max_size);
+
+    printf("tree: %p\n", &tree);
+
+    tree1: &my.rbtree_t := {};
+
+    printf("tree1: %p\n", &tree1);
+
+    tree2: &my.rbtree_t := {};
+
+    printf("tree2: %p\n", &tree2);
+
+
+}
+
+
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(2); }
+//---------------------------------------------------------------------
+{
+    nt = tree.push_back(7);
+
+    nt = nt.push_back(8);
+    nt = nt.push_back(9);
+    nt = nt.push_back(10);
+
+    printf("size: %zu\n", (&nt: *const my.rbtree_t.impl_t)->size);
+
+    v0 = nt.get(0);  printf("v0: %d\n", v0);
+    v1 = nt.get(1);  printf("v1: %d\n", v1);
+    v2 = nt.get(2);  printf("v2: %d\n", v2);
+    v3 = nt.get(3);  printf("v3: %d\n", v3);
+
+
+}
+
+
+tree_: &my.rbtree_t := {};
+
+
+{   tr: &my.rbtree_t := {};
+
+    sz = 1000000;
+
+    for (i: &int := 0; i < sz; ++i)
+    {
+        tr := tr.push_back(i);
+    }
+
+    {   tmp: &my.rbtree_t := tr;
+
+        tr := tree;         //- Empty...
+
+        for (i: &int := 0; i < sz; ++i)
+        {
+            tr := tr.push_back(tmp.get(sz-1-i));
+        }
+    }
+
+    for (i: &int := 0; i < sz; i += sz/100-1)
+    {
+        v = tr.get(i);  printf("tr[%d]: %ld\n", i, v);
+    }
+
+}
+
+
+

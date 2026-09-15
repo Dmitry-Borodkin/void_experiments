@@ -1279,7 +1279,7 @@ namespace dec_right_visitor
         ({})           //- Sic!
     };
 
-    #define visit_leaf: [](pos, idx: count_t) ~> result_t  =  v_assert(false && "Kinda, unreachable");
+    #define visit_leaf: [](pos, idx: count_t) ~> result_t  =  {};   //- v_assert(false && "Kinda, unreachable");
 }
 
 
@@ -1527,7 +1527,7 @@ namespace dec_right_visitor
                         {
                             if (mutate)
                             {
-                                po.each_right(dec_visitor, idx + 1, {});
+                                pos.each_right(dec_visitor, idx + 1, {});
 
                                 return  {pos.shift, node, ts, tail};
                             }
@@ -1657,7 +1657,7 @@ namespace dec_right_visitor
                         else if (collapse  &&  idx == 1  &&  pos.shift > BL)
                         {
                             newn = pos.node->inner[0];
-                            return  {pos.shift - B, &newn->inc, ts, tail};
+                            return  {pos.shift - B, newn->inc, ts, tail};
                         }
                         else
                         {
@@ -1705,7 +1705,7 @@ namespace dec_right_visitor
                         else if (collapse  &&  idx == 1  &&  pos.shift > BL)
                         {
                             newn = pos.node->inner[0];
-                            return  {pos.shift - B, &newn->inc, ts, tail};
+                            return  {pos.shift - B, newn->inc, ts, tail};
                         }
                         else
                         {
@@ -1735,7 +1735,7 @@ namespace dec_right_visitor
 
                     if (new_tail_size == old_tail_size)
                     {
-                        new_tail := &pos.node()->inc;
+                        new_tail := pos.node->inc;
                     }
                     else
                     {

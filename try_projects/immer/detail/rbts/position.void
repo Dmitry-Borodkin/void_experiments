@@ -943,7 +943,7 @@ namespace rbts {
         {
             n: &**node_t := p.node->inner + start;
             last          = p.count - 1;
-            e:  **node_t  = n.node->inner + last;
+            e:  **node_t  = p.node->inner + last;
 
             if (n <= e)
             {
@@ -959,7 +959,7 @@ namespace rbts {
         {
             n: &**node_t := p.node->inner + start;
             last          = p.count - 1;
-            e:  **node_t  = n.node->inner + last;
+            e:  **node_t  = p.node->inner + last;
 
             ss = p.shift - B;
 
@@ -1007,26 +1007,30 @@ namespace rbts {
         child   = p.node->inner[offset_hint];
         is_full = offset_hint + 1 != count_hint;
 
+        #if (ArgsT == struct {})  #define mk_args: (V) = V;
+        #else                     #define mk_args: (V) = {V, args};
+        #endif
+
         if (is_full)
         {
             if (is_leaf)
             {
-                return  make_full_leaf_pos(child).visit(Vis, {idx, args});
+                return  make_full_leaf_pos(child).visit(Vis, mk_args(idx));
             }
             else
             {
-                return  make_full_pos(child, p.shift - B).visit(Vis, {idx, args});
+                return  make_full_pos(child, p.shift - B).visit(Vis, mk_args(idx));
             }
         }
         else
         {
             if (is_leaf)
             {
-                return  make_leaf_pos(child, p.size).visit(Vis, {idx, args});
+                return  make_leaf_pos(child, p.size).visit(Vis, mk_args(idx));
             }
             else
             {
-                return  make_regular_pos(child, p.shift - B, p.size).visit(Vis, {idx, args});
+                return  make_regular_pos(child, p.shift - B, p.size).visit(Vis, mk_args(idx));
             }
         }
     }
@@ -1067,26 +1071,30 @@ namespace rbts {
         size    = p.this_size;
         is_full = (size - lsize) >= ((1: size_t) << p.shift);
 
+        #if (ArgsT == struct {})  #define mk_args: (V) = V;
+        #else                     #define mk_args: (V) = {V, args};
+        #endif
+
         if (is_full)
         {
             if (is_leaf)
             {
-                return  make_full_leaf_pos(child).visit(Vis, {idx - lsize, args});
+                return  make_full_leaf_pos(child).visit(Vis, mk_args(idx - lsize));
             }
             else
             {
-                return  make_full_pos(child, p.shift - B).visit(Vis, {idx - lsize, args});
+                return  make_full_pos(child, p.shift - B).visit(Vis, mk_args(idx - lsize));
             }
         }
         else
         {
             if (is_leaf)
             {
-                return  make_leaf_sub_pos(child, p.size - lsize).visit(Vis, {idx - lsize, args});
+                return  make_leaf_sub_pos(child, p.size - lsize).visit(Vis, mk_args(idx - lsize));
             }
             else
             {
-                return  make_regular_sub_pos(child, p.shift - B, size - lsize).visit(Vis, {idx - lsize, args});
+                return  make_regular_sub_pos(child, p.shift - B, size - lsize).visit(Vis, mk_args(idx - lsize));
             }
         }
     }
@@ -2002,7 +2010,7 @@ struct null_sub_pos {};
             }
         }
 
-        NS._each_i(p, i, n, args)
+        NS._each_i_full(p, i, n, args)
     };
 
     #define (_.each_pred_right()): [](p: full_pos, v: visitor_t, start: count_t, args) ~> bool
@@ -2050,13 +2058,17 @@ struct null_sub_pos {};
                 is_leaf = pos.shift_ == BL;
                 child   = pos.node_->inner[offset_hint];
 
+                #if (ArgsT == struct {})  #define mk_args: (V) = V;
+                #else                     #define mk_args: (V) = {V, args};
+                #endif
+
                 if (is_leaf)
                 {
-                    return  make_full_leaf_pos(child).visit(v, {idx, args});
+                    return  make_full_leaf_pos(child).visit(v, mk_args(idx));
                 }
                 else
                 {
-                    return  make_full_pos(child, pos.shift_ - B).visit(v, {idx, args});
+                    return  make_full_pos(child, pos.shift_ - B).visit(v, mk_args(idx));
                 }
             }
         }
@@ -2079,13 +2091,17 @@ struct null_sub_pos {};
                 child   = pos.node_->inner[offset_hint];
                 lsize   = (offset_hint: size_t) << pos.shift_;
 
+                #if (ArgsT == struct {})  #define mk_args: (V) = V;
+                #else                     #define mk_args: (V) = {V, args};
+                #endif
+
                 if (is_leaf)
                 {
-                    return  make_full_leaf_pos(child).visit(v, {idx - lsize, args});
+                    return  make_full_leaf_pos(child).visit(v, mk_args(idx - lsize));
                 }
                 else
                 {
-                    return  make_full_pos(child, pos.shift_ - B).visit(v, {idx - lsize, args});
+                    return  make_full_pos(child, pos.shift_ - B).visit(v, mk_args(idx - lsize));
                 }
             }
         }
@@ -2680,13 +2696,17 @@ struct null_sub_pos {};
                 next_size = pos.relaxed_->d.sizes[offset_hint] - left_size_hint;
                 next_idx  = idx - left_size_hint;
 
+                #if (ArgsT == struct {})  #define mk_args: (V) = V;
+                #else                     #define mk_args: (V) = {V, args};
+                #endif
+
                 if (is_leaf)
                 {
-                    return  make_leaf_sub_pos(child, next_size).visit(v, {next_idx, args});
+                    return  make_leaf_sub_pos(child, next_size).visit(v, mk_args(next_idx));
                 }
                 else
                 {
-                    return  visit_maybe_relaxed_sub(child, pos.shift_ - B, next_size, v, {next_idx, args});
+                    return  visit_maybe_relaxed_sub(child, pos.shift_ - B, next_size, v, mk_args(next_idx));
                 }
             }
         }

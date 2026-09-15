@@ -1,0 +1,60 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+//---------------------------------------------------------------------
+{
+    v_import("cstdio.void");
+
+    v_import("string.void");
+
+    v_import("../../memory_policy.void");
+
+    v_import("../../detail/rbts/rbtree.void");
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+namespace qwe
+{
+    using namespace .immer.detail;
+
+    #define rbtree: [](T:  v_static_type_t,
+                       MP: v_static_namespace_t = default_memory_policy,
+                       B:  rbts.bits_t          = 5,
+                       BL: rbts.bits_t          = rbts.derive_bits_leaf(T, MP, B)
+                       ) ~> v_static_type_t
+      =  rbts.rbtree(T, MP, B, BL);
+}
+
+using qwe.rbtree;
+
+
+//---------------------------------------------------------------------
+{
+#note ("before")
+    ts: &rbtree(v_string_t) := {};
+#note ("after")
+
+    ts.push_back_mut("a");
+    ts.push_back_mut("b");
+    ts.push_back_mut("c");
+
+    for (i: &int := 0; i < 3; ++i)
+    {
+        ts := ts.assoc(i, ts.get(i) + "!");
+    }
+
+    for (i: &int := 0; i < 3; ++i)
+    {
+        printf("ts[%d]: %s\n", i, ts.get(i).data);
+    }
+
+
+}
+
+
+

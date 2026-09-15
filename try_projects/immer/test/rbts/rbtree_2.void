@@ -1,0 +1,72 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+//---------------------------------------------------------------------
+{
+    v_import("cstdio.void");
+
+    v_import("string.void");
+
+    v_import("../../memory_policy.void");
+
+    v_import("../../detail/rbts/rbtree.void");
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+
+//---------------------------------------------------------------------
+namespace qwe
+{
+    using namespace .immer.detail;
+
+    #define rbtree: [](T:  v_static_type_t,
+                       MP: v_static_namespace_t = default_memory_policy,
+                       B:  rbts.bits_t          = 5,
+                       BL: rbts.bits_t          = rbts.derive_bits_leaf(T, MP, B)
+                       ) ~> v_static_type_t
+      =  rbts.rbtree(T, MP, B, BL);
+}
+
+using qwe.rbtree;
+
+
+//---------------------------------------------------------------------
+{
+#note ("before")
+    t0: &rbtree(int) := {};
+#note ("after")
+    t1: &rbtree(int) := {};
+
+    N = 1000000;
+
+    for (i: &int := 0; i < N; ++i)
+    {
+        t0 := t0.push_back(i);
+        t1 := t1.push_back(i);
+    }
+
+    printf("ok: %d\n", (t0.equals(t1) : int));
+
+    for (i: &int := 0; i < N; ++i)
+    {
+        t1.get_mut(i) := t0.get(N-1-i);
+    }
+
+    printf("nok: %d\n", (t0.equals(t1) : int));
+
+    t2: &rbtree(int) := {};
+
+    for (i: &int := 0; i < N; ++i)
+    {
+        t2.push_back_mut(t1.get(N-1-i));
+    }
+
+    printf("ok: %d\n", (t0.equals(t2) : int));
+
+
+}
+

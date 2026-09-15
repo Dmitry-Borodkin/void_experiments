@@ -1,0 +1,70 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+//---------------------------------------------------------------------
+{
+    v_import("cstdio.void");
+
+    v_import("string.void");
+
+    v_import("../../memory_policy.void");
+
+    v_import("../../detail/rbts/rbtree.void");
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+namespace qwe
+{
+    using namespace .immer.detail;
+
+    #define rbtree: [](T:  v_static_type_t,
+                       MP: v_static_namespace_t = default_memory_policy,
+                       B:  rbts.bits_t          = 5,
+                       BL: rbts.bits_t          = rbts.derive_bits_leaf(T, MP, B)
+                       ) ~> v_static_type_t
+      =  rbts.rbtree(T, MP, B, BL);
+}
+
+using qwe.rbtree;
+
+
+//---------------------------------------------------------------------
+#note ("before")
+tstr: &rbtree(v_string_t) := {};
+#note ("after")
+
+
+{   ts: &rbtree(v_string_t) := {};
+
+    ts := ts.push_back("Превед");
+    ts := ts.push_back("медвед");
+    ts := ts.push_back("Кагдила?");
+
+    s0 = ts.get(0);  printf("s0: %s\n", s0.data);
+    s1 = ts.get(1);  printf("s1: %s\n", s1.data);
+    s2 = ts.get(2);  printf("s2: %s\n", s2.data);
+
+}
+
+{   tq: &rbtree(v_string_t) := {};
+
+    Q = v_quark_from_string("ЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫ");
+
+    for (i: &int := 1; i < Q; ++i)
+    {
+        tq := tq.push_back(v_quark_to_string(i));
+    }
+
+    for (i: &int := 1; i < Q; ++i)
+    {
+        printf("q[%d]: %s\n", i, tq.get(i-1).data);
+    }
+
+}
+
+
