@@ -9,7 +9,7 @@ Radix Balanced Trees                                           │rbts/micros.di
 Utility                                                        │util.void
                                                                │
                                                                │
-                                                               │
+Iterator facade                                                │iterator_facade.void
                                                                │
                                                                │
                                                                │

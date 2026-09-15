@@ -1,0 +1,146 @@
+{ voidc_import("libvoidc.void"); }
+{ voidc_make_header("iterator_facade"); }
+//---------------------------------------------------------------------
+{
+    v_import("llvm-c/Core.void");
+
+    v_import("util.void");
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+//- <immer/detail/iterator_facade.hpp>
+//---------------------------------------------------------------------
+namespace .immer {
+namespace detail {
+
+
+//---------------------------------------------------------------------
+#template instantiate_iterator_facade: [](IteratorT:       v_static_type_t,
+                                          AccessNS:        v_static_namespace_t,
+                                          T:               v_static_type_t,
+                                          ReferenceT:      v_static_type_t = &T,
+                                          DifferenceTypeT: v_static_type_t = intptr_t,
+                                          PointerT:        v_static_type_t = *T)
+{
+    using namespace .immer.detail;
+
+    _iterator = IteratorT;
+    access_ns = AccessNS;
+
+    value_type      = T;
+    difference_type = DifferenceTypeT;
+    pointer         = PointerT;
+    reference       = ReferenceT;
+
+    alwaysinline
+    (*_): (self: _iterator) ~> reference  =  access_ns.dereference(self);
+
+    alwaysinline
+    (_->): (self: _iterator) ~> pointer  =  &access_ns.dereference(self);
+
+    alwaysinline
+    (_[]): (self: _iterator, n: difference_type) ~> reference;
+
+    alwaysinline
+    (_==_): (a: &const _iterator, b: &const _iterator) ~> bool
+      =  access_ns.equal(a, b);
+
+    alwaysinline
+    (_!=_): (a: &const _iterator, b: &const _iterator) ~> bool
+      =  !access_ns.equal(a, b);
+
+    inlinehint
+    (++_): (self: &_iterator) ~> &_iterator  =
+    {
+        access_ns.increment(self);
+        self
+    };
+
+    inlinehint
+    (_++): (self: &_iterator) ~> _iterator  =
+    {
+        tmp: _iterator = self;
+        access_ns.increment(self);
+        tmp
+    };
+
+    inlinehint
+    (--_): (self: &_iterator) ~> &_iterator  =
+    {
+        access_ns.decrement(self);
+        self
+    };
+
+    inlinehint
+    (_--): (self: &_iterator) ~> _iterator  =
+    {
+        tmp: _iterator = self;
+        access_ns.decrement(self);
+        tmp
+    };
+
+    inlinehint
+    (_+=_): (self: &_iterator, n: difference_type) ~> &_iterator  =
+    {
+        access_ns.advance(self, n);
+        self
+    };
+
+    inlinehint
+    (_-=_): (self: &_iterator, n: difference_type) ~> &_iterator  =
+    {
+        access_ns.advance(self, -n);
+        self
+    };
+
+    inlinehint
+    (_+_): (self: _iterator, n: difference_type) ~> _iterator  =
+    {
+        tmp: &_iterator := self;
+        tmp += n
+    };
+
+    alwaysinline
+    (_+__): (n: difference_type, self: _iterator) ~> _iterator  =  self + n;
+
+    alwaysinline
+    (_[]): (self: _iterator, n: difference_type) ~> reference  =  *(self + n);
+
+    #define (_-_): (self: _iterator, x)  =
+    {
+        #if (util.unref_typeof(x).is_integer)   ret: _iterator = {tmp: &_iterator := self; tmp -= x};
+        #else                                   ret = access_ns.distance_to(x, self);
+        #endif
+
+        ret
+    };
+
+    inlinehint
+    (_<_): (a: &const _iterator, b: &const _iterator) ~> bool
+      =  access_ns.distance_to(a, b) > 0;
+
+    inlinehint
+    (_<=_): (a: &const _iterator, b: &const _iterator) ~> bool
+      =  access_ns.distance_to(a, b) >= 0;
+
+    inlinehint
+    (_>_): (a: &const _iterator, b: &const _iterator) ~> bool
+      =  access_ns.distance_to(a, b) < 0;
+
+    inlinehint
+    (_>=_): (a: &const _iterator, b: &const _iterator) ~> bool
+      =  access_ns.distance_to(a, b) <= 0;
+
+}   //- #template
+
+
+//---------------------------------------------------------------------
+}   //- namespace detail
+}   //- namespace .immer
+

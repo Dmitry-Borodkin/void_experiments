@@ -451,7 +451,7 @@ namespace rbts {
     inlinehint
     (_.assoc()): (self: rbtree_t, idx: size_t, value: T) ~> rbtree_t  =
     {
-        type = v_generic(assoc_function_tag, T(T));
+        type = v_generic(".immer.detail.rbts.assoc_function_tag", T(T));
 
         #template [type, T]()
         {

@@ -505,7 +505,7 @@ namespace equals_visitor
 
     #define equal_chunk_p: [](T: v_static_type_t, Iter: v_static_type_t = *T) ~> v_static_type_t  =
     {
-        type = v_generic(equal_chunk_p, T(T, Iter));
+        type = v_generic(".immer.detail.rbts.equal_chunk_p", T(T, Iter));
 
         #template [type, T, Iter]()
         {
@@ -2469,7 +2469,7 @@ namespace concat_rebalance_plan_fill_visitor
 //---------------------------------------------------------------------
 #define concat_rebalance_plan: [](B: bits_t, BL: bits_t) ~> v_static_type_t  =
 {
-    crp_t = v_generic(concat_rebalance_plan_tag, N[B,BL]);
+    crp_t = v_generic(".immer.detail.rbts.concat_rebalance_plan_tag", N[B,BL]);
 
     #template [*, crp_t, B, BL]()
     {
@@ -3172,7 +3172,7 @@ namespace concat_merger_mut_visitor
 //---------------------------------------------------------------------
 #define concat_rebalance_plan_mut: [](B: bits_t, BL: bits_t) ~> v_static_type_t  =
 {
-    crpm_t = v_generic(concat_rebalance_plan_mut_tag, N[B,BL]);
+    crpm_t = v_generic(".immer.detail.rbts.concat_rebalance_plan_mut_tag", N[B,BL]);
 
     #template [*, crpm_t, B, BL]()
     {
