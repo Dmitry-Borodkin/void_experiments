@@ -1,0 +1,103 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+//---------------------------------------------------------------------
+{
+    v_import("cstdio.void");
+
+    v_import("../detail/iterator_facade.void");
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+#define my_iterator: [](T: v_static_type_t) ~> v_static_type_t  =
+{
+    it = v_generic(my_iterator_tag, T(T));
+
+    #template [*, it, T]()
+    {
+        private
+        namespace core_access
+        {
+            #do (v_set_implementation_type(it, *T))
+
+            alwaysinline
+            increment: (p: &it) ~> void
+            {
+                p = *(&p: **T);
+
+                ++p;
+            }
+
+            alwaysinline
+            decrement: (p: &it) ~> void
+            {
+                p = *(&p: **T);
+
+                --p;
+            }
+
+            alwaysinline
+            advance: (p: &it, n: intptr_t) ~> void
+            {
+                p = *(&p: **T);
+
+                p += n;
+            }
+
+            alwaysinline
+            equal: (p: &const it, q: &const it) ~> bool  =
+            {
+                p = *(&p: **T);
+                q = *(&q: **T);
+
+                p == q
+            };
+
+            alwaysinline
+            distance_to: (p: &const it, q: &const it) ~> intptr_t  =
+            {
+                p = *(&p: **T);
+                q = *(&q: **T);
+
+                q - p
+            };
+
+            alwaysinline
+            dereference: (p: &const it) ~> &T  =
+            {
+                p = *(&p: **T);
+
+                *p
+            };
+        }
+
+        #do (.immer.detail.util.instantiate_iterator_facade(it, core_access, T))
+    }
+
+    it
+};
+
+
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(2); }
+//---------------------------------------------------------------------
+{
+    it: &my_iterator(int) := 0;
+
+    a: &int[] := {0, 1, 2, 3, 4, 5, 6};
+
+    *(&it: **int) := a;
+
+    for (i: &int := 0; i < 7; ++i)
+    {
+        printf("a[%d]: %d\n", i, *it++);
+    }
+
+}
+
+
