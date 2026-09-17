@@ -122,7 +122,7 @@ namespace detail {
     _minus_iterator: (a: _iterator, b: _iterator) ~> difference_type
       =  access.distance_to(b, a);
 
-    #define (_-_): (a: _iterator, b)  =
+    #define (_-_): [](a: _iterator, b)  =
     (
         #if (util.unref_typeof(b) == _iterator)  _minus_iterator(a, b)
         #else                                    _minus_number(a, b)

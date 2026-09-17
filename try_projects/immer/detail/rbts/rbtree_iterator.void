@@ -1,0 +1,143 @@
+{ voidc_import("libvoidc.void"); }
+{ voidc_make_header("rbtree_iterator"); }
+//---------------------------------------------------------------------
+{
+    v_export_import("../iterator_facade.void");
+    v_export_import("rbtree.void");
+
+    v_import("cstdio.void");        //- ?
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+//- <immer/detail/rbts/rbtree_iterator.hpp>
+//---------------------------------------------------------------------
+namespace .immer {
+namespace detail {
+namespace rbts {
+
+
+//---------------------------------------------------------------------
+#define rbtree_iterator: [](T: v_static_type_t, MP: v_static_namespace_t,
+                            B: bits_t, BL: bits_t) ~> v_static_type_t  =
+{
+    it = v_generic(".immer.detail.rbts.rbtree_iterator", T(T), Q(v_namespace_get_name(MP)), N[B,BL]);
+
+    #template [*, it, T, MP, B, BL]()
+    {
+        tree_t = rbtree(T, MP, B, BL);
+
+        private
+        namespace core_access
+        {
+            struct impl_t
+            {
+                v_:    *const tree_t;
+                i_:    size_t;
+                base_: size_t;
+                curr_: *const T;
+            };
+
+            #do (v_set_implementation_type(it, impl_t))
+
+            alwaysinline
+            increment: (p: &it) ~> void
+            {
+                p = *(&p: *impl_t);
+
+                v_assert(p.i_ < p.v_->size);
+                ++p.i_;
+            }
+
+            alwaysinline
+            decrement: (p: &it) ~> void
+            {
+                p = *(&p: *impl_t);
+
+                v_assert(p.i_ > 0);
+                --p.i_;
+            }
+
+            alwaysinline
+            advance: (p: &it, n: intptr_t) ~> void
+            {
+                p = *(&p: *impl_t);
+
+                v_assert(n <= 0  ||  p.i_ + (n: size_t) <= p.v_->size);
+                v_assert(n >= 0  ||  (-n: size_t) <= p.i_);
+                p.i_ += n;
+            }
+
+            alwaysinline
+            equal: (p: &const it, q: &const it) ~> bool  =
+            {
+                p = *(&p: *impl_t);
+                q = *(&q: *impl_t);
+
+                p.i_ == q.i_
+            };
+
+            alwaysinline
+            distance_to: (p: &const it, q: &const it) ~> intptr_t  =
+            {
+                p = *(&p: *impl_t);
+                q = *(&q: *impl_t);
+
+                r: &intptr_t := undef;
+
+                if (q.i_ > p.i_)  r := (q.i_ - p.i_ : intptr_t);
+                else              r := (p.i_ - q.i_ : intptr_t);
+
+                r
+            };
+
+            alwaysinline
+            dereference: (p: &const it) ~> &T  =
+            {
+                p = *(&p: *impl_t);
+
+                base = p.i_ & ~mask(BL);
+                if (p.base_ != base)
+                {
+                    p.base_ := base;
+                    p.curr_ := p.v_->array_for(p.i_);
+                }
+
+                p.curr_[p.i_ & mask(BL)]
+            };
+        }
+
+//      #do (instantiate_iterator_facade(it, core_access, T))       //- WTF !?!?!
+
+        alwaysinline
+        make: (v: &const tree_t, i: size_t) ~> it
+        {
+            ret = v_get_return_value();
+            ret = *(&ret: *core_access.impl_t);
+
+            ret := {&v, i, ~(0: size_t), 0};
+        }
+
+        alwaysinline
+        make_begin: (v: &const tree_t) ~> it  =  make(v, 0);
+
+        alwaysinline
+        make_end: (v: &const tree_t) ~> it  =  make(v, v.size);
+
+        #do (instantiate_iterator_facade(it, core_access, T))       //- WTF ?!?!?
+    }
+
+    it
+};
+
+
+//---------------------------------------------------------------------
+}   //- namespace rbts
+}   //- namespace detail
+}   //- namespace .immer
+

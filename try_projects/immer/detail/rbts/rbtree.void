@@ -2,7 +2,7 @@
 { voidc_make_header("rbtree"); }
 //---------------------------------------------------------------------
 {
-    v_import("../../config.void");
+//  v_import("../../config.void");
     v_export_import("node.void");
     v_export_import("operations.void");
     v_export_import("position.void");

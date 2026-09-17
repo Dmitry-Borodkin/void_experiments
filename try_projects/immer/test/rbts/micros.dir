@@ -11,6 +11,7 @@ rbtree 3    assoc                                              │rbtree_3.void 
                                                                │
 rbtree 4    take                                               │rbtree_4.void -T
                                                                │
+rbtree 5    iterator                                           │rbtree_5.void -T
                                                                │
                                                                │
                                                                │

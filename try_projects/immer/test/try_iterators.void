@@ -76,7 +76,7 @@
             };
         }
 
-        #do (.immer.detail.util.instantiate_iterator_facade(it, core_access, T))
+        #do (.immer.detail.instantiate_iterator_facade(it, core_access, T))
     }
 
     it
