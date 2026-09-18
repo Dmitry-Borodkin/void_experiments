@@ -1,0 +1,42 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+//---------------------------------------------------------------------
+{
+    v_import("cstdio.void");
+
+    v_import("string.void");
+
+    v_import("../../vector.void");
+    v_import("../../vector_transient.void");
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+{
+#note ("before")
+    vv: &immer.vector_transient(int) := {};
+#note ("after")
+
+    N = 100;
+
+    for (i: &int := 0; i < N; ++i)
+    {
+        vv.push_back(i);
+    }
+
+    vv = vv.persistent;
+
+    for (i: &int := 0; i < N; ++i)
+    {
+        printf("vv[%d]: %d\n", i, vv[i]);
+    }
+
+}
+
+
+

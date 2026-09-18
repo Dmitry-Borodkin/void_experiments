@@ -1,0 +1,155 @@
+{ voidc_import("libvoidc.void"); }
+{ voidc_make_header("vector"); }
+//---------------------------------------------------------------------
+{
+    v_export_import("memory_policy.void");
+    v_export_import("detail/rbts/rbtree.void");
+    v_export_import("detail/rbts/rbtree_iterator.void");
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+//- <immer/vector.hpp>
+//---------------------------------------------------------------------
+namespace .immer {
+
+
+//---------------------------------------------------------------------
+#define vector: [](T:            v_static_type_t,
+                   MemoryPolicy: v_static_namespace_t = default_memory_policy,
+                   B:            detail.rbts.bits_t   = default_bits,
+                   BL:           detail.rbts.bits_t   = detail.rbts.derive_bits_leaf(T, MemoryPolicy, B)
+                   ) ~> v_static_type_t  =
+{
+    vt = v_generic(".immer.vector", T(T), Q(v_namespace_get_name(MemoryPolicy)), N[B,BL]);
+
+    _instantiate_vector(vt, T, MemoryPolicy, B, BL);
+
+    vt
+};
+
+
+//---------------------------------------------------------------------
+#template _instantiate_vector: [](VT: v_static_type_t, T: v_static_type_t,
+                                  MemoryPolicy: v_static_namespace_t,
+                                  B: detail.rbts.bits_t, BL: detail.rbts.bits_t)
+{
+    using namespace .immer;
+
+    private impl_t = detail.rbts.rbtree(T, MemoryPolicy, B, BL);
+
+    #do (v_set_implementation_type(VT, impl_t))
+
+    alwaysinline
+    (_.impl): (self: &const VT) ~> &const impl_t  =  *(&self: *impl_t);
+
+    bits           = B;
+    bits_leaf      = BL;
+    _memory_policy = MemoryPolicy;          //- WTF ?!?!?!?
+
+    value_type      = T;
+    reference       = &const T;
+    size_type       = detail.rbts.size_t;
+    difference_type = intptr_t;
+    const_reference = &const T;
+
+    iterator = detail.rbts.rbtree_iterator(T, MemoryPolicy, B, BL);
+
+    //- ...
+
+    max_size = impl_t.max_size;
+
+    alwaysinline
+    (v_initialize(_)): (p: *VT, n: size_t) ~> void  { v_initialize(&p->impl, n); }
+
+    alwaysinline
+    (v_terminate(_)): (p: *VT, n: size_t) ~> void  { v_terminate(&p->impl, n); }
+
+    alwaysinline
+    (v_copy(_)): (d: *VT, s: *const VT, n: size_t) ~> void  { v_copy(&d->impl, &s->impl, n); }
+
+    alwaysinline
+    (v_move(_)): (d: *VT, s: *VT, n: size_t) ~> void  { v_move(&d->impl, &s->impl, n); }
+
+    alwaysinline
+    (v_empty(_)): (p: *const VT) ~> bool  =  v_empty(&p->impl);
+
+    inlinehint
+    (_:=_): (d: &VT, s: VT) ~> &VT  =  { v_copy(&d, &s); d };
+
+    //- ...
+
+    alwaysinline
+    (_.begin): (self: VT) ~> iterator  =  iterator.make_begin(self.impl);
+
+    alwaysinline
+    (_.end): (self: VT) ~> iterator  =  iterator.make_end(self.impl);
+
+    alwaysinline
+    (_.empty): (self: VT) ~> bool  =  self.impl.size == 0;
+
+    alwaysinline
+    (_.size): (self: VT) ~> size_type  =  self.impl.size;
+
+    alwaysinline
+    (_.back): (self: &const VT) ~> &const T  =  self.impl.back;
+
+    alwaysinline
+    (_.front): (self: &const VT) ~> &const T  =  self.impl.front;
+
+    alwaysinline
+    (_[]): (self: &const VT, index: size_type) ~> reference  =  self.impl.get(index);
+
+    //- ...
+
+    alwaysinline
+    (_==_): (self: &const VT, other: &const VT) ~> bool  =  self.impl.equals(other.impl);
+
+    alwaysinline
+    (_!=_): (self: &const VT, other: &const VT) ~> bool  =  !(self == other);
+
+    alwaysinline
+    (_.push_back()): (self: VT, value: value_type) ~> VT  =  *(&self.impl.push_back(value) : *VT);
+
+    alwaysinline
+    (_.set()): (self: VT, index: size_type, value: value_type) ~> VT  =  *(&self.impl.assoc(index, value) : *VT);
+
+    _vector = VT;
+
+    #define (_.update()): (self: _vector, index: size_type, fn) ~> _vector  =  *(&self.impl.update(index, fn) : *VT);
+
+    alwaysinline
+    (_.take()): (self: VT, elems: size_type) ~> VT  =  *(&self.impl.take(elems) : *VT);
+
+    //- ...
+
+    #define (_.transient): [](self: &const _vector)  =
+    {
+        transient_type = vector_transient(value_type, _memory_policy, bits, bits_leaf);
+
+        ret: &transient_type := {};
+
+        v_copy(&ret.impl, &self.impl);
+
+        ret: transient_type = ret;
+
+        ret
+    };
+
+
+    //- ...
+
+
+}   //- #template
+
+
+
+
+//---------------------------------------------------------------------
+}   //- namespace .immer
+

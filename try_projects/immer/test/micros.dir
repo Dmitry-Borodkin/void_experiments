@@ -13,9 +13,11 @@ try_rbts_operations                                            │try_rbts_opera
                                                                │
 rbts/                                                          │rbts/micros.dir
                                                                │
-                                                               │
 try_iterators                                                  │try_iterators.void -T
                                                                │
+---------------------------------------------------------------│
+vector/                                                        │vector/micros.dir
+vector_transient/                                              │vector_transient/micros.dir
                                                                │
                                                                │
 ---------------------------------------------------------------│

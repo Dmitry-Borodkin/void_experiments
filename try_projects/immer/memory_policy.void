@@ -2,7 +2,7 @@
 { voidc_make_header("memory_policy"); }
 //---------------------------------------------------------------------
 {
-    v_import("config.void");
+    v_export_import("config.void");
     v_export_import("heap/heap_policy.void");
     v_export_import("refcount/unsafe_refcount_policy.void");
     v_export_import("detail/util.void");

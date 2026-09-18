@@ -1,25 +1,20 @@
-                       ****  Immer  ****                       │*
+                 ****  Immer/test/vector  ****                 │*
                                                                │
-Detail                                                         │detail/micros.dir
+                                                               │
+vector 0    basics                                             │vector_0.void -T
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
+                                                               │
                                                                │
 ---------------------------------------------------------------│
-Heap                                                           │heap/micros.dir
                                                                │
-Reference counting                                             │refcount/micros.dir
-                                                               │
----------------------------------------------------------------│
-Config                                                         │config.void
-                                                               │
-Memory Policy                                                  │memory_policy.void
-                                                               │
-───────────────────────────────────────────────────────────────│
-vector                                                         │vector.void
-vector_transient                                               │vector_transient.void
-                                                               │
-                                                               │
-                                                               │
-───────────────────────────────────────────────────────────────│
-Tests                                                          │test/micros.dir
                                                                │
                                                                │
 ───────────────────────────────────────────────────────────────│

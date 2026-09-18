@@ -1,0 +1,38 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+//---------------------------------------------------------------------
+{
+    v_import("cstdio.void");
+
+    v_import("string.void");
+
+    v_import("../../vector.void");
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+{
+#note ("before")
+    vv: &immer.vector(v_string_t) := {};
+#note ("after")
+
+    vv := vv.push_back("превед");
+    vv := vv.push_back("медвед");
+    vv := vv.push_back("кагдила");
+
+    for (i: &int := 0; i < 3; ++i)
+    {
+        printf("vv[%d]: %s\n", i, vv[i].data);
+    }
+
+}
+
+
+
+
+
