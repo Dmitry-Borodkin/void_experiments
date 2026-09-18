@@ -121,8 +121,6 @@ namespace rbts {
         d->dec;
 
         *(d: *impl_t) := *(s: *impl_t);
-
-        s->dec;
     }
 
     private alwaysinline

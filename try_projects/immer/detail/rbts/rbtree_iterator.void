@@ -112,7 +112,7 @@ namespace rbts {
             };
         }
 
-//      #do (instantiate_iterator_facade(it, core_access, T))       //- WTF !?!?!
+        #do (instantiate_iterator_facade(it, core_access, T))
 
         alwaysinline
         make: (v: &const tree_t, i: size_t) ~> it
@@ -128,8 +128,6 @@ namespace rbts {
 
         alwaysinline
         make_end: (v: &const tree_t) ~> it  =  make(v, v.size);
-
-        #do (instantiate_iterator_facade(it, core_access, T))       //- WTF ?!?!?
     }
 
     it
