@@ -1,34 +1,21 @@
-                    ****  Immer/test  ****                     │*
+                  ****  Immer/test/some  ****                  │*
                                                                │
                                                                │
-try_util                                                       │try_util.void -T
+unique_ptr                                                     │unique_ptr.void -T
                                                                │
-try_heap                                                       │try_heap.void -T
-                                                               │
-try_rbts_node                                                  │try_rbts_node.void -T
-                                                               │
-try_rbts_position                                              │try_rbts_position.void -T
-                                                               │
-try_rbts_operations                                            │try_rbts_operations.void -T
-                                                               │
-rbts/                                                          │rbts/micros.dir
-                                                               │
-try_iterators                                                  │try_iterators.void -T
-                                                               │
----------------------------------------------------------------│
-vector/                                                        │vector/micros.dir
-vector_transient/                                              │vector_transient/micros.dir
+try_unique_ptr                                                 │try_unique_ptr.void -T
                                                                │
                                                                │
----------------------------------------------------------------│
-misc...                                                        │misc.void -T
+refcnt_ptr                                                     │refcnt_ptr.void -T
+                                                               │
+try_refcnt_ptr                                                 │try_refcnt_ptr.void -T
+                                                               │
+                                                               │
                                                                │
                                                                │
                                                                │
                                                                │
 ---------------------------------------------------------------│
-some/                                                          │some/micros.dir
-                                                               │
                                                                │
                                                                │
                                                                │

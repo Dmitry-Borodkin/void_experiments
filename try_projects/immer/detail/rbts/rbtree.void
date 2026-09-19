@@ -109,10 +109,9 @@ namespace rbts {
     (v_copy(_)): (d: *rbtree_t, s: *const rbtree_t) ~> void
     {
         d->dec;
+        s->inc;
 
         *(d: *impl_t) := *(s: *const impl_t);
-
-        d->inc;
     }
 
     inlinehint
@@ -121,6 +120,8 @@ namespace rbts {
         d->dec;
 
         *(d: *impl_t) := *(s: *impl_t);
+
+        v_initialize(s);        //- Sic !?!
     }
 
     private alwaysinline

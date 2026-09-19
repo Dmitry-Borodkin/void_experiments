@@ -48,9 +48,9 @@ namespace .immer {
     alwaysinline
     (_.impl): (self: &const VT) ~> &const impl_t  =  *(&self: *impl_t);
 
-    bits           = B;
-    bits_leaf      = BL;
-    _memory_policy = MemoryPolicy;          //- WTF ?!?!?!?
+    bits          = B;
+    bits_leaf     = BL;
+    memory_policy = MemoryPolicy;
 
     value_type      = T;
     reference       = &const T;
@@ -119,18 +119,16 @@ namespace .immer {
     alwaysinline
     (_.set()): (self: VT, index: size_type, value: value_type) ~> VT  =  *(&self.impl.assoc(index, value) : *VT);
 
-    _vector = VT;
-
-    #define (_.update()): (self: _vector, index: size_type, fn) ~> _vector  =  *(&self.impl.update(index, fn) : *VT);
+    #define (_.update()): [*, VT](self: VT, index: size_type, fn) ~> VT  =  *(&self.impl.update(index, fn) : *VT);
 
     alwaysinline
     (_.take()): (self: VT, elems: size_type) ~> VT  =  *(&self.impl.take(elems) : *VT);
 
     //- ...
 
-    #define (_.transient): [](self: &const _vector)  =
+    #define (_.transient): [*, VT, T, MemoryPolicy, B, BL](self: &const VT)  =
     {
-        transient_type = vector_transient(value_type, _memory_policy, bits, bits_leaf);
+        transient_type = vector_transient(T, MemoryPolicy, B, BL);
 
         ret: &transient_type := {};
 
