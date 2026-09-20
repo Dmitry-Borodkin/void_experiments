@@ -60,11 +60,11 @@ namespace .std {
     #endif
 
     //-------------------------------------------------------------
+    #do (v_set_implementation_type(PT, *ET))
+
     private
     namespace detail
     {
-        #do (v_set_implementation_type(PT, *ET))
-
         alwaysinline
         impl: (s: &PT) ~> &*ET  =  *(&s : **ET);
     }

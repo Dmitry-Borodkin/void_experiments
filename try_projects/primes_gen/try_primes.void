@@ -39,8 +39,6 @@ namespace intgen
 
 
 //---------------------------------------------------------------------
-#do (std.instantiate_refcnt_ptr(intgen._data_t))
-
 intgen_t = std.refcnt_ptr(intgen._data_t);
 
 
