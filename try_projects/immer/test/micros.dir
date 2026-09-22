@@ -24,10 +24,10 @@ vector_transient/                                              │vector_transie
 misc...                                                        │misc.void -T
                                                                │
                                                                │
-                                                               │
-                                                               │
 ---------------------------------------------------------------│
 some/                                                          │some/micros.dir
+                                                               │
+some_app/                                                      │some_app/micros.dir
                                                                │
                                                                │
                                                                │

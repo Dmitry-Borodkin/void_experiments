@@ -65,6 +65,8 @@
 //=====================================================================
 { voidc_unit_begin_module("utility_module"); }
 
+printf: (*const char, ...) ~> int;
+
 //---------------------------------------------------------------------
 private
 namespace_get_name_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
@@ -465,7 +467,7 @@ v_internal_immer_detail_util_effort: (*void) ~> void
 }
 
 //---------------------------------------------------------------------
-{   if (v_find_symbol_value("v_internal_immer_detail_util_enable"))
+{   if (v_find_symbol_value("v_internal_immer_detail_util_effort"))
     {
         voidc_skip_object_file_load(1);
     }
@@ -701,7 +703,23 @@ namespace util
 };
 
 
+//---------------------------------------------------------------------
+#define ipow: [](num, pow: unsigned) ~> typeof(num)  =
+{
+    #if   (pow == 0)  ret = 1;
+    #elif (pow == 1)  ret = num;
+    #else
 
+        r2 = ipow(num, pow/2);
+
+        ret = r2 * r2;
+
+        #if (pow & 1)  ret = ret * num;  #endif
+
+    #endif
+
+    ret
+};
 
 
 //---------------------------------------------------------------------

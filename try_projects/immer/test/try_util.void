@@ -134,10 +134,23 @@ test_t = v_generic(test_type);
 }
 
 
+//---------------------------------------------------------------------
+{
+    using namespace .immer.detail;
 
+    n: long = 127;
 
+    i = 0;  printf("ipow(%ld, %d): %ld\n", n, i, util.ipow(n, i));
+    i = 1;  printf("ipow(%ld, %d): %ld\n", n, i, util.ipow(n, i));
+    i = 2;  printf("ipow(%ld, %d): %ld\n", n, i, util.ipow(n, i));
+    i = 3;  printf("ipow(%ld, %d): %ld\n", n, i, util.ipow(n, i));
+    i = 4;  printf("ipow(%ld, %d): %ld\n", n, i, util.ipow(n, i));
+    i = 5;  printf("ipow(%ld, %d): %ld\n", n, i, util.ipow(n, i));
+    i = 6;  printf("ipow(%ld, %d): %ld\n", n, i, util.ipow(n, i));
+    i = 7;  printf("ipow(%ld, %d): %ld\n", n, i, util.ipow(n, i));
+    i = 8;  printf("ipow(%ld, %d): %ld\n", n, i, util.ipow(n, i));
+    i = 9;  printf("ipow(%ld, %d): %ld\n", n, i, util.ipow(n, i));
 
-
-
+}
 
 
