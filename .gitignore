@@ -29,4 +29,6 @@ try_projects/gtk_tries/gtk_tries
 
 try_projects/ninja/build/**
 
+try_projects/immer/test/some_app/some_app
+
 
