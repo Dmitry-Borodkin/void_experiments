@@ -28,7 +28,7 @@ namespace rbts {
 {
     it = v_generic(".immer.detail.rbts.rbtree_iterator", T(T), Q(v_namespace_get_name(MP)), N[B,BL]);
 
-    #template [*, it, T, MP, B, BL]()
+    #template rbtree_iterator: [*, it, T, MP, B, BL]()
     {
         tree_t = rbtree(T, MP, B, BL);
 

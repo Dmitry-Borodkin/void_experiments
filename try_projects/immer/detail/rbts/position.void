@@ -26,7 +26,7 @@ namespace rbts {
 {
     ns = v_generic_ns(position_ns, T(NodeT));
 
-    #template [ns, NodeT]()
+    #template position: [ns, NodeT]()
     {
         node_t    = NodeT;
         B         = NodeT.bits;
@@ -1635,7 +1635,7 @@ struct null_sub_pos {};
 {
     ns = v_generic_ns(position_shift_ns, T(NodeT), N(Shift));
 
-    #template [ns, NodeT]()
+    #template position_shift: [ns, NodeT]()
     {
         using namespace position(NodeT);
     }
@@ -1721,7 +1721,7 @@ struct null_sub_pos {};
 {
     ns = v_generic_ns(regular_descent_args_ns, Q(v_namespace_get_name(Vis)), T(NodeT));
 
-    #template [ns, NodeT]()
+    #template regular_descent_args: [ns, NodeT]()
     {
         using namespace position(NodeT);
     }
@@ -2933,7 +2933,7 @@ struct null_sub_pos {};
 
     ns = relaxed_sub_args(NodeT, v, ArgsT);
 
-    #template [ns, NodeT, v, ArgsT]()
+    #template visit_maybe_relaxed_sub: [ns, NodeT, v, ArgsT]()
     {
         linkonce_odr
         _visit_maybe_relaxed_sub: (node: *NodeT, shift: shift_t, size: size_t, args: ArgsT) ~> v.result_t
@@ -3006,7 +3006,7 @@ struct null_sub_pos {};
 
         ns = position_args(Pos, v, size_t);
 
-        #template [ns, Pos, v]()
+        #template relaxed_descend: [ns, Pos, v]()
         {
             alwaysinline
             _descend: (pos: Pos, idx: size_t) ~> v.result_t
@@ -3064,7 +3064,7 @@ struct null_sub_pos {};
 {
     ns = v_generic_ns(relaxed_descent_args_ns, Q(v_namespace_get_name(Vis)), T(NodeT));
 
-    #template [ns, NodeT]()
+    #template relaxed_descent_args: [ns, NodeT]()
     {
         using namespace position(NodeT);
     }

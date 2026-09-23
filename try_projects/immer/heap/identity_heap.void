@@ -18,7 +18,7 @@ namespace .immer {
 {
     ih = v_generic_ns(identity_heap_ns, Q(v_namespace_get_name(HeapNS)));
 
-    #template [ih, HeapNS]()
+    #template identity_heap: [ih, HeapNS]()
     {
         alwaysinline
         allocate: (size: size_t) ~> *void  =  HeapNS.allocate(size);

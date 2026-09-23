@@ -26,7 +26,7 @@ visitor_t = v_static_namespace_t;
 {
     ns = v_generic_ns(visitor_base_tag, Q(v_namespace_get_name(Derived)));
 
-    #template [*, ns, Derived]()
+    #template visitor_base: [*, ns, Derived]()
     {
         _base    = ns;
         _derived = Derived;

@@ -18,7 +18,7 @@
 {
     it = v_generic(my_iterator_tag, T(T));
 
-    #template [*, it, T]()
+    #template my_iterator: [*, it, T]()
     {
         private
         namespace core_access

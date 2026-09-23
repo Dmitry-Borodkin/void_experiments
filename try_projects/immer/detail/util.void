@@ -527,7 +527,7 @@ namespace util
 
     ns = v_generic_ns(equal_args, T[Iter1, Iter2]);
 
-    #template [ns, Iter1, Iter2]()
+    #template equal: [ns, Iter1, Iter2]()
     {
         inlinehint
         _equal: (i1: Iter1, i2: Iter2, n: size_t) ~> bool
@@ -639,7 +639,7 @@ namespace util
 
     ns = v_generic_ns(move_in_place_args, T(T));
 
-    #template [ns, T]()
+    #template move_in_place: [ns, T]()
     {
         inlinehint
         _move_in_place: (p: *T, s: intptr_t, n: size_t) ~> void

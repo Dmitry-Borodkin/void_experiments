@@ -452,7 +452,7 @@ namespace rbts {
     {
         type = v_generic(".immer.detail.rbts.assoc_function_tag", T(T));
 
-        #template [type, T]()
+        #template rbtree_assoc: [type, T]()
         {
             #do (v_set_implementation_type(type, T))
 

@@ -19,7 +19,7 @@ namespace .immer {
 {
     hp = v_generic_ns(heap_policy_ns, Q(v_namespace_get_name(HeapNS)));
 
-    #template [hp, HeapNS]()
+    #template heap_policy: [hp, HeapNS]()
     {
         heap = HeapNS;
 
@@ -29,7 +29,7 @@ namespace .immer {
 
             _HeapNS = heap;
 
-            #template [op, _HeapNS, Size]()
+            #template optimized: [op, _HeapNS, Size]()
             {
                 optimal_size = Size;
 

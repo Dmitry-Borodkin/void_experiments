@@ -28,7 +28,7 @@ namespace rbts {
 {
     vis = v_generic_ns(array_for_visitor_tag, T(T));
 
-    #template [*, vis, T]()
+    #template array_for_visitor: [*, vis, T]()
     {
         using namespace visitor_base(vis);
 
@@ -51,7 +51,7 @@ namespace rbts {
 {
     vis = v_generic_ns(region_for_visitor_tag, T(T));
 
-    #template [vis, T]()
+    #template region_for_visitor: [vis, T]()
     {
         using namespace visitor_base(vis);
 
@@ -74,7 +74,7 @@ namespace rbts {
 {
     vis = v_generic_ns(get_visitor_tag, T(T));
 
-    #template [*, vis, T]()
+    #template get_visitor: [*, vis, T]()
     {
         using namespace visitor_base(vis);
 
@@ -507,7 +507,7 @@ namespace equals_visitor
     {
         type = v_generic(".immer.detail.rbts.equal_chunk_p", T(T, Iter));
 
-        #template [type, T, Iter]()
+        #template equal_chunk_p: [type, T, Iter]()
         {
             #do (v_set_implementation_type(type, Iter))
 
@@ -541,7 +541,7 @@ namespace equals_visitor
 
         ns = PosL.v_generic_ns(equals_visit_relaxed, T(ArgsT));
 
-        #template [ns, PosL, ArgsT]()
+        #template visit_relaxed: [ns, PosL, ArgsT]()
         {
             inlinehint
             _visit_relaxed: (posl: PosL, args: ArgsT) ~> bool
@@ -688,7 +688,7 @@ namespace equals_visitor
 {
     vis = v_generic_ns(update_visitor_tag, T(NodeT));
 
-    #template [vis, NodeT]()
+    #template update_visitor: [vis, NodeT]()
     {
         using namespace visitor_base(vis);
 
@@ -863,7 +863,7 @@ namespace dec_visitor
 {
     vis = v_generic_ns(get_mut_visitor_tag, T(NodeT));
 
-    #template [vis, NodeT]()
+    #template get_mut_visitor: [vis, NodeT]()
     {
         using namespace visitor_base(vis);
 
@@ -969,7 +969,7 @@ namespace dec_visitor
 {
     vis = v_generic_ns(push_tail_mut_visitor_ns, T(NodeT), N(Mutating));
 
-    #template [vis, NodeT, Mutating]()
+    #template push_tail_mut_visitor: [vis, NodeT, Mutating]()
     {
         using namespace visitor_base(vis);
         using namespace position(NodeT);
@@ -1136,7 +1136,7 @@ namespace dec_visitor
 {
     vis = v_generic_ns(push_tail_visitor_tag, T(NodeT));
 
-    #template [vis, NodeT]()
+    #template push_tail_visitor: [vis, NodeT]()
     {
         using namespace visitor_base(vis);
         using namespace position(NodeT);
@@ -1291,7 +1291,7 @@ namespace dec_right_visitor
 {
     vis = v_generic_ns(slice_right_mut_visitor_ns, T(NodeT), N(2*Collapse + Mutating));
 
-    #template [vis, NodeT, Collapse, Mutating]()
+    #template slice_right_mut_visitor: [vis, NodeT, Collapse, Mutating]()
     {
         using namespace visitor_base(vis);
         using namespace position(NodeT);
@@ -1605,7 +1605,7 @@ namespace dec_right_visitor
 {
     vis = v_generic_ns(slice_right_visitor_ns, T(NodeT), N(Collapse));
 
-    #template [vis, NodeT, Collapse]()
+    #template slice_right_visitor: [vis, NodeT, Collapse]()
     {
         using namespace visitor_base(vis);
         using namespace position(NodeT);
@@ -1801,7 +1801,7 @@ namespace dec_left_visitor
 {
     vis = v_generic_ns(slice_left_mut_visitor_ns, T(NodeT), N(2*Collapse + Mutating));
 
-    #template [vis, NodeT, Collapse, Mutating]()
+    #template slice_left_mut_visitor: [vis, NodeT, Collapse, Mutating]()
     {
         using namespace visitor_base(vis);
         using namespace position(NodeT);
@@ -2014,7 +2014,7 @@ namespace dec_left_visitor
 {
     vis = v_generic_ns(slice_left_visitor_ns, T(NodeT), N(Collapse));
 
-    #template [vis, NodeT, Collapse]()
+    #template slice_left_visitor: [vis, NodeT, Collapse]()
     {
         using namespace visitor_base(vis);
         using namespace position(NodeT);
@@ -2471,7 +2471,7 @@ namespace concat_rebalance_plan_fill_visitor
 {
     crp_t = v_generic(".immer.detail.rbts.concat_rebalance_plan_tag", N[B,BL]);
 
-    #template [*, crp_t, B, BL]()
+    #template concat_rebalance_plan: [*, crp_t, B, BL]()
     {
         max_children = 2 * branches(B) + 1;
 
@@ -2662,7 +2662,7 @@ namespace concat_rebalance_plan_fill_visitor
 {
     vis = v_generic_ns(concat_left_visitor_tag, T(NodeT));
 
-    #template [vis, NodeT]()
+    #template concat_left_visitor: [vis, NodeT]()
     {
         using namespace visitor_base(vis);
 
@@ -2695,7 +2695,7 @@ namespace concat_rebalance_plan_fill_visitor
 {
     vis = v_generic_ns(concat_right_visitor_tag, T(NodeT));
 
-    #template [vis, NodeT]()
+    #template concat_right_visitor: [vis, NodeT]()
     {
         using namespace visitor_base(vis);
 
@@ -2729,7 +2729,7 @@ namespace concat_rebalance_plan_fill_visitor
 {
     vis = v_generic_ns(concat_both_visitor_tag, T(NodeT));
 
-    #template [vis, NodeT]()
+    #template concat_both_visitor: [vis, NodeT]()
     {
         using namespace visitor_base(vis);
 
@@ -2763,7 +2763,7 @@ namespace concat_rebalance_plan_fill_visitor
 {
     vis = v_generic_ns(concat_trees_right_visitor_tag, T(NodeT));
 
-    #template [vis, NodeT]()
+    #template concat_trees_right_visitor: [vis, NodeT]()
     {
         using namespace visitor_base(vis);
 
@@ -2789,7 +2789,7 @@ namespace concat_rebalance_plan_fill_visitor
 {
     vis = v_generic_ns(concat_trees_left_visitor_tag, T(NodeT));
 
-    #template [vis, NodeT]()
+    #template concat_trees_left_visitor: [vis, NodeT]()
     {
         using namespace visitor_base(vis);
 
@@ -3174,7 +3174,7 @@ namespace concat_merger_mut_visitor
 {
     crpm_t = v_generic(".immer.detail.rbts.concat_rebalance_plan_mut_tag", N[B,BL]);
 
-    #template [*, crpm_t, B, BL]()
+    #template concat_rebalance_plan_mut: [*, crpm_t, B, BL]()
     {
         using namespace concat_rebalance_plan(B, BL);
 
@@ -3321,7 +3321,7 @@ namespace concat_merger_mut_visitor
 {
     vis = v_generic_ns(concat_left_mut_visitor_tag, T(NodeT));
 
-    #template [vis, NodeT]()
+    #template concat_left_mut_visitor: [vis, NodeT]()
     {
         using namespace visitor_base(vis);
 
@@ -3354,7 +3354,7 @@ namespace concat_merger_mut_visitor
 {
     vis = v_generic_ns(concat_right_mut_visitor_tag, T(NodeT));
 
-    #template [vis, NodeT]()
+    #template concat_right_mut_visitor: [vis, NodeT]()
     {
         using namespace visitor_base(vis);
 
@@ -3388,7 +3388,7 @@ namespace concat_merger_mut_visitor
 {
     vis = v_generic_ns(concat_both_mut_visitor_tag, T(NodeT));
 
-    #template [vis, NodeT]()
+    #template concat_both_mut_visitor: [vis, NodeT]()
     {
         using namespace visitor_base(vis);
 
@@ -3422,7 +3422,7 @@ namespace concat_merger_mut_visitor
 {
     vis = v_generic_ns(concat_trees_right_mut_visitor_tag, T(NodeT));
 
-    #template [vis, NodeT]()
+    #template concat_trees_right_mut_visitor: [vis, NodeT]()
     {
         using namespace visitor_base(vis);
 
@@ -3448,7 +3448,7 @@ namespace concat_merger_mut_visitor
 {
     vis = v_generic_ns(concat_trees_left_mut_visitor_tag, T(NodeT));
 
-    #template [vis, NodeT]()
+    #template concat_trees_left_mut_visitor: [vis, NodeT]()
     {
         using namespace visitor_base(vis);
 

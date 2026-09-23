@@ -21,7 +21,7 @@ namespace .immer {
   {
     ds = v_generic_ns(debug_size_heap_ns, Q(v_namespace_get_name(HeapNS)));
 
-    #template [ds, HeapNS]()
+    #template debug_size_heap: [ds, HeapNS]()
     {
         extra_size = 16;            //- Kinda  alignof(max_align_t)
 

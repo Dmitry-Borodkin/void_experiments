@@ -24,7 +24,7 @@ namespace .immer {
                       Q(v_namespace_get_name(HeapPolicy)),
                       T(RefcountPolicy));
 
-    #template [mp, HeapPolicy, RefcountPolicy]()
+    #template memory_policy: [mp, HeapPolicy, RefcountPolicy]()
     {
         heap     = HeapPolicy;
         refcount = RefcountPolicy;
