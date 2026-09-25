@@ -33,7 +33,7 @@ qwerty: void;
     t = v_find_symbol_type("qwerty");
     v = v_find_symbol_value("qwerty");
 
-    printf("qwerty: %p %p %d\n", t, v, (v_type_is_void(t): int));
+    printf("qwerty: %p %p\n", t, v);
 }
 
 
@@ -56,6 +56,16 @@ qwerty: void;
 }
 
 
+//---------------------------------------------------------------------
+#if (v_defined(zxcvb)  &&  zxcvb == 7)
+
+    #note ("okay")
+
+#else
+
+    #note ("not okay")
+
+#endif
 
 
 

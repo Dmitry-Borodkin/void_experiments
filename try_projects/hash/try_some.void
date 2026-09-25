@@ -7,9 +7,9 @@
     v_import("try_fnv1a.void");
 }
 
+
 { v_import("stack_trace.void"); }
 { voidc_enable_stack_trace(); }
-
 
 
 //---------------------------------------------------------------------
@@ -25,8 +25,6 @@ using namespace my.hash.detail;         //- ?
 
 
 //---------------------------------------------------------------------
-#do (instantiate_fnv1a(uint(32)))
-
 {   hash: &fnv1a(uint(32)) := {};
 
     data = "Hello World";
@@ -37,6 +35,41 @@ using namespace my.hash.detail;         //- ?
 
     printf("h: %x\n", h);
 }
+
+
+//---------------------------------------------------------------------
+{
+    d: &uint(8)[] := "chongo <Landon Curt Noll> /\\../\\";
+
+    #define check: (T: v_static_type_t) ~> bool  =
+    {
+        b: &T := 0;
+
+        for (i: &size_t := 0; i < 32; ++i)
+        {
+            b *= fnv1a_const(T).prime;
+            b ^= d[i];
+        }
+
+        b == fnv1a_const(T).basis
+    };
+
+    v_assert(check(uint(32)));
+    v_assert(check(uint(64)));
+    v_assert(check(uint(128)));
+    v_assert(check(uint(256)));
+    v_assert(check(uint(512)));
+    v_assert(check(uint(1024)));
+
+    printf("\nOK\n");
+}
+
+
+
+
+
+
+
 
 
 

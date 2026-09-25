@@ -1,11 +1,8 @@
-{ v_import("printf.void"); }
 { v_import("libvoidc.void"); }
 { voidc_make_module("main_module"); }
 //---------------------------------------------------------------------
 {
     v_import("cstdio.void");
-//  v_import("cstdarg.void");
-
     v_import("string.void");
 
     v_import("../../vector.void");

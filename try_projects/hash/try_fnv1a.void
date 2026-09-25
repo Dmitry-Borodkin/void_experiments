@@ -12,13 +12,9 @@
 
 
 //---------------------------------------------------------------------
-namespace my
-{
-namespace hash
-{
-
-namespace detail
-{
+namespace my {
+namespace hash {
+namespace detail {
 
 //---------------------------------------------------------------------
 #define fnv1a_const: (T: v_static_type_t) ~> v_static_namespace_t  =  .my.hash.detail.v_generic_ns(fnv1a_const, t(T));
@@ -61,53 +57,48 @@ namespace fnv1a_const(uint(1024))
 
 
 //---------------------------------------------------------------------
-#define fnv1a: (T: v_static_type_t) ~> v_static_type_t  =  v_generic(fnv1a, t(T));
+#define fnv1a: [](T: v_static_type_t) ~> v_static_type_t  =
+{
+    ht = v_generic(".my.hash.detail.fnv1a", t(T));
+
+    _instantiate_fnv1a(ht, T);
+
+    ht
+};
 
 //---------------------------------------------------------------------
-#define instantiate_fnv1a: (T: v_static_type_t)
-{'unit_defn_list'
+#template _instantiate_fnv1a: [](HT: v_static_type_t, T: v_static_type_t)
+{
+    #do (v_set_implementation_type(HT, T))
 
-  namespace .my.hash.detail
-  {
-    #do (v_set_implementation_type(fnv1a(T), T))
-
-    private
-    namespace v_generic_ns(fnv1a_detail, t(T))
-    {
-        impl_t = v_get_implementation_type(fnv1a(T));
-
-        alwaysinline
-        (_.impl): (s: &fnv1a(T)) ~> &impl_t  =  *(&s : *impl_t);
-    }
-
-    private
-    detail_ns = v_generic_ns(fnv1a_detail, t(T));
+    private alwaysinline
+    impl: (s: &HT) ~> &T  =  *(&s : *T);
 
     //-------------------------------------------------------------
     inlinehint
-    (v_initialize(_)): (d: *fnv1a(T)) ~> void
+    (v_initialize(_)): (p: *HT) ~> void
     {
-        d->impl := fnv1a_const(T).basis;
+        impl(*p) := fnv1a_const(T).basis;
     }
 
     alwaysinline
-    (v_terminate(_)): (*fnv1a(T)) ~> void {}
+    (v_terminate(_)): (*HT) ~> void {}
 
     alwaysinline
-    (v_copy(_)): (d: *fnv1a(T), s: *const fnv1a(T), n: size_t) ~> void
+    (v_copy(_)): (d: *HT, s: *const HT, n: size_t) ~> void
     {
         .memcpy: (*void, *const void, size_t) ~> *void;
 
-        .memcpy(d, s, n*sizeof(fnv1a(T)));
+        .memcpy(d, s, n*sizeof(HT));
     }
 
     //-------------------------------------------------------------
     inlinehint
-    (_.update()): (d: &fnv1a(T), pv: *const void, n: size_t) ~> void
+    (_.update()): (d: &HT, pv: *const void, n: size_t) ~> void
     {
         p = (pv: *const uint(8));
 
-        h: &T := d.impl;
+        h: &T := impl(d);
 
         for (i: &size_t := 0; i < n; ++i)
         {
@@ -115,36 +106,24 @@ namespace fnv1a_const(uint(1024))
             h *= fnv1a_const(T).prime;
         }
 
-        d.impl := h;
+        impl(d) := h;
     }
 
     inlinehint
-    (_.result): (d: &fnv1a(T)) ~> T
+    (_.result): (d: &HT) ~> T
     {
-        v_get_return_value() := d.impl;
+        v_get_return_value() := impl(d);
 
         //- ?!?!?
 
-        d.impl := (d.impl ^ 0xFF) * fnv1a_const(T).prime;
+        impl(d) := (impl(d) ^ 0xFF) * fnv1a_const(T).prime;
     }
 
-  } //- namespace .my.hash.detail
-
-'unit_defn_list'}
+}   //- #template
 
 
-
-
-
+//---------------------------------------------------------------------
 }   //- namespace detail
-
-
-
-
 }   //- namespace hash
 }   //- namespace my
-
-
-
-
 
