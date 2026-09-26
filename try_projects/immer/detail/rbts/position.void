@@ -2536,7 +2536,7 @@ struct null_sub_pos {};
                 {
                     for (i: &count_t := 0; i < n; ++i)
                     {
-                        make_leaf_sub_pos(p[i], pos.relaxed_->d.sizes[i] - s).visit(v, args);
+                        make_leaf_sub_pos(p[i], (pos.relaxed_->d.sizes[i] - s : count_t)).visit(v, args);
                         s := pos.relaxed_->d.sizes[i];
                         v_assert(s);
                     }
@@ -2702,7 +2702,7 @@ struct null_sub_pos {};
 
                 if (is_leaf)
                 {
-                    return  make_leaf_sub_pos(child, next_size).visit(v, mk_args(next_idx));
+                    return  make_leaf_sub_pos(child, (next_size: count_t)).visit(v, mk_args(next_idx));
                 }
                 else
                 {
@@ -2715,7 +2715,6 @@ struct null_sub_pos {};
     };
 
     #define (_.last_oh_csh()): [](p: relaxed_pos, v: visitor_t,
-                                  idx: size_t,
                                   offset_hint: count_t,
                                   child_size_hint: size_t,
                                   args)  =
@@ -2737,7 +2736,7 @@ struct null_sub_pos {};
 
                 if (is_leaf)
                 {
-                    return  make_leaf_sub_pos(child, child_size_hint).visit(v, args);
+                    return  make_leaf_sub_pos(child, (child_size_hint: count_t)).visit(v, args);
                 }
                 else
                 {
@@ -2746,7 +2745,7 @@ struct null_sub_pos {};
             }
         }
 
-        NS._last_oh_csh(p, idx, offset_hint, child_size_hint, args)
+        NS._last_oh_csh(p, offset_hint, child_size_hint, args)
     };
 
     #define (_.last_sub()): [](p: relaxed_pos, v: visitor_t, args)  =
@@ -2926,9 +2925,9 @@ struct null_sub_pos {};
 //---------------------------------------------------------------------
 //- visit_maybe_relaxed_sub
 //---------------------------------------------------------------------
-#define visit_maybe_relaxed_sub: (node, shift: shift_t, size: size_t, v: visitor_t, args)  =
+#define visit_maybe_relaxed_sub: [](node, shift: shift_t, size: size_t, v: visitor_t, args)  =
 {
-    NodeT = typeof(node).element_type;
+    NodeT = util.unref_typeof(node).element_type;
     ArgsT = typeof(args);
 
     ns = relaxed_sub_args(NodeT, v, ArgsT);
@@ -2945,7 +2944,7 @@ struct null_sub_pos {};
 
             if (relaxed)
             {
-                v_assert(size == pos.relaxed_->d.sizes[pos.relaxed_->d.count - 1]);
+                v_assert(size == relaxed->d.sizes[relaxed->d.count - 1]);
 
                 return  make_relaxed_pos(node, shift, relaxed).visit(v, args);
             }
@@ -2990,8 +2989,8 @@ struct null_sub_pos {};
     inlinehint
     (_.index()): (pos: relaxed_descent_pos, idx: size_t) ~> count_t
     {
-        #if (Shift == BL) offset: &count_t := (idx >> BL) & mask(B);
-        #else             offset: &count_t := idx >> Shift;
+        #if (Shift == BL) offset: &count_t := ((idx >> BL) & mask(B) : count_t);
+        #else             offset: &count_t := (idx >> Shift : count_t);
         #endif
 
         while (pos.relaxed_->d.sizes[offset] <= idx)  ++offset;
@@ -3006,7 +3005,7 @@ struct null_sub_pos {};
 
         ns = position_args(Pos, v, size_t);
 
-        #template relaxed_descend: [ns, Pos, v]()
+        #template relaxed_descend: [ns, Pos, v, _Shift]()
         {
             alwaysinline
             _descend: (pos: Pos, idx: size_t) ~> v.result_t
@@ -3035,7 +3034,7 @@ struct null_sub_pos {};
             }
         }
 
-        ns._descent(p, idx)
+        ns._descend(p, idx)
     };
 
     #define (_.visit()): [](p: relaxed_descent_pos, v: visitor_t, args)
@@ -3046,7 +3045,7 @@ struct null_sub_pos {};
 //---------------------------------------------------------------------
 #define make_relaxed_descent_pos: [](Shift: shift_t, node, relaxed)  =
 {
-    prepare_position_shift(node, shift);
+    prepare_position_shift(node, Shift);
 
     _instantiate_relaxed_descent_pos(NS, NodeT, Shift);
 
@@ -3098,6 +3097,8 @@ struct null_sub_pos {};
 
             default:      //- IMMER_DESCENT_DEEP...
               {
+                idx: &size_t := idx;
+
                 node: &*NodeT := node;
 
                 for (level: &shift_t := shift; level != endshift(B, BL); level -= B)
@@ -3141,7 +3142,7 @@ struct null_sub_pos {};
 //---------------------------------------------------------------------
 #define visit_maybe_relaxed_descent: (node, shift: shift_t, Vis: visitor_t, idx: size_t)  =
 {
-    NodeT = typeof(node).element_type;
+    NodeT = util.unref_typeof(node).element_type;
 
     ns = relaxed_descent_args(NodeT, Vis);
 

@@ -13,6 +13,8 @@ rbtree 4    take                                               │rbtree_4.void 
                                                                │
 rbtree 5    iterator                                           │rbtree_5.void -T
                                                                │
+---------------------------------------------------------------│
+rrbtree 0    basics                                            │rrbtree_0.void -T
                                                                │
                                                                │
                                                                │

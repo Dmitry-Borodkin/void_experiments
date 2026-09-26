@@ -45,7 +45,7 @@ namespace rbts {
     node_t   = node(T, MemoryPolicy, B, BL);
     rbtree_t = RBT;
 
-    max_size = (1: size_t) << ((size_t.width - BL)/B * B + BL);
+    max_size = ((1: size_t) << BL) * util.ipow((1: size_t) << B, (size_t.width - BL) / B);
 
     struct impl_t
     {
@@ -174,7 +174,7 @@ namespace rbts {
 
         if (last > tail_off)
         {
-            make_leaf_sub_pos(self.tail, (self_size: count_t))
+            make_leaf_sub_pos(self.tail, (tail_size: count_t))
                 .visit(v,
                        {util.if_(first > tail_off, first - tail_off, 0),
                        last - tail_off,
@@ -247,7 +247,7 @@ namespace rbts {
             if (idx >= tail_off)  ret := make_leaf_descent_pos(self.tail).visit(v, idx);
             else                  ret := visit_regular_descent(self.root, self.shift, v, idx);
 
-            ret = (ret: ret_t);
+            ret: ret_t = ret;
 
         #endif
 

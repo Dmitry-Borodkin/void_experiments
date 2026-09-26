@@ -1,0 +1,589 @@
+{ voidc_import("libvoidc.void"); }
+{ voidc_make_header("rrbtree"); }
+//---------------------------------------------------------------------
+{
+//  v_import("../../config.void");
+    v_export_import("node.void");
+    v_export_import("operations.void");
+    v_export_import("position.void");
+
+    v_import("cstdio.void");        //- ?
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+//- <immer/detail/rbts/rrbtree.hpp>
+//---------------------------------------------------------------------
+namespace .immer {
+namespace detail {
+namespace rbts {
+
+
+//---------------------------------------------------------------------
+#define rrbtree: [](T: v_static_type_t, MemoryPolicy: v_static_namespace_t,
+                    B: bits_t, BL: bits_t) ~> v_static_type_t  =
+{
+    rbt = v_generic(".immer.detail.rbts.rrbtree", T(T), Q(v_namespace_get_name(MemoryPolicy)), N[B,BL]);
+
+    _instantiate_rrbtree(rbt, T, MemoryPolicy, B, BL);
+
+    rbt
+};
+
+//---------------------------------------------------------------------
+#template _instantiate_rrbtree: [](RBT: v_static_type_t, T: v_static_type_t,
+                                   MemoryPolicy: v_static_namespace_t,
+                                   B: bits_t, BL: bits_t)
+{
+    using namespace .immer.detail.rbts;
+
+    node_t    = node(T, MemoryPolicy, B, BL);
+    rrbtree_t = RBT;
+
+    max_size = (((1: size_t) << BL) - util.min(BL, 2, size_t)) *
+               util.ipow(((1: size_t) << B) - 2, (size_t.width - BL) / B);
+
+    struct impl_t
+    {
+        size:  size_t;
+        shift: shift_t;
+        root:  *node_t;
+        tail:  *node_t;
+    };
+
+    #do (v_set_implementation_type(rrbtree_t, impl_t),
+         v_make_trivial_coercion(v_coe_projective,  rrbtree_t, &const impl_t),
+         v_make_trivial_coercion(v_coe_projective, &rrbtree_t, &impl_t),
+         v_make_trivial_coercion(v_coe_projective, *rrbtree_t, *impl_t))
+
+    alwaysinline empty_root: () ~> *node_t  =  node_t.make_inner_n(0);      //- TODO !!! ???
+    alwaysinline empty_tail: () ~> *node_t  =  node_t.make_leaf_n(0);       //- TODO !!! ???
+
+    inlinehint
+    (v_initialize(_)): (p: *rrbtree_t) ~> void
+    {
+        *(p: *impl_t) := { 0, BL, empty_root(), empty_tail() };
+    }
+
+    inlinehint
+    (v_terminate(_)): (p: *rrbtree_t) ~> void;
+
+    inlinehint
+    (v_copy(_)): (d: *rrbtree_t, s: *const rrbtree_t) ~> void;
+
+    inlinehint
+    (v_move(_)): (d: *rrbtree_t, s: *rrbtree_t) ~> void;
+
+    inlinehint
+    (v_empty(_)): (p: *rrbtree_t) ~> bool  =  p->size == 0;
+
+    inlinehint
+    (_:=_): (d: &rrbtree_t, s: rrbtree_t) ~> &rrbtree_t  =
+    {
+        v_copy(&d, &s);
+
+        d
+    };
+
+    inlinehint
+    (_.inc): (self: &const rrbtree_t) ~> void
+    {
+        self.root->inc;
+        self.tail->inc;
+    }
+
+    inlinehint
+    (_.dec): (self: &const rrbtree_t) ~> void;
+
+    inlinehint
+    (v_terminate(_)): (p: *rrbtree_t) ~> void
+    {
+        p->dec;
+    }
+
+    inlinehint
+    (v_copy(_)): (d: *rrbtree_t, s: *const rrbtree_t) ~> void
+    {
+        d->dec;
+        s->inc;
+
+        *(d: *impl_t) := *(s: *const impl_t);
+    }
+
+    inlinehint
+    (v_move(_)): (d: *rrbtree_t, s: *rrbtree_t) ~> void
+    {
+        d->dec;
+
+        *(d: *impl_t) := *(s: *impl_t);
+
+        v_initialize(s);        //- Sic !?!
+    }
+
+    private alwaysinline
+    make: (sz: size_t, sh: shift_t, r: *node_t, t: *node_t) ~> rrbtree_t
+    {
+        ret = v_get_return_value();
+
+        ret.dec;
+
+        *(&ret: *impl_t) := {sz, sh, r, t};         //- Sic !!!
+    }
+
+    inlinehint
+    (_.tail_offset): (self: rrbtree_t) ~> size_t;
+
+    inlinehint
+    (_.tail_size): (self: rrbtree_t) ~> size_t
+      =  self.size - self.tail_offset;
+
+    inlinehint
+    (_.tail_offset): (self: rrbtree_t) ~> size_t
+    {
+        r = self.root->relaxed;
+        v_assert(r == 0  ||  r->d.count);
+
+        ret = v_get_return_value();
+
+        if (r)
+        {
+            ret := r->d.sizes[r->d.count - 1];
+        }
+        else
+        {
+            ret := util.if_(self.size,  (self.size - 1) & ~mask(BL),  0);
+        }
+    }
+
+    #define (_.traverse()): [](self: rrbtree_t, v: visitor_t, args)
+    {'stmt_list'
+
+        tail_off  = self.tail_offset;
+        tail_size = self.size - tail_off;
+
+        if (tail_off)
+            visit_maybe_relaxed_sub(self.root, self.shift, tail_off, v, args);
+        else
+            make_empty_regular_pos(self.root).visit(v, args);
+
+        if (tail_size)
+            make_leaf_sub_pos(self.tail, (tail_size: count_t)).visit(v, args);
+        else
+            make_empty_leaf_pos(self.tail).visit(v, args);
+
+    'stmt_list'}
+
+    inlinehint
+    (_.dec): (self: &const rrbtree_t) ~> void  { self.traverse(dec_visitor, {}); }
+
+    #define (_.traverse_i()): [](self: rrbtree_t, v: visitor_t, first: size_t, last: size_t, args)
+    {'stmt_list'
+
+        tail_off  = self.tail_offset;
+        tail_size = self.size - tail_off;
+
+        if (first < tail_off)
+        {
+            visit_maybe_relaxed_sub(self.root, self.shift, tail_off, v,
+                                    {first, util.min(last, tail_off), args});
+        }
+
+        if (last > tail_off)
+        {
+            make_leaf_sub_pos(self.tail, (tail_size: count_t))
+                .visit(v,
+                       {util.if_(first > tail_off, first - tail_off, 0),
+                       last - tail_off,
+                       args});
+        }
+
+    'stmt_list'}
+
+    #define (_.traverse_p()): [](self: rrbtree_t, v: visitor_t, args) ~> bool  =
+    {
+        tail_off  = self.tail_offset;
+        tail_size = self.size - tail_off;
+
+        r: &bool := undef;
+
+        if (tail_off)
+            r := visit_maybe_relaxed_sub(self.root, self.shift, tail_off, v, args);
+        else
+            r := make_empty_regular_pos(self.root).visit(v, args);
+
+        if (r)
+        {
+            if (tail_size)
+                r := make_leaf_sub_pos(self.tail, (tail_size: count_t)).visit(v, args);
+            else
+                r := make_empty_leaf_pos(self.tail).visit(v, args);
+        }
+
+        r
+    };
+
+    #define (_.traverse_p_i()): [](self: rrbtree_t, v: visitor_t, first: size_t, last: size_t, args) ~> bool  =
+    {
+        tail_off  = self.tail_offset;
+        tail_size = self.size - tail_off;
+
+        r: &bool := true;
+
+        if (first < tail_off)
+        {
+            r := visit_maybe_relaxed_sub(self.root, self.shift, tail_off, v,
+                                         {first, util.min(last, tail_off), args});
+        }
+
+        if (r  &&  last > tail_off)
+        {
+            r := make_leaf_sub_pos(self.tail, (tail_size: count_t))
+                     .visit(v,
+                            {util.if_(first > tail_off, first - tail_off, 0),
+                            last - tail_off,
+                            args});
+        }
+
+        r
+    };
+
+    #define (_.descend()): [](self: rrbtree_t, v: visitor_t, idx: size_t)  =
+    {
+        is_reference = v.result_t.is_reference;
+
+        #if (is_reference)  ret_t = *v.result_t.element_type;
+        #else               ret_t = v.result_t;
+        #endif
+
+        tail_off = self.tail_offset;
+
+        ret: &ret_t := undef;
+
+        #if (is_reference)
+
+            if (idx >= tail_off)  ret := &make_leaf_descent_pos(self.tail).visit(v, idx - tail_off);
+            else                  ret := &visit_maybe_relaxed_descent(self.root, self.shift, v, idx);
+
+            ret = *ret;
+
+        #else
+
+            if (idx >= tail_off)  ret := make_leaf_descent_pos(self.tail).visit(v, idx - tail_off);
+            else                  ret := visit_maybe_relaxed_descent(self.root, self.shift, v, idx);
+
+            ret: ret_t = ret;
+
+        #endif
+
+        ret
+    };
+
+    #define (_.for_each_chunk()): [](selt: rrbtree_t, fn)
+    {'stmt'
+        self.traverse(for_each_chunk_visitor, fn);
+    'stmt'}
+
+    #define (_.for_each_chunk_i()): [](selt: rrbtree_t, first: size_t, last: size_t, fn)
+    {'stmt'
+        self.traverse_i(for_each_chunk_i_visitor, first, last, fn);
+    'stmt'}
+
+    #define (_.for_each_chunk_p()): [](selt: rrbtree_t, fn) ~> bool
+      =  self.traverse_p(for_each_chunk_p_visitor, fn);
+
+    #define (_.for_each_chunk_p_i()): [](selt: rrbtree_t, first: size_t, last: size_t, fn) ~> bool
+      =  self.traverse_p_i(for_each_chunk_p_i_visitor, first, last, fn);
+
+    #define (_.equals()): [*, T, MemoryPolicy, B, BL](self: rrbtree_t, other: rrbtree_t) ~> bool  =
+    {
+        #template equals: [*, rrbtree_t, T, MemoryPolicy, B, BL]()
+        {
+            inlinehint
+            _equals: (self: rrbtree_t, other: rrbtree_t) ~> bool
+            {
+                iter_t = rrbtree_iterator(T, MemoryPolicy, B, BL);          //- Sic !!!
+                if (self.size != other.size)
+                    return  false;
+                if (self.size == 0)
+                    return  true;
+                tail_off       = self.tail_offset;
+                tail_off_other = other.tail_offset;
+                // compare trees
+                if (tail_off > 0  &&  tail_off_other > 0)
+                {
+                    // other.shift != self.shift is a theoretical possibility for
+                    // relaxed trees that sadly we haven't managed to exercise
+                    // in tests yet...
+                    if (other.shift >= self.shift)
+                    {
+                        if (!visit_maybe_relaxed_sub(other.root,
+                                                     other.shift,
+                                                     tail_off_other,
+                                                     equals_visitor.rrb,
+                                                     {iter_t.make_begin(other),
+                                                      self.root,
+                                                      self.shift,
+                                                      tail_off}))
+                            return false;
+                    }
+                    else
+                    {
+                        if (!visit_maybe_relaxed_sub(self.root,
+                                                     self.shift,
+                                                     tail_off,
+                                                     equals_visitor.rrb,
+                                                     {iter_t.make_begin(self),
+                                                      other.root,
+                                                      other.shift,
+                                                      tail_off_other}))
+                            return false;
+                    }
+                }
+
+                if (tail_off == tail_off_other)
+                {
+                    return  make_leaf_sub_pos(self.tail, tail_size())
+                                .visit(equals_visitor, other.tail);
+                }
+
+                if (tail_off > tail_off_other)
+                {
+                    return  util.equal(self.tail->leaf,
+                                       other.tail->leaf + (tail_off - tail_off_other),
+                                       self.size - tail_off);
+                }
+                else        // otherwise
+                {
+                    return  util.equal(self.tail->leaf,
+                                       iter_t.make(other, tail_off),
+                                       self.size - tail_off);
+                }
+            }
+        }
+
+        _equals(self, other)
+    };
+
+    inlinehint
+    (_.push_tail()): (self: rrbtree_t,
+                      root: *node_t, shift: shift_t, size: size_t,
+                      tail: *node_t, tail_size: count_t
+                      ) ~> struct { shift_t; *node_t; }
+    {
+        if (r = root->relaxed)
+        {
+            new_root = make_relaxed_pos(root, shift, r)
+                           .visit(push_tail_visitor(node_t), {tail, tail_size});
+            if (new_root)
+                return  {shift, new_root};
+
+            new_root = node_t.make_inner_r_n(2);
+            new_path = node_t.make_path(shift, tail);
+            new_root->inner[0] := root->inc;
+            new_root->inner[1] := new_path;
+            new_root->relaxed->d.sizes[0] := size;
+            new_root->relaxed->d.sizes[1] := size + tail_size;
+            v_assert(size);
+            v_assert(tail_size);
+            new_root->relaxed->d.count := 2;
+
+            return  {shift + B, new_root};
+        }
+        else if (size == (branches(B): size_t) << shift)
+        {
+            new_root = node_t.make_inner_n(2);
+            new_path = node_t.make_path(shift, tail);
+            new_root->inner[0] := root->inc;
+            new_root->inner[1] := new_path;
+
+            return  {shift + B, new_root};
+        }
+        else if (size)
+        {
+            new_root = make_regular_sub_pos(root, shift, size)
+                           .visit(push_tail_visitor(node_t), tail);
+            return  {shift, new_root};
+        }
+        else
+        {
+            return  {shift, node_t.make_path(shift, tail)};
+        }
+    }
+
+    inlinehint
+    (_.push_tail_mut()): (self: rrbtree_t, tail_off: size_t, tail: *node_t, tail_size: count_t) ~> void
+    {
+        if (r = self.root->relaxed)
+        {
+            new_root = make_relaxed_pos(self.root, self.shift, r)
+                           .visit(push_tail_mut_visitor(node_t), {tail, tail_size});
+            if (new_root)
+                self.root := new_root;
+            else
+            {
+                new_root = node_t.make_inner_r_e();
+                new_path = node_t.make_path_e(self.shift, tail);
+                new_root->inner[0] := self.root;
+                new_root->inner[1] := new_path;
+                new_root->relaxed->d.sizes[0] := tail_off;
+                new_root->relaxed->d.sizes[1] := tail_off + tail_size;
+                v_assert(tail_off);
+                v_assert(tail_size);
+                new_root->relaxed->d.count := 2;
+                self.root                  := new_root;
+                self.shift += B;
+            }
+        }
+        else if (tail_off == (branches(B): size_t) << self.shift)
+        {
+            new_root = node_t.make_inner_e();
+            new_path = node_t.make_path_e(self.shift, tail);
+            new_root->inner[0] := self.root;
+            new_root->inner[1] := new_path;
+            self.root          := new_root;
+            self.shift += B;
+        }
+        else if (tail_off)
+        {
+            new_root = make_regular_sub_pos(self.root, self.shift, tail_off)
+                           .visit(push_tail_mut_visitor(node_t), tail);
+            self.root := new_root;
+        }
+        else
+        {
+            new_root = node_t.make_path_e(self.shift, tail);
+            dec_empty_regular(self.root);
+            self.root := new_root;
+        }
+    }
+
+    inlinehint
+    (_.ensure_mutable_tail()): (self: &rrbtree_t, n: count_t) ~> void
+    {
+        if (self.tail->can_mutate)  return;
+
+        new_tail = node_t.copy_leaf_e(self.tail, n);
+        dec_leaf(self.tail, n);
+        self.tail := new_tail;
+    }
+
+    inlinehint
+    (_.push_back_mut()): (self: &rrbtree_t, value: T) ~> void
+    {
+        ts = self.tail_size;
+        if (ts < branches(BL))
+        {
+            self.ensure_mutable_tail((ts: count_t));
+            util.uninitialized_copy(&self.tail->leaf[ts], &value);
+        }
+        else
+        {
+            new_tail = node_t.make_leaf_e1(value);
+            tail_off = self.tail_offset;
+            self.push_tail_mut(tail_off, self.tail, (ts: count_t));
+            self.tail := new_tail;
+        }
+        ++self.size;
+    }
+
+    inlinehint
+    (_.push_back()): (self: rrbtree_t, value: T) ~> rrbtree_t
+    {
+        ts = self.tail_size;
+        if (ts < branches(BL))
+        {
+            new_tail = node_t.copy_leaf_emplace(self.tail, (ts: count_t), value);
+            return  make(self.size + 1, self.shift, self.root->inc, new_tail);
+        }
+        else
+        {
+            new_tail = node_t.make_leaf_n1(1, value);
+            tail_off = self.tail_offset;
+            new_root = self.push_tail(self.root, self.shift, tail_off, self.tail, (self.size - tail_off : count_t));
+            self.tail->inc;
+            return  make(self.size + 1, new_root[0], new_root[1], new_tail);
+        }
+    }
+
+    inlinehint
+    (_.region_for()): (self: rrbtree_t, idx: size_t) ~> struct { *const T; size_t; size_t; }
+    {
+        tail_off = self.tail_offset;
+        if (idx >= tail_off)
+        {
+            return  {self.tail->leaf, tail_off, self.size};
+        }
+        else
+        {
+            subs = visit_maybe_relaxed_sub(self.root, self.shift, tail_off, region_for_visitor(T), idx);
+            first = idx - subs[1];
+            end   = first + subs[2];
+            return  {subs[0], first, end};
+        }
+    }
+
+    inlinehint
+    (_.get_mut()): (self: &rrbtree_t, idx: size_t) ~> &T
+    {
+        tail_off = self.tail_offset;
+        if (idx >= tail_off)
+        {
+            self.ensure_mutable_tail((self.size - tail_off : count_t));
+            return  self.tail->leaf[(idx - tail_off) & mask(BL)];
+        }
+        else
+        {
+            return  visit_maybe_relaxed_sub(self.root,
+                                            self.shift,
+                                            tail_off,
+                                            get_mut_visitor(node_t),
+                                            {idx,
+                                            &self.root});
+        }
+    }
+
+    inlinehint
+    (_.get()): (self: rrbtree_t, index: size_t) ~> &const T
+    {
+        return  self.descend(get_visitor(T), index);
+    }
+
+    alwaysinline
+    (_.front): (self: rrbtree_t) ~> &const T  =  self.get(0);
+
+    alwaysinline
+    (_.back): (self: rrbtree_t) ~> &const T  =  self.get(self.size - 1);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}   //- #template
+
+
+//---------------------------------------------------------------------
+}   //- namespace rbts
+}   //- namespace detail
+}   //- namespace .immer
+

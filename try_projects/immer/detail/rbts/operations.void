@@ -51,7 +51,7 @@ namespace rbts {
 {
     vis = v_generic_ns(region_for_visitor_tag, T(T));
 
-    #template region_for_visitor: [vis, T]()
+    #template region_for_visitor: [*, vis, T]()
     {
         using namespace visitor_base(vis);
 
@@ -59,7 +59,7 @@ namespace rbts {
 
         _vis = vis;
 
-        #define visit_inner: [](pos, idx: size_t) ~> result_t  =  pos.towards(_vis, idx);
+        #define visit_inner: [](pos, idx: size_t) ~> result_t  =  pos.towards(_vis, idx, {});
         #define visit_leaf:  [](pos, idx: size_t) ~> result_t  =  {pos.node->leaf, pos.index(idx), pos.count};
     }
 
@@ -1147,7 +1147,7 @@ namespace dec_visitor
         {
             prepare_visitor_args(vis, pos, args);
 
-            #template visit_relaxed: [*, NS, Pos, ArgsT]()
+            #template visit_relaxed: [*, NS, Pos, ArgsT, vis]()
             {
                 inlinehint
                 _visit_relaxed: (pos: Pos, args: ArgsT) ~> result_t
