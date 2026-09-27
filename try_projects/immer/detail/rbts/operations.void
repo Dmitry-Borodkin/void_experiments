@@ -1850,7 +1850,7 @@ namespace dec_left_visitor
                     {
                         newn: &*node_t := undef;
 
-                        if (mutate)  newn := {node->ensure_mutable_relaxed(); node};
+                        if (mutate)  newn := {node->ensure_mutable_relaxed; node};
                         else         newn := node_t.make_inner_r_e();
 
                         newr     = newn->relaxed;
@@ -1861,7 +1861,7 @@ namespace dec_left_visitor
 
                         if (mutate)  subs := pos.towards_sub_oh(no_collapse_vis, first, idx, {});
                         else         subs := pos.towards_sub_oh(no_collapse_no_mut_vis, first, idx, {});
-                        if (mutate)  pos.each_left(dec_visitor, idx);
+                        if (mutate)  pos.each_left(dec_visitor, idx, {});
                         pos.copy_sizes(idx + 1, newcount - 1, new_child_size, newr->d.sizes + 1);
 
                         util.conditional_copy(newn->inner + 1, node->inner + idx + 1, count - idx - 1);
@@ -1904,7 +1904,7 @@ namespace dec_left_visitor
                     child_size         = pos.size_sbh(idx, left_size);
                     dropped_size       = first;
                     child_dropped_size = dropped_size - left_size;
-                    if (collapse  &&  pos.shift > BL  &&  idx == pos.count() - 1)
+                    if (collapse  &&  pos.shift > BL  &&  idx == pos.count - 1)
                     {
                         r: &result_t := undef;
 
@@ -1946,7 +1946,7 @@ namespace dec_left_visitor
 
                         if (mutate)  subs := pos.towards_sub_oh(no_collapse_vis, first, idx, {});
                         else         subs := pos.towards_sub_oh(no_collapse_no_mut_vis, first, idx, {});
-                        if (mutate)  pos.each_left(dec_visitor, idx);
+                        if (mutate)  pos.each_left(dec_visitor, idx, {});
                         newr->d.sizes[0] := child_size - child_dropped_size;
                         v_assert(newr->d.sizes[0]);
                         pos.copy_sizes(idx + 1, newcount - 1, newr->d.sizes[0], newr->d.sizes + 1);
@@ -1958,7 +1958,7 @@ namespace dec_left_visitor
                         if (!mutate)
                         {
                             node_t.inc_nodes(newn->inner + 1, newcount - 1);
-                            if (vutating)  pos.visit(dec_visitor, {});
+                            if (mutating)  pos.visit(dec_visitor, {});
                         }
                         return {pos.shift, newn};
                     }
@@ -1992,7 +1992,7 @@ namespace dec_left_visitor
                     }
                     else
                     {
-                        newn = node_t.copy_leaf_e(node, idx, count);
+                        newn = node_t.copy_leaf_e_last(node, idx, count);
                         if (mutating)  pos.visit(dec_visitor, {});
                         return  {0, newn};
                     }
@@ -2061,7 +2061,7 @@ namespace dec_left_visitor
                                        newr->d.sizes[0],
                                        newr->d.sizes + 1);
                         v_assert(newr->d.sizes[newr->d.count - 1] == pos.size - dropped_size);
-                        newn->inner()[0] := subs[1];
+                        newn->inner[0] := subs[1];
 
                         util.conditional_copy(newn->inner + 1, n->inner + idx + 1, count - idx - 1);
 
@@ -2076,7 +2076,7 @@ namespace dec_left_visitor
 
         #define visit_leaf: [*, vis](pos, first: size_t) ~> result_t  =
         {
-            n = node_t.copy_leaf(pos.node, pos.index(first), pos.count);
+            n = node_t.copy_leaf_last(pos.node, pos.index(first), pos.count);
 
             {0, n}
         };

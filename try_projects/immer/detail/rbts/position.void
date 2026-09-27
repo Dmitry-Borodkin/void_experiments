@@ -1090,7 +1090,7 @@ namespace rbts {
         {
             if (is_leaf)
             {
-                return  make_leaf_sub_pos(child, p.size - lsize).visit(Vis, mk_args(idx - lsize));
+                return  make_leaf_sub_pos(child, (p.size - lsize : count_t)).visit(Vis, mk_args(idx - lsize));
             }
             else
             {
@@ -2578,7 +2578,7 @@ struct null_sub_pos {};
                 {
                     for (i: &count_t := start; i < pos.relaxed_->d.count; ++i)
                     {
-                        make_leaf_sub_pos(p[i], pos.relaxed_->d.sizes[i] - s).visit(v, args);
+                        make_leaf_sub_pos(p[i], (pos.relaxed_->d.sizes[i] - s : count_t)).visit(v, args);
                         s := pos.relaxed_->d.sizes[i];
                         v_assert(s);
                     }

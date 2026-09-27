@@ -559,10 +559,232 @@ namespace rbts {
     alwaysinline
     (_.back): (self: rrbtree_t) ~> &const T  =  self.get(self.size - 1);
 
+    #define (_.update_mut()): [*, T](self: &rrbtree_t, idx: size_t, fn)
+    {'stmt'
+        {   elem = self.get_mut(idx);
+            elem := fn({e: T = elem; e});           //- WTF !?!?!?!?!
+        }
+    'stmt'}
 
+    #define (_.update()): [](self: rrbtree_t, idx: size_t, fn) ~> rrbtree_t  =
+    {
+        new_root: &*node_t := undef;
+        new_tail: &*node_t := undef;
 
+        tail_off = self.tail_offset;
+        if (idx >= tail_off)
+        {
+            tail_size = self.size - tail_off;
+            new_tail :=
+                make_leaf_sub_pos(self.tail, (tail_size: count_t))
+                    .visit(update_visitor(node_t), {idx - tail_off, fn});
+            new_root := self.root->inc;
+        }
+        else
+        {
+            new_root := visit_maybe_relaxed_sub(self.root, self.shift, tail_off,
+                                                update_visitor(node_t), {idx, fn});
+            new_tail := self.tail->inc;
+        }
 
+        make(self.size, self.shift, new_root, new_tail)
+    };
 
+    inlinehint
+    (_.assoc_mut()): (self: &rrbtree_t, idx: size_t, value: T) ~> void
+    {
+        #define fun: (v) ~> T  =  value;            //- Sic!
+
+        self.update_mut(idx, fun);
+    }
+
+    inlinehint
+    (_.assoc()): (self: rrbtree_t, idx: size_t, value: T) ~> rrbtree_t  =
+    {
+        type = v_generic(".immer.detail.rbts.assoc_function_tag", T(T));
+
+        #template _assoc: [type, T]()
+        {
+            #do (v_set_implementation_type(type, T))
+
+            alwaysinline
+            (_()): (p: *type, v: T) ~> T  =  *(p: *T);
+        }
+
+        fn: &T := value;
+        fn = (&fn: *type);
+
+        self.update(idx, fn)
+    };
+
+    inlinehint
+    (_.take_mut()): (self: &rrbtree_t, new_size: size_t) ~> void
+    {
+        tail_off = self.tail_offset;
+        if (new_size == 0)
+        {
+            self := {};
+        }
+        else if (new_size >= self.size)
+        {
+            return;
+        }
+        else if (new_size > tail_off)
+        {
+            ts    = self.size - tail_off;
+            newts = new_size - tail_off;
+            if (self.tail->can_mutate)
+            {
+                util.conditional_terminate(self.tail->leaf + newts, ts - newts);
+            }
+            else
+            {
+                new_tail = node_t.copy_leaf_e(self.tail, (newts: count_t));
+                dec_leaf(self.tail, (ts: count_t));
+                self.tail := new_tail;
+            }
+            self.size := new_size;
+            return;
+        }
+        else
+        {
+            l = new_size - 1;
+            v = slice_right_mut_visitor(node_t);
+            r = visit_maybe_relaxed_sub(self.root, self.shift, tail_off, v, l);
+            new_shift = r[0];
+            new_root  = r[1];
+            new_tail  = r[3];
+            if (new_root)
+            {
+                self.root  := new_root;
+                self.shift := new_shift;
+            }
+            else
+            {
+                self.root  := empty_root();
+                self.shift := BL;
+            }
+            dec_leaf(self.tail, (self.size - tail_off : count_t));
+            self.size := new_size;
+            self.tail := new_tail;
+            return;
+        }
+    }
+
+    inlinehint
+    (_.take()): (self: rrbtree_t, new_size: size_t) ~> rrbtree_t
+    {
+        tail_off = self.tail_offset;
+        if (new_size == 0)
+        {
+            return {};
+        }
+        else if (new_size >= self.size)
+        {
+            return self;
+        }
+        else if (new_size > tail_off)
+        {
+            new_tail = node_t.copy_leaf(self.tail, (new_size - tail_off : count_t));
+            return  make(new_size, self.shift, self.root->inc, new_tail);
+        }
+        else
+        {
+            l = new_size - 1;
+            v = slice_right_visitor(node_t);
+            r = visit_maybe_relaxed_sub(self.root, self.shift, tail_off, v, l);
+            new_shift = r[0];
+            new_root  = r[1];
+            new_tail  = r[3];
+            if (new_root)
+            {
+                return make(new_size, new_shift, new_root, new_tail);
+            }
+            else
+            {
+                return make(new_size, BL, empty_root(), new_tail);
+            }
+        }
+    }
+
+    inlinehint
+    (_.drop_mut()): (self: &rrbtree_t, elems: size_t) ~> void
+    {
+        tail_off = self.tail_offset;
+        if (elems == 0)
+        {
+            return;
+        }
+        else if (elems >= self.size)
+        {
+            self := {};
+        }
+        else if (elems == tail_off)
+        {
+            dec_inner(self.root, self.shift, tail_off);
+            self.shift := BL;
+            self.root := empty_root();
+            self.size -= elems;
+            return;
+        }
+        else if (elems > tail_off)
+        {
+            v = slice_left_mut_visitor(node_t);
+            self.tail := make_leaf_sub_pos(self.tail, (self.size - tail_off : count_t))
+                             .visit(v, elems - tail_off)
+                             [1];
+            if (tail_off)
+            {
+                dec_inner(self.root, self.shift, tail_off);
+                self.shift := BL;
+                self.root  := empty_root();
+            }
+            self.size -= elems;
+            return;
+        }
+        else
+        {
+            v = slice_left_mut_visitor(node_t);
+            r = visit_maybe_relaxed_sub(self.root, self.shift, tail_off, v, elems);
+            self.shift := r[0];
+            self.root  := r[1];
+            self.size  -= elems;
+            return;
+        }
+    }
+
+    inlinehint
+    (_.drop()): (self: rrbtree_t, elems: size_t) ~> rrbtree_t
+    {
+        if (elems == 0)
+        {
+            return  self;
+        }
+        else if (elems >= self.size)
+        {
+            return {};
+        }
+        else if (elems == self.tail_offset)
+        {
+            return  make(self.size - elems, BL, empty_root(), self.tail->inc);
+        }
+        else if (elems > self.tail_offset)
+        {
+            tail_off = self.tail_offset;
+            new_tail = node_t.copy_leaf_last(self.tail,
+                                             (elems - tail_off : count_t),
+                                             (self.size - tail_off : count_t));
+            return  make(self.size - elems, BL, empty_root(), new_tail);
+        }
+        else
+        {
+            v = slice_left_visitor(node_t);
+            r = visit_maybe_relaxed_sub(self.root, self.shift, self.tail_offset, v, elems);
+            new_root  = r[1];
+            new_shift = r[0];
+            return  make(self.size - elems, new_shift, new_root, self.tail->inc);
+        }
+    }
 
 
 

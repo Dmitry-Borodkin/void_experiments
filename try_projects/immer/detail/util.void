@@ -633,74 +633,77 @@ namespace util
 //---------------------------------------------------------------------
 //- ...
 //---------------------------------------------------------------------
-#define move_in_place: [](p, s: intptr_t, n: size_t) ~> void  =
-{
-    T = unref_typeof(p).element_type;
+#define move_in_place: [](p, s: intptr_t, n: size_t)
+{'stmt'
 
-    ns = v_generic_ns(move_in_place_args, T(T));
+    {   T = unref_typeof(p).element_type;
 
-    #template move_in_place: [ns, T]()
-    {
-        inlinehint
-        _move_in_place: (p: *T, s: intptr_t, n: size_t) ~> void
+        ns = v_generic_ns(move_in_place_args, T(T));
+
+        #template move_in_place: [ns, T]()
         {
-            if (n == 0)  return;    //- Nothing to do...
-            if (s == 0)  return;    //- ...
-
-            n: &size_t := n;
-
-            if (s > 0)              //- Move from right to left (forward)
+            inlinehint
+            _move_in_place: (p: *T, s: intptr_t, n: size_t) ~> void
             {
-                s = (s: size_t);
+                if (n == 0)  return;    //- Nothing to do...
+                if (s == 0)  return;    //- ...
 
-                p: &*T := p;
+                n: &size_t := n;
 
-                loop
+                if (s > 0)              //- Move from right to left (forward)
                 {
-                    m = min(s, n);
+                    s = (s: size_t);
 
-                    conditional_move(p, p+s, m);
+                    p: &*T := p;
 
-                    if (m == n)
+                    loop
                     {
-                        conditional_terminate(p+s, m);
+                        m = min(s, n);
 
-                        break;
+                        conditional_move(p, p+s, m);
+
+                        if (m == n)
+                        {
+                            conditional_terminate(p+s, m);
+
+                            break;
+                        }
+
+                        p += m;
+                        n -= m;
                     }
-
-                    p += m;
-                    n -= m;
                 }
-            }
-            else                    //- Move from left to right (backward)
-            {
-                s = (-s : size_t);
-
-                p: &*T := p + n;
-
-                loop
+                else                    //- Move from left to right (backward)
                 {
-                    m = min(s, n);
+                    s = (-s : size_t);
 
-                    p -= m;
+                    p: &*T := p + n;
 
-                    conditional_move(p, p-s, m);
-
-                    if (m == n)
+                    loop
                     {
-                        conditional_terminate(p-s, m);
+                        m = min(s, n);
 
-                        break;
+                        p -= m;
+
+                        conditional_move(p, p-s, m);
+
+                        if (m == n)
+                        {
+                            conditional_terminate(p-s, m);
+
+                            break;
+                        }
+
+                        n -= m;
                     }
-
-                    n -= m;
                 }
             }
         }
+
+        ns._move_in_place(p, s, n);
     }
 
-    ns._move_in_place(p, s, n)
-};
+'stmt'}
 
 
 //---------------------------------------------------------------------
