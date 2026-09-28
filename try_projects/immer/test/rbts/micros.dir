@@ -16,6 +16,7 @@ rbtree 5    iterator                                           │rbtree_5.void 
 ---------------------------------------------------------------│
 rrbtree 0   basics                                             │rrbtree_0.void -T
                                                                │
+rrbtree 1   quarks                                             │rrbtree_1.void -T
                                                                │
                                                                │
                                                                │

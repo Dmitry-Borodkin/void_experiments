@@ -9,7 +9,7 @@
     v_import("../../config.void");
     v_import("../../memory_policy.void");
 
-    v_import("../../detail/rbts/rbtree.void");
+    v_import("../../detail/rbts/rrbtree.void");
 }
 
 
@@ -23,24 +23,24 @@ namespace qwe
 {
     using namespace .immer.detail;
 
-    #define rbtree: [](T:  v_static_type_t,
-                       MP: v_static_namespace_t = default_memory_policy,
-                       B:  rbts.bits_t          = default_bits,
-                       BL: rbts.bits_t          = rbts.derive_bits_leaf(T, MP, B)
-                       ) ~> v_static_type_t
-      =  rbts.rbtree(T, MP, B, BL);
+    #define rrbtree: [](T:  v_static_type_t,
+                        MP: v_static_namespace_t = default_memory_policy,
+                        B:  rbts.bits_t          = default_bits,
+                        BL: rbts.bits_t          = rbts.derive_bits_leaf(T, MP, B)
+                        ) ~> v_static_type_t
+      =  rbts.rrbtree(T, MP, B, BL);
 }
 
-using qwe.rbtree;
+using qwe.rrbtree;
 
 
 //---------------------------------------------------------------------
 #note ("before")
-tstr: &rbtree(v_string_t) := {};
+tstr: &rrbtree(v_string_t) := {};
 #note ("after")
 
 
-{   ts: &rbtree(v_string_t) := {};
+{   ts: &rrbtree(v_string_t) := {};
 
     ts := ts.push_back("Превед");
     ts := ts.push_back("медвед");
@@ -52,7 +52,7 @@ tstr: &rbtree(v_string_t) := {};
 
 }
 
-{   tq: &rbtree(v_string_t) := {};
+{   tq: &rrbtree(v_string_t) := {};
 
     Q = v_quark_from_string("ЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫ");
 

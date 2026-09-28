@@ -6,6 +6,7 @@
 
     v_import("string.void");
 
+    v_import("../../config.void");
     v_import("../../memory_policy.void");
 
     v_import("../../detail/rbts/rbtree.void");
@@ -25,14 +26,14 @@ namespace qwe
 
     #define rbtree: [](T:  v_static_type_t,
                        MP: v_static_namespace_t = default_memory_policy,
-                       B:  rbts.bits_t          = 5,
+                       B:  rbts.bits_t          = default_bits,
                        BL: rbts.bits_t          = rbts.derive_bits_leaf(T, MP, B)
                        ) ~> v_static_type_t
       =  rbts.rbtree(T, MP, B, BL);
 
     #define rbtree_iterator: [](T:  v_static_type_t,
                                 MP: v_static_namespace_t = default_memory_policy,
-                                B:  rbts.bits_t          = 5,
+                                B:  rbts.bits_t          = default_bits,
                                 BL: rbts.bits_t          = rbts.derive_bits_leaf(T, MP, B)
                                 ) ~> v_static_type_t
       =  rbts.rbtree_iterator(T, MP, B, BL);

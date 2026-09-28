@@ -6,6 +6,7 @@
 
     v_import("string.void");
 
+    v_import("../../config.void");
     v_import("../../memory_policy.void");
 
     v_import("../../detail/rbts/rbtree.void");
@@ -32,10 +33,12 @@ namespace my
 
     policy = default_memory_policy;
 
-    BL = derive_bits_leaf(my_type, policy, 5);
+    B = default_bits;
+
+    BL = derive_bits_leaf(my_type, policy, B);
 
 #note ("before")
-    rbtree_t = rbtree(my_type, policy, 5, BL);
+    rbtree_t = rbtree(my_type, policy, B, BL);
 #note ("after")
 
 
@@ -51,7 +54,7 @@ tree: &my.rbtree_t := {};
 //{ v_debug_print_module(2); }
 //---------------------------------------------------------------------
 {
-    printf("BL: %d\n", my.BL);
+    printf("B: %d, BL: %d\n", my.B, my.BL);
 
     printf("max_size: %zu\n", my.rbtree_t.max_size);
 
