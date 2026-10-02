@@ -1117,12 +1117,7 @@ namespace dec_visitor
             NS._visit_regular(pos, args)
         };
 
-        #define visit_leaf: [](pos, args) ~> result_t  =  0;
-//        {
-//            v_assert(false && "Kinda, unreachable");
-//
-//            undef
-//        };
+        #define visit_leaf: [](pos, args) ~> result_t  =  util.unreachable(result_t);
     }
 
     vis
@@ -1232,13 +1227,9 @@ namespace dec_visitor
             NS._visit_regular(pos, args)
         };
 
-        #define visit_leaf: [](pos, args) ~> result_t  =  0;
-//        {
-//            v_assert(false && "Kinda, unreachable");
-//
-//            0
-//        };
-    }
+        #define visit_leaf: [](pos, args) ~> result_t  =  util.unreachable(result_t);
+
+    }   //- #template
 
     vis
 };
@@ -1279,7 +1270,7 @@ namespace dec_right_visitor
         ({})           //- Sic!
     };
 
-    #define visit_leaf: [](pos, idx: count_t) ~> result_t  =  {};   //- v_assert(false && "Kinda, unreachable");
+    #define visit_leaf: [](pos, idx: count_t) ~> result_t  =  util.unreachable(result_t);
 }
 
 
@@ -1789,7 +1780,7 @@ namespace dec_left_visitor
         ({})           //- Sic!
     };
 
-    #define visit_leaf: [](pos, idx: count_t) ~> result_t  =  v_assert(false && "Kinda, unreachable");
+    #define visit_leaf: [](pos, idx: count_t) ~> result_t  =  util.unreachable(result_t);
 }
 
 
@@ -2106,7 +2097,7 @@ namespace dec_left_visitor
     {
         shift_: shift_t;
         count_: count_t;
-        nodes_: node_t[max_children];
+        nodes_: (*node_t)[max_children];
         sizes_: size_t[max_children];
     };
 
@@ -2122,13 +2113,15 @@ namespace dec_left_visitor
             inlinehint
             _each_sub: (pos: Pos, args: ArgsT) ~> struct {}
             {
+                pos: &Pos := pos;
+
                 if (pos.shift_ == BL)
                 {
                     s: &size_t := 0;
 
                     for (i: &count_t := 0; i < pos.count_; ++i)
                     {
-                        make_leaf_sub_pos(pos.nodes_[i], pos.sizes_[i] - s).visit(v, args);
+                        make_leaf_sub_pos(pos.nodes_[i], (pos.sizes_[i] - s : count_t)).visit(v, args);
                         s := pos.sizes_[i];
                     }
                 }
@@ -2147,7 +2140,7 @@ namespace dec_left_visitor
     };
 
     inlinehint
-    (_.realize): (p: &concat_center_pos) ~> NS.relaxed_pos
+    (_.realize): (p: concat_center_pos) ~> NS.relaxed_pos
     {
         if (p.count_ > 1)
         {
@@ -2155,9 +2148,11 @@ namespace dec_left_visitor
             r      = result->relaxed;
             r->d.count := p.count_;
 
-            util.conditional_copy(result->inner, p.nodes_, p.count);
-            util.conditional_copy(r->d.sizes,    p.sizes_, p.count);
-            return  {result, shift_, r};
+            p: &concat_center_pos := p;
+
+            util.conditional_copy(result->inner, p.nodes_, p.count_);
+            util.conditional_copy(r->d.sizes,    p.sizes_, p.count_);
+            return  {result, p.shift_, r};
         }
         else
         {
@@ -2167,16 +2162,18 @@ namespace dec_left_visitor
     }
 
     inlinehint
-    (_.realize_e): (p: &concat_center_pos) ~> NS.relaxed_pos
+    (_.realize_e): (p: concat_center_pos) ~> NS.relaxed_pos
     {
         if (p.count_ > 1)
         {
-            result = node_t.make_inner_r_n_e();
+            result = node_t.make_inner_r_e();
             r      = result->relaxed;
             r->d.count := p.count_;
 
-            util.conditional_copy(result->inner, p.nodes_, p.count);
-            util.conditional_copy(r->d.sizes,    p.sizes_, p.count);
+            p: &concat_center_pos := p;
+
+            util.conditional_copy(result->inner, p.nodes_, p.count_);
+            util.conditional_copy(r->d.sizes,    p.sizes_, p.count_);
             return  {result, p.shift_, r};
         }
         else
@@ -2189,6 +2186,17 @@ namespace dec_left_visitor
 }   //- #template
 
 //---------------------------------------------------------------------
+#define make_concat_center_pos_undef: (n)  =
+{
+    prepare_position(n);
+
+    _instantiate_concat_center_pos(NS, NodeT);
+
+    ret: NS.concat_center_pos = undef;
+
+    ret
+};
+
 #define make_concat_center_pos_1: (s: shift_t, n0, s0: size_t)  =
 {
     prepare_position(n0);
@@ -2228,6 +2236,8 @@ namespace dec_left_visitor
 //---------------------------------------------------------------------
 #template _instantiate_concat_merger: [](NS, NodeT: v_static_type_t)
 {
+    #do (_instantiate_concat_center_pos(NS, NodeT))
+
     private result_t = NS.concat_center_pos;
 
     struct concat_merger
@@ -2261,7 +2271,7 @@ namespace dec_left_visitor
             v_assert(self.result_.sizes_[self.result_.count_]);
             ++self.result_.count_;
         }
-        idx = self.relaxed->d.count++;
+        idx = relaxed->d.count++;
         self.result_.sizes_[self.result_.count_ - 1] += size;
         v_assert(self.result_.sizes_[self.result_.count_ - 1]);
 
@@ -2274,9 +2284,11 @@ namespace dec_left_visitor
 
     #define (_.merge_leaf()): [*, NS](self: &concat_merger, p) ~> struct {}  =
     {
-        Pos = typeof(p);
+        Pos = util.unref_typeof(p);
 
-        #template merge_leaf: [*, NS, Pos]()
+        MNS = NS.v_generic_ns(merge_leaf_tag, T(Pos));
+
+        #template merge_leaf: [*, MNS, Pos]()
         {
             inlinehint
             _merge_leaf: (self: &concat_merger, p: Pos) ~> struct {}
@@ -2320,14 +2332,16 @@ namespace dec_left_visitor
             }
         }
 
-        NS._merge_leaf(self, p)
+        MNS._merge_leaf(self, p)
     };
 
     #define (_.merge_inner()): [*, NS](self: &concat_merger, p) ~> struct {}  =
     {
-        Pos = typeof(p);
+        Pos = util.unref_typeof(p);
 
-        #template merge_inner: [*, NS, Pos]()
+        MNS = NS.v_generic_ns(merge_leaf_tag, T(Pos));
+
+        #template merge_inner: [*, MNS, Pos]()
         {
             inlinehint
             _merge_inner: (self: &concat_merger, p: Pos) ~> struct {}
@@ -2378,7 +2392,7 @@ namespace dec_left_visitor
             }
         }
 
-        NS._merge_inner(self, p)
+        MNS._merge_inner(self, p)
     };
 
     alwaysinline
@@ -2413,9 +2427,9 @@ namespace dec_left_visitor
 //---------------------------------------------------------------------
 #define make_concat_merger: (NT: v_static_type_t, shift: shift_t, counts: *count_t, n: count_t)  =
 {
-    prepare_position((undef: *NT));             //- ?!?!?!?!?
+    NS = position(NT);
 
-    _instantiate_concat_merger(NS, NodeT);
+    _instantiate_concat_merger(NS, NT);
 
     m = util.min(n, branches(B));
 
@@ -2436,8 +2450,8 @@ namespace concat_merger_visitor
 
     result_t = struct {};
 
-    #define visit_inner: [](p, merger) ~> result_t  =  merger.merge_inner(p);
-    #define visit_leaf:  [](p, merger) ~> result_t  =  merger.merge_leaf(p);
+    #define visit_inner: [](p, merger) ~> result_t  =  merger->merge_inner(p);
+    #define visit_leaf:  [](p, merger) ~> result_t  =  merger->merge_leaf(p);
 }
 
 
@@ -2452,14 +2466,17 @@ namespace concat_rebalance_plan_fill_visitor
 
     result_t = struct {};
 
-    #define visit_node: [](p, plan) ~> result_t  =
+    #define visit_node: [](p, plan_) ~> result_t  =
     {
-        count = p.count;
-        v_assert(plan.n < typeof(plan).element_type.max_children);
-        plan.counts[plan.n++] := count;
-        plan.total += count;
+        {   plan = *plan_;
 
-        ({})       //- Sic!
+            count = p.count;
+            v_assert(plan.n < typeof(plan).element_type.max_children);
+            plan.counts[plan.n++] := count;
+            plan.total += count;
+        }
+
+        ({})
     };
 }
 
@@ -2473,6 +2490,8 @@ namespace concat_rebalance_plan_fill_visitor
 
     #template concat_rebalance_plan: [*, crp_t, B, BL]()
     {
+        using namespace .immer.detail.rbts;
+
         max_children = 2 * branches(B) + 1;
 
         impl_t = struct
@@ -2481,6 +2500,8 @@ namespace concat_rebalance_plan_fill_visitor
             n:      count_t;
             total:  count_t;
         };
+
+        impl_t.max_children = max_children;
 
         #do (v_set_implementation_type(crp_t, impl_t))
 
@@ -2492,20 +2513,20 @@ namespace concat_rebalance_plan_fill_visitor
             *(&ret : *impl_t) := {{}, 0, 0};
         }
 
-        #define (_.fill()): (self: &crp_t, lpos, cpos, rpos) ~> void  =
-        {
+        #define (_.fill()): [*, crp_t](self: &crp_t, lpos, cpos, rpos)
+        {'stmt_list'
+
             impl = *(&self : *impl_t);
 
             v_assert(impl.n == 0);
             v_assert(impl.total == 0);
 
             vis = concat_rebalance_plan_fill_visitor;
-            lpos.each_left_sub(vis, self);
-            cpos.each_sub(vis, self);
-            rpos.each_right_sub(vis, self);
+            lpos.each_left_sub(vis, &impl);
+            cpos.each_sub(vis, &impl);
+            rpos.each_right_sub(vis, &impl);
 
-            ({})       //- Sic!
-        };
+        'stmt_list'}
 
         inlinehint
         (_.shuffle()): (self: &crp_t, shift: shift_t) ~> void
@@ -2550,20 +2571,23 @@ namespace concat_rebalance_plan_fill_visitor
             }
         }
 
-        #define (_.merge()): (self: &crp_t, lpos, cpos, rpos)  =
-        {
-            self = *(&self : *impl_t);
+        #define (_.merge()): [*, crp_t](self: &crp_t, lpos, cpos, rpos)
+        {'stmt_list'
 
-            node_t = typeof(cpos).node_t;
-            merger = make_concat_merger(node_t, cpos.shift, self.counts, self.n);
+            impl = *(&self : *impl_t);
+
+            node_t = util.unref_typeof(cpos).node_t;
+            merger = make_concat_merger(node_t, cpos.shift, impl.counts, impl.n);
+            merger: &position(node_t).concat_merger := merger;
             vis    = concat_merger_visitor;
-            lpos.each_left_sub(vis, merger);
-            cpos.each_sub(vis, merger);
-            rpos.each_right_sub(vis, merger);
+            lpos.each_left_sub(vis, &merger);
+            cpos.each_sub(vis, &merger);
+            rpos.each_right_sub(vis, &merger);
             cpos.each_sub(dec_visitor, {});
 
-            merger.finish
-        };
+            merger.finish;
+
+        'stmt_list'}
     }
 
     crp_t
@@ -2575,7 +2599,7 @@ namespace concat_rebalance_plan_fill_visitor
 //---------------------------------------------------------------------
 #define concat_rebalance: [](lpos, cpos, rpos)  =
 {
-    node_t = typeof(cpos).node_t;
+    node_t = util.unref_typeof(cpos).node_t;
 
     plan: &concat_rebalance_plan(node_t.bits, node_t.bits_leaf) := {};
 
@@ -2591,7 +2615,7 @@ namespace concat_rebalance_plan_fill_visitor
 //---------------------------------------------------------------------
 #define concat_leafs: [](lpos, tpos, rpos)  =
 {
-    node_t = typeof(tpos).node_t;
+    node_t = util.unref_typeof(tpos).node_t;
 
     #assert (node_t.bits >= 2)
 
@@ -2599,23 +2623,27 @@ namespace concat_rebalance_plan_fill_visitor
 
     BL = node_t.bits_leaf;
 
+    _instantiate_concat_center_pos(position(node_t), node_t);
+
     ret_t = position(node_t).concat_center_pos;
 
     ret: &ret_t := undef;
 
     if (tpos.count > 0)
     {
-        ret := make_concat_center_3(BL, lpos.node->inc, lpos.count,
-                                        tpos.node->inc, tpos.count,
-                                        rpos.node->inc, rpos.count);
+        ret := make_concat_center_pos_3(BL, lpos.node->inc, lpos.count,
+                                            tpos.node->inc, tpos.count,
+                                            rpos.node->inc, rpos.count);
     }
     else
     {
-        ret := make_concat_center_2(BL, lpos.node->inc, lpos.count,
-                                        rpos.node->inc, rpos.count);
+        ret := make_concat_center_pos_2(BL, lpos.node->inc, lpos.count,
+                                            rpos.node->inc, rpos.count);
     }
 
-    (ret: ret_t)
+    ret: ret_t = ret;
+
+    ret
 };
 
 
@@ -2624,10 +2652,12 @@ namespace concat_rebalance_plan_fill_visitor
 //---------------------------------------------------------------------
 #define concat_inners: [](lpos, tpos, rpos)  =
 {
-    node_t = typeof(tpos).node_t;
+    node_t = util.unref_typeof(tpos).node_t;
 
     lshift = lpos.shift;
     rshift = rpos.shift;
+
+    _instantiate_concat_center_pos(position(node_t), node_t);
 
     ret_t = position(node_t).concat_center_pos;
 
@@ -2651,7 +2681,9 @@ namespace concat_rebalance_plan_fill_visitor
         ret := concat_rebalance(lpos, cpos, rpos);
     }
 
-    (ret: ret_t)
+    ret: ret_t = ret;
+
+    ret
 };
 
 
@@ -2666,6 +2698,8 @@ namespace concat_rebalance_plan_fill_visitor
     {
         using namespace visitor_base(vis);
 
+        #do (_instantiate_concat_center_pos(position(NodeT), NodeT))
+
         result_t = position(NodeT).concat_center_pos;
 
         #define visit_inner: [](lpos, args) ~> result_t  =
@@ -2676,12 +2710,7 @@ namespace concat_rebalance_plan_fill_visitor
             concat_inners(lpos, tpos, rpos)
         };
 
-        #define visit_leaf: [](lpos, args) ~> result_t  =
-        {
-            v_assert(false  &&  "Kinda, unreachable...");
-
-            undef
-        };
+        #define visit_leaf: [](lpos, args) ~> result_t  =  util.unreachable(result_t);
     }
 
     vis
@@ -2698,6 +2727,8 @@ namespace concat_rebalance_plan_fill_visitor
     #template concat_right_visitor: [vis, NodeT]()
     {
         using namespace visitor_base(vis);
+
+        #do (_instantiate_concat_center_pos(position(NodeT), NodeT))
 
         result_t = position(NodeT).concat_center_pos;
 
@@ -2733,6 +2764,8 @@ namespace concat_rebalance_plan_fill_visitor
     {
         using namespace visitor_base(vis);
 
+        #do (_instantiate_concat_center_pos(position(NodeT), NodeT))
+
         result_t = position(NodeT).concat_center_pos;
 
         #define visit_inner: [*, NodeT](lpos, args) ~> result_t  =
@@ -2743,7 +2776,7 @@ namespace concat_rebalance_plan_fill_visitor
             rpos.first_sub(concat_right_visitor(NodeT), {lpos, tpos})
         };
 
-        #define visit_leaf: [](lpos, args) ~> result_t  =
+        #define visit_leaf: [*, NodeT](lpos, args) ~> result_t  =
         {
             tpos = args[0];
             rpos = args[1];
@@ -2766,6 +2799,8 @@ namespace concat_rebalance_plan_fill_visitor
     #template concat_trees_right_visitor: [vis, NodeT]()
     {
         using namespace visitor_base(vis);
+
+        #do (_instantiate_concat_center_pos(position(NodeT), NodeT))
 
         result_t = position(NodeT).concat_center_pos;
 
@@ -2793,9 +2828,11 @@ namespace concat_rebalance_plan_fill_visitor
     {
         using namespace visitor_base(vis);
 
+        #do (_instantiate_concat_center_pos(position(NodeT), NodeT))
+
         result_t = position(NodeT).concat_center_pos;
 
-        #define visit_node: [](lpos, args) ~> result_t  =
+        #define visit_node: [*, NodeT](lpos, args) ~> result_t  =
         {
             tpos   = args[0];
             lroot  = args[1];
@@ -2818,7 +2855,7 @@ namespace concat_rebalance_plan_fill_visitor
                          ltail, ltcount: count_t,
                          rroot, rshift: shift_t, rsize: size_t)  =
 {
-    NodeT = typeof(lroot).element_type;
+    NodeT = util.unref_typeof(lroot).element_type;
 
     visit_maybe_relaxed_sub(lroot, lshift, lsize, concat_trees_left_visitor(NodeT),
                             { make_leaf_pos(ltail, ltcount), rroot, rshift, rsize }).realize
@@ -2830,7 +2867,9 @@ namespace concat_rebalance_plan_fill_visitor
 #define concat_trees_short: [](ltail, ltcount: count_t,
                                rroot, rshift: shift_t, rsize: size_t)  =
 {
-    NodeT = typeof(ltail).element_type;
+    NodeT = util.unref_typeof(ltail).element_type;
+
+    _instantiate_empty_leaf_pos(position(NodeT), NodeT);
 
     elp: position(NodeT).empty_leaf_pos = {0};          //- WTF ?
 
@@ -2890,6 +2929,8 @@ namespace concat_rebalance_plan_fill_visitor
 //---------------------------------------------------------------------
 #template _instantiate_concat_merger_mut: [](NS, NodeT: v_static_type_t)
 {
+    #do (_instantiate_concat_center_pos(NS, NodeT))
+
     private result_t = NS.concat_center_pos;
 
     struct concat_merger_mut
@@ -3325,6 +3366,8 @@ namespace concat_merger_mut_visitor
     {
         using namespace visitor_base(vis);
 
+        #do (_instantiate_concat_center_pos(position(NodeT), NodeT))
+
         result_t = position(NodeT).concat_center_mut_pos;
 
         #define visit_inner: [](lpos, args) ~> result_t  =
@@ -3335,12 +3378,7 @@ namespace concat_merger_mut_visitor
             concat_inners_mut(lpos, tpos, rpos)
         };
 
-        #define visit_leaf: [](lpos, args) ~> result_t  =
-        {
-            v_assert(false  &&  "Kinda, unreachable...");
-
-            undef
-        };
+        #define visit_leaf: [](lpos, args) ~> result_t  =  util.unreachable(result_t);
     }
 
     vis

@@ -18,6 +18,8 @@
 { voidc_enable_stack_trace(); }
 
 
+//{ v_set_export_flag(true); }
+
 
 //---------------------------------------------------------------------
 //my_type = struct { char[3]; };
@@ -30,6 +32,10 @@ my_type = int;
 namespace my
 {
     using namespace immer.detail.rbts;
+
+#assert(v_defined(concat_rebalance_plan_fill_visitor))
+#assert(v_defined(concat_rebalance_plan_fill_visitor, visit_node))
+#assert(v_defined(concat_rebalance_plan_fill_visitor, visit_leaf))
 
     policy = default_memory_policy;
 

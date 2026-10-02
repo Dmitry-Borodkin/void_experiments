@@ -94,6 +94,31 @@ namespace_get_name_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t
 
 //---------------------------------------------------------------------
 private
+namespace_get_local_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    arg0 = v_list_get_item(args, 0);        //- namespace
+
+    v_push_result();
+
+    v_set_result_type(v_find_type("v_static_namespace_t"));
+
+    v_ast_accept_visitor(arg0, vis);
+
+    ns = (v_get_result_value() : *v_namespace_t);
+
+    expr: &v_ast_expr_t := {};
+
+    v_ast_make_expr_string(&expr, v_quark_to_string(ns->local));
+
+    v_pop_result();
+
+    v_ast_accept_visitor(&expr, vis);
+}
+
+//---------------------------------------------------------------------
+private
 static_log2_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 {
     args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
@@ -381,7 +406,14 @@ check_builder_intrinsic: (*void, vis: *voidc_visitor_t, *v_ast_base_t) ~> void
 }
 
 
+//---------------------------------------------------------------------
+private
+unreachable_intrinsic: (*void, vis: *voidc_visitor_t, *v_ast_base_t) ~> void
+{
+    builder = v_target_get_builder();
 
+    LLVMBuildUnreachable(builder);          //- ?..
+}
 
 
 //---------------------------------------------------------------------
@@ -452,9 +484,10 @@ v_internal_immer_detail_util_effort: (*void) ~> void
 //printf("v_internal_immer_detail_util_enable: start\n");
 //defer printf("v_internal_immer_detail_util_enable: stop\n");
 
-    v_add_intrinsic("v_namespace_get_name", namespace_get_name_intrinsic, 0);
-    v_add_intrinsic("v_static_log2",        static_log2_intrinsic,        0);
-    v_add_intrinsic("v_guard_ns",           guard_ns_intrinsic,           0);
+    v_add_intrinsic("v_namespace_get_name",  namespace_get_name_intrinsic,  0);
+    v_add_intrinsic("v_namespace_get_local", namespace_get_local_intrinsic, 0);
+    v_add_intrinsic("v_static_log2",         static_log2_intrinsic,         0);
+    v_add_intrinsic("v_guard_ns",            guard_ns_intrinsic,            0);
 
     v_add_intrinsic("v_execute_outer", execute_outer_intrinsic, 0);
 
@@ -464,6 +497,7 @@ v_internal_immer_detail_util_effort: (*void) ~> void
     v_add_intrinsic("v_print_type",       print_type_intrinsic,       0);
     v_add_intrinsic("v_type_name",        type_name_intrinsic,        0);
     v_add_intrinsic("v_check_builder",    check_builder_intrinsic,    0);
+    v_add_intrinsic("v_unreachable",      unreachable_intrinsic,      0);
 }
 
 //---------------------------------------------------------------------
@@ -722,6 +756,27 @@ namespace util
     #endif
 
     ret
+};
+
+
+//---------------------------------------------------------------------
+#define unreachable: [](T: v_static_type_t) ~> T  =
+{
+    ns = v_generic_ns(unreachable_args, T[T]);
+
+    #template unreachable: [ns, T]()
+    {
+        linkonce_odr
+        _unreachable: () ~> T
+        {
+            printf("Unreachable!\n");
+
+            .exit: (int) ~> void;
+            .exit(-1);
+        }
+    }
+
+    ns._unreachable()
 };
 
 

@@ -457,7 +457,7 @@ namespace rbts {
 #define prepare_position_args: [](pos, Vis, args)
 {'stmt_list'
 
-    Pos   = typeof(pos);
+    Pos   = util.unref_typeof(pos);
     ArgsT = typeof(args);
 
     NS = position_args(Pos, Vis, ArgsT);
@@ -1224,7 +1224,7 @@ struct null_sub_pos {};
 //---------------------------------------------------------------------
 #define make_singleton_regular_sub_pos: [](leaf, count: count_t)  =
 {
-    prepare_position(leaf, args);
+    prepare_position(leaf);
 
     _instantiate_singleton_regular_sub_pos(NS, NodeT);
 
@@ -1360,7 +1360,7 @@ struct null_sub_pos {};
                         make_full_leaf_pos(*n).visit(v, args);
                     }
 
-                    make_leaf_sub_pos(*n, lsize).visit(v, args);
+                    make_leaf_sub_pos(*n, (lsize: count_t)).visit(v, args);
                 }
                 else
                 {
@@ -1384,7 +1384,7 @@ struct null_sub_pos {};
 
     #define (_.each_right_sub()): [](p: regular_sub_pos, v: visitor_t, args)  =
     {
-        if (p.count > 1)  p.each_right_sub_(v, 1, args);
+        { if (p.count > 1)  p.each_right_sub_(v, 1, args); }        //- WTF ?!?!?!?!?!?!?
 
         ({})        //- ?!?!?
     };
@@ -1427,7 +1427,7 @@ struct null_sub_pos {};
 
                 if (is_leaf)
                 {
-                    return  make_leaf_sub_pos(child, lsize).visit(v, args);
+                    return  make_leaf_sub_pos(child, (lsize: count_t)).visit(v, args);
                 }
                 else
                 {
@@ -1467,7 +1467,7 @@ struct null_sub_pos {};
                 {
                     if (is_leaf)
                     {
-                        return  make_leaf_sub_pos(child, pos.size_).visit(v, args);
+                        return  make_leaf_sub_pos(child, (pos.size_ : count_t)).visit(v, args);
                     }
                     else
                     {
@@ -1499,7 +1499,7 @@ struct null_sub_pos {};
                 }
                 else
                 {
-                    return  make_leaf_sub_pos(child, pos.size_).visit(v, args);
+                    return  make_leaf_sub_pos(child, (pos.size_ : count_t)).visit(v, args);
                 }
             }
         }
@@ -1564,7 +1564,7 @@ struct null_sub_pos {};
                 {
                     if (is_leaf)
                     {
-                        return  make_leaf_sub_pos(child, lsize).visit(v, args);
+                        return  make_leaf_sub_pos(child, (lsize: count_t)).visit(v, args);
                     }
                     else
                     {
@@ -1597,7 +1597,7 @@ struct null_sub_pos {};
                 }
                 else
                 {
-                    return  make_leaf_sub_pos(child, lsize).visit(v, args);
+                    return  make_leaf_sub_pos(child, (lsize: count_t)).visit(v, args);
                 }
             }
         }
@@ -1986,7 +1986,7 @@ struct null_sub_pos {};
         #template each_i: [NS, Pos, v, ArgsT]()
         {
             inlinehint
-            _each_i_full: (pos: Pos, i: count_t, n: count_t, args: ArgsT) ~> struct {}
+            _each_i: (pos: Pos, i: count_t, n: count_t, args: ArgsT) ~> struct {}
             {
                 p: &**node_t := pos.node_->inner + i;
                 e             = pos.node_->inner + n;
@@ -2010,7 +2010,7 @@ struct null_sub_pos {};
             }
         }
 
-        NS._each_i_full(p, i, n, args)
+        NS._each_i(p, i, n, args)
     };
 
     #define (_.each_pred_right()): [](p: full_pos, v: visitor_t, start: count_t, args) ~> bool
@@ -2116,10 +2116,8 @@ struct null_sub_pos {};
         #template first_sub: [NS, Pos, v, ArgsT]()
         {
             inlinehint
-            _first_sub: (pos: Ppos, args: ArgsT) ~> v.result_t
+            _first_sub: (pos: Pos, args: ArgsT) ~> v.result_t
             {
-                v_assert(offset_hint == pos.index(idx));
-
                 is_leaf = pos.shift_ == BL;
                 child   = pos.node_->inner[0];
 
@@ -2341,7 +2339,7 @@ struct null_sub_pos {};
                 {
                     for (i: &count_t := 0; i < n; ++i)
                     {
-                        if (!make_leaf_sub_pos(p[i], pos.relaxed_->d.sizes[i] - s).visit(v, args))  return  false;
+                        if (!make_leaf_sub_pos(p[i], (pos.relaxed_->d.sizes[i] - s : count_t)).visit(v, args))  return  false;
                         s := pos.relaxed_->d.sizes[i];
                     }
                 }
@@ -2380,7 +2378,7 @@ struct null_sub_pos {};
                 {
                     for (i: &count_t := i; i < n; ++i)
                     {
-                        if (!make_leaf_sub_pos(p[i], pos.relaxed_->d.sizes[i] - s).visit(v, args))  return  false;
+                        if (!make_leaf_sub_pos(p[i], (pos.relaxed_->d.sizes[i] - s : count_t)).visit(v, args))  return  false;
                         s := pos.relaxed_->d.sizes[i];
                     }
                 }
@@ -2417,7 +2415,7 @@ struct null_sub_pos {};
                 {
                     for (i: &count_t := 0; i < n; ++i)
                     {
-                        if (!make_leaf_sub_pos(p[i], pos.relaxed_->d.sizes[i] - s).visit(v, args))  return  false;
+                        if (!make_leaf_sub_pos(p[i], (pos.relaxed_->d.sizes[i] - s : count_t)).visit(v, args))  return  false;
                         s := pos.relaxed_->d.sizes[i];
                     }
                 }
@@ -2456,7 +2454,7 @@ struct null_sub_pos {};
                 {
                     for (i: &count_t := start; i < pos.relaxed_->d.count; ++i)
                     {
-                        if (!make_leaf_sub_pos(p[i], pos.relaxed_->d.sizes[i] - s).visit(v, args))  return  false;
+                        if (!make_leaf_sub_pos(p[i], (pos.relaxed_->d.sizes[i] - s : count_t)).visit(v, args))  return  false;
                         s := pos.relaxed_->d.sizes[i];
                     }
                 }
@@ -2495,7 +2493,7 @@ struct null_sub_pos {};
                 {
                     for (i: &count_t := i; i < n; ++i)
                     {
-                        make_leaf_sub_pos(p[i], pos.relaxed_->d.sizes[i] - s).visit(v, args);
+                        make_leaf_sub_pos(p[i], (pos.relaxed_->d.sizes[i] - s : count_t)).visit(v, args);
                         s := pos.relaxed_->d.sizes[i];
                     }
                 }
@@ -2764,7 +2762,7 @@ struct null_sub_pos {};
 
                 if (is_leaf)
                 {
-                    return  make_leaf_sub_pos(child, child_size).visit(v, args);
+                    return  make_leaf_sub_pos(child, (child_size: count_t)).visit(v, args);
                 }
                 else
                 {
@@ -2792,7 +2790,7 @@ struct null_sub_pos {};
 
                 if (is_leaf)
                 {
-                    return  make_leaf_sub_pos(child, child_size).visit(v, args);
+                    return  make_leaf_sub_pos(child, (child_size: count_t)).visit(v, args);
                 }
                 else
                 {
@@ -2817,7 +2815,7 @@ struct null_sub_pos {};
                 child      = pos.node_->inner[0];
                 child_size = pos.relaxed_->d.sizes[0];
 
-                return  make_leaf_sub_pos(child, child_size).visit(v, args);
+                return  make_leaf_sub_pos(child, (child_size: count_t)).visit(v, args);
             }
         }
 
@@ -2859,7 +2857,7 @@ struct null_sub_pos {};
 
                 if (is_leaf)
                 {
-                    return  make_leaf_sub_pos(child, child_size).visit(v, args);
+                    return  make_leaf_sub_pos(child, (child_size: count_t)).visit(v, args);
                 }
                 else
                 {
@@ -2884,7 +2882,7 @@ struct null_sub_pos {};
                 child      = pos.node_->inner[offset];
                 child_size = pos.size(offset);
 
-                return  make_leaf_sub_pos(child, child_size).visit(v, args);
+                return  make_leaf_sub_pos(child, (child_size: count_t)).visit(v, args);
             }
         }
 
