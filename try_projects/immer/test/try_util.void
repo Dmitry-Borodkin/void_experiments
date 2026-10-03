@@ -126,11 +126,19 @@ test_t = v_generic(test_type);
 
 //---------------------------------------------------------------------
 {
-    #define (_.ident): (t: v_static_type_t)  =  v_type_name(t);
+    #define (_.ident): (t: v_static_type_t)  =  v_type_repr(t);
 
     printf("t: %s\n", v_ast_expr_t.ident);
 
+}
 
+//---------------------------------------------------------------------
+{
+    printf("v: %s\n", v_value_repr({"AAAA", 777, &"BBBB"}));
+
+    printf("v: %s\n", v_value_repr(999999999999999999999999999999999999999999999999999));
+    printf("v: %s\n", v_value_repr(0xDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEF));
+    printf("v: %s\n", v_value_repr(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF));
 }
 
 

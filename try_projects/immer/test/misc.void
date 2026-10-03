@@ -60,7 +60,7 @@ namespace some_ns {}
 
 
 //---------------------------------------------------------------------
-#note (v_type_name(*int))
+#note (v_type_repr(*int))
 
 #note ()
 

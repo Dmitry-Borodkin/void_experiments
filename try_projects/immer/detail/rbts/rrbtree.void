@@ -860,16 +860,79 @@ namespace rbts {
         }
     }
 
+    linkonce_odr
+    concat_mut_l: (l: &rrbtree_t, r: rrbtree_t) ~> void
+    {
+        v_assert(&l != &r);
+//      assert(r.size < (std::numeric_limits<size_t>::max() - l.size));         //- ?
 
+        if (l.size == 0)
+            l := r;
+        else if (r.size == 0)
+            return;
+        else if (r.tail_offset == 0)
+        {
+            // just concat the tail, similar to push_back
+            tail_offst = l.tail_offset;
+            tail_size  = l.size - tail_offst;
+            if (tail_size == branches(BL)) {
+                l.push_tail_mut(tail_offst, l.tail, (tail_size: count_t));
+                l.tail := r.tail->inc;
+                l.size += r.size;
+                return;
+            } else if (tail_size + r.size <= branches(BL)) {
+                l.ensure_mutable_tail((tail_size: count_t));
+                util.uninitialized_copy(l.tail->leaf + tail_size,
+                                        r.tail->leaf,
+                                        r.size);
+                l.size += r.size;
+                return;
+            } else {
+                remaining = branches(BL) - tail_size;
+                l.ensure_mutable_tail((tail_size: count_t));
+                util.uninitialized_copy(l.tail->leaf + tail_size,
+                                        r.tail->leaf,
+                                        remaining);
 
+                new_tail = node_t.copy_leaf_e_last(r.tail, (remaining: count_t), (r.size: count_t));
 
-
-
-
-
-
-
-
+                l.push_tail_mut(tail_offst, l.tail, branches(BL));
+                l.tail := new_tail;
+                l.size += r.size;
+                return;
+            }
+        }
+        else if (l.tail_offset == 0)
+        {
+            tail_offst = l.tail_offset;
+            tail_size  = l.size - tail_offst;
+            concated   = concat_trees_short(l.tail, (tail_size: count_t),
+                                            r.root, r.shift, r.tail_offset);
+            l := make(l.size + r.size,
+                      concated.shift,
+                      concated.node,
+                      r.tail->inc);
+        //  assert(l.check_tree());
+            return;
+        }
+        else
+        {
+            tail_offst = l.tail_offset;
+            tail_size  = l.size - tail_offst;
+            concated   = concat_trees(l.root,
+                                      l.shift,
+                                      tail_offst,
+                                      l.tail,
+                                      (tail_size: count_t),
+                                      r.root,
+                                      r.shift,
+                                      r.tail_offset);
+            l := make(l.size + r.size,
+                      concated.shift,
+                      concated.node,
+                      r.tail->inc);
+        }
+    }
 
 
 
