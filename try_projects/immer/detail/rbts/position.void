@@ -1543,7 +1543,7 @@ struct null_sub_pos {};
             inlinehint
             _nth_sub: (pos: Pos, idx: count_t, args: ArgsT) ~> v.result_t
             {
-                v_assert(idx < pos.count_);
+                v_assert(idx < pos.count);
                 is_leaf = pos.shift_ == BL;
                 child   = pos.node_->inner[idx];
                 lsize   = pos.size(idx);

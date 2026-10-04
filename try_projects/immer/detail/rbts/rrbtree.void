@@ -934,16 +934,102 @@ namespace rbts {
         }
     }
 
+    linkonce_odr
+    concat_mut_r: (l: rrbtree_t, r: &rrbtree_t) ~> void
+    {
+        v_assert(&l != &r);
+//      assert(r.size < (std::numeric_limits<size_t>::max() - l.size));         //- ?
+
+        if (r.size == 0)
+            r := l;
+        else if (l.size == 0)
+            return;
+        else if (r.tail_offset == 0)
+        {
+            // just concat the tail, similar to push_back
+            tail_offst = l.tail_offset;
+            tail_size  = l.size - tail_offst;
+            if (tail_size == branches(BL))
+            {
+                // this could be improved by making sure that the
+                // newly created nodes as part of the `push_tail()`
+                // are tagged with `er`
+                res = push_tail(l.root, l.shift, tail_offst, l.tail, (tail_size: count_t));
+                l.tail->inc; // note: leak if mutably concatenated
+                             // with itself, but this is forbidden
+                             // by the interface
+                r := make(l.size + r.size, res[0], res[1], r.tail->inc);
+                return;
+            }
+            else if (tail_size + r.size <= branches(BL))
+            {
+                // doing this in a exception way mutating way is very
+                // tricky while potential performance gains are
+                // minimal (we need to move every element of the right
+                // tail anyways to make space for the left tail)
+                //
+                // we could however improve this by at least moving the
+                // elements of the right tail...
+                new_tail = node_t.copy_leaf_2(l.tail, (tail_size: count_t), r.tail, (r.size: count_t));
+                r := make(l.size + r.size, l.shift, l.root->inc, new_tail);
+                return;
+            }
+            else
+            {
+                // like the immutable version
+                remaining = branches(BL) - tail_size;
+                add_tail  = node_t.copy_leaf_e2(l.tail, (tail_size: count_t), r.tail, (remaining: count_t));
+
+                new_tail = node_t.copy_leaf_e_last(r.tail, (remaining: count_t), (r.size: count_t));
+
+                // this could be improved by making sure that the
+                // newly created nodes as part of the `push_tail()`
+                // are tagged with `er`
+                new_root = push_tail(l.root,
+                                     l.shift,
+                                     tail_offst,
+                                     add_tail,
+                                     branches(BL));
+                r := make(l.size + r.size,
+                          new_root[0],
+                          new_root[1],
+                          new_tail);
+                return;
+            }
+        }
+        else if (l.tail_offset == 0)
+        {
+            tail_offst = l.tail_offset;
+            tail_size  = l.size - tail_offst;
+            concated   = concat_trees_short(l.tail, (tail_size: count_t), r.root, r.shift, r.tail_offset);
+            r := make(l.size + r.size,
+                      concated.shift,
+                      concated.node,
+                      r.tail->inc);
+            return;
+        }
+        else
+        {
+            tail_offst = l.tail_offset;
+            tail_size  = l.size - tail_offst;
+            concated   = concat_trees(l.root,
+                                      l.shift,
+                                      tail_offst,
+                                      l.tail,
+                                      (tail_size: count_t),
+                                      r.root,
+                                      r.shift,
+                                      r.tail_offset);
+            r := make(l.size + r.size,
+                      concated.shift,
+                      concated.node,
+                      r.tail->inc);
+            return;
+        }
+    }
 
 
-
-
-
-
-
-
-
-
+    //- ?..
 
 
 }   //- #template

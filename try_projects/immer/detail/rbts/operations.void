@@ -445,7 +445,7 @@ namespace equals_visitor
 
     result_t = bool;
 
-    namespace this_aux
+    namespace .immer.detail.rbts.equals_visitor_util.this_aux
     {
         using namespace visitor_base(this_aux);
 
@@ -472,7 +472,9 @@ namespace equals_visitor
         };
     }
 
-    namespace rrb
+    this_aux = .immer.detail.rbts.equals_visitor_util.this_aux;
+
+    namespace .immer.detail.rbts.equals_visitor_util.rrb
     {
         using namespace visitor_base(rrb);
 
@@ -491,7 +493,7 @@ namespace equals_visitor
             {
                 if (shiftl == posr.shift)
                 {
-                    break  visit_maybe_relaxed_sub(rootl, shiftl, sizel, equals_visitor, {posr, first, (undef: size_t)});
+                    break  visit_maybe_relaxed_sub(rootl, shiftl, sizel, equals_visitor, {posr, first, (0: size_t)});
                 }
                 else
                 {
@@ -502,6 +504,8 @@ namespace equals_visitor
             })
         };
     }
+
+    rrb = .immer.detail.rbts.equals_visitor_util.rrb;
 
     #define equal_chunk_p: [](T: v_static_type_t, Iter: v_static_type_t = *T) ~> v_static_type_t  =
     {
@@ -568,7 +572,7 @@ namespace equals_visitor
 
                     if (sbl == sbr)
                     {
-                        if (!posr.nth_sub(j, this_aux, {posl, first, idx + sbl}))  return  false;
+                        if (!posr.nth_sub(j, this_aux, {i, posl, first, idx + sbl}))  return  false;
                     }
                     else
                     {
@@ -640,13 +644,14 @@ namespace equals_visitor
                 first = args[1];
                 idx   = args[2];
 
-                if (posl.node == posr.node)  return  true;
+                posl.node == posr.node  ||
+                {   cl = posl.count;
+                    cr = posr.count;
+                    mp = util.min(cl, cr);
 
-                cl = posl.count;
-                cr = posr.count;
-                mp = util.min(cl, cr);
-                util.equal(posl.node->leaf, posr.node->leaf, mp)  &&
-                util.equal(posl.node->leaf + mp, first + (idx + mp), posl.count - mp)
+                    util.equal(posl.node->leaf, posr.node->leaf, mp)  &&
+                    util.equal(posl.node->leaf + mp, first + (idx + mp), posl.count - mp)
+                }
             }
 
         #else     //- Short...

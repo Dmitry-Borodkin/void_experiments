@@ -16,6 +16,7 @@ rbtree iterator                                                │rbtree_iterato
                                                                │
 rrbtree                                                        │rrbtree.void
                                                                │
+rrbtree iterator                                               │rrbtree_iterator.void
                                                                │
                                                                │
                                                                │

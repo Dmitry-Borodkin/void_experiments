@@ -1,0 +1,69 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+//---------------------------------------------------------------------
+{
+    v_import("cstdio.void");
+
+    v_import("string.void");
+
+    v_import("../../config.void");
+    v_import("../../memory_policy.void");
+
+    v_import("../../detail/rbts/rrbtree.void");
+    v_import("../../detail/rbts/rrbtree_iterator.void");
+}
+
+
+//---------------------------------------------------------------------
+{ v_import("stack_trace.void"); }
+{ voidc_enable_stack_trace(); }
+
+
+//---------------------------------------------------------------------
+namespace qwe
+{
+    using namespace .immer.detail;
+
+    #define rrbtree: [](T:  v_static_type_t,
+                        MP: v_static_namespace_t = default_memory_policy,
+                        B:  rbts.bits_t          = default_bits,
+                        BL: rbts.bits_t          = rbts.derive_bits_leaf(T, MP, B)
+                        ) ~> v_static_type_t
+      =  rbts.rrbtree(T, MP, B, BL);
+
+    #define rrbtree_iterator: [](T:  v_static_type_t,
+                                 MP: v_static_namespace_t = default_memory_policy,
+                                 B:  rbts.bits_t          = default_bits,
+                                 BL: rbts.bits_t          = rbts.derive_bits_leaf(T, MP, B)
+                                 ) ~> v_static_type_t
+      =  rbts.rrbtree_iterator(T, MP, B, BL);
+}
+
+using qwe.rrbtree;
+using qwe.rrbtree_iterator;
+
+//---------------------------------------------------------------------
+{
+#note ("before")
+    t0: &rrbtree(int) := {};
+#note ("after")
+
+    N = 1000;
+
+    for (i: &int := 0; i < N; ++i)
+    {
+        t0 := t0.push_back(i);
+    }
+
+    begin = rrbtree_iterator(int).make_begin(t0);
+    end   = rrbtree_iterator(int).make_end(t0);
+
+    for (i: &rrbtree_iterator(int) := begin; i < end; ++i)
+    {
+        printf("t0[%zd]: %d\n", i - begin, *i);
+    }
+
+
+}
+
+
