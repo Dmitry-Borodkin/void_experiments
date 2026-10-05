@@ -22,6 +22,9 @@ rrbtree 2   iterator                                           │rrbtree_2.void
                                                                │
 rrbtree 3   equals                                             │rrbtree_3.void -T
                                                                │
+rrbtree 4   assoc                                              │rrbtree_4.void -T
+                                                               │
+rrbtree 5   take                                               │rrbtree_5.void -T
                                                                │
                                                                │
                                                                │
