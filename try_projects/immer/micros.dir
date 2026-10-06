@@ -16,6 +16,8 @@ Memory Policy                                                  │memory_policy.
 vector                                                         │vector.void
 vector_transient                                               │vector_transient.void
                                                                │
+flex_vector                                                    │flex_vector.void
+                                                               │
                                                                │
                                                                │
 ───────────────────────────────────────────────────────────────│

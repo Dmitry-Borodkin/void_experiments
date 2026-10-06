@@ -1,37 +1,19 @@
-                    ****  Immer/test  ****                     │*
+               ****  Immer/test/flex_vector  ****              │*
                                                                │
                                                                │
-try_util                                                       │try_util.void -T
+flex_vector 0   basics                                         │flex_vector_0.void -T
                                                                │
-try_heap                                                       │try_heap.void -T
                                                                │
-try_rbts_node                                                  │try_rbts_node.void -T
                                                                │
-try_rbts_position                                              │try_rbts_position.void -T
                                                                │
-try_rbts_operations                                            │try_rbts_operations.void -T
                                                                │
-rbts/                                                          │rbts/micros.dir
                                                                │
-try_iterators                                                  │try_iterators.void -T
                                                                │
----------------------------------------------------------------│
-vector/                                                        │vector/micros.dir
-vector_transient/                                              │vector_transient/micros.dir
                                                                │
-flex_vector/                                                   │flex_vector/micros.dir
                                                                │
                                                                │
                                                                │
 ---------------------------------------------------------------│
-misc...                                                        │misc.void -T
-                                                               │
-                                                               │
----------------------------------------------------------------│
-some/                                                          │some/micros.dir
-                                                               │
-some_app/                                                      │some_app/micros.dir
-                                                               │
                                                                │
                                                                │
                                                                │
