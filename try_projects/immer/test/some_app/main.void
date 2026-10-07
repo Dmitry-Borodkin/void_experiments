@@ -5,7 +5,7 @@
     v_import("cstdio.void");
     v_import("string.void");
 
-    v_import("../../vector.void");
+    v_import("../../flex_vector.void");
 }
 
 
@@ -15,12 +15,12 @@
 main: (argc: int, argv: **const char) ~> int
 {
 #note ("before")
-    vv: &immer.vector(v_string_t) := {};
+    vv: &immer.flex_vector(v_string_t) := {};
 #note ("after")
 
-    vv := vv.push_back("превед");
     vv := vv.push_back("медвед");
     vv := vv.push_back("кагдила");
+    vv := vv.push_front("превед");
 
     for (s = vv.size, i: &int := 0; i < s; ++i)
     {

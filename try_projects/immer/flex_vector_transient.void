@@ -1,10 +1,10 @@
 { voidc_import("libvoidc.void"); }
-{ voidc_make_header("vector_transient"); }
+{ voidc_make_header("flex_vector_transient"); }
 //---------------------------------------------------------------------
 {
     v_export_import("memory_policy.void");
-    v_export_import("detail/rbts/rbtree.void");
-    v_export_import("detail/rbts/rbtree_iterator.void");
+    v_export_import("detail/rbts/rrbtree.void");
+    v_export_import("detail/rbts/rrbtree_iterator.void");
 }
 
 
@@ -14,34 +14,34 @@
 
 
 //---------------------------------------------------------------------
-//- <immer/vector_transient.hpp>
+//- <immer/flex_vector_transient.hpp>
 //---------------------------------------------------------------------
 namespace .immer {
 
 
 //---------------------------------------------------------------------
-#define vector_transient: [](T:            v_static_type_t,
-                             MemoryPolicy: v_static_namespace_t = default_memory_policy,
-                             B:            detail.rbts.bits_t   = default_bits,
-                             BL:           detail.rbts.bits_t   = detail.rbts.derive_bits_leaf(T, MemoryPolicy, B)
-                             ) ~> v_static_type_t  =
+#define flex_vector_transient: [](T:            v_static_type_t,
+                                  MemoryPolicy: v_static_namespace_t = default_memory_policy,
+                                  B:            detail.rbts.bits_t   = default_bits,
+                                  BL:           detail.rbts.bits_t   = detail.rbts.derive_bits_leaf(T, MemoryPolicy, B)
+                                  ) ~> v_static_type_t  =
 {
-    vt = v_generic(".immer.vector_transient", T(T), Q(v_namespace_get_name(MemoryPolicy)), N[B,BL]);
+    vt = v_generic(".immer.flex_vector_transient", T(T), Q(v_namespace_get_name(MemoryPolicy)), N[B,BL]);
 
-    _instantiate_vector_transient(vt, T, MemoryPolicy, B, BL);
+    _instantiate_flex_vector_transient(vt, T, MemoryPolicy, B, BL);
 
     vt
 };
 
 
 //---------------------------------------------------------------------
-#template _instantiate_vector_transient: [](VT: v_static_type_t, T: v_static_type_t,
-                                            MemoryPolicy: v_static_namespace_t,
-                                            B: detail.rbts.bits_t, BL: detail.rbts.bits_t)
+#template _instantiate_flex_vector_transient: [](VT: v_static_type_t, T: v_static_type_t,
+                                                 MemoryPolicy: v_static_namespace_t,
+                                                 B: detail.rbts.bits_t, BL: detail.rbts.bits_t)
 {
     using namespace .immer;
 
-    private impl_t = detail.rbts.rbtree(T, MemoryPolicy, B, BL);
+    private impl_t = detail.rbts.rrbtree(T, MemoryPolicy, B, BL);
 
     #do (v_set_implementation_type(VT, impl_t))
 
@@ -58,7 +58,7 @@ namespace .immer {
     difference_type = intptr_t;
     const_reference = &const T;
 
-    iterator = detail.rbts.rbtree_iterator(T, MemoryPolicy, B, BL);
+    iterator = detail.rbts.rrbtree_iterator(T, MemoryPolicy, B, BL);
 
     //- ...
 
@@ -113,11 +113,22 @@ namespace .immer {
     alwaysinline
     (_.take()): (self: &VT, elems: size_type) ~> void  { self.impl.take_mut(elems); }
 
+    alwaysinline
+    (_.drop()): (self: &VT, elems: size_type) ~> void  { self.impl.drop_mut(elems); }
+
+    //- ...
+
+    alwaysinline
+    (_.append()): (self: &VT, r: VT) ~> void  { impl_t.concat_mut_l(self.impl, r.impl); }
+
+    alwaysinline
+    (_.prepend()): (self: &VT, l: VT) ~> void  { impl_t.concat_mut_r(l.impl, self.impl); }
+
     //- ...
 
     #define (_.persistent): [*, VT, T, MemoryPolicy, B, BL](self: &const VT)  =
     {
-        persistent_type = vector(T, MemoryPolicy, B, BL);
+        persistent_type = flex_vector(T, MemoryPolicy, B, BL);
 
         ret: &persistent_type := {};
 
