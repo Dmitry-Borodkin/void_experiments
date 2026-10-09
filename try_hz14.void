@@ -35,4 +35,28 @@ fabs:  (double) ~> double;
 
 }
 
+//---------------------------------------------------------------------
+{
+    D: &double[3] := { log2(3), log2(5), log2(7) };
+
+    N = 441;
+
+    printf("\n%d:", N);
+
+    for (i: &int := 0; i < 3; ++i)
+    {
+        printf(" %g", D[i]*N);
+    }
+
+    printf("\n%d:", N);
+
+    for (i: &int := 0; i < 3; ++i)
+    {
+        printf(" %d", (round(D[i]*N) : int) % N);
+    }
+
+    printf("\n");
+
+}
+
 
