@@ -1,6 +1,8 @@
 { v_import("mainline.void"); }
 { v_enable_mainline(); }
 {
+    v_import("llvm-c/Core.void");
+
     v_import("type_traits.void");
     v_import("cstring.void");
 }
@@ -15,7 +17,7 @@ struct my_ast_generator_t
     visitor: voidc_visitor_t;           //- Kinda, "base class"...
 
     //---------------------------------------------------------
-    expr_list: v_ast_expr_list_t;
+    data_list: v_util_list_t;
     gen_list:  v_util_list_t;
 
     max_stk: int;
@@ -32,10 +34,10 @@ struct my_ast_generator_t
 
     v_copy(&d->visitor, my_get_ast_generator_visitor());
 
-    v_initialize(&d->expr_list);
+    v_initialize(&d->data_list);
     v_initialize(&d->gen_list);
 
-    v_make_list_nil(&d->expr_list);
+    v_make_list_nil(&d->data_list);
     v_make_list_nil(&d->gen_list);
 
     d->max_stk := 0;
@@ -48,14 +50,26 @@ struct my_ast_generator_t
 
 
 //---------------------------------------------------------------------
-(_.add_expr()): (gen: &my_ast_generator_t, expr: *v_ast_expr_t) ~> void
+(_.add_data()): (gen: &my_ast_generator_t, key: unsigned, data: *void) ~> void
 {
-    list = &gen.expr_list;
+    list = &gen.data_list;
 
-    v_list_append(list, list, expr);
+    a: &v_std_any_t := {};
+
+    v_std_any_set_value(&a, (key: intptr_t));   v_list_append(list, list, &a);
+    v_std_any_set_value(&a, (data: intptr_t));  v_list_append(list, list, &a);
 }
 
-(_.get_expr()): (gen: &my_ast_generator_t, idx: size_t) ~> *v_ast_expr_t  =  v_list_get_item(&gen.expr_list, idx);
+(_.get_data()): (gen: &my_ast_generator_t, idx: size_t, data: &*void) ~> unsigned  =
+{
+    idx = 2*idx;
+
+    list = &gen.data_list;
+
+    data := (v_std_any_get_value(intptr_t, v_list_get_item(list, idx+1)) : *void);
+
+    (v_std_any_get_value(intptr_t, v_list_get_item(list, idx)) : unsigned)
+};
 
 //---------------------------------------------------------------------
 (_.add_item()): (gen: &my_ast_generator_t, item: *void) ~> void
@@ -106,6 +120,13 @@ struct my_ast_generator_t
 
     if (n < 0  &&  gen.max_stk < gen.cur_stk)  gen.max_stk := gen.cur_stk;
 }
+
+
+//---------------------------------------------------------------------
+k_identifier: unsigned = 0;
+k_number:     unsigned = 1;
+k_quark:      unsigned = 2;
+k_string:     unsigned = 3;
 
 
 //---------------------------------------------------------------------
@@ -164,10 +185,7 @@ my_make_empty: (cmd: &*const *void, top: &*v_ast_base_t) ~> void
 
         gen.push;
 
-        expr: &v_ast_expr_t := {};
-
-        v_ast_make_expr_identifier(&expr, "my_make_empty");
-        gen.add_expr(&expr);
+        gen.add_data(k_identifier, &"my_make_empty");
     }
     else
     {
@@ -223,14 +241,9 @@ gen_unit: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     expr: &v_ast_expr_t := {};
 
-    v_ast_make_expr_identifier(&expr, "my_make_unit");
-    gen.add_expr(&expr);
-
-    v_ast_make_expr_integer(&expr, line);
-    gen.add_expr(&expr);
-
-    v_ast_make_expr_integer(&expr, column);
-    gen.add_expr(&expr);
+    gen.add_data(k_identifier, &"my_make_unit");
+    gen.add_data(k_number,     (line  : *void));
+    gen.add_data(k_number,     (column: *void));
 }
 
 
@@ -241,7 +254,7 @@ export
 my_make_generic_list: (cmd: &*const *void, top: &*v_ast_base_t) ~> void
 {
     size  = (cmd[0] : size_t);
-    quark = (cmd[1] : v_quark_t);
+    quark = v_quark_from_string((cmd[1] : *const char));
 
     ast = top - size;
 
@@ -284,8 +297,6 @@ gen_generic_list: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     M = 32;         //- ?
 
-    expr: &v_ast_expr_t := {};
-
     for (i: &size_t := 0;;)
     {
         n: &size_t := undef;
@@ -301,19 +312,14 @@ gen_generic_list: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
         if (i == n)
         {
             gen.add_item(my_make_generic_list);
-            gen.add_item((n    : *void));
-            gen.add_item((quark: *void));
+            gen.add_item((n: *void));
+            gen.add_item(v_quark_to_string(quark));
 
             gen.pop_n((n - 1 : int));
 
-            v_ast_make_expr_identifier(&expr, "my_make_generic_list");
-            gen.add_expr(&expr);
-
-            v_ast_make_expr_integer(&expr, n);
-            gen.add_expr(&expr);
-
-            v_ast_make_expr_compiled(&expr, 0, (quark: LLVMValueRef));
-            gen.add_expr(&expr);
+            gen.add_data(k_identifier, &"my_make_generic_list");
+            gen.add_data(k_number,     (n: *void));
+            gen.add_data(k_quark,      (quark: *void));
         }
         else
         {
@@ -322,11 +328,8 @@ gen_generic_list: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
             gen.pop_n((n: int));
 
-            v_ast_make_expr_identifier(&expr, "my_append_generic_list");
-            gen.add_expr(&expr);
-
-            v_ast_make_expr_integer(&expr, n);
-            gen.add_expr(&expr);
+            gen.add_data(k_identifier, &"my_append_generic_list");
+            gen.add_data(k_number,     (n: *void));
         }
 
         if (i == size)  break;
@@ -361,10 +364,7 @@ gen_unit_stmt_init: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     gen.add_item(my_make_unit_stmt_init);
 
-    expr: &v_ast_expr_t := {};
-
-    v_ast_make_expr_identifier(&expr, "my_make_unit_stmt_init");
-    gen.add_expr(&expr);
+    gen.add_data(k_identifier, &"my_make_unit_stmt_init");
 }
 
 
@@ -395,10 +395,7 @@ gen_unit_stmt_term: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     gen.add_item(my_make_unit_stmt_term);
 
-    expr: &v_ast_expr_t := {};
-
-    v_ast_make_expr_identifier(&expr, "my_make_unit_stmt_term");
-    gen.add_expr(&expr);
+    gen.add_data(k_identifier, &"my_make_unit_stmt_term");
 }
 
 
@@ -451,8 +448,6 @@ gen_stmt_list: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     M = 32;         //- ?
 
-    expr: &v_ast_expr_t := {};
-
     for (i: &size_t := 0;;)
     {
         n: &size_t := undef;
@@ -472,11 +467,8 @@ gen_stmt_list: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
             gen.pop_n((n - 1 : int));
 
-            v_ast_make_expr_identifier(&expr, "my_make_stmt_list");
-            gen.add_expr(&expr);
-
-            v_ast_make_expr_integer(&expr, n);
-            gen.add_expr(&expr);
+            gen.add_data(k_identifier, &"my_make_stmt_list");
+            gen.add_data(k_number,     (n: *void));
         }
         else
         {
@@ -485,11 +477,8 @@ gen_stmt_list: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
             gen.pop_n((n: int));
 
-            v_ast_make_expr_identifier(&expr, "my_append_stmt_list");
-            gen.add_expr(&expr);
-
-            v_ast_make_expr_integer(&expr, n);
-            gen.add_expr(&expr);
+            gen.add_data(k_identifier, &"my_append_stmt_list");
+            gen.add_data(k_number,     (n: *void));
         }
 
         if (i == size)  break;
@@ -503,7 +492,7 @@ gen_stmt_list: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 export
 my_make_stmt: (cmd: &*const *void, top: &*v_ast_base_t) ~> void
 {
-    qname = (cmd[0] : v_quark_t);
+    qname = v_quark_from_string((cmd[0] : *const char));
 
     ast = top - 1;
 
@@ -528,15 +517,10 @@ gen_stmt: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
     gen.visit(sexpr);
 
     gen.add_item(my_make_stmt);
-    gen.add_item((qname: *void));
+    gen.add_item(v_quark_to_string(qname));
 
-    expr: &v_ast_expr_t := {};
-
-    v_ast_make_expr_identifier(&expr, "my_make_stmt");
-    gen.add_expr(&expr);
-
-    v_ast_make_expr_compiled(&expr, 0, (qname: LLVMValueRef));
-    gen.add_expr(&expr);
+    gen.add_data(k_identifier, &"my_make_stmt");
+    gen.add_data(k_quark,      (qname: *void));
 }
 
 
@@ -579,10 +563,7 @@ gen_stmt_if_then_else: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> vo
 
     gen.pop_n(2);
 
-    expr: &v_ast_expr_t := {};
-
-    v_ast_make_expr_identifier(&expr, "my_make_stmt_if_then_else");
-    gen.add_expr(&expr);
+    gen.add_data(k_identifier, &"my_make_stmt_if_then_else");
 }
 
 
@@ -621,13 +602,8 @@ gen_stmt_block: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
     gen.add_item(my_make_stmt_block);
     gen.add_item((flag: *void));
 
-    expr: &v_ast_expr_t := {};
-
-    v_ast_make_expr_identifier(&expr, "my_make_stmt_block");
-    gen.add_expr(&expr);
-
-    v_ast_make_expr_integer(&expr, flag);
-    gen.add_expr(&expr);
+    gen.add_data(k_identifier, &"my_make_stmt_block");
+    gen.add_data(k_number,     (flag: *void));
 }
 
 
@@ -660,10 +636,7 @@ gen_stmt_loop: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     gen.add_item(my_make_stmt_loop);
 
-    expr: &v_ast_expr_t := {};
-
-    v_ast_make_expr_identifier(&expr, "my_make_stmt_loop");
-    gen.add_expr(&expr);
+    gen.add_data(k_identifier, &"my_make_stmt_loop");
 }
 
 
@@ -696,10 +669,7 @@ gen_stmt_defer: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     gen.add_item(my_make_stmt_defer);
 
-    expr: &v_ast_expr_t := {};
-
-    v_ast_make_expr_identifier(&expr, "my_make_stmt_defer");
-    gen.add_expr(&expr);
+    gen.add_data(k_identifier, &"my_make_stmt_defer");
 }
 
 
@@ -739,10 +709,7 @@ gen_stmt_switch: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     gen.pop;
 
-    expr: &v_ast_expr_t := {};
-
-    v_ast_make_expr_identifier(&expr, "my_make_stmt_switch");
-    gen.add_expr(&expr);
+    gen.add_data(k_identifier, &"my_make_stmt_switch");
 }
 
 
@@ -782,10 +749,7 @@ gen_case_block: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     gen.pop;
 
-    expr: &v_ast_expr_t := {};
-
-    v_ast_make_expr_identifier(&expr, "my_make_case_block");
-    gen.add_expr(&expr);
+    gen.add_data(k_identifier, &"my_make_case_block");
 }
 
 
@@ -838,8 +802,6 @@ gen_expr_list: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     M = 32;         //- ?
 
-    expr: &v_ast_expr_t := {};
-
     for (i: &size_t := 0;;)
     {
         n: &size_t := undef;
@@ -859,11 +821,8 @@ gen_expr_list: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
             gen.pop_n((n - 1 : int));
 
-            v_ast_make_expr_identifier(&expr, "my_make_expr_list");
-            gen.add_expr(&expr);
-
-            v_ast_make_expr_integer(&expr, n);
-            gen.add_expr(&expr);
+            gen.add_data(k_identifier, &"my_make_expr_list");
+            gen.add_data(k_number,     (n    : *void));
         }
         else
         {
@@ -872,11 +831,8 @@ gen_expr_list: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
             gen.pop_n((n: int));
 
-            v_ast_make_expr_identifier(&expr, "my_append_expr_list");
-            gen.add_expr(&expr);
-
-            v_ast_make_expr_integer(&expr, n);
-            gen.add_expr(&expr);
+            gen.add_data(k_identifier, &"my_append_expr_list");
+            gen.add_data(k_number,     (n: *void));
         }
 
         if (i == size)  break;
@@ -918,10 +874,7 @@ gen_expr_call: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     gen.pop;
 
-    expr: &v_ast_expr_t := {};
-
-    v_ast_make_expr_identifier(&expr, "my_make_expr_call");
-    gen.add_expr(&expr);
+    gen.add_data(k_identifier, &"my_make_expr_call");
 }
 
 
@@ -931,7 +884,7 @@ gen_expr_call: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 export
 my_make_expr_identifier: (cmd: &*const *void, top: &*v_ast_base_t) ~> void
 {
-    qn = (cmd[0] : v_quark_t);
+    qn = v_quark_from_string((cmd[0] : *const char));
 
     ast = top;
 
@@ -953,17 +906,12 @@ gen_expr_identifier: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
     qn = v_ast_expr_identifier_get_name_q(eid);
 
     gen.add_item(my_make_expr_identifier);
-    gen.add_item((qn: *void));
+    gen.add_item(v_quark_to_string(qn));
 
     gen.push;
 
-    expr: &v_ast_expr_t := {};
-
-    v_ast_make_expr_identifier(&expr, "my_make_expr_identifier");
-    gen.add_expr(&expr);
-
-    v_ast_make_expr_compiled(&expr, 0, (qn: LLVMValueRef));
-    gen.add_expr(&expr);
+    gen.add_data(k_identifier, &"my_make_expr_identifier");
+    gen.add_data(k_quark,      (qn: *void));
 }
 
 
@@ -999,13 +947,8 @@ gen_expr_integer: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     gen.push;
 
-    expr: &v_ast_expr_t := {};
-
-    v_ast_make_expr_identifier(&expr, "my_make_expr_integer");
-    gen.add_expr(&expr);
-
-    v_ast_make_expr_integer(&expr, num);
-    gen.add_expr(&expr);
+    gen.add_data(k_identifier, &"my_make_expr_integer");
+    gen.add_data(k_number,     (num: *void));
 }
 
 
@@ -1045,15 +988,9 @@ gen_expr_string: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     gen.push;
 
-    expr: &v_ast_expr_t := {};
-
-    v_ast_make_expr_identifier(&expr, "my_make_expr_string");
-    gen.add_expr(&expr);
-
-    gen.add_expr(estr);     //- !
-
-    v_ast_make_expr_integer(&expr, len);
-    gen.add_expr(&expr);
+    gen.add_data(k_identifier, &"my_make_expr_string");
+    gen.add_data(k_string,     str);
+    gen.add_data(k_number,     (len: *void));
 }
 
 
@@ -1089,13 +1026,8 @@ gen_expr_char: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     gen.push;
 
-    expr: &v_ast_expr_t := {};
-
-    v_ast_make_expr_identifier(&expr, "my_make_expr_char");
-    gen.add_expr(&expr);
-
-    v_ast_make_expr_integer(&expr, chr);
-    gen.add_expr(&expr);
+    gen.add_data(k_identifier, &"my_make_expr_char");
+    gen.add_data(k_number,     (chr: *void));
 }
 
 
@@ -1145,13 +1077,8 @@ gen_expr_struct: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     gen.pop;
 
-    expr: &v_ast_expr_t := {};
-
-    v_ast_make_expr_identifier(&expr, "my_make_expr_struct");
-    gen.add_expr(&expr);
-
-    v_ast_make_expr_integer(&expr, (packed << 1) | export);
-    gen.add_expr(&expr);
+    gen.add_data(k_identifier, &"my_make_expr_struct");
+    gen.add_data(k_number,     ((packed << 1) | export: *void));
 }
 
 
@@ -1192,13 +1119,8 @@ gen_expr_union: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     gen.pop;
 
-    expr: &v_ast_expr_t := {};
-
-    v_ast_make_expr_identifier(&expr, "my_make_expr_union");
-    gen.add_expr(&expr);
-
-    v_ast_make_expr_integer(&expr, obj.export);
-    gen.add_expr(&expr);
+    gen.add_data(k_identifier, &"my_make_expr_union");
+    gen.add_data(k_number,     (obj.export: *void));
 }
 
 
@@ -1229,10 +1151,7 @@ gen_expr_stmt: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     gen.add_item(my_make_expr_stmt);
 
-    expr: &v_ast_expr_t := {};
-
-    v_ast_make_expr_identifier(&expr, "my_make_expr_stmt");
-    gen.add_expr(&expr);
+    gen.add_data(k_identifier, &"my_make_expr_stmt");
 }
 
 
@@ -1269,10 +1188,7 @@ gen_expr_block: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
     gen.pop;
 
-    expr: &v_ast_expr_t := {};
-
-    v_ast_make_expr_identifier(&expr, "my_make_expr_block");
-    gen.add_expr(&expr);
+    gen.add_data(k_identifier, &"my_make_expr_block");
 }
 
 
@@ -1282,7 +1198,7 @@ gen_expr_block: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 export
 my_make_operator: (cmd: &*const *void, top: &*v_ast_base_t) ~> void
 {
-    quark = (cmd[0] : v_quark_t);
+    quark = v_quark_from_string((cmd[0] : *const char));
 
     ast = top;
 
@@ -1306,7 +1222,7 @@ my_make_operator: (cmd: &*const *void, top: &*v_ast_base_t) ~> void
 export
 my_make_operator_nullary: (cmd: &*const *void, top: &*v_ast_base_t) ~> void
 {
-    quark = (cmd[0] : v_quark_t);
+    quark = v_quark_from_string((cmd[0] : *const char));
 
     ast = top - 1;
 
@@ -1330,16 +1246,13 @@ gen_operator_nullary: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> voi
     quark =  obj[0];
     pay   = &obj[1];
 
-    expr: &v_ast_expr_t := {};
-
     if (v_empty(pay))
     {
         gen.push;
 
         gen.add_item(my_make_operator);
 
-        v_ast_make_expr_identifier(&expr, "my_make_operator");
-        gen.add_expr(&expr);
+        gen.add_data(k_identifier, &"my_make_operator");
     }
     else
     {
@@ -1347,14 +1260,12 @@ gen_operator_nullary: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> voi
 
         gen.add_item(my_make_operator_nullary);
 
-        v_ast_make_expr_identifier(&expr, "my_make_operator_nullary");
-        gen.add_expr(&expr);
+        gen.add_data(k_identifier, &"my_make_operator_nullary");
     }
 
-    gen.add_item((quark: *void));
+    gen.add_item(v_quark_to_string(quark));
 
-    v_ast_make_expr_compiled(&expr, 0, (quark: LLVMValueRef));
-    gen.add_expr(&expr);
+    gen.add_data(k_quark, (quark: *void));
 }
 
 
@@ -1365,7 +1276,7 @@ export
 my_make_operator_unary: (cmd: &*const *void, top: &*v_ast_base_t) ~> void
 {
     prec  = (cmd[0] : unsigned);
-    quark = (cmd[1] : v_quark_t);
+    quark = v_quark_from_string((cmd[1] : *const char));
 
     ast = top - 1;
 
@@ -1390,16 +1301,13 @@ gen_operator_unary: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
     prec  =  obj[1];
     pay   = &obj[2];
 
-    expr: &v_ast_expr_t := {};
-
     if (v_empty(pay))
     {
         gen.push;
 
         gen.add_item(my_make_operator);
 
-        v_ast_make_expr_identifier(&expr, "my_make_operator");
-        gen.add_expr(&expr);
+        gen.add_data(k_identifier, &"my_make_operator");
     }
     else
     {
@@ -1408,17 +1316,13 @@ gen_operator_unary: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
         gen.add_item(my_make_operator_unary);
         gen.add_item((prec: *void));
 
-        v_ast_make_expr_identifier(&expr, "my_make_operator_unary");
-        gen.add_expr(&expr);
-
-        v_ast_make_expr_integer(&expr, prec);
-        gen.add_expr(&expr);
+        gen.add_data(k_identifier, &"my_make_operator_unary");
+        gen.add_data(k_number,     (prec: *void));
     }
 
-    gen.add_item((quark: *void));
+    gen.add_item(v_quark_to_string(quark));
 
-    v_ast_make_expr_compiled(&expr, 0, (quark: LLVMValueRef));
-    gen.add_expr(&expr);
+    gen.add_data(k_quark, (quark: *void));
 }
 
 
@@ -1430,7 +1334,7 @@ my_make_operator_binary: (cmd: &*const *void, top: &*v_ast_base_t) ~> void
 {
     prec_l = (cmd[0] : unsigned);
     prec_r = (cmd[1] : unsigned);
-    quark  = (cmd[2] : v_quark_t);
+    quark  = v_quark_from_string((cmd[2] : *const char));
 
     ast = top - 1;
 
@@ -1464,8 +1368,7 @@ gen_operator_binary: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
 
         gen.add_item(my_make_operator);
 
-        v_ast_make_expr_identifier(&expr, "my_make_operator");
-        gen.add_expr(&expr);
+        gen.add_data(k_identifier, &"my_make_operator");
     }
     else
     {
@@ -1475,20 +1378,164 @@ gen_operator_binary: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
         gen.add_item((prec_l: *void));
         gen.add_item((prec_r: *void));
 
-        v_ast_make_expr_identifier(&expr, "my_make_operator_binary");
-        gen.add_expr(&expr);
-
-        v_ast_make_expr_integer(&expr, prec_l);
-        gen.add_expr(&expr);
-
-        v_ast_make_expr_integer(&expr, prec_r);
-        gen.add_expr(&expr);
+        gen.add_data(k_identifier, &"my_make_operator_binary");
+        gen.add_data(k_number,     (prec_l: *void));
+        gen.add_data(k_number,     (prec_r: *void));
     }
 
-    gen.add_item((quark: *void));
+    gen.add_item(v_quark_to_string(quark));
 
-    v_ast_make_expr_compiled(&expr, 0, (quark: LLVMValueRef));
-    gen.add_expr(&expr);
+    gen.add_data(k_quark, (quark: *void));
+}
+
+
+//---------------------------------------------------------------------
+export
+my_ast_repr_helper: (stk_size: size_t, cmd: *const *void, cmd_size: size_t) ~> v_ast_base_t
+{
+    stk = new v_ast_base_t[stk_size];
+    defer delete[] stk;
+
+    for (p: &*const *void := cmd, e = p+cmd_size, s: &*v_ast_base_t := stk; p < e;)
+    {
+        fun = (*p: *((&*const *void, &*v_ast_base_t) ~> void));
+
+//      printf("cmd: %u\n", (p-cmd : unsigned));
+
+        fun(++p, s);
+    }
+
+    ret = v_get_return_value();
+
+    v_copy(&ret, stk+0);
+}
+
+//---------------------------------------------------------------------
+private
+my_compile_ast_repr_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+{
+//printf("my_compile_ast_repr_intrinsic: start\n");
+//defer printf("my_compile_ast_repr_intrinsic: stop\n");
+
+    args = v_ast_expr_call_get_arg_list((self: *v_ast_expr_t));
+
+    arg0 = v_list_get_item(args, 0);        //- Value
+
+    gen: &my_ast_generator_t := {};
+
+    gen.visit(arg0);
+
+    v_assert(gen.cur_stk == 1 <= gen.max_stk);
+
+    list = &gen.data_list;
+
+    //-----------------------------------------------------------------
+    N = v_list_get_size(list);
+
+    vals = v_malloc(LLVMValueRef, N/2);
+    defer v_free(vals);
+
+    builder = v_target_get_builder();
+
+    for (i: &size_t := 0; i < N; i += 2)
+    {
+        key  = (v_std_any_get_value(intptr_t, v_list_get_item(list, i))   : unsigned);
+        data = (v_std_any_get_value(intptr_t, v_list_get_item(list, i+1)) : *void);
+
+        val = vals[i/2];
+
+        switch(key)
+        {
+        case k_identifier:
+
+            ok = v_obtain_identifier((data: *const char), 0, &val);
+            v_assert(ok);
+
+            break;
+
+        case k_number:
+
+            v = LLVMConstInt(v_type_get_llvm_type(intptr_t), (data: intptr_t), 1);
+            val := LLVMConstIntToPtr(v, v_type_get_llvm_type(v_pointer_type(v_void_type(), 0)));
+
+            break;
+
+        case k_quark:
+
+            quark = (data: v_quark_t);
+
+            str = v_quark_to_string(quark);
+            len = v_quark_to_string_size(quark);
+
+            str_v = LLVMConstStringInContext(v_target_get_llvm_ctx(), str, (len: unsigned), 0);
+
+            vv = LLVMAddGlobal(v_get_module(), LLVMTypeOf(str_v), "");
+
+            LLVMSetInitializer(vv, str_v);
+
+            LLVMSetLinkage(vv, LLVMPrivateLinkage);
+
+            LLVMSetUnnamedAddress(vv, LLVMGlobalUnnamedAddr);
+
+            LLVMSetGlobalConstant(vv, true);
+
+            val := vv;
+
+            break;
+
+        case k_string:
+
+            len = (v_std_any_get_value(intptr_t, v_list_get_item(list, i+3)) : size_t);
+            str = (data: *const char);
+
+            str_v = LLVMConstStringInContext(v_target_get_llvm_ctx(), str, (len: unsigned), 0);
+
+            vv = LLVMAddGlobal(v_get_module(), LLVMTypeOf(str_v), "");
+
+            LLVMSetInitializer(vv, str_v);
+
+            LLVMSetLinkage(vv, LLVMPrivateLinkage);
+
+            LLVMSetUnnamedAddress(vv, LLVMGlobalUnnamedAddr);
+
+            LLVMSetGlobalConstant(vv, true);
+
+            val := vv;
+
+            break;
+        }
+    }
+
+    void_ptr = v_pointer_type(v_void_type(), 0);
+
+    arr_v = LLVMConstArray(v_type_get_llvm_type(void_ptr), vals, (N/2 : unsigned));
+
+    vv = LLVMAddGlobal(v_get_module(), LLVMTypeOf(arr_v), "");
+
+    LLVMSetInitializer(vv, arr_v);
+
+    LLVMSetLinkage(vv, LLVMPrivateLinkage);
+
+    LLVMSetUnnamedAddress(vv, LLVMGlobalUnnamedAddr);
+
+    LLVMSetGlobalConstant(vv, true);
+
+    expr: &v_ast_expr_t[3]   := {};
+    elst: &v_ast_expr_list_t := {};
+
+    v_ast_make_expr_integer(expr+0, gen.max_stk);
+
+    v_ast_make_expr_compiled(expr+1, v_pointer_type(void_ptr, 0), vv);
+
+    v_ast_make_expr_integer(expr+2, N/2);
+
+    v_make_list(&elst, expr, 3);
+
+    v_ast_make_expr_identifier(expr+0, "my_ast_repr_helper");
+
+    v_ast_make_expr_call(expr+0, expr+0, &elst);
+
+    v_ast_accept_visitor(expr+0, vis);
 }
 
 
@@ -1499,20 +1546,17 @@ my_quote_ast_grammar_action: (ret: *v_std_any_t, *void, any: *v_std_any_t, size_
     ast = v_ast_std_any_get_base(any);
     if (!ast)   return;
 
-    gen: &my_ast_generator_t := {};
-
-    gen.visit(ast);
-
-    v_assert(gen.cur_stk == 1 <= gen.max_stk);
-
     //-----------------------------------------------------------------
+    expr: &v_ast_expr_t := {};
+    elst: &v_ast_expr_list_t := {};
 
+    v_make_list(&elst, (ast: *v_ast_expr_t));
 
+    v_ast_make_expr_identifier(&expr, "my.compile_ast_repr");
 
-    //- ...
+    v_ast_make_expr_call(&expr, &expr, &elst);
 
-
-
+    v_std_any_set_pointer(ret, &expr);
 }
 
 
@@ -1574,6 +1618,10 @@ block
     voidc_visitor_set_method(vis, vis, q("operator_binary"),     gen_operator_binary,   0);
     voidc_visitor_set_method(vis, vis, q("projection_payload"),  gen_generic_list,      0);
 
+    //-----------------------------------------------------------------
+    v_add_intrinsic("my.compile_ast_repr", my_compile_ast_repr_intrinsic, 0);
+
+    //-----------------------------------------------------------------
     gr0 = v_peg_get_grammar();
 
     grammar gr0
@@ -1582,7 +1630,7 @@ block
         my_quote_ast = my_quote_ast_grammar_action;
 
     parsers:
-        prim =+ "#my" a:parse_any     { my_quote_ast(a) };
+        prim =+ "#my" _ a:parse_any     { my_quote_ast(a) };
     }
 }
 
@@ -1594,6 +1642,11 @@ my_get_ast_generator_visitor: () ~> *voidc_visitor_t
 
 
 //=====================================================================
+{   printf("OK 00\n");
+}
+
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(1); }
 {
     gen: &my_ast_generator_t := {};
 
@@ -1602,156 +1655,156 @@ my_get_ast_generator_visitor: () ~> *voidc_visitor_t
     gen.visit(&some);
 
 
-some2: v_ast_generic_list_t =
-{'unit_defn_list'
+    some2: v_ast_generic_list_t =
+    {'unit_defn_list'
 
-export
-my_make_expr_list: (cmd: &*const *void, top: &*v_ast_base_t) ~> void
-{
-    size = (cmd[0] : size_t);
-
-    ast = top - size;
-
-    ret  = (ast: *v_ast_expr_list_t);
-    expr = (ast: *v_ast_expr_t);
-
-    if (size) v_make_list(ret, expr, size);
-    else      v_make_list_nil(ret);
-
-    top := ret + 1;
-
-    cmd += 1;
-}
-
-export
-my_append_expr_list: (cmd: &*const *void, top: &*v_ast_base_t) ~> void
-{
-    size = (cmd[0] : size_t);
-
-    ast = top - (size + 1);
-
-    ret  = (ast   : *v_ast_expr_list_t);
-    expr = (ast+1 : *v_ast_expr_t);
-
-    v_list_append(ret, ret, expr, size);
-
-    top := ret + 1;
-
-    cmd += 1;
-}
-
-private
-gen_expr_list: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
-{
-    gen = *(vis: *my_ast_generator_t);
-
-    lst = (self: *v_ast_expr_list_t);
-
-    size = v_list_get_size(lst);
-
-    M = 32;         //- ?
-
-    for (i: &size_t := 0;;)
-    {
-        n: &size_t := undef;
-
-        if (m = size - i, m < M)  n := m;
-        else                      n := M;
-
-        for (s = i+n; i < s; ++i)
+        export
+        my_make_expr_list: (cmd: &*const *void, top: &*v_ast_base_t) ~> void
         {
-            gen.visit(v_list_get_item(lst, i));
+            size = (cmd[0] : size_t);
+
+            ast = top - size;
+
+            ret  = (ast: *v_ast_expr_list_t);
+            expr = (ast: *v_ast_expr_t);
+
+            if (size) v_make_list(ret, expr, size);
+            else      v_make_list_nil(ret);
+
+            top := ret + 1;
+
+            cmd += 1;
         }
 
-        if (i == n)
+        export
+        my_append_expr_list: (cmd: &*const *void, top: &*v_ast_base_t) ~> void
         {
-            gen.add_item(my_make_expr_list);
-            gen.add_item((n: *void));
+            size = (cmd[0] : size_t);
 
-            gen.pop_n((n - 1 : int));
+            ast = top - (size + 1);
+
+            ret  = (ast   : *v_ast_expr_list_t);
+            expr = (ast+1 : *v_ast_expr_t);
+
+            v_list_append(ret, ret, expr, size);
+
+            top := ret + 1;
+
+            cmd += 1;
         }
-        else
+
+        private
+        gen_expr_list: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
         {
-            gen.add_item(my_append_expr_list);
-            gen.add_item((n: *void));
+            gen = *(vis: *my_ast_generator_t);
 
-            gen.pop_n((n: int));
+            lst = (self: *v_ast_expr_list_t);
+
+            size = v_list_get_size(lst);
+
+            M = 32;         //- ?
+
+            for (i: &size_t := 0;;)
+            {
+                n: &size_t := undef;
+
+                if (m = size - i, m < M)  n := m;
+                else                      n := M;
+
+                for (s = i+n; i < s; ++i)
+                {
+                    gen.visit(v_list_get_item(lst, i));
+                }
+
+                if (i == n)
+                {
+                    gen.add_item(my_make_expr_list);
+                    gen.add_item((n: *void));
+
+                    gen.pop_n((n - 1 : int));
+                }
+                else
+                {
+                    gen.add_item(my_append_expr_list);
+                    gen.add_item((n: *void));
+
+                    gen.pop_n((n: int));
+                }
+
+                if (i == size)  break;
+            }
         }
 
-        if (i == size)  break;
-    }
-}
+        private
+        gen_visitor: &voidc_visitor_t := {};
 
-private
-gen_visitor: &voidc_visitor_t := {};
+        block
+        {
+            vis = &gen_visitor;
 
-block
-{
-    vis = &gen_visitor;
+            voidc_make_visitor(vis);
 
-    voidc_make_visitor(vis);
+            q = v_quark_from_string;
 
-    q = v_quark_from_string;
+            voidc_visitor_set_method(vis, vis, q("unit"),                gen_unit,              0);
+            voidc_visitor_set_method(vis, vis, q("defn_list_unit"),      gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_defn_list"),      gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_fun_defn"),       gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_var_defn"),       gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_val_defn"),       gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_ccif_list"),      gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_struct_defn"),    gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_spec_fun_defn"),  gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_spec_fun_renm"),  gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_union_defn"),     gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_stmt_init"),      gen_unit_stmt_init,    0);
+            voidc_visitor_set_method(vis, vis, q("unit_stmt_term"),      gen_unit_stmt_term,    0);
+            voidc_visitor_set_method(vis, vis, q("unit_namespace_open"), gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_defn_close"),     gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_defn_using"),     gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("stmt_list"),           gen_stmt_list,         0);
+            voidc_visitor_set_method(vis, vis, q("stmt"),                gen_stmt,              0);
+            voidc_visitor_set_method(vis, vis, q("stmt_if_then_else"),   gen_stmt_if_then_else, 0);
+            voidc_visitor_set_method(vis, vis, q("stmt_block"),          gen_stmt_block,        0);
+            voidc_visitor_set_method(vis, vis, q("stmt_loop"),           gen_stmt_loop,         0);
+            voidc_visitor_set_method(vis, vis, q("stmt_defer"),          gen_stmt_defer,        0);
+            voidc_visitor_set_method(vis, vis, q("stmt_switch"),         gen_stmt_switch,       0);
+            voidc_visitor_set_method(vis, vis, q("case_list"),           gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("case_block"),          gen_case_block,        0);
+            voidc_visitor_set_method(vis, vis, q("stmt_ccif_list"),      gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("expr_list"),           gen_expr_list,         0);
+            voidc_visitor_set_method(vis, vis, q("expr_call"),           gen_expr_call,         0);
+            voidc_visitor_set_method(vis, vis, q("expr_identifier"),     gen_expr_identifier,   0);
+            voidc_visitor_set_method(vis, vis, q("expr_integer"),        gen_expr_integer,      0);
+            voidc_visitor_set_method(vis, vis, q("expr_string"),         gen_expr_string,       0);
+            voidc_visitor_set_method(vis, vis, q("expr_char"),           gen_expr_char,         0);
+            voidc_visitor_set_method(vis, vis, q("expr_struct"),         gen_expr_struct,       0);
+            voidc_visitor_set_method(vis, vis, q("expr_union"),          gen_expr_union,        0);
+            voidc_visitor_set_method(vis, vis, q("expr_stmt"),           gen_expr_stmt,         0);
+            voidc_visitor_set_method(vis, vis, q("expr_block"),          gen_expr_block,        0);
+            voidc_visitor_set_method(vis, vis, q("expr_ccif_list"),      gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("br_item_list"),        gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("cc_message"),          gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("cc_do"),               gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("cc_assert"),           gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("operator_nullary"),    gen_operator_nullary,  0);
+            voidc_visitor_set_method(vis, vis, q("operator_unary"),      gen_operator_unary,    0);
+            voidc_visitor_set_method(vis, vis, q("operator_binary"),     gen_operator_binary,   0);
+            voidc_visitor_set_method(vis, vis, q("projection_payload"),  gen_generic_list,      0);
 
-    voidc_visitor_set_method(vis, vis, q("unit"),                gen_unit,              0);
-    voidc_visitor_set_method(vis, vis, q("defn_list_unit"),      gen_generic_list,      0);
-    voidc_visitor_set_method(vis, vis, q("unit_defn_list"),      gen_generic_list,      0);
-    voidc_visitor_set_method(vis, vis, q("unit_fun_defn"),       gen_generic_list,      0);
-    voidc_visitor_set_method(vis, vis, q("unit_var_defn"),       gen_generic_list,      0);
-    voidc_visitor_set_method(vis, vis, q("unit_val_defn"),       gen_generic_list,      0);
-    voidc_visitor_set_method(vis, vis, q("unit_ccif_list"),      gen_generic_list,      0);
-    voidc_visitor_set_method(vis, vis, q("unit_struct_defn"),    gen_generic_list,      0);
-    voidc_visitor_set_method(vis, vis, q("unit_spec_fun_defn"),  gen_generic_list,      0);
-    voidc_visitor_set_method(vis, vis, q("unit_spec_fun_renm"),  gen_generic_list,      0);
-    voidc_visitor_set_method(vis, vis, q("unit_union_defn"),     gen_generic_list,      0);
-    voidc_visitor_set_method(vis, vis, q("unit_stmt_init"),      gen_unit_stmt_init,    0);
-    voidc_visitor_set_method(vis, vis, q("unit_stmt_term"),      gen_unit_stmt_term,    0);
-    voidc_visitor_set_method(vis, vis, q("unit_namespace_open"), gen_generic_list,      0);
-    voidc_visitor_set_method(vis, vis, q("unit_defn_close"),     gen_generic_list,      0);
-    voidc_visitor_set_method(vis, vis, q("unit_defn_using"),     gen_generic_list,      0);
-    voidc_visitor_set_method(vis, vis, q("stmt_list"),           gen_stmt_list,         0);
-    voidc_visitor_set_method(vis, vis, q("stmt"),                gen_stmt,              0);
-    voidc_visitor_set_method(vis, vis, q("stmt_if_then_else"),   gen_stmt_if_then_else, 0);
-    voidc_visitor_set_method(vis, vis, q("stmt_block"),          gen_stmt_block,        0);
-    voidc_visitor_set_method(vis, vis, q("stmt_loop"),           gen_stmt_loop,         0);
-    voidc_visitor_set_method(vis, vis, q("stmt_defer"),          gen_stmt_defer,        0);
-    voidc_visitor_set_method(vis, vis, q("stmt_switch"),         gen_stmt_switch,       0);
-    voidc_visitor_set_method(vis, vis, q("case_list"),           gen_generic_list,      0);
-    voidc_visitor_set_method(vis, vis, q("case_block"),          gen_case_block,        0);
-    voidc_visitor_set_method(vis, vis, q("stmt_ccif_list"),      gen_generic_list,      0);
-    voidc_visitor_set_method(vis, vis, q("expr_list"),           gen_expr_list,         0);
-    voidc_visitor_set_method(vis, vis, q("expr_call"),           gen_expr_call,         0);
-    voidc_visitor_set_method(vis, vis, q("expr_identifier"),     gen_expr_identifier,   0);
-    voidc_visitor_set_method(vis, vis, q("expr_integer"),        gen_expr_integer,      0);
-    voidc_visitor_set_method(vis, vis, q("expr_string"),         gen_expr_string,       0);
-    voidc_visitor_set_method(vis, vis, q("expr_char"),           gen_expr_char,         0);
-    voidc_visitor_set_method(vis, vis, q("expr_struct"),         gen_expr_struct,       0);
-    voidc_visitor_set_method(vis, vis, q("expr_union"),          gen_expr_union,        0);
-    voidc_visitor_set_method(vis, vis, q("expr_stmt"),           gen_expr_stmt,         0);
-    voidc_visitor_set_method(vis, vis, q("expr_block"),          gen_expr_block,        0);
-    voidc_visitor_set_method(vis, vis, q("expr_ccif_list"),      gen_generic_list,      0);
-    voidc_visitor_set_method(vis, vis, q("br_item_list"),        gen_generic_list,      0);
-    voidc_visitor_set_method(vis, vis, q("cc_message"),          gen_generic_list,      0);
-    voidc_visitor_set_method(vis, vis, q("cc_do"),               gen_generic_list,      0);
-    voidc_visitor_set_method(vis, vis, q("cc_assert"),           gen_generic_list,      0);
-    voidc_visitor_set_method(vis, vis, q("operator_nullary"),    gen_operator_nullary,  0);
-    voidc_visitor_set_method(vis, vis, q("operator_unary"),      gen_operator_unary,    0);
-    voidc_visitor_set_method(vis, vis, q("operator_binary"),     gen_operator_binary,   0);
-    voidc_visitor_set_method(vis, vis, q("projection_payload"),  gen_generic_list,      0);
+            gr0 = v_peg_get_grammar();
 
-    gr0 = v_peg_get_grammar();
+            grammar gr0
+            {
+            actions:
+                my_quote_ast = my_quote_ast_grammar_action;
 
-    grammar gr0
-    {
-    actions:
-        my_quote_ast = my_quote_ast_grammar_action;
+            parsers:
+                prim =+ "#my" _ a:parse_any     { my_quote_ast(a) };
+            }
+        }
 
-    parsers:
-        prim =+ "#my" a:parse_any     { my_quote_ast(a) };
-    }
-}
-
-'unit_defn_list'};
+    'unit_defn_list'};
 
     gen.visit(&some2);
 
@@ -1811,10 +1864,172 @@ block
     printf("OK 4\n");
 }
 
+{   printf("OK 5\n");
+}
 
 
+//---------------------------------------------------------------------
+//{ voidc_verify_jit_module_optimized(true); }
+//{ v_debug_print_module(2); }
+{
+    some = #my {'expr'  2 + 2 == 4  'expr'};
+
+    some1 = #my {'expr'  "zzzzzzz"  'expr'};
+
+    some2 = #my
+    {'unit_defn_list'
+
+        export
+        my_make_expr_list: (cmd: &*const *void, top: &*v_ast_base_t) ~> void
+        {
+            size = (cmd[0] : size_t);
+
+            ast = top - size;
+
+            ret  = (ast: *v_ast_expr_list_t);
+            expr = (ast: *v_ast_expr_t);
+
+            if (size) v_make_list(ret, expr, size);
+            else      v_make_list_nil(ret);
+
+            top := ret + 1;
+
+            cmd += 1;
+        }
+
+        export
+        my_append_expr_list: (cmd: &*const *void, top: &*v_ast_base_t) ~> void
+        {
+            size = (cmd[0] : size_t);
+
+            ast = top - (size + 1);
+
+            ret  = (ast   : *v_ast_expr_list_t);
+            expr = (ast+1 : *v_ast_expr_t);
+
+            v_list_append(ret, ret, expr, size);
+
+            top := ret + 1;
+
+            cmd += 1;
+        }
+
+        private
+        gen_expr_list: (*void, vis: *voidc_visitor_t, self: *v_ast_base_t) ~> void
+        {
+            gen = *(vis: *my_ast_generator_t);
+
+            lst = (self: *v_ast_expr_list_t);
+
+            size = v_list_get_size(lst);
+
+            M = 32;         //- ?
+
+            for (i: &size_t := 0;;)
+            {
+                n: &size_t := undef;
+
+                if (m = size - i, m < M)  n := m;
+                else                      n := M;
+
+                for (s = i+n; i < s; ++i)
+                {
+                    gen.visit(v_list_get_item(lst, i));
+                }
+
+                if (i == n)
+                {
+                    gen.add_item(my_make_expr_list);
+                    gen.add_item((n: *void));
+
+                    gen.pop_n((n - 1 : int));
+                }
+                else
+                {
+                    gen.add_item(my_append_expr_list);
+                    gen.add_item((n: *void));
+
+                    gen.pop_n((n: int));
+                }
+
+                if (i == size)  break;
+            }
+        }
+
+        private
+        gen_visitor: &voidc_visitor_t := {};
+
+        block
+        {
+            vis = &gen_visitor;
+
+            voidc_make_visitor(vis);
+
+            q = v_quark_from_string;
+
+            voidc_visitor_set_method(vis, vis, q("unit"),                gen_unit,              0);
+            voidc_visitor_set_method(vis, vis, q("defn_list_unit"),      gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_defn_list"),      gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_fun_defn"),       gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_var_defn"),       gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_val_defn"),       gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_ccif_list"),      gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_struct_defn"),    gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_spec_fun_defn"),  gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_spec_fun_renm"),  gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_union_defn"),     gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_stmt_init"),      gen_unit_stmt_init,    0);
+            voidc_visitor_set_method(vis, vis, q("unit_stmt_term"),      gen_unit_stmt_term,    0);
+            voidc_visitor_set_method(vis, vis, q("unit_namespace_open"), gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_defn_close"),     gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("unit_defn_using"),     gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("stmt_list"),           gen_stmt_list,         0);
+            voidc_visitor_set_method(vis, vis, q("stmt"),                gen_stmt,              0);
+            voidc_visitor_set_method(vis, vis, q("stmt_if_then_else"),   gen_stmt_if_then_else, 0);
+            voidc_visitor_set_method(vis, vis, q("stmt_block"),          gen_stmt_block,        0);
+            voidc_visitor_set_method(vis, vis, q("stmt_loop"),           gen_stmt_loop,         0);
+            voidc_visitor_set_method(vis, vis, q("stmt_defer"),          gen_stmt_defer,        0);
+            voidc_visitor_set_method(vis, vis, q("stmt_switch"),         gen_stmt_switch,       0);
+            voidc_visitor_set_method(vis, vis, q("case_list"),           gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("case_block"),          gen_case_block,        0);
+            voidc_visitor_set_method(vis, vis, q("stmt_ccif_list"),      gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("expr_list"),           gen_expr_list,         0);
+            voidc_visitor_set_method(vis, vis, q("expr_call"),           gen_expr_call,         0);
+            voidc_visitor_set_method(vis, vis, q("expr_identifier"),     gen_expr_identifier,   0);
+            voidc_visitor_set_method(vis, vis, q("expr_integer"),        gen_expr_integer,      0);
+            voidc_visitor_set_method(vis, vis, q("expr_string"),         gen_expr_string,       0);
+            voidc_visitor_set_method(vis, vis, q("expr_char"),           gen_expr_char,         0);
+            voidc_visitor_set_method(vis, vis, q("expr_struct"),         gen_expr_struct,       0);
+            voidc_visitor_set_method(vis, vis, q("expr_union"),          gen_expr_union,        0);
+            voidc_visitor_set_method(vis, vis, q("expr_stmt"),           gen_expr_stmt,         0);
+            voidc_visitor_set_method(vis, vis, q("expr_block"),          gen_expr_block,        0);
+            voidc_visitor_set_method(vis, vis, q("expr_ccif_list"),      gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("br_item_list"),        gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("cc_message"),          gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("cc_do"),               gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("cc_assert"),           gen_generic_list,      0);
+            voidc_visitor_set_method(vis, vis, q("operator_nullary"),    gen_operator_nullary,  0);
+            voidc_visitor_set_method(vis, vis, q("operator_unary"),      gen_operator_unary,    0);
+            voidc_visitor_set_method(vis, vis, q("operator_binary"),     gen_operator_binary,   0);
+            voidc_visitor_set_method(vis, vis, q("projection_payload"),  gen_generic_list,      0);
+
+            gr0 = v_peg_get_grammar();
+
+            grammar gr0
+            {
+            actions:
+                my_quote_ast = my_quote_ast_grammar_action;
+
+            parsers:
+                prim =+ "#my" _ a:parse_any     { my_quote_ast(a) };
+            }
+        }
+
+    'unit_defn_list'};
 
 
+    printf("OK 6\n");
+}
 
 
 
