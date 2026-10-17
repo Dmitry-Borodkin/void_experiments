@@ -193,6 +193,9 @@ alwaysinline
     v_add_symbol("cur_gctx", v_target_global_ctx_t, gctx);
 }
 
+{   v_import("llvm-c/Core.void");
+}
+
 //---------------------------------------------------------------------
 { voidc_unit_begin_module("trigroup_module"); }
 
@@ -269,7 +272,7 @@ trigroup_op_braces_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_b
 
     slst: &v_ast_stmt_list_t := {};
 
-    {   ast: v_ast_generic_list_t =         //- ???
+    {   ast =
         {'stmt'
 
           #define my_build_trigroup: (ab, bc, ca) ~> TriGroup
@@ -279,7 +282,7 @@ trigroup_op_braces_intrinsic: (aux: *void, vis: *voidc_visitor_t, self: *v_ast_b
 
         'stmt'};
 
-        v_make_list( &slst, (&ast: *v_ast_stmt_t));
+        v_make_list(&slst, (&ast : *v_ast_stmt_t));
     }
 
     expr: &v_ast_expr_t := {};
