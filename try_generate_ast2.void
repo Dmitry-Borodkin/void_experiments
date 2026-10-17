@@ -1444,6 +1444,11 @@ my_compile_ast_repr_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_
 
         val = vals[i/2];
 
+        flag: &bool := false;
+
+        str: &*const char := undef;
+        len: &size_t      := undef;
+
         switch(key)
         {
         case k_identifier:
@@ -1464,30 +1469,25 @@ my_compile_ast_repr_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_
 
             quark = (data: v_quark_t);
 
-            str = v_quark_to_string(quark);
-            len = v_quark_to_string_size(quark);
+            str := v_quark_to_string(quark);
+            len := v_quark_to_string_size(quark);
 
-            str_v = LLVMConstStringInContext(v_target_get_llvm_ctx(), str, (len: unsigned), 0);
-
-            vv = LLVMAddGlobal(v_get_module(), LLVMTypeOf(str_v), "");
-
-            LLVMSetInitializer(vv, str_v);
-
-            LLVMSetLinkage(vv, LLVMPrivateLinkage);
-
-            LLVMSetUnnamedAddress(vv, LLVMGlobalUnnamedAddr);
-
-            LLVMSetGlobalConstant(vv, true);
-
-            val := vv;
+            flag := true;
 
             break;
 
         case k_string:
 
-            len = (v_std_any_get_value(intptr_t, v_list_get_item(list, i+3)) : size_t);
-            str = (data: *const char);
+            str := (data: *const char);
+            len := (v_std_any_get_value(intptr_t, v_list_get_item(list, i+3)) : size_t);
 
+            flag := true;
+
+            break;
+        }
+
+        if (flag)
+        {
             str_v = LLVMConstStringInContext(v_target_get_llvm_ctx(), str, (len: unsigned), 0);
 
             vv = LLVMAddGlobal(v_get_module(), LLVMTypeOf(str_v), "");
@@ -1501,8 +1501,6 @@ my_compile_ast_repr_intrinsic: (*void, vis: *voidc_visitor_t, self: *v_ast_base_
             LLVMSetGlobalConstant(vv, true);
 
             val := vv;
-
-            break;
         }
     }
 
@@ -1874,7 +1872,7 @@ my_get_ast_generator_visitor: () ~> *voidc_visitor_t
 {
     some = #my {'expr'  2 + 2 == 4  'expr'};
 
-    some1 = #my {'expr'  "zzzzzzz"  'expr'};
+    some1 = #my {'stmt'  printf("Hello world!\n");  'stmt'};
 
     some2 = #my
     {'unit_defn_list'
