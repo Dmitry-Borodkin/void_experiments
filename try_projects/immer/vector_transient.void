@@ -123,9 +123,7 @@ namespace .immer {
 
         v_copy(&ret.impl, &self.impl);
 
-        ret: persistent_type = ret;
-
-        ret
+        (ret: persistent_type)
     };
 
 

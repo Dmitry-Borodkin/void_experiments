@@ -1,0 +1,25 @@
+{ v_import("mainline.void"); }
+{ v_enable_mainline(); }
+{
+    v_import("cstdio.void");
+}
+
+//---------------------------------------------------------------------
+{ voidc_verify_jit_module_optimized(true); }
+{ v_debug_print_module(2); }
+{
+    #define some: (n: int)  =
+    {
+        r: &int := n + 1;
+
+        (r: int)
+    };
+
+    a = some(5);
+
+    printf("a: %d\n", a);
+
+}
+
+
+

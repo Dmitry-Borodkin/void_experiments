@@ -164,9 +164,7 @@ namespace .immer {
 
         v_copy(&ret.impl, &self.impl);
 
-        ret: transient_type = ret;
-
-        ret
+        (ret: transient_type)
     };
 
 
