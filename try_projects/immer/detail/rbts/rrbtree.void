@@ -23,10 +23,6 @@ namespace .immer {
 namespace detail {
 namespace rbts {
 
-#assert(v_defined(for_each_chunk_visitor))
-#assert(v_defined(for_each_chunk_visitor, visit_leaf))
-#assert(v_defined(for_each_chunk_visitor, visit_node))
-
 
 //---------------------------------------------------------------------
 #define rrbtree: [](T: v_static_type_t, MemoryPolicy: v_static_namespace_t,
