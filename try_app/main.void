@@ -238,6 +238,10 @@ font_face: &*cairo_font_face_t := undef;
 
 block
 {
+    FcInit: () ~> int;
+
+    FcInit();
+
     struct FcPattern;
 
     FcNameParse: (*const char) ~> *FcPattern;
@@ -251,7 +255,14 @@ block
     font_face := cairo_ft_font_face_create_for_pattern(fc_pattern);
 }
 
-defer cairo_font_face_destroy(font_face);
+defer
+{
+    cairo_font_face_destroy(font_face);
+
+    FcFini: () ~> void;
+
+    FcFini();
+}
 
 
 //=====================================================================
